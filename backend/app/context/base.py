@@ -51,7 +51,7 @@ class TurnContext:
     budget: TokenBudget = TokenBudget(memory=512, tools=2048, history=4096)
     # ISO 639-1 of the conversation, or None before detection has run.
     language: str | None = None
-    # Output of any tools that ran for this turn (search, news, later RAG).
+    # Output of any tools that ran for this turn (search, later RAG).
     tool_results: tuple[ToolResult, ...] = ()
     # Files attached to the conversation, oldest first.
     documents: tuple[AttachedDocument, ...] = ()

@@ -5,7 +5,6 @@ import type { GuardAlert } from '@/hooks/useChat'
 const SOURCE_LABELS: Record<string, string> = {
   user_input: 'your message',
   web_search: 'a search result',
-  news: 'a news item',
   document: 'a document',
 }
 

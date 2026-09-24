@@ -10,7 +10,6 @@ import { inOrder, startWith, type Makeable } from '@/components/make/showcase'
 import { MessageList } from '@/components/chat/MessageList'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { ConversationUsage } from '@/components/chat/Usage'
-import { NewsStrip } from '@/components/news/NewsStrip'
 import { AttachmentError } from '@/components/chat/AttachmentError'
 import { Suggestions } from '@/components/chat/Suggestions'
 import { ShareDialog } from '@/components/chat/ShareDialog'
@@ -174,17 +173,6 @@ export default function Chat() {
 
         {empty ? (
           <>
-            {/* The news leads now, at the top, and what can be made sits
-                where the decision is — right above the box. */}
-            <div className="pt-3">
-              <NewsStrip
-                onAsk={(headline, source) =>
-                  // Written into the box, not sent: they may want to ask
-                  // something narrower than "tell me more".
-                  composer.current?.fill(`Tell me more about this story from ${source}: "${headline}"`)
-                }
-              />
-            </div>
             <EmptyState canMake={kinds.length > 0} />
           </>
         ) : (

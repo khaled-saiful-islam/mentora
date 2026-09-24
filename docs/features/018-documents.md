@@ -137,7 +137,7 @@ the UI as *answering from the attached files*.
 
 Explicitly time-sensitive wording still searches — "what's the **latest** on
 this?" searches even with three files attached, because the files cannot contain
-news.
+today's events.
 
 ## Errors are answers, not alerts
 

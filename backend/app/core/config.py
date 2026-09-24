@@ -79,19 +79,10 @@ class Settings(BaseSettings):
     # was written. 0 keeps to Google's snippets.
     search_read_pages: int = 3
     search_read_timeout_seconds: float = 6.0
-    # Google's `gl` country code ("my"), so prices, weather and news are local.
+    # Google's `gl` country code ("my"), so prices, weather and results are local.
     search_country: str = ""
     # The zone a turn is dated in when the browser does not say.
     default_timezone: str = "UTC"
-
-    mcp_news_command: str = "/opt/mcp-news/bin/google-news-mcp"
-    mcp_news_args: str = ""
-    mcp_news_tool: str = "get_top_headlines"
-    mcp_news_language: str = "en"
-    mcp_news_country: str = "MY"
-    mcp_news_ttl_seconds: int = 1800
-    mcp_news_timeout_seconds: float = 20.0
-    mcp_news_max_items: int = 6
 
     # ---- Documents ------------------------------------------------------
     document_max_bytes: int = 5 * 1024 * 1024
@@ -236,10 +227,6 @@ class Settings(BaseSettings):
     @property
     def supported_language_list(self) -> list[str]:
         return [x.strip().lower() for x in self.supported_languages.split(",") if x.strip()]
-
-    @property
-    def mcp_news_arg_list(self) -> list[str]:
-        return [a for a in self.mcp_news_args.split() if a]
 
     @property
     def search_enabled(self) -> bool:

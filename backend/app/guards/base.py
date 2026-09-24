@@ -24,7 +24,6 @@ class ContentSource(StrEnum):
 
     USER_INPUT = "user_input"
     WEB_SEARCH = "web_search"
-    NEWS = "news"
     DOCUMENT = "document"
 
 

@@ -53,9 +53,9 @@ three existing files, stop and ask whether the seam is in the wrong place.
 
 ### 3. Failure degrades, it never breaks the turn
 
-Every optional thing — memory, search, news, suggestions, guards, extraction —
+Every optional thing — memory, search, suggestions, guards, extraction —
 is wrapped so a failure produces a worse answer, not a failed request. Look at
-`_memories_for` or `NewsService.headlines` for the shape. A bare `except` in
+`_memories_for` or `suggestion_service.suggest` for the shape. A bare `except` in
 this codebase is usually correct and should carry a comment saying why.
 
 ## The prompt is built by contributors
@@ -319,8 +319,6 @@ Be honest about these rather than discovering them:
 - **The document budget is split evenly across files**, not first-come.
   Otherwise one long file consumes it and a question about the third is answered
   from nothing, with no way for the user to see why.
-- **The news MCP server runs in its own virtualenv** at `/opt/mcp-news` pinned to
-  `mcp<2`, while the client uses `mcp` 2.x. Verified to interoperate over stdio.
 - **Costs use `Decimal` and six decimal places.** A 40-token reply costs
   $0.000006; two places reports every short message as free.
 - **Search is `auto` by default** and explains itself (`mentions 'current'`).

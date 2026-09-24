@@ -221,8 +221,7 @@ the identity, because nothing about the transcript makes it visible.
 
 A Create menu in the composer held them for two kinds. At five it was five
 words behind a button nobody opened, so the kinds moved to where the decision is
-made: right above the box. The news that used to sit there moved to the top of
-the screen.
+made: right above the box.
 
 On a new chat, **Make something** is a row of five tiles, each in its kind's
 colour with a few pixels of what it makes, moving -- a poster's sun rising

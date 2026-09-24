@@ -135,8 +135,8 @@ re-wrapped, quote escaping in titles, no sources, and empty input.
 `backend/tests/test_tools.py` — image results linking to the page not the file,
 data-URI thumbnails never used as links, six stock hosts skipped, a library
 named only in the source field skipped, tiny images skipped, unreported sizes
-kept, contiguous ranks after filtering, and HTML entities decoded in both search
-and news parsing.
+kept, contiguous ranks after filtering, and HTML entities decoded in search
+parsing.
 
 ### Images survive a reload
 

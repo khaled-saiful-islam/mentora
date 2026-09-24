@@ -76,12 +76,11 @@ default.
 | **Tool calling** | The model picks its own tools and can run several in a turn — two questions, two searches. Falls back to pattern matching on providers without function calling |
 | **Attached files** | Text, PDF and Word files — three per chat, 5 MB each. Each appears as a card on the message that sent it, and stays readable for the rest of the chat |
 | **Image understanding** | Attach a photo, screenshot or scan and ask about it. Needs a vision model; off until you set `VISION_MODEL` |
-| **News briefing** | Across the top of the new-chat screen: one story at a time in a card tinted by its source, the next three beside it, and **Ask Pelita about this** to turn a headline into a conversation. Pulled from an MCP server via the official Python SDK and cached for 30 minutes |
 | **Token and cost accounting** | Per message and per conversation, labelled as provider-reported or estimated so a total is never quietly a guess |
 | **Language auto-detection** | Replies in the language of your first message. Verified for Bahasa Melayu, English, Tamil, Chinese and Bengali |
 | **Memory** | Facts that persist across conversations, added by you or extracted as you talk — all editable and deletable |
 | **Follow-up suggestions** | Three chips after each answer |
-| **Prompt-injection guard** | Scans your input *and* text from search and news before it reaches the prompt, with a banner naming what it found |
+| **Prompt-injection guard** | Scans your input *and* text from search before it reaches the prompt, with a banner naming what it found |
 | **Accounts** | Sign-up, sign-in, profile, JWT in an httpOnly cookie |
 | **Rate limiting** | Per-user caps on chat and uploads, per-address on sign-in. Counted in Postgres, so it survives more than one worker |
 | **User management** | Admins create, disable and promote accounts, and cap what each one may spend per 24 hours. Unlimited by default |
@@ -119,7 +118,7 @@ is the only prerequisite.
 |---|---|---|
 | `WEB_PORT` / `API_PORT` | `8080` / `8000` | Change if something else holds the port |
 | `SERPAPI_KEY` | *(empty)* | Enables web search. The toggle stays disabled without it |
-| `SEARCH_COUNTRY` | *(empty)* | Google country code, e.g. `MY`, for local prices, weather and news |
+| `SEARCH_COUNTRY` | *(empty)* | Google country code, e.g. `MY`, for local prices and weather |
 | `LLM_PRICE_INPUT_PER_1M` / `_OUTPUT_PER_1M` | `0.15` / `0.60` | **Set to your provider's real rates**, or the cost column is fiction |
 | `DOCUMENT_MAX_BYTES` / `_MAX_PER_CONVERSATION` | `5 MB` / `3` | Attached-file limits. Raising the size means raising `client_max_body_size` in `frontend/nginx.conf` too |
 | `VISION_MODEL` | *(empty)* | Enables image upload. `gpt-4o-mini`, `llama-3.2-11b-vision-preview`, `llava`. Defaults to the `LLM_` URL and key |
@@ -129,7 +128,6 @@ is the only prerequisite.
 | `SUPPORTED_LANGUAGES` | `en,ms,ta,zh,bn` | Languages to detect between |
 | `MEMORY_AUTO_EXTRACT` | `true` | `false` removes one model call per turn |
 | `SUGGESTIONS_ENABLED` | `true` | `false` removes one model call per turn |
-| `MCP_NEWS_COUNTRY` | `US` | `MY` for Malaysia |
 
 Every setting lives in [`.env.example`](.env.example) with a comment.
 
@@ -163,7 +161,7 @@ backend/app/
 ├── providers/   base.py (Protocol) + openai_compatible.py + registry.py
 ├── guards/      base.py (Protocol) + prompt_injection.py + registry.py
 ├── context/     the ordered contributor pipeline
-├── tools/       serpapi.py, news_mcp.py, artifact.py
+├── tools/       serpapi.py, web_search.py, artifact.py
 ├── artifacts/   base.py (Protocol) + poster.py + slides.py + games.py + website.py + web_app.py + registry.py
 └── db/          models, repositories, session
 frontend/src/styles/theme.css    every colour, in one file

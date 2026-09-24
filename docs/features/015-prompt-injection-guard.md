@@ -3,7 +3,7 @@
 ## What it does
 
 Scans text on its way into the prompt — your message, and anything fetched from
-web search or news — and reports what it finds in a banner above the answer.
+web search — and reports what it finds in a banner above the answer.
 Untrusted text that tries to give instructions is marked as data before the
 model sees it.
 
@@ -36,8 +36,8 @@ page saying the same thing is an attack, because nobody asked that page for
 instructions.
 
 So the same match carries different weight: from `user_input` severity drops a
-level, and role-play and prompt questions drop to `low`. From `web_search` or
-`news` it keeps full weight.
+level, and role-play and prompt questions drop to `low`. From `web_search` it
+keeps full weight.
 
 ### Sanitisation wraps, it does not delete
 

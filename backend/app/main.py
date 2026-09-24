@@ -22,7 +22,6 @@ from app.api.routes import (
     documents,
     health,
     memories,
-    news,
     shares,
 )
 from app.core.config import deployment_warnings, get_settings
@@ -120,7 +119,6 @@ def create_app() -> FastAPI:
     app.include_router(conversations.router, prefix="/api")
     app.include_router(documents.router, prefix="/api")
     app.include_router(memories.router, prefix="/api")
-    app.include_router(news.router, prefix="/api")
     app.include_router(shares.owner_router, prefix="/api")
     app.include_router(shares.public_router, prefix="/api")
     return app

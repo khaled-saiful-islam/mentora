@@ -1,8 +1,7 @@
-"""Search and news parsing, and the contributor that puts them in the prompt."""
+"""Search parsing, and the contributor that puts results in the prompt."""
 
 from __future__ import annotations
 
-import json
 from uuid import uuid4
 
 import httpx
@@ -11,7 +10,6 @@ import pytest
 from app.context.base import TurnContext
 from app.context.contributors import ToolResultsContributor
 from app.providers.base import Role, TokenBudget, ToolResult
-from app.tools.news_mcp import NewsUnavailable, parse_feed
 from app.tools.serpapi import (
     SearchUnavailable,
     SerpApiSearch,
@@ -122,93 +120,6 @@ async def test_a_successful_search_returns_results(monkeypatch) -> None:
     patch_http(monkeypatch, lambda r: httpx.Response(200, json=payload))
     results = await SerpApiSearch(api_key="k").search("query", limit=5)
     assert results[0].title == "Hit"
-
-
-# --- news feed parsing --------------------------------------------------
-
-
-def feed(*entries: dict) -> str:
-    return json.dumps({"entries": list(entries)})
-
-
-def test_entries_become_news_items() -> None:
-    items = parse_feed(
-        feed(
-            {
-                "title": "Something happened - The Star",
-                "link": "https://thestar.test/1",
-                "summary": "<p>Body <b>text</b></p>",
-                "published": "Tue, 16 Sep 2026 10:00:00 GMT",
-            }
-        ),
-        max_items=6,
-    )
-    assert items[0].title == "Something happened - The Star"
-    assert items[0].url == "https://thestar.test/1"
-    assert items[0].published_at.startswith("Tue")
-
-
-def test_the_publisher_is_taken_from_the_title_suffix() -> None:
-    """Google News has no source field; the title suffix is the reliable place."""
-    items = parse_feed(
-        feed({"title": "Headline - Malaysiakini", "link": "https://x.test"}), max_items=6
-    )
-    assert items[0].source == "Malaysiakini"
-
-
-def test_an_explicit_source_object_wins_over_the_title() -> None:
-    items = parse_feed(
-        feed(
-            {
-                "title": "Headline - Wrong",
-                "link": "https://x.test",
-                "source": {"title": "Right"},
-            }
-        ),
-        max_items=6,
-    )
-    assert items[0].source == "Right"
-
-
-def test_a_title_without_a_suffix_falls_back() -> None:
-    items = parse_feed(feed({"title": "Plain headline", "link": "https://x.test"}), max_items=6)
-    assert items[0].source == "News"
-
-
-def test_html_is_stripped_from_summaries() -> None:
-    items = parse_feed(
-        feed({"title": "T", "link": "https://x.test", "summary": "<a href='#'>Read</a> this"}),
-        max_items=6,
-    )
-    assert items[0].snippet == "Read this"
-
-
-def test_max_items_is_respected() -> None:
-    many = feed(*[{"title": f"H{i}", "link": f"https://{i}.test"} for i in range(20)])
-    assert len(parse_feed(many, max_items=4)) == 4
-
-
-@pytest.mark.parametrize(
-    "payload",
-    [
-        '{"items": [{"title": "T", "link": "https://x.test"}]}',
-        '{"articles": [{"title": "T", "url": "https://x.test"}]}',
-        '[{"title": "T", "link": "https://x.test"}]',
-    ],
-)
-def test_other_server_shapes_are_tolerated(payload: str) -> None:
-    """MCP_NEWS_COMMAND is swappable, so the parser cannot assume one shape."""
-    assert len(parse_feed(payload, max_items=6)) == 1
-
-
-def test_non_json_is_reported_as_unavailable() -> None:
-    with pytest.raises(NewsUnavailable, match="not JSON"):
-        parse_feed("<html>nope</html>", max_items=6)
-
-
-def test_no_usable_entries_is_reported_as_unavailable() -> None:
-    with pytest.raises(NewsUnavailable, match="no usable"):
-        parse_feed(feed({"title": "", "link": ""}), max_items=6)
 
 
 # --- the contributor ----------------------------------------------------
@@ -376,18 +287,3 @@ def test_search_snippets_decode_html_entities() -> None:
     assert parsed[0].title == "A & B"
     assert "&nbsp;" not in parsed[0].snippet
     assert "&#39;" not in parsed[0].snippet
-
-
-def test_news_titles_and_summaries_decode_html_entities() -> None:
-    items = parse_feed(
-        feed(
-            {
-                "title": "Anwar &amp; the budget",
-                "link": "https://y.test",
-                "summary": "<p>a&nbsp;b</p>",
-            }
-        ),
-        max_items=6,
-    )
-    assert items[0].title == "Anwar & the budget"
-    assert items[0].snippet == "a b"

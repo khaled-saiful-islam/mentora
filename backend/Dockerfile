@@ -22,17 +22,6 @@ RUN pip install --no-cache-dir -e . \
 # deployment only ever needs the HTML.
 RUN playwright install --with-deps chromium
 
-# The news MCP server, pinned by commit. It imports mcp.server.fastmcp, which
-# only exists in mcp<2, while the backend client runs mcp 2.x — verified to
-# interoperate over stdio. Its own virtualenv keeps the two versions apart
-# instead of holding the whole backend back a major version.
-ARG MCP_NEWS_REF=a454db6295776f936146472d660c595f9b9449a1
-RUN python -m venv /opt/mcp-news \
- && /opt/mcp-news/bin/pip install --no-cache-dir \
-      "google-news-mcp @ git+https://github.com/moltrus/google-news-mcp@${MCP_NEWS_REF}" \
-      "mcp<2" \
- && /opt/mcp-news/bin/python -c "import google_news_mcp.server"
-
 COPY alembic.ini ./
 COPY alembic ./alembic
 COPY app ./app
