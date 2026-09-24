@@ -1,6 +1,6 @@
 # Mentora — Implementation Plan
 
-> **Status: APPROVED 2026-09-24 — Phase 1 in progress.**
+> **Status: APPROVED 2026-09-24 — Phase 1 done; Phase 2 waiting for your go.**
 > Mentora is a fork of Pelita (`~/projects/pelita` @ `5a23f41`). This plan reuses
 > Pelita's stack, layering and Protocol-plus-registry design, and extends it into a
 > teacher–student learning platform.
@@ -671,4 +671,4 @@ Every phase runs the same loop:
 
 ---
 
-**Approved 2026-09-24.** Phase 1 in progress.
+**Approved 2026-09-24.** Phase 1 done (fork, News removed, renamed, pushed).
