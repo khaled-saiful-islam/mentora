@@ -79,7 +79,7 @@ UNREADABLE_SUFFIXES = (
 # Identifies itself honestly. A crawler pretending to be a browser is the
 # thing site owners block first.
 HEADERS = {
-    "user-agent": "Mozilla/5.0 (compatible; Pelita/1.0; reads pages its search found)",
+    "user-agent": "Mozilla/5.0 (compatible; Mentora/1.0; reads pages its search found)",
     "accept": "text/html,application/xhtml+xml;q=0.9,text/plain;q=0.8",
     # Only what `_body` can inflate with a limit. Brotli is left off the list,
     # and a page sent in it anyway is not read.

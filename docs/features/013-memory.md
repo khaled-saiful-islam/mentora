@@ -3,7 +3,7 @@
 ## What it does
 
 Remembers facts about you across conversations. Some you type in settings; some
-Pelita extracts from what you say. All of them are listed, editable, switchable
+Mentora extracts from what you say. All of them are listed, editable, switchable
 and deletable in one place.
 
 ## How it works
@@ -17,7 +17,7 @@ Every memory records where it came from:
 | `user` | Typed in settings |
 | `extracted` | Proposed by the model after a turn |
 
-The settings list labels them "Added by you" and "Added by Pelita". People trust
+The settings list labels them "Added by you" and "Added by Mentora". People trust
 what they wrote themselves and want to audit what was inferred about them, so
 collapsing the distinction would be the wrong simplification.
 

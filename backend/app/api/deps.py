@@ -71,10 +71,10 @@ def _token_from(cookie: str | None, authorization: str | None) -> str:
 
 async def current_user(
     auth: AuthServiceDep,
-    pelita_session: Annotated[str | None, Cookie()] = None,
+    mentora_session: Annotated[str | None, Cookie()] = None,
     authorization: Annotated[str | None, Header()] = None,
 ) -> User:
-    user_id = decode_access_token(_token_from(pelita_session, authorization))
+    user_id = decode_access_token(_token_from(mentora_session, authorization))
     return await auth.get_user(user_id)
 
 

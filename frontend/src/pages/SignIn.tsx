@@ -46,7 +46,7 @@ export default function SignIn() {
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <Logo className="size-9" />
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Pelita</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Mentora</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {mode === 'signin' ? 'Sign in to continue' : 'Create an account'}
             </p>

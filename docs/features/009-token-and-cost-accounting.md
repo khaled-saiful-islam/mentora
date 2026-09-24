@@ -10,7 +10,7 @@ you point the template somewhere else entirely.
 
 ### Provenance is carried, not smoothed over
 
-Some providers report usage during streaming and some do not. Pelita asks for
+Some providers report usage during streaming and some do not. Mentora asks for
 `stream_options: {include_usage: true}`, uses the reported figures when they
 arrive, and counts with `tiktoken` when they do not. Every message records which
 happened, in `usage_source`:

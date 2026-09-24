@@ -83,7 +83,7 @@ export function siteLayout(
  */
 export function withState(html: string, data: unknown): string {
   const given = JSON.stringify(data ?? null).replace(/</g, '\\u003c')
-  const tag = `<script data-pelita="state">window.__PELITA_STATE__ = ${given};<\/script>`
+  const tag = `<script data-mentora="state">window.__MENTORA_STATE__ = ${given};<\/script>`
   const head = /<head\b[^>]*>/i.exec(html)
   if (!head) return tag + html
   const at = head.index + head[0].length
@@ -102,7 +102,7 @@ export function withState(html: string, data: unknown): string {
  */
 export function editableSite(html: string, editor: string): string {
   const without = html.replace(
-    /<script\b(?![^>]*data-pelita)[^>]*>[\s\S]*?<\/script\s*>/gi,
+    /<script\b(?![^>]*data-mentora)[^>]*>[\s\S]*?<\/script\s*>/gi,
     '',
   )
   const tag =
@@ -112,7 +112,7 @@ export function editableSite(html: string, editor: string): string {
     `${editor}<\/script>`
   // Before the router, so its listener is registered first and the router
   // never sees the click.
-  const router = without.search(/<script\b[^>]*data-pelita\s*=\s*["']router["']/i)
+  const router = without.search(/<script\b[^>]*data-mentora\s*=\s*["']router["']/i)
   if (router !== -1) return without.slice(0, router) + tag + without.slice(router)
   return without.includes('</body>') ? without.replace('</body>', `${tag}</body>`) : without + tag
 }

@@ -52,7 +52,7 @@ export const EDITOR = `
     })
     span.addEventListener('input', function () {
       parent.postMessage(
-        { source: 'pelita-edit', index: index, text: span.textContent || '' },
+        { source: 'mentora-edit', index: index, text: span.textContent || '' },
         '*'
       )
     })
@@ -63,7 +63,7 @@ export const EDITOR = `
     })
   })
 
-  parent.postMessage({ source: 'pelita-edit-ready', count: nodes.length }, '*')
+  parent.postMessage({ source: 'mentora-edit-ready', count: nodes.length }, '*')
 })()
 `
 
@@ -108,7 +108,7 @@ export function EditableFrame({
       // has an opaque origin and reports "null".
       if (event.source !== frame.current?.contentWindow) return
       const data = event.data as { source?: string; index?: number; text?: string }
-      if (data?.source !== 'pelita-edit') return
+      if (data?.source !== 'mentora-edit') return
       if (typeof data.index === 'number') onChange(data.index, data.text ?? '')
     }
     window.addEventListener('message', onMessage)

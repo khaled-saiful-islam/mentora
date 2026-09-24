@@ -38,7 +38,7 @@ failure paths produce the identical message.
 bcrypt via the `bcrypt` package directly, not passlib — passlib has a
 long-standing incompatibility with bcrypt 4.x and adds nothing here.
 
-bcrypt silently truncates at 72 bytes. Pelita rejects longer passwords instead,
+bcrypt silently truncates at 72 bytes. Mentora rejects longer passwords instead,
 because a password where only the first 72 bytes matter, without anyone being
 told, is worse than an error message.
 

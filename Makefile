@@ -5,8 +5,9 @@ COMPOSE_DEV := docker compose -f docker-compose.yml -f docker-compose.dev.yml
 
 # Ports come from .env when it exists, so the banner cannot print a stale one.
 env_or = $(shell grep -E '^$(1)=' .env 2>/dev/null | cut -d= -f2- | grep . || echo $(2))
-WEB_PORT := $(call env_or,WEB_PORT,8080)
-API_PORT := $(call env_or,API_PORT,8000)
+WEB_PORT := $(call env_or,WEB_PORT,8300)
+API_PORT := $(call env_or,API_PORT,8301)
+DEV_PORT := $(call env_or,DEV_PORT,8303)
 ADMIN_USER := $(call env_or,SEED_ADMIN_USERNAME,admin)
 ADMIN_PASS := $(call env_or,SEED_ADMIN_PASSWORD,admin)
 
@@ -18,10 +19,10 @@ ifneq (,$(findstring xterm,$(TERM)))
   RESET := $(shell tput sgr0)
 endif
 
-.PHONY: help up down logs migrate migration test lint reset seed dev ps shell-api shell-db
+.PHONY: help up down logs migrate migration test lint reset seed dev ps shell-backend shell-db api-dev
 
 help: ## Show this help
-	@echo "$(BOLD)Pelita$(RESET) — provider-agnostic chatbot template"
+	@echo "$(BOLD)Mentora$(RESET) — where teachers and students learn together"
 	@echo
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 	  | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(AMBER)%-12s$(RESET) %s\n", $$1, $$2}'
@@ -39,7 +40,7 @@ up: .env ## Build and start everything, run migrations, seed admin
 
 _banner:
 	@echo
-	@echo "  $(BOLD)Pelita is running$(RESET)"
+	@echo "  $(BOLD)Mentora is running$(RESET)"
 	@echo "  ─────────────────────────────────────────"
 	@echo "  Web        $(AMBER)http://localhost:$(WEB_PORT)$(RESET)"
 	@echo "  API docs   $(DIM)http://localhost:$(API_PORT)/api/docs$(RESET)"
@@ -61,39 +62,40 @@ ps: ## Show service status
 	@$(COMPOSE) ps
 
 migrate: ## Apply pending migrations
-	@$(COMPOSE) exec api alembic upgrade head
+	@$(COMPOSE) exec backend alembic upgrade head
 
 migration: ## Autogenerate a migration — make migration m="add widgets"
 	@test -n "$(m)" || { echo 'Usage: make migration m="what changed"'; exit 1; }
-	@$(COMPOSE) exec api alembic revision --autogenerate -m "$(m)"
+	@$(COMPOSE) exec backend alembic revision --autogenerate -m "$(m)"
 
 seed: ## Re-run the seed (idempotent)
-	@$(COMPOSE) exec api python -m app.scripts.seed
+	@$(COMPOSE) exec backend python -m app.scripts.seed
 
 # Frontend tooling runs in a container so `make test` needs Docker and nothing
 # else. The named volume keeps node_modules between runs.
-NODE := docker run --rm -v "$(PWD)/frontend:/app" -v pelita-node-modules:/app/node_modules \
+NODE := docker run --rm -v "$(PWD)/frontend:/app" -v mentora-node-modules:/app/node_modules \
 	-w /app node:22-alpine sh -c
 
 # Source is mounted rather than baked in, so test and lint see your edits
 # without a rebuild.
-PY_RUN := $(COMPOSE) run --rm --entrypoint="" -v "$(PWD)/backend:/srv" api
+PY_RUN := $(COMPOSE) run --rm --entrypoint="" -v "$(PWD)/backend:/srv" backend
 
 test: ## Run backend and frontend tests
 	@$(PY_RUN) python -m pytest -q --cov=app --cov-report=term-missing
 	@$(NODE) "npm install --silent --no-audit --no-fund && npm test"
 
 lint: ## Lint backend and frontend
+	@./scripts/check-brand.sh
 	@$(PY_RUN) python -m ruff check app tests
 	@$(NODE) "npm install --silent --no-audit --no-fund && npm run lint"
 
 dev: .env ## Run with hot reload on both sides
-	@$(COMPOSE_DEV) up -d --build --wait db api
-	@echo "$(AMBER)API on http://localhost:$(API_PORT)$(RESET) reloads on save — starting Vite with HMR"
-	@cd frontend && npm install && npm run dev
+	@$(COMPOSE_DEV) up -d --build --wait db backend
+	@echo "$(AMBER)API on http://localhost:$(API_PORT)$(RESET) reloads on save — starting Vite with HMR on :$(DEV_PORT)"
+	@cd frontend && npm install && VITE_API_TARGET=http://localhost:$(API_PORT) npm run dev -- --port $(DEV_PORT)
 
-api-dev: .env ## API only, with hot reload (no Vite)
-	@$(COMPOSE_DEV) up -d --build --wait db api
+api-dev: .env ## Backend only, with hot reload (no Vite)
+	@$(COMPOSE_DEV) up -d --build --wait db backend
 	@echo "$(AMBER)API on http://localhost:$(API_PORT)$(RESET) — reloads on save"
 
 reset: ## Destroy everything including the database, then start clean
@@ -102,8 +104,8 @@ reset: ## Destroy everything including the database, then start clean
 	@$(COMPOSE) down -v --remove-orphans
 	@$(MAKE) --no-print-directory up
 
-shell-api: ## Shell into the API container
-	@$(COMPOSE) exec api bash
+shell-backend: ## Shell into the backend container
+	@$(COMPOSE) exec backend bash
 
 shell-db: ## psql into the database
-	@$(COMPOSE) exec db psql -U $${POSTGRES_USER:-pelita} -d $${POSTGRES_DB:-pelita}
+	@$(COMPOSE) exec db psql -U $${POSTGRES_USER:-mentora} -d $${POSTGRES_DB:-mentora}

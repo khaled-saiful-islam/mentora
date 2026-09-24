@@ -24,7 +24,7 @@ from app.services.quota import TokenQuota
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-COOKIE_NAME = "pelita_session"
+COOKIE_NAME = "mentora_session"
 
 
 def _set_session_cookie(response: Response, token: str, settings: Settings) -> None:

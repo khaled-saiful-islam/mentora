@@ -42,7 +42,7 @@ li { padding: 6px 0; }
   <button id="clear" type="button">Clear done</button>
 </main>
 <script>
-const state = PelitaStore.load({ tasks: [] });
+const state = MentoraStore.load({ tasks: [] });
 const list = document.getElementById('list');
 function render() {
   list.innerHTML = '';
@@ -55,10 +55,10 @@ document.getElementById('add').addEventListener('submit', (e) => {
   e.preventDefault();
   const input = document.getElementById('task');
   state.tasks.push(input.value); input.value = '';
-  PelitaStore.save(state); render();
+  MentoraStore.save(state); render();
 });
 document.getElementById('clear').addEventListener('click', () => {
-  state.tasks = []; PelitaStore.save(state); render();
+  state.tasks = []; MentoraStore.save(state); render();
 });
 render();
 </script>
@@ -123,13 +123,13 @@ def test_an_app_never_gets_the_origin_it_was_framed_from() -> None:
 
 def test_the_store_is_defined_before_the_apps_own_script() -> None:
     document = instrument(APP, "a1b2c3d4e5f6")
-    assert document.index('data-pelita="store"') < document.index("PelitaStore.load(")
-    assert document.index('data-pelita="store"') < document.index("<meta")
+    assert document.index('data-mentora="store"') < document.index("MentoraStore.load(")
+    assert document.index('data-mentora="store"') < document.index("<meta")
 
 
 def test_the_guard_comes_after_the_apps_own_styles() -> None:
     document = instrument(APP, "a1b2c3d4e5f6")
-    assert document.index('data-pelita="app"') > document.index("max-width: 600px")
+    assert document.index('data-mentora="app"') > document.index("max-width: 600px")
 
 
 def test_an_app_keeps_its_id_however_many_times_it_is_changed() -> None:
@@ -137,8 +137,8 @@ def test_an_app_keeps_its_id_however_many_times_it_is_changed() -> None:
     once = instrument(APP, "a1b2c3d4e5f6")
     twice = instrument(once)
     assert app_id_of(twice) == "a1b2c3d4e5f6"
-    assert twice.count('data-pelita="store"') == 1
-    assert twice.count('data-pelita="app"') == 1
+    assert twice.count('data-mentora="store"') == 1
+    assert twice.count('data-mentora="app"') == 1
 
 
 def test_the_runtime_comes_back_out_exactly() -> None:
@@ -147,14 +147,14 @@ def test_the_runtime_comes_back_out_exactly() -> None:
 
 def test_saved_data_cannot_end_the_script_it_is_put_into() -> None:
     document = with_state(APP, {"tasks": ["</script><script>alert(1)</script>"]})
-    tag = document[document.index('data-pelita="state"') :]
-    assert tag.index("</script>") > tag.index("__PELITA_STATE__")
+    tag = document[document.index('data-mentora="state"') :]
+    assert tag.index("</script>") > tag.index("__MENTORA_STATE__")
     assert "\\u003c/script>" in tag
 
 
 def test_saved_data_comes_before_the_store_that_reads_it() -> None:
     document = with_state(instrument(APP, "a1b2c3d4e5f6"), {"tasks": []})
-    assert document.index('data-pelita="state"') < document.index('data-pelita="store"')
+    assert document.index('data-mentora="state"') < document.index('data-mentora="store"')
 
 
 # --- what can be known without running it ------------------------------------
@@ -171,9 +171,9 @@ def test_a_working_app_has_nothing_to_report() -> None:
 @pytest.mark.parametrize(
     ("change", "said"),
     [
-        ("PelitaStore.save(state); render();\n});", "alert('Added'); });"),
+        ("MentoraStore.save(state); render();\n});", "alert('Added'); });"),
         (
-            "const state = PelitaStore.load({ tasks: [] });",
+            "const state = MentoraStore.load({ tasks: [] });",
             "const state = JSON.parse(localStorage.getItem('t') || '{}');",
         ),
         ("render();\n</script>", "fetch('/api/tasks'); render();\n</script>"),
@@ -247,7 +247,7 @@ async def test_an_app_is_built_end_to_end() -> None:
     updates = [u async for u in AppKind(model, check=False).build(brief())]  # type: ignore[arg-type]
 
     finished = updates[-1].built
-    assert finished.html.count('data-pelita="store"') == 1
+    assert finished.html.count('data-mentora="store"') == 1
     assert app_id_of(finished.html)
     assert finished.spec.movement == "soft paper planner"
     assert "Keep today's tasks" in finished.summary
@@ -450,7 +450,7 @@ async def test_saved_data_is_there_when_the_app_opens_and_saves_go_to_the_panel(
         "<html><body><iframe sandbox='allow-scripts allow-forms' id='f'></iframe><script>"
         "window.said = [];"
         "window.addEventListener('message', (e) => {"
-        "  if (e.data && e.data.source === 'pelita-store') window.said.push(e.data.data);"
+        "  if (e.data && e.data.source === 'mentora-store') window.said.push(e.data.data);"
         "});"
         f"document.getElementById('f').srcdoc = {json.dumps(framed).replace('</', '<\\/')};"
         "</script></body></html>"
@@ -474,7 +474,7 @@ async def test_a_button_that_throws_is_found_by_using_the_app() -> None:
     from app.artifacts.apptest import use_app
 
     broken = APP.replace(
-        "state.tasks = []; PelitaStore.save(state); render();",
+        "state.tasks = []; MentoraStore.save(state); render();",
         "state.tasks = done.filter(Boolean); render();",
     )
     await _browser()
@@ -486,7 +486,7 @@ async def test_a_dialog_is_found_by_using_the_app() -> None:
     from app.artifacts.apptest import use_app
 
     asks = APP.replace(
-        "state.tasks = []; PelitaStore.save(state); render();",
+        "state.tasks = []; MentoraStore.save(state); render();",
         "if (confirm('Clear?')) { state.tasks = []; render(); }",
     )
     await _browser()

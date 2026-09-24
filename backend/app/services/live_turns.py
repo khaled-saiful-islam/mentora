@@ -26,7 +26,7 @@ import logging
 from collections.abc import AsyncIterator
 from uuid import UUID
 
-from app.core.errors import PelitaError
+from app.core.errors import MentoraError
 from app.providers.base import FinishReason
 from app.services.events import ChatEvent, DoneEvent, ErrorEvent, StartEvent
 
@@ -125,7 +125,7 @@ class LiveTurns:
                 turn.append(event)
         except asyncio.CancelledError:
             raise
-        except PelitaError as exc:
+        except MentoraError as exc:
             # The response may already have begun, so an HTTP status is no
             # longer available anywhere. The reason arrives as an event.
             turn.append(ErrorEvent(message=exc.message))

@@ -79,7 +79,7 @@ def test_export_has_a_title_and_both_speakers(conversation) -> None:
 
 
 def test_export_names_the_app(conversation) -> None:
-    assert "Exported from Pelita" in to_markdown(conversation)
+    assert "Exported from Mentora" in to_markdown(conversation)
     assert "Exported from Suria" in to_markdown(conversation, app_name="Suria")
 
 

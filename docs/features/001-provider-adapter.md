@@ -2,7 +2,7 @@
 
 ## What it does
 
-Routes every model call in Pelita through one adapter that speaks the OpenAI
+Routes every model call in Mentora through one adapter that speaks the OpenAI
 chat-completions wire format. Switching from OpenAI to Groq, Ollama, OpenRouter,
 vLLM or ILMU means editing three lines of `.env` and restarting. No code change,
 no vendor SDK, no conditional branches scattered through the codebase.
@@ -41,7 +41,7 @@ distinction in the UI. A cost table that silently mixes measured and guessed
 numbers cannot be trusted, so the difference is carried all the way through
 rather than smoothed over.
 
-**`stream_options` degrades on its own.** Pelita asks for
+**`stream_options` degrades on its own.** Mentora asks for
 `stream_options: {include_usage: true}` because it produces exact counts. Some
 providers reject the field with a 400. The adapter detects that specific
 rejection, retries once without it, and stops sending it for the rest of the
@@ -82,7 +82,7 @@ that replays recordings, wired in with a single line.
 - **Chat completions only.** No embeddings, images or audio. Those belong in
   their own protocols rather than bolted onto this one.
 - **No tool/function calling.** Providers disagree too much about the dialect for
-  a single adapter to abstract it honestly. Pelita gets tool results into the
+  a single adapter to abstract it honestly. Mentora gets tool results into the
   prompt through context contributors (feature 002) instead, which works
   identically everywhere.
 - **`tiktoken` is an OpenAI tokeniser.** Estimates for Llama or Qwen models are

@@ -70,12 +70,12 @@ export function SiteFrame({
       // By frame, not by origin: an opaque origin reports itself as "null".
       if (event.source !== frame.current?.contentWindow) return
       const data = event.data as { source?: string; page?: string; index?: number; text?: string }
-      if (data?.source === 'pelita-site' && data.page) {
+      if (data?.source === 'mentora-site' && data.page) {
         shown.current = data.page
         onPage?.(data.page)
-      } else if (data?.source === 'pelita-edit' && typeof data.index === 'number') {
+      } else if (data?.source === 'mentora-edit' && typeof data.index === 'number') {
         onEdit?.(data.index, data.text ?? '')
-      } else if (data?.source === 'pelita-store' && typeof (data as { data?: unknown }).data === 'string') {
+      } else if (data?.source === 'mentora-store' && typeof (data as { data?: unknown }).data === 'string') {
         onStore?.((data as { data: string }).data)
       }
     }
@@ -86,7 +86,7 @@ export function SiteFrame({
   // Asked for a page the site is not already showing: say so.
   useEffect(() => {
     if (!page || page === shown.current) return
-    frame.current?.contentWindow?.postMessage({ source: 'pelita-go', page }, '*')
+    frame.current?.contentWindow?.postMessage({ source: 'mentora-go', page }, '*')
   }, [page])
 
   // A new document starts wherever its address says, and will report it.

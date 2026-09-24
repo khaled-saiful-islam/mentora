@@ -126,7 +126,7 @@ def build_service(
 
     def contributors(memories: tuple[str, ...]):
         return (
-            SystemPromptContributor("You are Pelita."),
+            SystemPromptContributor("You are Mentora."),
             # Only when a test fixes the time: the rest assert on prompts that
             # would otherwise carry whatever the real clock said.
             *((ClockContributor(),) if clock else ()),
@@ -227,7 +227,7 @@ async def test_the_prompt_is_built_by_the_contributors(session, db_user, registr
     assert roles == [Role.SYSTEM, Role.USER]
     # The system message carries the base prompt plus the detected-language
     # instruction, in that order.
-    assert provider.received.messages[0].content.startswith("You are Pelita.")
+    assert provider.received.messages[0].content.startswith("You are Mentora.")
     assert provider.received.messages[-1].content == "the question"
 
 

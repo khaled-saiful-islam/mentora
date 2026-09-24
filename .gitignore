@@ -33,3 +33,6 @@ blob-report/
 .idea/
 .vscode/
 *.swp
+
+# Browser automation scratch
+.playwright-mcp/

@@ -1,7 +1,7 @@
 [project]
-name = "pelita-backend"
+name = "mentora-backend"
 version = "0.1.0"
-description = "Pelita — provider-agnostic chatbot template API"
+description = "Mentora — teacher–student learning platform API"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",

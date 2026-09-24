@@ -8,7 +8,7 @@ import { showcaseOf, type Makeable } from '@/components/make/showcase'
 const SPOTLIGHT_MS = 3400
 
 /**
- * What Pelita can make, on the new-chat screen, where the decision is made.
+ * What Mentora can make, on the new-chat screen, where the decision is made.
  *
  * Five in a menu were five words nobody opened. Here each kind is a tile in
  * its own colour with a few pixels of what it makes, moving, and a real thing

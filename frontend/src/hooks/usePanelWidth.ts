@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  * behave the same on a laptop and on a wide monitor, and neither side may be
  * squeezed to nothing.
  */
-const KEY = 'pelita.artifact-panel-width'
+const KEY = 'mentora.artifact-panel-width'
 const DEFAULT_SHARE = 0.58
 const MIN_SHARE = 0.3
 const MAX_SHARE = 0.8

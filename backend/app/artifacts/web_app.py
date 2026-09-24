@@ -9,7 +9,7 @@ Two things are new.
 
 The first is memory. An app is the first artifact somebody puts data into, and
 that data is theirs. The app never touches storage itself -- its frame has an
-opaque origin, where `localStorage` throws -- but calls `PelitaStore`, which
+opaque origin, where `localStorage` throws -- but calls `MentoraStore`, which
 `app_runtime` puts in front of it: in the panel, saves go by message to the
 panel and on to the person's account; in a downloaded copy, to that browser.
 
@@ -64,7 +64,7 @@ SCREEN = Canvas(width=APP_WIDTH, height=APP_HEIGHT, page=f"{APP_WIDTH}px {APP_HE
 FIX_ATTEMPTS = 2
 _LINE = re.compile(r"^\s*([A-Z]+)\s*:\s*(.+?)\s*$")
 _HEX = re.compile(r"#(?:[0-9a-fA-F]{3}){1,2}\b")
-_SCRIPT = re.compile(r"<script\b(?![^>]*data-pelita)[^>]*>([\s\S]*?)</script>", re.IGNORECASE)
+_SCRIPT = re.compile(r"<script\b(?![^>]*data-mentora)[^>]*>([\s\S]*?)</script>", re.IGNORECASE)
 _ROLES = ("ground", "ink", "accent", "support", "quiet", "warning")
 _FALLBACK = ("#f7f5f0", "#1c1b19", "#4d7c0f", "#e7e2d6", "#6b6760")
 

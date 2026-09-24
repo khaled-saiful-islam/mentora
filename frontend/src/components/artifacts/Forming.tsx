@@ -60,7 +60,7 @@ export function Forming({ build }: { build: ArtifactBuild }) {
       data-phase={phase}
       // Always the kind's own colour, the one its card and panel wear. Taken
       // from the palette instead, a design with a gold in it glowed in
-      // Pelita's own amber, and every artifact looked like the app.
+      // Mentora's own amber, and every artifact looked like the app.
       style={{ ['--glow' as string]: colourOf(build.kind) }}
     >
       {/* The light it is being made under. Warm on purpose, and the one colour

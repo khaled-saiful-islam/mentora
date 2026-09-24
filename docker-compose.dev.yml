@@ -1,10 +1,10 @@
-# Development overlay: source is mounted and the API reloads on save.
+# Development overlay: source is mounted and the backend reloads on save.
 #
 # Not merged into docker-compose.yml, because `make up` should build the image
 # it would actually deploy. Used by `make dev`:
 #   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 services:
-  api:
+  backend:
     volumes:
       - ./backend:/srv
     command:

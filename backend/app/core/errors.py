@@ -7,7 +7,7 @@ path for failure rather than one per endpoint.
 from __future__ import annotations
 
 
-class PelitaError(Exception):
+class MentoraError(Exception):
     """Base for errors that carry a message safe to show a user."""
 
     status_code = 500
@@ -18,32 +18,32 @@ class PelitaError(Exception):
         self.message = message
 
 
-class NotFoundError(PelitaError):
+class NotFoundError(MentoraError):
     status_code = 404
     code = "not_found"
 
 
-class ConflictError(PelitaError):
+class ConflictError(MentoraError):
     status_code = 409
     code = "conflict"
 
 
-class ValidationError(PelitaError):
+class ValidationError(MentoraError):
     status_code = 422
     code = "validation_error"
 
 
-class AuthError(PelitaError):
+class AuthError(MentoraError):
     status_code = 401
     code = "unauthorized"
 
 
-class ForbiddenError(PelitaError):
+class ForbiddenError(MentoraError):
     status_code = 403
     code = "forbidden"
 
 
-class RateLimitError(PelitaError):
+class RateLimitError(MentoraError):
     """Too many requests. Carries how long to wait, because a 429 without it
     leaves a client guessing — and guessing usually means retrying at once."""
 
@@ -55,7 +55,7 @@ class RateLimitError(PelitaError):
         self.retry_after = max(1, retry_after)
 
 
-class UpstreamError(PelitaError):
+class UpstreamError(MentoraError):
     """A dependency failed in a way the user should be told about."""
 
     status_code = 502

@@ -18,13 +18,13 @@ describe('usePanelWidth', () => {
   })
 
   it('remembers a width somebody chose', () => {
-    localStorage.setItem('pelita.artifact-panel-width', '0.7')
+    localStorage.setItem('mentora.artifact-panel-width', '0.7')
     const { result } = renderHook(() => usePanelWidth())
     expect(widthOf(result)).toBeCloseTo(70, 0)
   })
 
   it('refuses a remembered width that would squeeze either side to nothing', () => {
-    localStorage.setItem('pelita.artifact-panel-width', '0.99')
+    localStorage.setItem('mentora.artifact-panel-width', '0.99')
     const { result } = renderHook(() => usePanelWidth())
     expect(widthOf(result)).toBeLessThanOrEqual(80)
   })
@@ -48,7 +48,7 @@ describe('usePanelWidth', () => {
   })
 
   it('goes back to the default on reset', () => {
-    localStorage.setItem('pelita.artifact-panel-width', '0.78')
+    localStorage.setItem('mentora.artifact-panel-width', '0.78')
     const { result } = renderHook(() => usePanelWidth())
     act(() => result.current.reset())
     expect(widthOf(result)).toBeCloseTo(58, 0)

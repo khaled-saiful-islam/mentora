@@ -27,7 +27,7 @@ def make_ctx(**overrides) -> TurnContext:
 
 
 DEFAULT_CONTRIBUTORS = (
-    SystemPromptContributor("You are Pelita."),
+    SystemPromptContributor("You are Mentora."),
     HistoryContributor(),
     UserMessageContributor(),
 )
@@ -45,7 +45,7 @@ async def test_messages_come_out_in_registry_order() -> None:
     messages, _ = await build_messages(ctx, shuffled)
 
     assert [m.role for m in messages] == [Role.SYSTEM, Role.USER, Role.ASSISTANT, Role.USER]
-    assert messages[0].content == "You are Pelita."
+    assert messages[0].content == "You are Mentora."
     assert messages[-1].content == ctx.user_message
 
 

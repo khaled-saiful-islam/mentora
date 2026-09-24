@@ -25,7 +25,7 @@ from app.api.routes import (
     shares,
 )
 from app.core.config import deployment_warnings, get_settings
-from app.core.errors import PelitaError, RateLimitError
+from app.core.errors import MentoraError, RateLimitError
 from app.core.logging import configure_logging
 
 settings = get_settings()
@@ -94,8 +94,8 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    @app.exception_handler(PelitaError)
-    async def handle_pelita_error(_: Request, exc: PelitaError) -> JSONResponse:
+    @app.exception_handler(MentoraError)
+    async def handle_mentora_error(_: Request, exc: MentoraError) -> JSONResponse:
         # Retry-After is the only header any of these carry, and it is the
         # difference between a client backing off and a client hammering.
         headers = (

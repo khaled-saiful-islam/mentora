@@ -6,7 +6,7 @@ nowhere useful, and a link to another site would replace the app inside the
 panel. None of that is the app's to solve, and a model left to solve it writes
 something slightly different every time. So it is solved once, here:
 
-- `PelitaStore` -- `load(defaults)` and `save(data)`. In the panel, what was
+- `MentoraStore` -- `load(defaults)` and `save(data)`. In the panel, what was
   saved comes in with the document and every save goes out by message to the
   panel, which keeps it on the person's account. Opened as a downloaded file,
   the same two calls use that browser's own storage. Anywhere else it simply
@@ -15,7 +15,7 @@ something slightly different every time. So it is solved once, here:
 - a small stylesheet after the app's own, at zero specificity, so a grid or
   a long word cannot push the app sideways on a phone.
 
-Everything added is marked `data-pelita`, so it is taken out and put back
+Everything added is marked `data-mentora`, so it is taken out and put back
 exactly when the app is changed, and it keeps the same id each time -- the id
 is how a downloaded copy finds what it saved.
 """
@@ -27,7 +27,7 @@ import re
 from uuid import uuid4
 
 _OURS = re.compile(
-    r"<(script|style)\b[^>]*\bdata-pelita\s*=\s*[\"'](?:store|app|state)[\"'][^>]*>.*?</\1\s*>",
+    r"<(script|style)\b[^>]*\bdata-mentora\s*=\s*[\"'](?:store|app|state)[\"'][^>]*>.*?</\1\s*>",
     re.S | re.IGNORECASE,
 )
 _ID = re.compile(r"var ID = \"([0-9a-f]{12})\";")
@@ -75,19 +75,19 @@ def with_state(document: str, data: object) -> str:
     belongs to the app.
     """
     given = json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
-    tag = f'<script data-pelita="state">window.__PELITA_STATE__ = {given};</script>'
+    tag = f'<script data-mentora="state">window.__MENTORA_STATE__ = {given};</script>'
     opened = re.search(r"<head\b[^>]*>", document, re.IGNORECASE)
     if opened is None:
         return tag + document
     return document[: opened.end()] + tag + document[opened.end() :]
 
 
-_STORE = """<script data-pelita="store">
+_STORE = """<script data-mentora="store">
 (function () {
   var ID = __ID__;
-  var KEY = 'pelita-app:' + ID;
+  var KEY = 'mentora-app:' + ID;
   var framed = window.parent !== window;
-  var given = window.__PELITA_STATE__;
+  var given = window.__MENTORA_STATE__;
   var timer = null;
   var pending;
 
@@ -119,14 +119,14 @@ _STORE = """<script data-pelita="store">
     var text;
     try { text = JSON.stringify(pending); } catch (e) { return; }
     if (framed) {
-      try { window.parent.postMessage({ source: 'pelita-store', data: text }, '*'); } catch (e) {}
+      try { window.parent.postMessage({ source: 'mentora-store', data: text }, '*'); } catch (e) {}
       return;
     }
     var store = local();
     if (store) { try { store.setItem(KEY, text); } catch (e) {} }
   }
 
-  window.PelitaStore = {
+  window.MentoraStore = {
     load: function (defaults) {
       var found = saved();
       if (found === null || found === undefined) return copy(defaults);
@@ -170,7 +170,7 @@ _STORE = """<script data-pelita="store">
 })();
 </script>"""
 
-_GUARD = """<style data-pelita="app">
+_GUARD = """<style data-mentora="app">
 img, video { max-width: 100%; }
 :where(#app *) { min-width: 0; }
 :where(#app) { overflow-wrap: break-word; }

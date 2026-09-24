@@ -1,6 +1,6 @@
 """Memory management.
 
-Everything Pelita remembers about you is listed, editable and deletable here.
+Everything Mentora remembers about you is listed, editable and deletable here.
 Memory a person cannot see or correct is a liability rather than a feature.
 """
 

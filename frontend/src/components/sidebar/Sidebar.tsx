@@ -386,7 +386,7 @@ function MenuItem({
   )
 }
 
-const FOLDED_KEY = 'pelita-sidebar-folded'
+const FOLDED_KEY = 'mentora-sidebar-folded'
 
 /** Remembered, because a sidebar that springs back open on every reload is
  *  one somebody has to fold again every time. */

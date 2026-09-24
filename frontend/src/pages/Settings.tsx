@@ -111,7 +111,7 @@ export default function Settings() {
               Memory
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Facts included in every conversation. Pelita adds some as you talk; you can
+              Facts included in every conversation. Mentora adds some as you talk; you can
               add, edit, switch off or delete any of them.
             </p>
           </div>
@@ -230,7 +230,7 @@ function MemoryRow({
               {memory.content}
             </p>
             <span className="mt-0.5 text-xs text-muted-foreground">
-              {memory.source === 'extracted' ? 'Added by Pelita' : 'Added by you'}
+              {memory.source === 'extracted' ? 'Added by Mentora' : 'Added by you'}
             </span>
           </>
         )}

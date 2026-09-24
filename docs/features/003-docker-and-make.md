@@ -14,17 +14,17 @@ command "once the database is ready".
 
 Three services:
 
-| service | image | role |
-|---|---|---|
-| `db` | `postgres:16-alpine` | Data. Named volume `pelita-db` survives `make down` |
-| `api` | built from `backend/` | FastAPI on 8000 |
-| `web` | built from `frontend/` | nginx serving the built SPA and proxying `/api` |
+| service | container | image | role |
+|---|---|---|---|
+| `db` | `mentora-db` | `postgres:16-alpine` | Data. Named volume `mentora-db` survives `make down` |
+| `backend` | `mentora-backend` | built from `backend/` | FastAPI on 8000 inside the network, host port 8301 |
+| `frontend` | `mentora-frontend` | built from `frontend/` | nginx serving the built SPA and proxying `/api`, host port 8300 |
 
 ### Ordering is enforced by health, not by sleep
 
-`db` has a `pg_isready` healthcheck. `api` declares
+`db` has a `pg_isready` healthcheck. `backend` declares
 `depends_on: db: condition: service_healthy`, so it does not start until Postgres
-answers. `web` waits on `api` the same way, and `make up` passes `--wait` so the
+answers. `frontend` waits on `backend` the same way, and `make up` passes `--wait` so the
 command does not return until every healthcheck is green.
 
 A `sleep 5` would work most of the time, which is worse than not working at all —
@@ -60,7 +60,7 @@ nothing errors.
 | `make lint` | ruff over the backend, `tsc --noEmit` over the frontend |
 | `make dev` | Postgres and API in Docker, Vite with hot reload on the host |
 | `make reset` | Destroy the database volume and start clean. Asks first |
-| `make shell-api` / `make shell-db` | A shell in the API container, psql in the database |
+| `make shell-backend` / `make shell-db` | A shell in the backend container, psql in the database |
 
 `make test` and `make lint` run the frontend toolchain inside a `node:22-alpine`
 container with a named volume for `node_modules`, so neither target needs Node
@@ -70,10 +70,11 @@ installed on the host. Docker is the only prerequisite.
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `WEB_PORT` | `8080` | Host port for the web UI |
-| `API_PORT` | `8000` | Host port for the API |
-| `POSTGRES_PORT` | `5433` | Host port for Postgres. Not 5432, so it does not collide with a local install |
-| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | `pelita` | Database credentials |
+| `WEB_PORT` | `8300` | Host port for the web UI |
+| `API_PORT` | `8301` | Host port for the API |
+| `POSTGRES_PORT` | `8302` | Host port for Postgres. Not 5432, so it does not collide with a local install |
+| `DEV_PORT` | `8303` | Vite dev server port for `make dev` |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | `mentora` | Database credentials |
 
 `DATABASE_URL` is derived from the `POSTGRES_*` values in `docker-compose.yml`,
 so there is one source of truth for credentials. Set `DATABASE_URL` directly only
@@ -88,8 +89,8 @@ the banner cannot print a port you are not actually using.
   it to `docker-compose.yml` with a healthcheck, and have whatever depends on it
   use `condition: service_healthy`.
 - **Another startup step**: add it to `docker-entrypoint.sh` before the `exec`.
-- **Production build**: the `web` image is already a static build behind nginx.
-  The `api` image installs dev dependencies for `make test`; strip that line for
+- **Production build**: the `frontend` image is already a static build behind nginx.
+  The `backend` image installs dev dependencies for `make test`; strip that line for
   a smaller production image.
 
 ## Known limits

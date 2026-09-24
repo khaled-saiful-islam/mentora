@@ -15,7 +15,7 @@ spend money.
 ```
 Users                                              [+ New user]
 
-demo            demo · demo@pelita.local        Make admin   Disable
+demo            demo · demo@mentora.local        Make admin   Disable
 Used in 24h: 15,167    Limit: 500
 
 Administrator  [Admin]  admin · admin@test.com  Remove admin  Disable

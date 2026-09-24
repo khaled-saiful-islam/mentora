@@ -57,7 +57,7 @@ export default function Shared() {
   }, [token])
 
   useEffect(() => {
-    if (conversation) document.title = `${conversation.title} · Pelita`
+    if (conversation) document.title = `${conversation.title} · Mentora`
   }, [conversation])
 
   if (loading) {
@@ -74,7 +74,7 @@ export default function Shared() {
         <Logo className="size-10" />
         <Alert tone="info">{error}</Alert>
         <Link to="/" className="text-sm text-primary underline-offset-4 hover:underline">
-          Go to Pelita
+          Go to Mentora
         </Link>
       </main>
     )
@@ -100,7 +100,7 @@ export default function Shared() {
             to="/"
             className="shrink-0 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:border-hover-border hover:bg-hover"
           >
-            Try Pelita
+            Try Mentora
           </Link>
         </div>
       </header>

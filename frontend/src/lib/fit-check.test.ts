@@ -35,7 +35,7 @@ describe('checkFit', () => {
   it('ignores a message from anything but its own frame', async () => {
     const result = checkFit('<html></html>', 40)
     window.postMessage(
-      { source: 'pelita-fit', problems: [{ tag: 'h1', text: 'spoofed' }] },
+      { source: 'mentora-fit', problems: [{ tag: 'h1', text: 'spoofed' }] },
       '*',
     )
     await new Promise((r) => setTimeout(r, 15))

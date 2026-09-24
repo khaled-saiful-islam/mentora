@@ -20,18 +20,6 @@ you   Design a wide banner for a badminton tournament at Dewan
       └─────────────────────────────────────────────────┘
 ```
 
-![A poster for a night market in Kota Bharu, designed from a one-line brief](../images/pelita-poster.png)
-
-![A five-slide deck, each slide on one of the grounds its design chose](../images/pelita-slides.png)
-
-![A game, run in a browser before it was shown](../images/pelita-game.png)
-
-![A landing page in the panel, with the Desktop, Tablet and Phone switcher](../images/pelita-website.png)
-
-![An app that remembers what was put in it: a standup spinner](../images/pelita-app.png)
-
-![The build in progress: the artifact forming in its own ground and face, lit in its kind's colour](../images/pelita-building.png)
-
 An artifact is **one self-contained HTML document**. That is the whole format,
 and it is why this feature adds no service, no build step and no dependency. A
 poster is one canvas; a deck is one `<section>` per slide in the same file; a
@@ -156,7 +144,7 @@ first true thing about what you are going to get.
 It has three states, because the build does. Behind it is a glow in the
 kind's own colour -- rose for a poster, emerald for a website -- which does not
 change when the design lands. Taken from the palette instead, a design with a
-gold in it glowed in Pelita's own amber, and every artifact looked like the app.
+gold in it glowed in Mentora's own amber, and every artifact looked like the app.
 
 | | What is on the card | What it looks like |
 |---|---|---|
@@ -372,7 +360,7 @@ so any rule the design wrote still wins:
   now also gets it as its `background-image`, whatever either thought the
   convention was.
 
-Everything added is marked `data-pelita`, so it is taken out and put back
+Everything added is marked `data-mentora`, so it is taken out and put back
 exactly when the site changes; a site read back and reassembled is the same
 bytes.
 
@@ -420,10 +408,10 @@ blocked in the frame, so a question asked with one is never asked.
 
 **What it keeps is saved on the account.** The frame has an opaque origin, so
 `localStorage` throws and the app cannot call the API. It is given
-`PelitaStore` instead (`app_runtime.py`), in front of its own script:
+`MentoraStore` instead (`app_runtime.py`), in front of its own script:
 
-    const state = PelitaStore.load({ tasks: [] })   // saved data over these defaults
-    PelitaStore.save(state)                          // batched; call it as often as you like
+    const state = MentoraStore.load({ tasks: [] })   // saved data over these defaults
+    MentoraStore.save(state)                          // batched; call it as often as you like
 
 In the panel, what was saved is fetched from `GET /artifacts/{id}/state` and put
 into the document before it is framed, so `load` is synchronous and the first

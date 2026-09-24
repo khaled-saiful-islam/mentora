@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { editableSite, isFluid, siteLayout, sitePages, withState } from './site'
 
-const SITE = `<!DOCTYPE html><html><head><script data-pelita="route-head">1</script></head><body>
+const SITE = `<!DOCTYPE html><html><head><script data-mentora="route-head">1</script></head><body>
 <header><nav><a class="nav-link" href="#/home">Home</a></nav></header>
 <main id="site">
 <section data-page="home" data-title="Home" aria-label="Home"><section class="section"><h1>Hi</h1></section></section>
 <section data-page="menu" data-title="Food &amp; drink" aria-label="Food"><p>Kopi</p></section>
 </main>
 <script>document.body.insertAdjacentHTML('beforeend', '<p>written by script</p>')</script>
-<script data-pelita="router">route()</script>
+<script data-mentora="router">route()</script>
 </body></html>`
 
 describe('sitePages', () => {
@@ -52,12 +52,12 @@ describe('editableSite', () => {
   })
 
   it('keeps the routing, so every page can still be reached and edited', () => {
-    expect(editing).toContain('data-pelita="router"')
-    expect(editing).toContain('data-pelita="route-head"')
+    expect(editing).toContain('data-mentora="router"')
+    expect(editing).toContain('data-mentora="route-head"')
   })
 
   it('puts the editor in before the router, so a click on a link edits it instead', () => {
-    expect(editing.indexOf('window.EDITOR')).toBeLessThan(editing.indexOf('data-pelita="router"'))
+    expect(editing.indexOf('window.EDITOR')).toBeLessThan(editing.indexOf('data-mentora="router"'))
     expect(editing).toContain('stopImmediatePropagation')
   })
 })
@@ -81,22 +81,22 @@ describe('an app in the panel', () => {
 })
 
 describe('withState', () => {
-  const app = '<!DOCTYPE html><html><head><script data-pelita="store">x</script></head><body></body></html>'
+  const app = '<!DOCTYPE html><html><head><script data-mentora="store">x</script></head><body></body></html>'
 
   it('puts what was saved in front of the store that reads it', () => {
     const opened = withState(app, { tasks: ['Call Aina'] })
-    expect(opened.indexOf('__PELITA_STATE__')).toBeLessThan(opened.indexOf('data-pelita="store"'))
+    expect(opened.indexOf('__MENTORA_STATE__')).toBeLessThan(opened.indexOf('data-mentora="store"'))
     expect(opened).toContain('{"tasks":["Call Aina"]}')
   })
 
   it('says null rather than nothing, so the app does not go looking elsewhere', () => {
-    expect(withState(app, null)).toContain('window.__PELITA_STATE__ = null;')
+    expect(withState(app, null)).toContain('window.__MENTORA_STATE__ = null;')
   })
 
   it('cannot be ended early by what somebody typed into the app', () => {
     const opened = withState(app, { note: '</script><script>alert(1)</script>' })
-    const tag = opened.slice(opened.indexOf('data-pelita="state"'))
-    expect(tag.indexOf('</script>')).toBeGreaterThan(tag.indexOf('__PELITA_STATE__'))
+    const tag = opened.slice(opened.indexOf('data-mentora="state"'))
+    expect(tag.indexOf('</script>')).toBeGreaterThan(tag.indexOf('__MENTORA_STATE__'))
     expect(tag).toContain('\\u003c/script>')
   })
 })

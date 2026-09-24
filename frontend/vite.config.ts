@@ -10,9 +10,9 @@ export default defineConfig({
   },
   server: {
     host: true,
-    port: 5173,
-    // Dev server talks to the API container; production uses the nginx proxy.
-    proxy: { '/api': { target: process.env.VITE_API_TARGET ?? 'http://localhost:8000', changeOrigin: true } },
+    port: 8303,
+    // Dev server talks to the backend container; production uses the nginx proxy.
+    proxy: { '/api': { target: process.env.VITE_API_TARGET ?? 'http://localhost:8301', changeOrigin: true } },
   },
   test: {
     environment: 'jsdom',

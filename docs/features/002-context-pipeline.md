@@ -8,7 +8,7 @@ once. Adding a new source of prompt content — retrieval, a user's calendar, a
 compliance preamble — is a new file and one line in a registry. No existing
 contributor changes, and neither does the code that calls the model.
 
-This is the piece that makes Pelita a template rather than an app.
+This is the piece that makes Mentora easy to extend.
 
 ## How it works
 
@@ -125,7 +125,7 @@ a default. Existing contributors ignore it.
   contributors.
 - **Budgets are per contributor, not global.** Every contributor spending its
   full budget can exceed a small context window. The model reports the overflow;
-  Pelita does not pre-empt it. A global ceiling would need a trimming policy
+  Mentora does not pre-empt it. A global ceiling would need a trimming policy
   across contributors, which is a decision the template should not make for you.
 - **`order` collisions are resolved arbitrarily.** Two contributors with the same
   value sort unpredictably. The spacing convention exists to avoid this.

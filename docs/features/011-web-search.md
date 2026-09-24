@@ -85,7 +85,7 @@ the tool message.
 
 ### Current means now
 
-Asked "who is the current EPL champion?" on 24 September 2026, Pelita answered
+Asked "who is the current EPL champion?" on 24 September 2026, Mentora answered
 "Liverpool, 2024-25". Its own results said "2025/26: Arsenal". Asked the date,
 it searched for "today" and found a TV show. Told it was wrong, it agreed with
 whatever it was told. Each of those had a cause, fixed where it happened:

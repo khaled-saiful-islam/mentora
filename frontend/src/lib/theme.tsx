@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 export type ThemeChoice = 'light' | 'dark' | 'system'
 
-const STORAGE_KEY = 'pelita-theme'
+const STORAGE_KEY = 'mentora-theme'
 
 interface ThemeState {
   choice: ThemeChoice

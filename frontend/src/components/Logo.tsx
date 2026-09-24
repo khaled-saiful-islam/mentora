@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 
 /**
- * The Pelita mark.
+ * The Mentora mark.
  *
  * Inline rather than an <img> so it inherits `currentColor` where that reads
  * better — muted in the sidebar, accent on the sign-in screen — without

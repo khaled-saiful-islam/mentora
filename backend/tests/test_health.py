@@ -55,7 +55,7 @@ async def test_health_reports_ok_when_database_answers(client, monkeypatch) -> N
         response = await c.get("/api/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "app": "Pelita", "database": "ok"}
+    assert response.json() == {"status": "ok", "app": "Mentora", "database": "ok"}
 
 
 async def _false() -> bool:

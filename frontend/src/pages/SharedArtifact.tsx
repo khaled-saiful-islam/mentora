@@ -64,7 +64,7 @@ export default function SharedArtifact() {
   const app = isApp(shared?.kind)
   const fluid = isFluid(shared?.kind)
   const pages = useMemo(() => (shared && site ? sitePages(shared.html) : []), [shared, site])
-  const key = `pelita-app:shared:${token}`
+  const key = `mentora-app:shared:${token}`
   // Read once, when the app arrives; a save must not reload the frame.
   const appHtml = useMemo(
     () => (shared && app ? withState(shared.html, readLocal(key)) : null),
@@ -75,7 +75,7 @@ export default function SharedArtifact() {
     <div className="flex h-dvh flex-col bg-surface">
       <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-4">
         <Logo className="size-5" />
-        <span className="text-sm font-medium">Pelita</span>
+        <span className="text-sm font-medium">Mentora</span>
       </header>
 
       {error && (

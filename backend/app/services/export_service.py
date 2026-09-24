@@ -17,7 +17,7 @@ _WHITESPACE = re.compile(r"[-\s]+")
 MAX_FILENAME_LENGTH = 60
 
 
-def to_markdown(conversation: Conversation, *, app_name: str = "Pelita") -> str:
+def to_markdown(conversation: Conversation, *, app_name: str = "Mentora") -> str:
     """Render a conversation as a Markdown document."""
     lines = [
         f"# {conversation.title}",

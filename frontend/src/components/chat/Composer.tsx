@@ -7,7 +7,7 @@ import { acceptAttribute, type AttachedFile } from '@/hooks/useDocuments'
 import { Attachments } from './Attachments'
 
 const MAX_HEIGHT_PX = 224 // matches --composer-max-height in theme.css
-const SEARCH_MODE_KEY = 'pelita-search-mode'
+const SEARCH_MODE_KEY = 'mentora-search-mode'
 
 const MODES: { value: SearchMode; label: string; hint: string }[] = [
   { value: 'auto', label: 'Auto', hint: 'Search when the question needs current information' },
@@ -45,7 +45,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     atFileLimit,
     onAttach,
     onRemoveFile,
-    placeholder = 'Message Pelita…',
+    placeholder = 'Message Mentora…',
     autoFocus,
   },
   ref,
@@ -268,7 +268,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         </div>
 
         <p className="mt-2 text-center text-xs text-muted-foreground">
-          Pelita can make mistakes. Check important information.
+          Mentora can make mistakes. Check important information.
         </p>
       </div>
     </div>

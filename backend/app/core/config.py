@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     )
 
     # ---- Identity -------------------------------------------------------
-    app_name: str = "Pelita"
+    app_name: str = "Mentora"
     app_env: str = "development"
     log_level: str = "INFO"
 
@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     llm_temperature: float = 0.7
 
     system_prompt: str = (
-        "You are Pelita, a helpful assistant. Answer clearly and concisely. "
+        "You are Mentora, a helpful assistant. Answer clearly and concisely. "
         "If you are unsure about something, say so rather than guessing."
     )
 
@@ -54,12 +54,12 @@ class Settings(BaseSettings):
     documents_token_budget: int = 8192
 
     # ---- Database -------------------------------------------------------
-    database_url: str = "postgresql+asyncpg://pelita:pelita@db:5432/pelita"
+    database_url: str = "postgresql+asyncpg://mentora:mentora@db:5432/mentora"
 
     # ---- Auth -----------------------------------------------------------
     # Long enough for HS256, and obviously a placeholder. `verify_deployment`
     # refuses to start with this value when APP_ENV=production.
-    jwt_secret: str = "pelita-insecure-development-secret-change-me"  # noqa: S105
+    jwt_secret: str = "mentora-insecure-development-secret-change-me"  # noqa: S105
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24 * 7
 
@@ -213,7 +213,7 @@ class Settings(BaseSettings):
     default_language: str = "en"
 
     # ---- CORS -----------------------------------------------------------
-    cors_origins: str = "http://localhost:5173,http://localhost:3000,http://localhost:8080"
+    cors_origins: str = "http://localhost:8303,http://localhost:8300"
 
     @field_validator("llm_base_url")
     @classmethod
@@ -234,7 +234,7 @@ class Settings(BaseSettings):
         return bool(self.serpapi_key.strip())
 
 
-INSECURE_JWT_SECRET = "pelita-insecure-development-secret-change-me"  # noqa: S105
+INSECURE_JWT_SECRET = "mentora-insecure-development-secret-change-me"  # noqa: S105
 INSECURE_PASSWORDS = frozenset({"admin", "password", "changeme"})
 MIN_JWT_SECRET_LENGTH = 32
 

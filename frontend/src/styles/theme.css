@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Pelita theme — the whole look lives here.
+   Mentora theme — the whole look lives here.
 
    Change the values in this file and every surface, border, shadow and accent
    in the application follows. Nothing else in the codebase hardcodes a colour;
@@ -14,7 +14,7 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  /* --- Accent ramp: Pelita amber ---------------------------------------- */
+  /* --- Accent ramp: Mentora amber ---------------------------------------- */
   --accent-50: 48 96% 95%;
   --accent-100: 48 96% 89%;
   --accent-200: 45 97% 77%;

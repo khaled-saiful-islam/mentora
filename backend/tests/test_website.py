@@ -250,7 +250,7 @@ def test_the_shell_comes_back_without_its_pages() -> None:
     shell = shell_of(site_document())
     assert PAGES_MARK in shell
     assert 'data-page="menu"' not in shell
-    assert "data-pelita" not in shell
+    assert "data-mentora" not in shell
 
 
 def test_a_page_keeps_the_plans_slug_whatever_it_wrote() -> None:
@@ -366,28 +366,28 @@ def test_the_first_page_is_decided_before_anything_is_painted() -> None:
     the end of the body gets round to hiding them."""
     document = site_document()
     head = document.index("<head>")
-    guard = document.index('data-pelita="route-head"')
+    guard = document.index('data-mentora="route-head"')
     assert guard - head < 20
     assert guard < document.index("<meta")
 
 
 def test_the_router_comes_after_the_design_and_its_script() -> None:
     document = site_document()
-    assert document.index('data-pelita="router"') > document.index("classList.add('ready')")
-    assert document.index('data-pelita="site"') > document.index("--ground")
+    assert document.index('data-mentora="router"') > document.index("classList.add('ready')")
+    assert document.index('data-mentora="site"') > document.index("--ground")
 
 
 def test_routing_is_added_once_however_many_times_a_site_is_changed() -> None:
     document = site_document()
     again = route(document, slugs=SLUGS, titles=TITLES, site="Kopi Lane")
-    assert again.count('data-pelita="router"') == 1
-    assert again.count('data-pelita="route-head"') == 1
-    assert again.count('data-pelita="site"') == 1
+    assert again.count('data-mentora="router"') == 1
+    assert again.count('data-mentora="route-head"') == 1
+    assert again.count('data-mentora="site"') == 1
 
 
 def test_a_title_cannot_end_the_router_early() -> None:
     document = route(SHELL, slugs=["home"], titles={"home": "</script><b>"}, site="x")
-    router = document[document.index('data-pelita="router"') :]
+    router = document[document.index('data-mentora="router"') :]
     assert router.index("</script>") > router.index("TITLES")
     assert "\\u003c/script>" in router
 
@@ -588,7 +588,7 @@ async def test_a_site_is_built_end_to_end() -> None:
 
     finished = updates[-1].built
     assert [slug for slug, _ in pages_of(finished.html)] == SLUGS
-    assert finished.html.count('data-pelita="router"') == 1
+    assert finished.html.count('data-mentora="router"') == 1
     assert 'href="#/visit"' in finished.html
     assert finished.spec.width == 1280
 
@@ -608,7 +608,7 @@ async def test_each_page_arrives_in_order_as_something_to_look_at() -> None:
     parts = [u for u in await build(model) if type(u).__name__ == "Part"]
 
     assert [p.title for p in parts] == ["Home", "Menu", "Visit"]
-    assert all("data-page=" in p.html and "data-pelita" not in p.html for p in parts)
+    assert all("data-page=" in p.html and "data-mentora" not in p.html for p in parts)
     # Shown in a frame that runs no scripts: one left in is a console error each.
     assert all("<script" not in p.html for p in parts)
 
@@ -703,9 +703,9 @@ async def test_the_address_opens_the_page_it_names() -> None:
     """A downloaded site opened as `site.html#/visit` starts on Visit."""
     context, tab = await _opened(
         site_document().replace(
-            '<script data-pelita="route-head">',
+            '<script data-mentora="route-head">',
             "<script>history.replaceState(null, '', '#/visit');</script>"
-            '<script data-pelita="route-head">',
+            '<script data-mentora="route-head">',
         )
     )
     try:
@@ -890,7 +890,7 @@ async def test_a_word_is_changed_and_nothing_else_is() -> None:
     )
     assert "a pour-over at dawn" in after
     assert after.replace("a pour-over at dawn", "a pour-over of the morning's batch") == before
-    assert after.count('data-pelita="router"') == 1
+    assert after.count('data-mentora="router"') == 1
 
 
 async def test_the_model_is_shown_the_site_without_the_router() -> None:
@@ -899,7 +899,7 @@ async def test_the_model_is_shown_the_site_without_the_router() -> None:
         {"action": "edit", "edits": [{"find": "shut Mondays", "replace": "closed on Mondays"}]},
         html=distinct_site(),
     )
-    assert "data-pelita" not in model.asked[0]
+    assert "data-mentora" not in model.asked[0]
 
 
 async def test_an_edit_that_matches_nothing_leaves_the_site_as_it_was() -> None:
@@ -921,7 +921,7 @@ async def test_a_new_page_is_written_and_joins_the_menu() -> None:
         page_html=page("events"),
     )
     assert [slug for slug, _ in pages_of(after)] == ["home", "menu", "events", "visit"]
-    nav = after[after.index("<!--pelita:nav-->") : after.index("<!--/pelita:nav-->")]
+    nav = after[after.index("<!--mentora:nav-->") : after.index("<!--/mentora:nav-->")]
     assert nav.index("#/menu") < nav.index("#/events") < nav.index("#/visit")
 
 

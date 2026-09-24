@@ -61,7 +61,7 @@ for (const canvas of surfaces) {
     }
   }
 }
-parent.postMessage({ source: 'pelita-fit', problems }, '*')
+parent.postMessage({ source: 'mentora-fit', problems }, '*')
 `
 
 /**
@@ -106,7 +106,7 @@ export function checkFit(html: string, timeout = FIT_TIMEOUT_MS): Promise<FitRes
       // without `allow-same-origin` has an opaque origin and reports "null".
       if (event.source !== frame.contentWindow) return
       const data = event.data as { source?: string; problems?: FitProblem[] }
-      if (data?.source !== 'pelita-fit') return
+      if (data?.source !== 'mentora-fit') return
       const problems = data.problems ?? []
       finish({ fits: problems.length === 0, problems })
     }

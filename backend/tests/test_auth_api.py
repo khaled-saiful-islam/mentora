@@ -59,7 +59,7 @@ async def test_signin_sets_an_httponly_cookie_and_returns_the_user(client) -> No
     assert response.json()["username"] == "admin"
 
     cookie = response.headers["set-cookie"]
-    assert "pelita_session=" in cookie
+    assert "mentora_session=" in cookie
     assert "HttpOnly" in cookie
     assert "SameSite=lax" in cookie
 
@@ -117,7 +117,7 @@ async def test_signout_clears_the_cookie(client) -> None:
         response = await c.post("/api/auth/signout")
 
     assert response.status_code == 204
-    assert 'pelita_session=""' in response.headers["set-cookie"]
+    assert 'mentora_session=""' in response.headers["set-cookie"]
 
 
 async def test_signup_creates_an_account_and_signs_it_in(client, repo) -> None:
@@ -133,7 +133,7 @@ async def test_signup_creates_an_account_and_signs_it_in(client, repo) -> None:
 
     assert response.status_code == 201
     assert response.json()["is_admin"] is False
-    assert "pelita_session=" in response.headers["set-cookie"]
+    assert "mentora_session=" in response.headers["set-cookie"]
     assert repo.count == 2
 
 
@@ -176,7 +176,7 @@ async def test_password_change_reissues_the_session(client) -> None:
         )
 
     assert response.status_code == 204
-    assert "pelita_session=" in response.headers["set-cookie"]
+    assert "mentora_session=" in response.headers["set-cookie"]
 
 
 # --- deployment safety --------------------------------------------------

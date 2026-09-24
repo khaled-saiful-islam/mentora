@@ -22,7 +22,7 @@ What is added, and nothing else:
   the form's thank-you, and room under a sticky header for in-page anchors;
 - one script at the end of `<body>`: routing, reveal, and forms.
 
-Everything is marked `data-pelita`, so it can be taken out and put back when
+Everything is marked `data-mentora`, so it can be taken out and put back when
 the site is changed, and nothing of the design's own is ever touched.
 
 Without scripts -- a thumbnail in the build view, a reader with them off --
@@ -42,11 +42,11 @@ from html import escape
 NAV_MARK = "<!--NAV-->"
 PAGES_MARK = "<!--PAGES-->"
 
-_NAV_BLOCK = re.compile(r"<!--pelita:nav-->.*?<!--/pelita:nav-->", re.S)
+_NAV_BLOCK = re.compile(r"<!--mentora:nav-->.*?<!--/mentora:nav-->", re.S)
 # Exactly what was added and not a character more, so taking it out is the
 # inverse of putting it in and a site read back assembles to the same bytes.
 _OURS = re.compile(
-    r"<(script|style)\b[^>]*\bdata-pelita\s*=\s*[\"'][^\"']*[\"'][^>]*>.*?</\1\s*>",
+    r"<(script|style)\b[^>]*\bdata-mentora\s*=\s*[\"'][^\"']*[\"'][^>]*>.*?</\1\s*>",
     re.S | re.IGNORECASE,
 )
 _SECTION_TAG = re.compile(r"<(/?)section\b[^>]*>", re.IGNORECASE)
@@ -83,7 +83,7 @@ def nav_block(links: Sequence[Link]) -> str:
     inner = "".join(
         f'<a class="nav-link" href="{escape(link.href)}">{escape(link.label)}</a>' for link in links
     )
-    return f"<!--pelita:nav-->{inner}<!--/pelita:nav-->"
+    return f"<!--mentora:nav-->{inner}<!--/mentora:nav-->"
 
 
 def place_nav(document: str, links: Sequence[Link]) -> str:
@@ -335,16 +335,16 @@ def _script_json(value: object) -> str:
 # one hidden. Also switches on the reveal styles, which is why they cannot flash
 # either.
 _HEAD = (
-    '<script data-pelita="route-head">(function(){var P=__PAGES__;'
+    '<script data-mentora="route-head">(function(){var P=__PAGES__;'
     "var h=location.hash||'';var s=h.indexOf('#/')===0?h.slice(2).split(/[\\/?#]/)[0]:'';"
     "if(P.indexOf(s)<0)s=P[0];var t=document.createElement('style');"
-    "t.setAttribute('data-pelita','route');"
+    "t.setAttribute('data-mentora','route');"
     "t.textContent='[data-page]:not([data-page=\"'+s+'\"]){display:none!important}';"
     "document.head.appendChild(t);document.documentElement.classList.add('site-live');"
     "})();</script>"
 )
 
-_GUARD = """<style data-pelita="site">
+_GUARD = """<style data-mentora="site">
 img, video { max-width: 100%; }
 :where([data-page] *, .site-footer *) { min-width: 0; }
 :where([data-page], .site-footer) { overflow-wrap: break-word; }
@@ -353,27 +353,27 @@ img, video { max-width: 100%; }
   background-position: center;
   background-repeat: no-repeat;
 }
-[data-page] [id] { scroll-margin-top: var(--pelita-header, 84px); }
+[data-page] [id] { scroll-margin-top: var(--mentora-header, 84px); }
 .site-live [data-reveal] {
   opacity: 0;
   transform: translate3d(0, 18px, 0);
   transition: opacity .7s cubic-bezier(.22, 1, .36, 1), transform .7s cubic-bezier(.22, 1, .36, 1);
 }
 .site-live [data-reveal].is-revealed { opacity: 1; transform: none; }
-@keyframes pelita-page-in {
+@keyframes mentora-page-in {
   from { opacity: 0; transform: translate3d(0, 10px, 0); }
   to { opacity: 1; transform: none; }
 }
-.pelita-enter { animation: pelita-page-in .45s cubic-bezier(.22, 1, .36, 1) backwards; }
+.mentora-enter { animation: mentora-page-in .45s cubic-bezier(.22, 1, .36, 1) backwards; }
 form.is-sent > :not(.form-success) { display: none !important; }
 .form-success.is-shown { display: block !important; }
 @media (prefers-reduced-motion: reduce) {
   .site-live [data-reveal] { opacity: 1; transform: none; transition: none; }
-  .pelita-enter { animation: none; }
+  .mentora-enter { animation: none; }
 }
 </style>"""
 
-_ROUTER = """<script data-pelita="router">
+_ROUTER = """<script data-mentora="router">
 (function () {
   var PAGES = __PAGES__;
   var TITLES = __TITLES__;
@@ -385,10 +385,10 @@ _ROUTER = """<script data-pelita="router">
   var current = null;
 
   function rule(slug) {
-    var style = document.querySelector('style[data-pelita="route"]');
+    var style = document.querySelector('style[data-mentora="route"]');
     if (!style) {
       style = document.createElement('style');
-      style.setAttribute('data-pelita', 'route');
+      style.setAttribute('data-mentora', 'route');
       document.head.appendChild(style);
     }
     style.textContent = '[data-page]:not([data-page="' + slug + '"]){display:none!important}';
@@ -419,7 +419,7 @@ _ROUTER = """<script data-pelita="router">
   function tell() {
     if (!framed) return;
     try {
-      var said = { source: 'pelita-site', page: current, pages: PAGES, titles: TITLES };
+      var said = { source: 'mentora-site', page: current, pages: PAGES, titles: TITLES };
       window.parent.postMessage(said, '*');
     } catch (e) {}
   }
@@ -434,9 +434,9 @@ _ROUTER = """<script data-pelita="router">
       if (!keepScroll) window.scrollTo(0, 0);
       var page = document.querySelector('[data-page="' + slug + '"]');
       if (page && !reduce) {
-        page.classList.remove('pelita-enter');
+        page.classList.remove('mentora-enter');
         void page.offsetWidth;
-        page.classList.add('pelita-enter');
+        page.classList.add('mentora-enter');
       }
       if (PAGES.length > 1 && TITLES[slug]) document.title = TITLES[slug] + ' \\u2014 ' + SITE;
       reveal();
@@ -507,7 +507,7 @@ _ROUTER = """<script data-pelita="router">
 
   window.addEventListener('message', function (event) {
     var data = event.data;
-    if (!data || data.source !== 'pelita-go' || event.source !== window.parent) return;
+    if (!data || data.source !== 'mentora-go' || event.source !== window.parent) return;
     if (PAGES.indexOf(data.page) > -1) visit('#/' + data.page);
   });
 
@@ -546,7 +546,7 @@ _ROUTER = """<script data-pelita="router">
 
   function measure() {
     var header = document.querySelector('.site-header, header');
-    if (header) root.style.setProperty('--pelita-header', (header.offsetHeight + 16) + 'px');
+    if (header) root.style.setProperty('--mentora-header', (header.offsetHeight + 16) + 'px');
   }
 
   window.addEventListener('resize', measure);

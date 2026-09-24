@@ -1,14 +1,18 @@
-# Working on Pelita
+# Working on Mentora
 
 Guidance for Claude Code and other AI assistants working in this repository.
 Read this before writing code here.
 
 ## What this is
 
-A chatbot **template**. People clone it and change it. That single fact decides
-most arguments: extensibility beats features, clarity beats cleverness, and a
-thing someone has to understand before they can change it must be small enough
-to hold in your head.
+Mentora is a teacher–student learning platform built on a streaming chat
+codebase. Teachers run classes and share quizzes and flashcards; students take
+them, see their results and learn with a guardrailed study buddy. `PLAN.md` is
+the roadmap and the record of what was decided.
+
+The codebase keeps a strict discipline, because features keep landing on it:
+extensibility beats cleverness, and a thing someone has to understand before
+they can change it must be small enough to hold in your head.
 
 ## Run it
 
@@ -22,7 +26,7 @@ make lint    # ruff over the backend, tsc over the frontend
 Docker is the only prerequisite. `make test` and `make lint` run the frontend
 toolchain in a container.
 
-**Do not** `docker compose restart api` after editing Python — the image bakes
+**Do not** `docker compose restart backend` after editing Python — the image bakes
 the source. Use `make api-dev` (mounts the working tree, reloads on save) or
 rebuild.
 
@@ -124,7 +128,7 @@ before claiming a feature works:
   worth limiting is the one with no limit. `RateLimiter.check` commits.
 - `sse-starlette` frames with **CRLF**; a parser matching `\n\n` found nothing
   while the request still returned 200.
-- **A failed `docker compose build web` leaves the old image running.** The
+- **A failed `docker compose build frontend` leaves the old image running.** The
   browser then shows behaviour you already fixed. `make lint` type-checks the
   app; `npm run build` also type-checks the tests, so a bad test file fails the
   deploy and not the lint.

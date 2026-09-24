@@ -99,12 +99,12 @@ no vendor prefixes, no commented-out code, no features the design did not name.
 - **No `alert`, `confirm` or `prompt`.** They are blocked where the app runs,
   so a question asked with one is never asked. Confirm and ask in the page.
 - **No `localStorage`, `sessionStorage`, `indexedDB` or `document.cookie`.**
-  They throw where the app runs. To remember data, use `PelitaStore`, which
+  They throw where the app runs. To remember data, use `MentoraStore`, which
   is already defined before your script runs:
 
-      const state = PelitaStore.load({ tasks: [], filter: 'all' });
+      const state = MentoraStore.load({ tasks: [], filter: 'all' });
       // ...after every change:
-      PelitaStore.save(state);
+      MentoraStore.save(state);
 
   `load` returns what was saved last time, merged over the defaults you give
   it, so a field you add later still has a value. `save` is batched for you;
@@ -143,8 +143,8 @@ code fence. Fix what is broken and keep everything else: the same look, the
 same features, the same words.
 
 Everything in the original rules still holds: no network, no `alert` /
-`confirm` / `prompt`, no `localStorage` -- `PelitaStore.load` and
-`PelitaStore.save` are how it remembers -- and everything inside
+`confirm` / `prompt`, no `localStorage` -- `MentoraStore.load` and
+`MentoraStore.save` are how it remembers -- and everything inside
 `<main id="app">`.
 """
 
@@ -157,7 +157,7 @@ Return the whole document with the change made, and nothing else -- no
 explanation, no code fence. Change what they asked for and keep everything
 else exactly as it is: they are using an app they largely like, and its saved
 data must still load. If the change adds a field to what the app keeps, give
-it a default in `PelitaStore.load` rather than assuming it is there.
+it a default in `MentoraStore.load` rather than assuming it is there.
 
 Everything in the original rules still holds: no network, no `alert` /
 `confirm` / `prompt`, no `localStorage`, and everything inside

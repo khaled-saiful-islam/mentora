@@ -66,7 +66,7 @@ prompt; it already covers seventeen languages.
 - **First message only.** A conversation that switches language mid-way keeps
   the original instruction.
 - **It is an instruction, not a guarantee.** A model that ignores it will reply
-  in whatever it likes; Pelita does not verify the response language.
+  in whatever it likes; Mentora does not verify the response language.
 - **Code-switching confuses it.** Mixed Malay and English — normal in Malaysia —
   resolves to whichever dominates.
 - **Romanised Malay and Indonesian are close.** With `id` in the list, short

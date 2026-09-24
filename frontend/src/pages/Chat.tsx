@@ -294,7 +294,7 @@ function EmptyState({ canMake }: { canMake: boolean }) {
         <p className="mt-2 max-w-sm text-sm text-muted-foreground">
           {canMake
             ? 'Ask anything, or make something — a poster, a deck, a game, a website, an app.'
-            : 'Ask anything. Pelita replies in the language you write in.'}
+            : 'Ask anything. Mentora replies in the language you write in.'}
         </p>
       </div>
     </div>
