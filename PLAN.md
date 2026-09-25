@@ -1,6 +1,7 @@
 # Mentora — Implementation Plan
 
 > **Status: APPROVED 2026-09-24 — Phases 1–5 done (roles, design, classes, learning sets, taking/results/buddies); Phase 6 (guardrails & admin) next.**
+> **§19 Live AI group tutoring — approved 2026-09-26. Phase 0 (voice lab) done; waiting on your voice pick.**
 > Mentora is a fork of Pelita (`~/projects/pelita` @ `5a23f41`). This plan reuses
 > Pelita's stack, layering and Protocol-plus-registry design, and extends it into a
 > teacher–student learning platform.
@@ -672,3 +673,247 @@ Every phase runs the same loop:
 ---
 
 **Approved 2026-09-24.** Phases 1–5 done and pushed. Phase 6 next.
+
+---
+
+## 19. Live AI group tutoring (approved 2026-09-26)
+
+A teacher launches a live lesson for one group in one of their classes. An AI
+tutor teaches it out loud with live captions, takes raised hands, runs quick
+check-ins, and ends with a recap and a quiz shared to the group.
+
+### 19.0 Redlines (from you — nothing ships that breaks one)
+
+1. **The tutor sounds like a real teacher.** It should be smooth, warm, well paced and helpful. It must not sound robotic, leave gaps, or read slides aloud. If it sounds funny, the feature has failed (§19.2).
+2. **It looks and moves like the rest of Mentora.** Same tokens, motion presets, buddies, celebration and icons; its own kind colour; `prefers-reduced-motion` honoured; no cut or overlapping text, checked at 4 widths (§19.8).
+3. **English only for now.** `language` stays in the settings with one allowed value, so adding BM later is data, not surgery.
+4. **Teacher-controlled and safe.**
+   - **A session a teacher creates goes onto each group member's schedule**, with reminders to join on time (added 2026-09-26, §19.8a).
+   - Only teachers create sessions, and only members of the chosen group can join.
+   - **Students see each other but cannot talk to each other** (added 2026-09-26). Each classmate in the room shows as their buddy and first name, with whether they are here. There is no chat, no messages, no reactions and no voice between students. The only thing a student can do toward the room is raise a hand to the tutor.
+   - A student's mic works only while the tutor has called on them.
+   - Transcripts are stored; student audio never is.
+
+### 19.1 What we reuse (checked in the code)
+
+| Need | Existing piece |
+|---|---|
+| Class, group, members-only | `ClassGroup`, `GroupMember` (`db/models/classroom.py`), policies + `Capabilities` |
+| Work that outlives a request; replay to late joiners | `services/jobs.py` (`JobRunner.follow` replays from event 1, then live), `live_turns.py` |
+| Push to an open browser | `services/realtime.py` (`RealtimeHub`, push after commit), `lib/sse.ts` |
+| Grounded writing: check → research → skills → write ⟲ verify ⟲ repair | `learning/generator.py`, `learning/research.py` (SafeSearch, blocked hosts, `pictures()`), `learning/prompts.py` |
+| Document text | `services/document_extract.py` (PDF, DOCX, text, images) + `document_excerpts.py` (budgeted keyword chunking). Chat documents are conversation-scoped and chat-gated, so sessions get their own table |
+| Post-session quiz, skill-tagged, shared to a group | Quiz `LearningKind`, `GenerationService`, `AssignmentService.share` (class + groups + due date) → `AssignmentShared` → notifications. Skills feed strengths/weaknesses (`results_service`) |
+| Notifications | `NotificationService` + event subscribers |
+| Guardrails | `moderation/gate.py` (`check_input`, `check_output`), `guards/prompt_injection.py`, `StudentNeedsSupport` event, `moderation_service` queue |
+| Speech | ILMU on the **same base URL and key** as the LLM. `ilmu-tts-v2.1` returns MP3 in about 0.7 s per sentence; `speed` works (0.85 gives about 150 wpm). `ilmu-asr-v4.2` transcribed English word for word in about 0.3 s. Neither returns word timings |
+| UI | Buddies (rigs, choreography, speech bubble), auth `sky.ts` scene, `StepStones`, celebration + confetti, `useReadAloud`, `useCalmMotion`, `spring` presets, `make-tile`/`make-stage` |
+
+### 19.2 Making the tutor sound like a person (the redline, engineered)
+
+Natural speech comes from **six layers**. Each one is testable on its own.
+
+| # | Layer | What it does |
+|---|---|---|
+| 1 | **Written to be spoken** | Every segment has two tracks: `say` (what the tutor speaks) and `show` (key points, an example, a picture on screen). The tutor never reads the screen. Prompt rules: talk to *this* group at *this* grade; use contractions; mix short and long sentences; put questions to the room ("Hands up if…"); signpost ("Here's the tricky bit"); one idea per beat; examples from a Malaysian student's life; callbacks ("Remember the leaf?"); no lists read aloud; no markdown |
+| 2 | **Speakability check** | A verify stage in the existing verify ⟲ repair loop rejects: sentences over about 25 words, list-reading, unexpanded symbols, and pace outside 130–160 wpm for the segment's target time. The teacher approves every segment, and can listen to it in the preview |
+| 3 | **Speech normaliser** (code, not the model) | Strips markup and expands what TTS stumbles on: `°C` → "degrees Celsius", `H₂O` → "H two O", `x²` → "x squared", `e.g.` → "for example", `1/2` → "a half", `%` → "per cent". Unit-tested with a corpus |
+| 4 | **Beats, pre-recorded** | A segment (1–2 min) is split into **beats** of 2–4 sentences, one breath group each, synthesised whole so the intonation flows. All lesson audio is made **when the teacher approves**, so there's no waiting during the live lesson, and the teacher hears exactly what students will hear |
+| 5 | **Gapless playback** | Web Audio API: the next beat is fetched ahead and scheduled on the audio clock. The pauses (`short` 0.3 s, `breath` 0.6 s, `think` 1.5 s after a question to the room) come from the script, never from the network |
+| 6 | **Q&A that feels live** | When a hand is taken, a short line plays **instantly**, pre-recorded per student when they join the lobby ("Yes, Aisha?" / "Ooh, good question, Aisha"). The answer streams from the LLM; each sentence is screened, then synthesised as soon as it ends, so the tutor starts speaking about 1.5–2.5 s after the question. Answers are short (20–40 s spoken) and end with a bridge back ("Right — back to chlorophyll"). Similar questions merge: "A couple of you asked about…" |
+
+- **Pausing for a hand.** The tutor finishes its **current beat** (≤ about 15 s) and then calls on the student, as a real teacher finishes the thought.
+  - *Flagged:* your spec says "current sentence". Cutting a beat at a guessed sentence boundary risks clipping a word. If the Phase 0 choice gives us per-sentence clips with exact timings, it becomes the sentence.
+- **Captions.** Word-by-word highlight runs on the audio clock. Within a beat, word times are estimated from syllable counts, which is close enough to look right.
+- **The voice is a Protocol**, so the provider can be swapped:
+  - `SpeechProvider` (`synthesize(text, voice, speed) → audio + optional timings`) and `Transcriber` (`transcribe(clip) → text`) sit in `providers/`, beside the LLM adapter.
+  - ILMU is the default.
+  - An ElevenLabs adapter is optional. It has character timings, `previous_text` stitching and very natural delivery, and ILMUchat's voice mode uses it. It needs an `ELEVENLABS_API_KEY`. Everything else is untouched.
+- **Phase 0 gate.** No building until **you** say the voice sounds like a person (§19.9).
+
+### 19.3 Real-time architecture
+
+```
+teacher dashboard ─┐                     ┌─ student A ─ SSE /stream + GET /audio/{beat}
+                   │  POST /control       │─ student B
+                   ▼                      │─ …
+     ┌────────── SessionConductor (one asyncio task per live session) ─────────┐
+     │ state: lobby → teaching(segment, beat) → holding → answering(hand)       │
+     │        → checkin → recap → ended       (+ paused overlay)                │
+     │ persists position after every beat → a restart resumes, never restarts  │
+     └──────── SessionRoom: per-session fan-out, seq-numbered, replayable ─────┘
+```
+
+- **The server owns the timeline.**
+  - Each `beat` event carries `starts_at` in server time.
+  - Clients measure their clock offset with three `/live/time` pings (NTP-style) and schedule playback so everyone hears the same beat within about 200 ms.
+- **Late joiners and reconnects.** `Last-Event-ID` replay plus a snapshot on join (transcript so far, the current beat, the offset into it). They start mid-beat at the right moment.
+- **One TTS per beat, for everyone.** `GET /audio/{beat}` serves the same cached MP3 to every member, with auth checked.
+- **Why not LiveKit.**
+  - Lesson audio is one-to-many and pre-recorded, and questions are push-to-talk clips, so nothing needs a live two-way call.
+  - LiveKit would add a media server, an agent worker, TURN and ports to the stack for latency we don't use.
+  - Revisit it if we later want open-mic discussion.
+- **Autoplay.** The **Join** tap unlocks the `AudioContext`. This is tested on iPad Safari.
+- **Single worker.** Same constraint as today's hubs, and the same upgrade path (Postgres LISTEN/NOTIFY), kept in `SessionRoom` only.
+
+### 19.4 Data model (new tables, one migration per phase)
+
+| Table | Key columns |
+|---|---|
+| `live_sessions` | `teacher_id`, `class_id`, `group_id`, `template_id?`, `title`, `settings` JSONB (frozen copy of the setup), `status` (`draft · planning · ready · scheduled · lobby · live · ended · cancelled`), `position` JSONB (segment, beat), `scheduled_at`, `reminders_sent` JSONB, `started_at`, `ended_at`, `quiz_set_id?` → `learning_sets`, `assignment_id?` → `assignments`, `flagged_at` |
+| `live_session_documents` | `session_id`, `filename`, `mime`, `size_bytes`, `text` (extracted; original bytes not kept, like chat documents) |
+| `live_segments` | `session_id`, `position`, `subtopic`, `skill`, `title`, `beats` JSONB `[{id, say, show, pause}]`, `key_points`, `example`, `image`, `checkin` JSONB?, `target_seconds`, `status` (`draft · approved · played · skipped`) |
+| `live_audio` | `beat_id`, `session_id`, `path`, `seconds`, `voice`, `model`. Files on a volume; **deleted 7 days after the session ends** |
+| `live_participants` | PK (`session_id`, `student_id`), `first_joined_at`, `last_seen_at`, `seconds_present`, `removed_at` |
+| `live_hands` | `session_id`, `student_id`, `status` (`queued · called · asked · answered · merged · redirected · dismissed`), `via` (`text · voice`), `question`, `merged_into?`, `answer`, `raised_at`, `called_at`, `answered_at` |
+| `live_transcript` | `session_id`, `seq`, `segment_id?`, `speaker` (`tutor · student · system`), `student_id?`, `text`, `at` |
+| `live_checkins` / `live_checkin_answers` | question + options + answer / `student_id`, `choice`, `correct` |
+| `live_session_templates` | `teacher_id`, `name`, `settings` JSONB |
+| Reports | A student's report becomes a `moderation_events` row (`source=live_session`), so admins see it in the queue they already have, and `live_sessions.flagged_at` is set for the teacher |
+
+**Settings JSONB:**
+- `subject`, `topic`, `grade_level`, `breakdown[]`, `difficulty`, `approach`, `custom_instruction`, `language` (`en`), `duration_minutes`
+- `qa`: `anytime` or `pauses`, `max_per_student`
+- `quiz`: `on`, `count`, `difficulty`, `due_at`
+- `voice`, `start`
+
+It's validated by a Pydantic model at the boundary.
+
+### 19.5 API (all under `/api`)
+
+**Teacher** (`run_live_sessions` capability):
+
+| Method | Path | Does |
+|---|---|---|
+| POST · GET · PATCH | `/live-sessions`, `/live-sessions/{id}` | Draft from settings; list; edit settings |
+| POST · DELETE | `/live-sessions/{id}/documents` | Upload and extract / remove |
+| POST | `/live-sessions/breakdown` | "AI suggest breakdown" (editable list back) |
+| POST | `/live-sessions/{id}/plan` | Generate the lesson (a job, streamed like guides) |
+| PATCH · POST | `/live-sessions/{id}/segments/{sid}`, `…/regenerate` | Edit, or regenerate one segment |
+| POST | `/live-sessions/{id}/approve` | Freeze the plan, record the audio (a job with progress) |
+| POST | `/live-sessions/{id}/launch`, `/schedule`, `/cancel` | Go live now, later, or not at all |
+| POST | `/live-sessions/{id}/control` | `pause · resume · skip · end` |
+| POST | `/live-sessions/{id}/participants/{student}/remove`, `/hands/{hid}/dismiss` | Moderation in the room |
+| GET | `/live-sessions/{id}/summary` | Attendance, questions by student, check-ins, quiz results |
+| CRUD | `/live-templates` | Reusable setups |
+
+**Student** (`join_live_sessions`, members of the group only):
+
+| Method | Path | Does |
+|---|---|---|
+| GET | `/me/live-sessions` | The student's schedule: upcoming · live · past |
+| GET | `/live-sessions/{id}/calendar.ics` | Add to calendar |
+| POST | `/live-sessions/{id}/join` | A snapshot to start from |
+| GET | `/live-sessions/{id}/stream` | SSE timeline (also used by the teacher dashboard) |
+| GET | `/live-sessions/{id}/audio/{beat}` | The beat's MP3 |
+| POST · DELETE | `/live-sessions/{id}/hand` | Raise / lower |
+| POST | `/live-sessions/{id}/question` | A typed question (only while called on) |
+| POST | `/live-sessions/{id}/question/voice` | A push-to-talk clip → STT → text; the clip is discarded. Refused unless this student is called on right now |
+| POST | `/live-sessions/{id}/checkins/{cid}/answer` · `/report` | Check-in vote · report |
+| GET | `/live-sessions/{id}/notes` | Recap and transcript |
+
+Plus `GET /live/time` for clock sync.
+
+Every route checks ownership and membership **as lookup parameters** (the repository rule in §3), and IDOR tests cover each one.
+
+### 19.6 Lesson plan and quiz generation
+
+- **`live/planner.py`** reuses the generator's stages and its Researcher, rather than becoming a `LearningKind`, because a lesson is not a set of gradable items.
+  - check (scope, grade) → **documents** → research (gaps only) → write segments ⟲ verify (facts + speakability) ⟲ repair.
+  - Segments are written in batches, with streamed progress.
+- **Documents first.** Excerpts from the teacher's files become sources `D1…Dn`, ranked ahead of the web. Web research runs only for subtopics the documents don't cover, aligned to subject + topic + grade.
+- **Approach and difficulty** are prompt contracts. Each one (storytelling, step-by-step, Socratic, example-heavy, exam-focused) is a small strategy object with its own writing rules, and the custom instruction is appended after the guardrail rules, never before.
+- **Quiz.**
+  - `GenerationRequest` gains optional `documents` (sources) and `notes` (a recap of what was taught, plus the questions students asked). The quiz kind itself is unchanged.
+  - Skills are **fixed to the breakdown's subtopics**, so results land in strengths/weaknesses under the names the teacher chose.
+  - It's shared with `AssignmentService.share(class, [group], due_at)`, so the notifications, results and leaderboard all come for free.
+
+### 19.7 Guardrails
+
+| Point | Rule |
+|---|---|
+| Student question in | `prompt_injection` + `ModerationGate.check_input`. Unsafe or off-topic: the tutor redirects with a **pre-written** kind line (no LLM, no echoing the question aloud); the event is logged. Self-harm: never spoken in the room. The existing `StudentNeedsSupport` alerts the teacher privately, and the student gets the support message on their screen only |
+| Tutor answer out | Speech can't be retracted, so **each sentence is screened before it is synthesised**; a flagged sentence is dropped and replaced by a bridge |
+| Scope | Answers are restricted to the session topic and grade; the teacher's documents are cited when used |
+| Names | Only first names are spoken |
+| Audio | Clips live in memory for STT only and are never written to disk |
+| Reports | Go to the admin moderation queue and flag the session for the teacher |
+
+### 19.8 Design (Mentora's look, its own colour)
+
+- **Kind colour: Galaxy** (indigo, about 245°, between Blueberry and Orchid), as `--kind-live` and `--kind-live-vivid`, with dark-mode pairs. It has a night-sky theme that reuses the auth scene's `sky.ts` stars.
+- **Student screens:**
+  - **Lobby:** the sky drifts; each classmate who joins floats in as **their own buddy**; a countdown ring for scheduled starts; "Tap to join" (which unlocks audio).
+  - **Live stage:**
+    - **The tutor is a new character drawn in the buddies' style.** Its mouth and glow are driven by the *actual* voice (an `AnalyserNode` reading amplitude), so it moves when it speaks and breathes when it doesn't.
+    - The `show` card animates in beside it: key points, a picture, a worked example.
+    - Captions sit underneath with word-by-word highlight.
+    - A segment progress bar of glowing stars runs along the top.
+  - **Raise hand:** the hand waves as it goes up. A queue chip says "You're next" / "2nd in line". When called on: a push-to-talk ring (Phase 4) or a type box; the tutor's "Yes, Aisha?" plays.
+  - **Check-in:** a poll card pops up, with a live bar of the group's answers after voting.
+  - **End:** the recap, then the celebration (confetti, buddy cheer), then "Your quiz is ready", which opens the player.
+  - **Session notes:** key points plus the full transcript, in the student's history.
+- **Teacher screens:**
+  - **Setup wizard:** `StepStones`, with templates to start from.
+  - **Plan preview:** segment cards with ▶ listen, edit, regenerate, approve.
+  - **Live dashboard:** stage mirror, attendance, hand queue, transcript, controls.
+  - **Summary page.**
+- **Reduced motion:** a still avatar with a soft glow, captions still highlighted, no confetti burst.
+- **The text audit sweep** runs at 1440, 1024, 768 and 390 before each phase is called done.
+
+### 19.8a The student's schedule and reminders (added 2026-09-26)
+
+- **On the schedule the moment it exists.** When a teacher schedules a session, or launches one now, it appears for every member of the group:
+  - an **"Up next" card on Student Home**: title, Astra, the start time and a live countdown. It turns into a glowing **Join** button 10 minutes before the start;
+  - a **My schedule** page: upcoming sessions by day, then past ones with their notes and quiz;
+  - an **Add to calendar** button (an `.ics` file), so it can sit in the family calendar too.
+- **Reminders**, as notifications through the existing bell and toast, each linking straight to the lobby:
+
+| When | Says |
+|---|---|
+| When it is scheduled | "New live lesson with Astra: *Photosynthesis*, Tuesday 10:00" |
+| 1 day before (if it was scheduled further out) | "Tomorrow at 10:00: *Photosynthesis*" |
+| 15 minutes before | "Starting in 15 minutes — get ready!" |
+| At the start | "Astra is starting now — join!" (only to those not yet in the room) |
+| Moved or cancelled | "*Photosynthesis* has moved to Wednesday 11:00" / "…has been cancelled" |
+
+- **How:** a small scheduler loop in the app's lifespan checks for due reminders every 30 s. Each one sent is recorded on the session (`reminders_sent`), so a restart never sends one twice, and a late loop never sends a stale one (a reminder more than 5 minutes past due is skipped). The single-worker note in §19.3 applies.
+- **Changes are real time:** scheduling, moving or cancelling pushes to open browsers through the existing realtime hub, so the card and the schedule update without a reload.
+- **Seeing classmates, never talking to them:**
+  - The lobby and the stage show who is here: each classmate's buddy and first name, arriving and leaving with the buddies' animations.
+  - No text box, no reactions and no mic reach another student.
+  - The server has no endpoint that sends anything from one student to another, and a test asserts that.
+
+### 19.9 Build phases (your order, with a voice gate added and one change flagged)
+
+Each phase: TDD → lint + tests → `make up` → a browser check (desktop + phone) → feature doc → commit + push → a short summary → **wait for your go**.
+
+| # | Phase | Delivers |
+|---|---|---|
+| **0** | **Voice gate** | One real 90-second lesson segment plus one Q&A exchange, in the candidate voices and speeds, with the beat chunking and gapless playback on a test page. **You pick the voice, or say none is good enough and we add ElevenLabs.** Nothing else starts before this |
+| **1** | **Setup, plan, preview, templates, scheduling** | Tables for sessions, documents, segments and templates; setup wizard; suggested breakdown; documents-first planner with the speakability check; preview with edit, regenerate and listen; approve (records the audio); **schedule or start now → it appears on each student's "Up next" card and My schedule, with the "new live lesson" notification** |
+| **2** | **Live core, with voice** | Conductor + room + clock sync; **reminders (1 day, 15 min, at start)**; lobby **with classmates shown as their buddies (presence only, no talking)**; narrated beats + captions; typed raise-hand queue; spoken AI answers with instant acknowledgements; recap; quiz handoff. *Flagged change:* narration moves here from your Phase 4. Whether it feels natural can only be judged with the voice on, and the timeline has to be built on real audio durations, so text first would mean building the conductor twice |
+| **3** | **Teacher controls + summary** | Pause, resume, skip, end, remove, dismiss; dashboard; summary; student notes |
+| **4** | **Voice questions** | Push-to-talk (mic only while called on) → `ilmu-asr-v4.2` → the same answer path |
+| **5** | **Check-ins, visuals, polish** | Moving and cancelling with their notices; add to calendar; check-in polls; pictures in the `show` card; the celebration; reduced-motion pass; iPad Safari pass |
+
+### 19.10 Risks
+
+| Risk | Level | Mitigation |
+|---|---|---|
+| The voice sounds synthetic (**redline**) | **High** | The Phase 0 gate; the script is written for speech; the normaliser; paced at 0.85; ElevenLabs adapter as the fallback |
+| Q&A pause feels awkward | Medium | Instant pre-recorded acknowledgement; sentence-by-sentence streaming TTS; "thinking" animation on the avatar |
+| Students drift out of sync | Medium | Server-time `starts_at`, clock offset, audio-clock scheduling; tolerance 200 ms |
+| Autoplay blocked (iOS) | Medium | The Join gesture unlocks audio; a visible "Tap for sound" fallback |
+| Server restart during a lesson | Medium | Position persisted per beat; the conductor resumes on boot |
+| Lesson plan generation time (30 min ≈ 15–20 segments) | Medium | Batched, streamed progress like guides; recording is a background job with a progress bar |
+| Mispronounced names or terms | Low | The teacher hears every beat in the preview; a per-student "say my name as" field later if needed |
+| TTS cost | Low | One synthesis per beat for the whole group; about 4,500 words for a 30-minute lesson |
+
+**Defaults I chose (overturn any):**
+- up to 3 questions per student
+- a check-in is open for 20 s
+- the teacher watches from the dashboard by default
+- segments of 150–300 words
+- audio kept 7 days
+- the tutor gets a friendly name you can change, set per template

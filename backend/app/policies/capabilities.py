@@ -29,6 +29,8 @@ class Capabilities:
     manage_classes: bool = False
     join_classes: bool = False
     take_assignments: bool = False
+    # Live AI tutoring sessions: setting one up, recording its voice, running it.
+    run_live_sessions: bool = False
     # The guardrail log and its review queue.
     moderate: bool = False
     manage_users: bool = False
@@ -46,6 +48,7 @@ _TEACHING = {
     "studio_artifacts": True,
     "share_learning_sets": True,
     "manage_classes": True,
+    "run_live_sessions": True,
     "share_conversations": True,
     "see_usage": True,
 }

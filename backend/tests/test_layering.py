@@ -27,6 +27,7 @@ LOGIC_PACKAGES = (
     "learning",
     "badges",
     "moderation",
+    "live",
 )
 FORBIDDEN_ROOTS = {"fastapi", "starlette"}
 

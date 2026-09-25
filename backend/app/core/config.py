@@ -138,6 +138,25 @@ class Settings(BaseSettings):
     rate_limit_generate_per_minute: int = 4
     student_practice_per_day: int = 10
 
+    # ---- Live tutoring ---------------------------------------------------
+    # The tutor's voice, over the OpenAI-style `/audio/speech`. The URL and key
+    # fall back to the chat provider's, which is where ILMU serves speech too.
+    speech_model: str = "ilmu-tts-v2.1"
+    speech_base_url: str = ""
+    speech_api_key: str = ""
+    speech_voice: str = "fable"
+    # 1.0 is a newsreader's pace, near 190 words a minute. A teacher talking to
+    # a class is nearer 150, which is what 0.85 gives.
+    speech_speed: float = 0.85
+    speech_timeout_seconds: float = 30.0
+    # What the voice lab offers to compare, comma-separated.
+    speech_voices: str = "alloy,echo,fable,onyx,nova,shimmer"
+    speech_models: str = "ilmu-tts-v2.1,ilmu-tts-v2"
+    # Recorded beats. A cache: anything in it can be made again.
+    live_audio_dir: str = ".cache/live-audio"
+    # Clips per person per minute. A lesson preview asks for a dozen at once.
+    rate_limit_speech_per_minute: int = 120
+
     # ---- Artifacts -------------------------------------------------------
     # An artifact is one self-contained HTML document — a poster today, a deck
     # or a small app later. Composing one needs a much larger output budget
@@ -185,6 +204,22 @@ class Settings(BaseSettings):
     @property
     def resolved_learning_api_key(self) -> str:
         return self.learning_api_key or self.llm_api_key
+
+    @property
+    def resolved_speech_base_url(self) -> str:
+        return (self.speech_base_url or self.llm_base_url).rstrip("/")
+
+    @property
+    def resolved_speech_api_key(self) -> str:
+        return self.speech_api_key or self.llm_api_key
+
+    @property
+    def speech_voice_list(self) -> list[str]:
+        return _listed(self.speech_voices) or [self.speech_voice]
+
+    @property
+    def speech_model_list(self) -> list[str]:
+        return _listed(self.speech_models) or [self.speech_model]
 
     @property
     def resolved_artifact_base_url(self) -> str:
@@ -267,6 +302,10 @@ class Settings(BaseSettings):
     def search_enabled(self) -> bool:
         """Web search is only offered when a key is actually present."""
         return bool(self.serpapi_key.strip())
+
+
+def _listed(value: str) -> list[str]:
+    return [x.strip() for x in value.split(",") if x.strip()]
 
 
 INSECURE_JWT_SECRET = "mentora-insecure-development-secret-change-me"  # noqa: S105

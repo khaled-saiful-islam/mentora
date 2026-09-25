@@ -26,6 +26,7 @@ from app.api.routes import (
     health,
     invites,
     learning,
+    live,
     me,
     memories,
     notifications,
@@ -135,6 +136,7 @@ def create_app() -> FastAPI:
     app.include_router(documents.router, prefix="/api")
     app.include_router(invites.router, prefix="/api")
     app.include_router(learning.router, prefix="/api")
+    app.include_router(live.router, prefix="/api")
     app.include_router(me.router, prefix="/api")
     app.include_router(memories.router, prefix="/api")
     app.include_router(notifications.router, prefix="/api")

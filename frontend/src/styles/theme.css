@@ -114,6 +114,8 @@
   --kind-flashcard-vivid: 174 84% 38%;     /* Lagoon */
   --kind-study-guide: 224 76% 44%;
   --kind-study-guide-vivid: 217 91% 58%;   /* Blueberry */
+  --kind-live: 245 62% 46%;
+  --kind-live-vivid: 245 82% 64%;          /* Galaxy */
   --kind-poster: 342 75% 42%;
   --kind-poster-vivid: 342 89% 60%;        /* Rose */
   --kind-slides: 217 80% 45%;
@@ -165,6 +167,12 @@
   --buddy-rimau-cream: 36 100% 97%;
   --buddy-rimau-stripe: 262 32% 16%;
   --buddy-rimau-nose: 350 82% 70%;
+
+  --buddy-astra: 245 78% 66%;         /* Astra the tutor: a little planet of galaxy indigo */
+  --buddy-astra-deep: 248 56% 40%;
+  --buddy-astra-light: 240 100% 92%;
+  --buddy-astra-ring: 44 100% 64%;
+  --buddy-astra-glow: 190 100% 70%;
 
   /* --- Shape and depth: round and tactile ------------------------------ */
   --radius-sm: 0.5rem;
@@ -256,6 +264,7 @@
     --kind-quiz: 28 100% 65%;
     --kind-flashcard: 172 70% 55%;
     --kind-study-guide: 214 95% 72%;
+    --kind-live: 245 90% 78%;
     --kind-poster: 342 90% 72%;
     --kind-slides: 217 95% 72%;
     --kind-games: 283 90% 78%;
@@ -314,6 +323,7 @@
   --kind-quiz: 28 100% 65%;
   --kind-flashcard: 172 70% 55%;
   --kind-study-guide: 214 95% 72%;
+  --kind-live: 245 90% 78%;
   --kind-poster: 342 90% 72%;
   --kind-slides: 217 95% 72%;
   --kind-games: 283 90% 78%;
@@ -370,6 +380,8 @@
   --color-kind-flashcard-vivid: hsl(var(--kind-flashcard-vivid));
   --color-kind-study-guide: hsl(var(--kind-study-guide));
   --color-kind-study-guide-vivid: hsl(var(--kind-study-guide-vivid));
+  --color-kind-live: hsl(var(--kind-live));
+  --color-kind-live-vivid: hsl(var(--kind-live-vivid));
   --color-kind-poster: hsl(var(--kind-poster));
   --color-kind-poster-vivid: hsl(var(--kind-poster-vivid));
   --color-kind-slides: hsl(var(--kind-slides));
@@ -386,6 +398,7 @@
   --color-buddy-ollie: hsl(var(--buddy-ollie));
   --color-buddy-momo: hsl(var(--buddy-momo));
   --color-buddy-rimau: hsl(var(--buddy-rimau));
+  --color-buddy-astra: hsl(var(--buddy-astra));
 
   --color-grape-50: hsl(var(--grape-50));
   --color-grape-100: hsl(var(--grape-100));

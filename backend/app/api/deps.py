@@ -7,6 +7,7 @@ arguments and knows nothing about requests.
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Awaitable, Callable
+from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Cookie, Depends, Header, Request
@@ -22,12 +23,18 @@ from app.db.models.user import User
 from app.db.repositories.users import SqlUserRepository
 from app.db.session import SessionFactory, session_scope
 from app.guards.registry import build_guards
-from app.learning.factory import build_generator
+from app.learning.factory import build_generator, build_model
+from app.learning.model import Meter
 from app.learning.registry import build_learning_kinds
+from app.live.audio import AudioCache, Narrator
+from app.live.voice_lab import VoiceLab
+from app.moderation.gate import ModerationGate
 from app.moderation.registry import build_gate
 from app.policies.capabilities import Capabilities, capabilities_for
 from app.providers.base import TokenBudget
+from app.providers.openai_compatible import OpenAICompatibleProvider
 from app.providers.registry import build_provider
+from app.providers.speech import build_speech
 from app.services.accounting_service import Pricing
 from app.services.auth_service import AuthService
 from app.services.cancellation import registry as cancellation_registry
@@ -203,9 +210,7 @@ def get_chat_service(settings: SettingsDep, user: CurrentUser) -> ChatService:
         cancellation=cancellation_registry,
         tools=build_tools(settings, studio=studio),
         guards=build_guards(settings),
-        gate=build_gate(
-            settings, role=user.role, grade_level=user.grade_level, provider=provider
-        ),
+        gate=build_gate(settings, role=user.role, grade_level=user.grade_level, provider=provider),
         settings=TurnSettings(
             budget=TokenBudget(
                 memory=settings.memory_token_budget,
@@ -312,6 +317,43 @@ def get_generation_service(settings: SettingsDep) -> GenerationService:
 
 
 GenerationServiceDep = Annotated[GenerationService, Depends(get_generation_service)]
+
+
+async def limit_speech(session: SessionDep, settings: SettingsDep, user: CurrentUser) -> None:
+    """Recorded clips per person per minute; a clip already recorded is free
+    but still counted, which keeps the limit simple to reason about."""
+    await RateLimiter(session, enabled=settings.rate_limit_enabled).check(
+        "speech", str(user.id), Limit(settings.rate_limit_speech_per_minute)
+    )
+
+
+@lru_cache
+def _narrator() -> Narrator:
+    # One per process, so two requests for the same clip share one recording.
+    settings = get_settings()
+    return Narrator(build_speech(settings), AudioCache(settings.live_audio_dir))
+
+
+def get_narrator() -> Narrator:
+    return _narrator()
+
+
+NarratorDep = Annotated[Narrator, Depends(get_narrator)]
+
+
+def get_voice_lab(settings: SettingsDep) -> VoiceLab:
+    chat = OpenAICompatibleProvider(
+        base_url=settings.resolved_learning_base_url,
+        api_key=settings.resolved_learning_api_key,
+        model=settings.resolved_learning_model,
+        timeout=settings.learning_timeout_seconds,
+    )
+    # Questions are screened as a student's would be, because in a session
+    # they are a student's: the rules, without the classifier's extra call.
+    return VoiceLab(build_model(settings, Meter()), chat, ModerationGate())
+
+
+VoiceLabDep = Annotated[VoiceLab, Depends(get_voice_lab)]
 
 
 async def limit_auth(request: Request, session: SessionDep, settings: SettingsDep) -> None:
