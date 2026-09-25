@@ -181,6 +181,7 @@ class TodoResponse(BaseModel):
     assignment_id: UUID
     title: str
     kind: str
+    class_id: UUID
     class_name: str
     class_theme: str
     item_count: int
@@ -198,6 +199,7 @@ class TodoResponse(BaseModel):
             assignment_id=a.id,
             title=a.title,
             kind=a.kind,
+            class_id=a.class_id,
             class_name=card.class_name,
             class_theme=card.class_theme,
             item_count=card.item_count,

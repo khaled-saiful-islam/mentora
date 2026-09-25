@@ -22,6 +22,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
@@ -66,6 +67,39 @@ class Attempt(Base):
         Index("ix_attempts_assignment", "assignment_id", "status", "percent"),
         Index("ix_attempts_student", "student_id", "completed_at"),
         Index("ix_attempts_set_student", "set_id", "student_id"),
+        # One attempt running at a time, and no two with the same number:
+        # what makes a double-tapped "Start" end with one attempt, not two.
+        # Class attempts count per assignment; practice per set.
+        Index(
+            "uq_attempts_running_assignment",
+            "student_id",
+            "assignment_id",
+            unique=True,
+            postgresql_where=text("status = 'in_progress' AND assignment_id IS NOT NULL"),
+        ),
+        Index(
+            "uq_attempts_running_practice",
+            "student_id",
+            "set_id",
+            unique=True,
+            postgresql_where=text("status = 'in_progress' AND assignment_id IS NULL"),
+        ),
+        Index(
+            "uq_attempts_number_assignment",
+            "student_id",
+            "assignment_id",
+            "number",
+            unique=True,
+            postgresql_where=text("assignment_id IS NOT NULL"),
+        ),
+        Index(
+            "uq_attempts_number_practice",
+            "student_id",
+            "set_id",
+            "number",
+            unique=True,
+            postgresql_where=text("assignment_id IS NULL"),
+        ),
     )
 
 

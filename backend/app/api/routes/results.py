@@ -32,6 +32,7 @@ async def assignment_results(
     return {
         "assignment": {
             "id": a.id,
+            "class_id": a.class_id,
             "title": a.title,
             "kind": a.kind,
             "due_at": a.due_at,

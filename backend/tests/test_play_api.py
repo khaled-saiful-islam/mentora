@@ -10,6 +10,7 @@ async def test_a_student_plays_a_quiz_start_to_finish(session, client, teacher, 
     async with client(student) as c:
         todo = (await c.get("/api/me/assignments")).json()
         assert [t["status"] for t in todo] == ["todo"]
+        assert todo[0]["class_id"] == str(assignment.class_id)
         attempt = (await c.post(f"/api/me/assignments/{assignment.id}/attempts")).json()
         assert "answer" not in attempt["items"][0]
         for item in attempt["items"]:
@@ -60,6 +61,7 @@ async def test_the_teacher_sees_results_and_the_whole_board(
         ).json()
         board = (await c.get(f"/api/assignments/{assignment.id}/leaderboard")).json()
     assert results["summary"]["completed"] == 1
+    assert results["assignment"]["class_id"] == str(assignment.class_id)
     assert results["students"][0]["first"] == 0.0
     assert len(drill["attempts"]) == 1
     assert board["enabled"] is True and board["total"] == 1

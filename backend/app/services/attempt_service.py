@@ -21,6 +21,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import NotFoundError, ValidationError
@@ -99,9 +100,7 @@ class AttemptService:
             return await self.view(student.id, attempts[-1].id)
         if assignment.closed_at is not None:
             raise ValidationError("Your teacher has closed this one.")
-        attempt = self._new_attempt(student, learning_set, version, assignment, len(attempts) + 1)
-        await self._session.flush()
-        return await self.view(student.id, attempt.id)
+        return await self._create(student, learning_set, version, assignment, len(attempts) + 1)
 
     async def start_practice(self, student: User, set_id: UUID) -> AttemptView:
         learning_set = (
@@ -120,9 +119,45 @@ class AttemptService:
         if running is not None:
             return await self.view(student.id, running.id)
         version = await self._version(set_id, learning_set.current_version)
-        attempt = self._new_attempt(student, learning_set, version, None, len(attempts) + 1)
-        await self._session.flush()
+        return await self._create(student, learning_set, version, None, len(attempts) + 1)
+
+    async def _create(
+        self,
+        student: User,
+        learning_set: LearningSet,
+        version: LearningSetVersion,
+        assignment: Assignment | None,
+        number: int,
+    ) -> AttemptView:
+        """A new attempt — or, if another request made it a moment ago (a
+        double tap, a retry), that one. The database's unique indexes decide
+        who won; the loser joins rather than making a twin."""
+        try:
+            async with self._session.begin_nested():
+                attempt = self._new_attempt(student, learning_set, version, assignment, number)
+                await self._session.flush()
+        except IntegrityError:
+            running = await self._running(student.id, assignment, learning_set.id)
+            if running is None:
+                raise
+            return await self.view(student.id, running.id)
         return await self.view(student.id, attempt.id)
+
+    async def _running(
+        self, student_id: UUID, assignment: Assignment | None, set_id: UUID
+    ) -> Attempt | None:
+        scope = (
+            Attempt.assignment_id == assignment.id
+            if assignment
+            else (Attempt.assignment_id.is_(None) & (Attempt.set_id == set_id))
+        )
+        return (
+            await self._session.execute(
+                select(Attempt).where(
+                    Attempt.student_id == student_id, scope, Attempt.status == "in_progress"
+                )
+            )
+        ).scalar_one_or_none()
 
     def _new_attempt(
         self,

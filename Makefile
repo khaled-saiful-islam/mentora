@@ -71,6 +71,9 @@ migration: ## Autogenerate a migration — make migration m="add widgets"
 seed: ## Re-run the seed (idempotent)
 	@$(COMPOSE) exec backend python -m app.scripts.seed
 
+demo: ## Seed a demo class to try things with — make demo join="yourstudent"
+	@$(COMPOSE) exec backend python -m app.scripts.demo --join $(join)
+
 # Frontend tooling runs in a container so `make test` needs Docker and nothing
 # else. The named volume keeps node_modules between runs.
 NODE := docker run --rm -v "$(PWD)/frontend:/app" -v mentora-node-modules:/app/node_modules \
