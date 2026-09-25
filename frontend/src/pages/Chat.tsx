@@ -20,6 +20,8 @@ import { useChat } from '@/hooks/useChat'
 import { useConversations } from '@/hooks/useConversations'
 import { useConfig } from '@/hooks/useConfig'
 import { useMakeable } from '@/hooks/useMakeable'
+import { LearnTiles } from '@/features/learning/LearnTiles'
+import { useLearnStudio } from '@/features/learning/LearnStudio'
 import { useDocuments } from '@/hooks/useDocuments'
 import { apiFetch } from '@/lib/api'
 
@@ -49,7 +51,8 @@ export default function Chat() {
   const [sharing, setSharing] = useState(false)
   const composer = useRef<ComposerHandle>(null)
   const makeable = useMakeable()
-  const kinds: Makeable[] = useMemo(() => inOrder(makeable), [makeable])
+  const kinds: Makeable[] = useMemo(() => inOrder(makeable.studio), [makeable.studio])
+  const studio = useLearnStudio()
 
   /** A kind picked from the rail or the chips: its request, ready to edit. */
   function start(kind: Makeable, example?: string) {
@@ -175,7 +178,13 @@ export default function Chat() {
 
         {empty ? (
           <>
-            <EmptyState canMake={kinds.length > 0} />
+            {/* Where the news used to be: the studio artifacts, for staff. */}
+            {kinds.length > 0 && (
+              <div className="mx-auto w-full max-w-[var(--message-column)] px-4 pt-4">
+                <MakeRail kinds={kinds} onPick={start} />
+              </div>
+            )}
+            <EmptyState canMake={kinds.length > 0} learns={makeable.learning.length > 0} />
           </>
         ) : (
           <MessageList
@@ -209,10 +218,14 @@ export default function Chat() {
         <Composer
           ref={composer}
           above={
-            kinds.length === 0 ? null : empty ? (
-              <MakeRail kinds={kinds} onPick={start} />
+            empty ? (
+              // Right above the box: what Mentora makes for learning.
+              <LearnTiles kinds={makeable.learning} onPick={studio.create} />
             ) : (
-              <MakeChips kinds={kinds} hidden={chat.streaming} onPick={(kind) => start(kind)} />
+              <>
+                <LearnTiles compact kinds={makeable.learning} onPick={studio.create} />
+                {kinds.length > 0 && <MakeChips kinds={kinds} hidden={chat.streaming} onPick={(kind) => start(kind)} />}
+              </>
             )
           }
           onSend={(text, options) =>
@@ -287,7 +300,7 @@ function MenuButton({ onClick, className }: { onClick: () => void; className?: s
   )
 }
 
-function EmptyState({ canMake }: { canMake: boolean }) {
+function EmptyState({ canMake, learns }: { canMake: boolean; learns: boolean }) {
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-6">
       <div className="flex flex-col items-center text-center">
@@ -295,8 +308,10 @@ function EmptyState({ canMake }: { canMake: boolean }) {
         <h1 className="mt-4 text-2xl font-semibold tracking-tight">How can I help?</h1>
         <p className="mt-2 max-w-sm text-sm text-muted-foreground">
           {canMake
-            ? 'Ask anything, or make something — a poster, a deck, a game, a website, an app.'
-            : 'Ask anything. Mentora replies in the language you write in.'}
+            ? 'Ask anything, make a quiz or flashcards for your class, or design a poster, deck, game, website or app.'
+            : learns
+              ? 'Ask me anything about your lessons — or make a quiz or flashcards to practise.'
+              : 'Ask anything. Mentora replies in the language you write in.'}
         </p>
       </div>
     </div>

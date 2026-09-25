@@ -6,6 +6,8 @@
  * at every call site.
  */
 
+import type { LearningKindInfo } from '@/features/learning/api'
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -78,8 +80,15 @@ export interface MakeableKind {
   description: string
 }
 
+export interface Makeable {
+  studio: MakeableKind[]
+  learning: LearningKindInfo[]
+  /** Whether web search is configured, so sets can be grounded in sources. */
+  grounded: boolean
+}
+
 /** What this person may make. Depends on who is asking, so not in /config. */
-export const getMakeable = () => apiFetch<{ studio: MakeableKind[] }>('/me/makeable')
+export const getMakeable = () => apiFetch<Makeable>('/me/makeable')
 
 export const getConfig = () => apiFetch<PublicConfig>('/config')
 

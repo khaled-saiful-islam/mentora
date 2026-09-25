@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Archive, ArrowLeft, ArrowCounterClockwise, PencilSimple, QrCode, UserCirclePlus, UsersFour, UsersThree } from '@phosphor-icons/react'
+import { Archive, ArrowLeft, ArrowCounterClockwise, PencilSimple, QrCode, Sparkle, UserCirclePlus, UsersFour, UsersThree } from '@phosphor-icons/react'
 import { Alert, Button, Skeleton } from '@/components/ui'
 import { Confirm } from '@/components/ui/Confirm'
 import { Tabs } from '@/components/ui/Tabs'
@@ -15,11 +15,12 @@ import { useNotifications } from '@/features/notifications/NotificationsProvider
 import { classesApi, type ClassDraft, type ClassRoom } from './api'
 import { ClassFormDialog } from './ClassFormDialog'
 import { GroupsTab } from './GroupsTab'
+import { AssignmentsTab } from './AssignmentsTab'
 import { InviteTab } from './InviteTab'
 import { RequestsTab } from './RequestsTab'
 import { StudentsTab } from './StudentsTab'
 
-const TABS = ['students', 'requests', 'groups', 'invite'] as const
+const TABS = ['students', 'requests', 'groups', 'assignments', 'invite'] as const
 type Tab = (typeof TABS)[number]
 
 export default function ClassPage() {
@@ -95,6 +96,7 @@ export default function ClassPage() {
           { key: 'students', label: 'Students', to: base, icon: <UsersThree weight="bold" className="size-4" /> },
           { key: 'requests', label: 'Requests', to: `${base}/requests`, badge: data?.pending, icon: <UserCirclePlus weight="bold" className="size-4" /> },
           { key: 'groups', label: 'Groups', to: `${base}/groups`, icon: <UsersFour weight="bold" className="size-4" /> },
+          { key: 'assignments', label: 'Shared', to: `${base}/assignments`, icon: <Sparkle weight="bold" className="size-4" /> },
           { key: 'invite', label: 'Invite', to: `${base}/invite`, icon: <QrCode weight="bold" className="size-4" /> },
         ]}
       />
@@ -103,6 +105,7 @@ export default function ClassPage() {
         {tab === 'students' && <StudentsTab key={version} classId={classId} onChange={refreshCounts} />}
         {tab === 'requests' && <RequestsTab key={version} classId={classId} onChange={refreshCounts} />}
         {tab === 'groups' && <GroupsTab key={version} classId={classId} onChange={refreshCounts} />}
+        {tab === 'assignments' && <AssignmentsTab key={version} classId={classId} />}
         {tab === 'invite' && data && <InviteTab room={data} />}
       </motion.div>
 

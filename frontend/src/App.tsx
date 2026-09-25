@@ -12,6 +12,9 @@ import ClassPage from '@/features/classes/ClassPage'
 import ClassesPage from '@/features/classes/ClassesPage'
 import JoinPage from '@/features/classes/JoinPage'
 import { NotificationsProvider } from '@/features/notifications/NotificationsProvider'
+import EditorPage from '@/features/learning/EditorPage'
+import LibraryPage from '@/features/learning/LibraryPage'
+import { LearnStudioProvider } from '@/features/learning/LearnStudio'
 import { AppShell } from '@/features/shell/AppShell'
 import { ToastProvider } from '@/components/ui/Toast'
 import type { Capabilities } from '@/lib/user'
@@ -31,6 +34,7 @@ export default function App() {
       <MotionProvider>
       <ToastProvider>
       <NotificationsProvider>
+      <LearnStudioProvider>
         <Routes>
           <Route path="/signin" element={<PublicOnly><SignInPage /></PublicOnly>} />
           <Route path="/signup" element={<PublicOnly><SignUpChooser /></PublicOnly>} />
@@ -47,11 +51,14 @@ export default function App() {
           <Route path="/classes" element={<Shell><ClassesPage /></Shell>} />
           <Route path="/classes/:classId" element={<Shell capability="manage_classes"><ClassPage /></Shell>} />
           <Route path="/classes/:classId/:tab" element={<Shell capability="manage_classes"><ClassPage /></Shell>} />
+          <Route path="/library" element={<Shell capability={MAKES_SETS}><LibraryPage /></Shell>} />
+          <Route path="/library/:setId" element={<Shell capability={MAKES_SETS}><EditorPage /></Shell>} />
           <Route path="/profile" element={<Shell><Profile /></Shell>} />
           <Route path="/settings" element={<Shell><Settings /></Shell>} />
           <Route path="/admin" element={<Shell capability="manage_users"><Admin /></Shell>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+      </LearnStudioProvider>
       </NotificationsProvider>
       </ToastProvider>
       </MotionProvider>
@@ -99,7 +106,11 @@ function PublicOnly({ children }: { children: React.ReactNode }) {
  * home — the server refuses them either way; this just avoids a page of
  * refusals for someone who followed an old link.
  */
-function Shell({ children, capability }: { children: React.ReactNode; capability?: keyof Capabilities }) {
+const MAKES_SETS: (keyof Capabilities)[] = ['share_learning_sets', 'make_practice_sets']
+
+type Needs = keyof Capabilities | (keyof Capabilities)[]
+
+function Shell({ children, capability }: { children: React.ReactNode; capability?: Needs }) {
   return (
     <Protected>
       <Allowed capability={capability}>
@@ -109,8 +120,9 @@ function Shell({ children, capability }: { children: React.ReactNode; capability
   )
 }
 
-function Allowed({ children, capability }: { children: React.ReactNode; capability?: keyof Capabilities }) {
+function Allowed({ children, capability }: { children: React.ReactNode; capability?: Needs }) {
   const { user } = useAuth()
-  if (capability && !user?.capabilities[capability]) return <Navigate to="/" replace />
+  const needs = capability === undefined ? [] : Array.isArray(capability) ? capability : [capability]
+  if (needs.length > 0 && !needs.some((name) => user?.capabilities[name])) return <Navigate to="/" replace />
   return <>{children}</>
 }

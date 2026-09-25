@@ -3,7 +3,7 @@
  * the phone tab bar and the chat sidebar, so a page added for a role is one
  * line here. `show` reads the same capabilities the API enforces.
  */
-import { ChatsCircle, GearSix, ShieldStar, Sparkle, UsersThree, type Icon } from '@phosphor-icons/react'
+import { Books, ChatsCircle, GearSix, ShieldStar, Sparkle, Barbell, UsersThree, type Icon } from '@phosphor-icons/react'
 import { can, type User } from '@/lib/user'
 
 export interface NavItem {
@@ -43,6 +43,22 @@ export const NAV: NavItem[] = [
     Icon: UsersThree,
     show: (u) => can(u, 'manage_classes') || can(u, 'join_classes'),
     matches: under('/classes'),
+  },
+  {
+    key: 'library',
+    to: '/library',
+    label: 'Library',
+    Icon: Books,
+    show: (u) => can(u, 'share_learning_sets'),
+    matches: under('/library'),
+  },
+  {
+    key: 'practice',
+    to: '/library',
+    label: 'Practice',
+    Icon: Barbell,
+    show: (u) => can(u, 'make_practice_sets'),
+    matches: under('/library'),
   },
   {
     key: 'admin',

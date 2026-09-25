@@ -8,13 +8,13 @@ function user(role: User['role'], caps: Partial<User['capabilities']>): User {
 
 describe('navFor', () => {
   it('gives a teacher the studio and classes', () => {
-    const keys = navFor(user('teacher', { studio_artifacts: true, manage_classes: true })).map((i) => i.key)
-    expect(keys).toEqual(['studio', 'classes', 'settings'])
+    const keys = navFor(user('teacher', { studio_artifacts: true, manage_classes: true, share_learning_sets: true })).map((i) => i.key)
+    expect(keys).toEqual(['studio', 'classes', 'library', 'settings'])
   })
 
   it('gives a student their study buddy and classes, never the studio', () => {
-    const keys = navFor(user('student', { join_classes: true })).map((i) => i.key)
-    expect(keys).toEqual(['chat', 'classes', 'settings'])
+    const keys = navFor(user('student', { join_classes: true, make_practice_sets: true })).map((i) => i.key)
+    expect(keys).toEqual(['chat', 'classes', 'practice', 'settings'])
   })
 
   it('adds admin for administrators', () => {
