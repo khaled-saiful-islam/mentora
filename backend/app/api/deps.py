@@ -83,6 +83,26 @@ async def current_user(
 CurrentUser = Annotated[User, Depends(current_user)]
 
 
+async def user_for_stream(
+    mentora_session: Annotated[str | None, Cookie()] = None,
+    authorization: Annotated[str | None, Header()] = None,
+) -> User:
+    """Who is opening a long-lived stream, checked with a session that closes
+    straight away.
+
+    `CurrentUser` borrows the request's database session, and a stream that
+    stays open for hours would hold that connection the whole time — thirty
+    open tabs would empty the pool. This one returns the connection before the
+    first event is sent.
+    """
+    user_id = decode_access_token(_token_from(mentora_session, authorization))
+    async with session_scope() as session:
+        return await AuthService(SqlUserRepository(session)).get_user(user_id)
+
+
+StreamUser = Annotated[User, Depends(user_for_stream)]
+
+
 # --- roles and capabilities --------------------------------------------
 #
 # Dependencies rather than checks inside each handler: a check you have to
@@ -232,6 +252,14 @@ async def limit_share(request: Request, session: SessionDep, settings: SettingsD
     """
     await RateLimiter(session, enabled=settings.rate_limit_enabled).check(
         "share", client_address(request, settings), Limit(settings.rate_limit_share_per_minute)
+    )
+
+
+async def limit_invite(request: Request, session: SessionDep, settings: SettingsDep) -> None:
+    """Per address. A class code is six characters: the limit, not the code
+    length, is what makes guessing one impractical."""
+    await RateLimiter(session, enabled=settings.rate_limit_enabled).check(
+        "invite", client_address(request, settings), Limit(settings.rate_limit_invite_per_minute)
     )
 
 

@@ -108,6 +108,9 @@ class Settings(BaseSettings):
     # address, and generous — a shared link doing the rounds in a group chat is
     # a burst of real readers, not an attack.
     rate_limit_share_per_minute: int = 60
+    # Invite lookups and joins, per address: a class code is short, so guessing
+    # them has to be slow.
+    rate_limit_invite_per_minute: int = 30
     # nginx appends the real peer to any X-Forwarded-For the client sent, so the
     # LAST entry is the trustworthy one. Set false when the API is exposed
     # directly: then the header is entirely client-controlled and believing it

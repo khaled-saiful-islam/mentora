@@ -59,6 +59,15 @@ class UsernameStatusResponse(BaseModel):
     suggestions: list[str]
 
 
+class JoinAtSignUp(BaseModel):
+    """What happened to the invite a student signed up through."""
+
+    # "requested" | "pending" | "member" | "invalid"
+    status: str
+    class_name: str | None = None
+    teacher_name: str | None = None
+
+
 class UserResponse(BaseModel):
     """What the browser is allowed to know about a user. No password hash.
 
@@ -97,3 +106,7 @@ class UserResponse(BaseModel):
             capabilities=capabilities_for(user.role).as_dict(),
             created_at=user.created_at,
         )
+
+
+class StudentSignUpResponse(UserResponse):
+    join: JoinAtSignUp | None = None

@@ -9,11 +9,19 @@ from __future__ import annotations
 from app.db.models.artifact import Artifact, ArtifactVersion
 from app.db.models.artifact_share import ArtifactShare
 from app.db.models.artifact_state import ArtifactState
+from app.db.models.classroom import (
+    ClassGroup,
+    ClassInvite,
+    ClassMembership,
+    Classroom,
+    GroupMember,
+)
 from app.db.models.conversation import Conversation, Message
 from app.db.models.document import Document
 from app.db.models.feedback import MessageFeedback
 from app.db.models.guard_event import GuardEvent
 from app.db.models.memory import Memory
+from app.db.models.notification import Notification
 from app.db.models.rate_limit import RateLimitHit
 from app.db.models.share import ConversationShare
 from app.db.models.source import MessageSource
@@ -24,14 +32,20 @@ __all__ = [
     "ArtifactShare",
     "ArtifactState",
     "ArtifactVersion",
+    "ClassGroup",
+    "ClassInvite",
+    "ClassMembership",
+    "Classroom",
     "Conversation",
     "ConversationShare",
     "Document",
+    "GroupMember",
     "GuardEvent",
     "Memory",
     "Message",
     "MessageFeedback",
     "MessageSource",
+    "Notification",
     "RateLimitHit",
     "User",
 ]

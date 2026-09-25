@@ -14,7 +14,17 @@ from pathlib import Path
 import pytest
 
 APP = Path(__file__).resolve().parent.parent / "app"
-LOGIC_PACKAGES = ("services", "providers", "guards", "context", "tools", "core")
+LOGIC_PACKAGES = (
+    "services",
+    "providers",
+    "guards",
+    "context",
+    "tools",
+    "core",
+    "events",
+    "policies",
+    "artifacts",
+)
 FORBIDDEN_ROOTS = {"fastapi", "starlette"}
 
 

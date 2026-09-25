@@ -22,6 +22,7 @@ from tests.fakes import make_user
 STUDIO_PREFIXES = ("/api/artifacts", "/api/conversations/{conversation_id}/artifacts")
 SHARE_OWNER_PREFIX = "/api/conversations/{conversation_id}/share"
 ADMIN_PREFIX = "/api/admin"
+CLASS_PREFIX = "/api/classes"
 
 
 def _concrete(path: str) -> str:
@@ -82,6 +83,11 @@ async def test_a_student_is_refused_every_studio_artifact_route() -> None:
 
 async def test_a_student_cannot_manage_conversation_share_links() -> None:
     statuses = await _walk(Role.STUDENT, (SHARE_OWNER_PREFIX,))
+    assert set(statuses.values()) == {403}
+
+
+async def test_a_student_is_refused_every_class_management_route() -> None:
+    statuses = await _walk(Role.STUDENT, (CLASS_PREFIX,))
     assert set(statuses.values()) == {403}
 
 

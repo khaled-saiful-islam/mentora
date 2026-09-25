@@ -63,7 +63,7 @@ def downgrade() -> None:
         op.drop_column("users", column)
 
     op.drop_constraint("ck_users_identifier", "users", type_="check")
-    # Pelita-era rows always had both; a student row cannot go back, so the
+    # Rows from before roles always had both; a student row cannot go back, so the
     # downgrade refuses rather than inventing an address for a child.
     op.execute(
         "DO $$ BEGIN IF EXISTS (SELECT 1 FROM users WHERE username IS NULL OR email IS NULL) "

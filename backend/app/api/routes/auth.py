@@ -13,16 +13,21 @@ from app.api.deps import AuthServiceDep, CurrentUser, SessionDep, SettingsDep, l
 from app.api.schemas.admin import UsageResponse
 from app.api.schemas.auth import (
     ChangePasswordRequest,
+    JoinAtSignUp,
     PreferencesRequest,
     SignInRequest,
     StudentSignUpRequest,
+    StudentSignUpResponse,
     TeacherSignUpRequest,
     UpdateProfileRequest,
     UsernameStatusResponse,
     UserResponse,
 )
 from app.core.config import Settings
+from app.core.errors import NotFoundError
 from app.core.security import create_access_token
+from app.events.registry import build_bus
+from app.services.membership_service import MembershipService
 from app.services.quota import TokenQuota
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -65,24 +70,43 @@ async def sign_up_teacher(
 
 @router.post(
     "/signup/student",
-    response_model=UserResponse,
+    response_model=StudentSignUpResponse,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(limit_auth)],
 )
 async def sign_up_student(
     payload: StudentSignUpRequest,
     auth: AuthServiceDep,
+    session: SessionDep,
     settings: SettingsDep,
     response: Response,
-) -> UserResponse:
+) -> StudentSignUpResponse:
+    """Signing up through an invite link also asks to join that class, in the
+    same transaction: both happen or neither does. A dead invite does not
+    block the account — the student is told, and can ask for a new link."""
     result = await auth.sign_up_student(
         name=payload.name,
         grade_level=payload.grade_level,
         username=payload.username,
         password=payload.password,
     )
+    join = await _join_at_signup(session, result.user, payload.invite_token)
     _set_session_cookie(response, result.access_token, settings)
-    return UserResponse.of(result.user)
+    return StudentSignUpResponse(**UserResponse.of(result.user).model_dump(), join=join)
+
+
+async def _join_at_signup(session, student, token: str | None) -> JoinAtSignUp | None:
+    if not token:
+        return None
+    try:
+        outcome = await MembershipService(session, build_bus()).request(student, token)
+    except NotFoundError:
+        return JoinAtSignUp(status="invalid")
+    return JoinAtSignUp(
+        status=outcome.status,
+        class_name=outcome.preview.class_name,
+        teacher_name=outcome.preview.teacher_name,
+    )
 
 
 @router.get(

@@ -7,8 +7,10 @@ the development data. No test needs to remember to clean up.
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
+from uuid import uuid4
 
+import httpx
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -62,6 +64,74 @@ async def db_user(session: AsyncSession) -> User:
     session.add(user)
     await session.flush()
     return user
+
+
+AccountFactory = Callable[..., Awaitable[User]]
+
+
+@pytest.fixture
+def account(session: AsyncSession) -> AccountFactory:
+    """Make an account of any role: `await account("student", "Adam")`.
+
+    Teachers get an email and no username, students a username and a grade and
+    no email — the shapes signup produces, so tests meet the real thing.
+    """
+    counter = iter(range(1, 10_000))
+
+    async def make(role: str = "teacher", name: str | None = None, **extra: object) -> User:
+        n = next(counter)
+        label = name or f"{role.title()} {n}"
+        slug = f"{role}{n}-{uuid4().hex[:6]}"
+        user = User(
+            username=slug if role == "student" else None,
+            email=None if role == "student" else f"{slug}@school.test",
+            password_hash="x",  # noqa: S106
+            display_name=label,
+            role=role,
+            grade_level="year_4" if role == "student" else None,
+            preferences={},
+            is_active=True,
+            **extra,
+        )
+        session.add(user)
+        await session.flush()
+        return user
+
+    return make
+
+
+@pytest.fixture
+async def teacher(account: AccountFactory) -> User:
+    return await account("teacher", "Cikgu Aisyah")
+
+
+@pytest.fixture
+async def student(account: AccountFactory) -> User:
+    return await account("student", "Adam")
+
+
+ClientFactory = Callable[..., httpx.AsyncClient]
+
+
+@pytest.fixture
+def client(session: AsyncSession) -> ClientFactory:
+    """The app on this test's rolled-back session: `client(teacher)` is signed
+    in as `teacher`; `client()` is signed out and uses real cookies."""
+    from app.api.deps import current_user, get_session
+    from app.main import create_app
+
+    def make(user: User | None = None) -> httpx.AsyncClient:
+        app = create_app()
+
+        async def _session() -> AsyncIterator[AsyncSession]:
+            yield session
+
+        app.dependency_overrides[get_session] = _session
+        if user is not None:
+            app.dependency_overrides[current_user] = lambda: user
+        return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test")
+
+    return make
 
 
 @pytest.fixture

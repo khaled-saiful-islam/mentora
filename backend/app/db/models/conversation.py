@@ -40,6 +40,9 @@ class Conversation(Base):
     __table_args__ = (
         # The sidebar query: one user's conversations, newest first.
         Index("ix_conversations_user_updated", "user_id", "updated_at"),
+        # Created by a92f6c4b8e11 for the per-user quota sum. Declared here so
+        # autogenerate stops proposing to drop it.
+        Index("ix_conversations_user", "user_id"),
     )
 
 

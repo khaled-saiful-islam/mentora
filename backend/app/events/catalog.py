@@ -1,0 +1,53 @@
+"""Everything that can happen, as data.
+
+Each event carries what its subscribers need to react without a lookup —
+names as they were at the moment it happened, which is also what a
+notification should say even if the class is renamed later.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from uuid import UUID
+
+from app.events.base import Event
+
+
+@dataclass(frozen=True, slots=True)
+class MembershipRequested(Event):
+    membership_id: UUID
+    class_id: UUID
+    class_name: str
+    teacher_id: UUID
+    student_id: UUID
+    student_name: str
+    grade_label: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class MembershipApproved(Event):
+    membership_id: UUID
+    class_id: UUID
+    class_name: str
+    teacher_id: UUID
+    teacher_name: str
+    student_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
+class MembershipRejected(Event):
+    membership_id: UUID
+    class_id: UUID
+    teacher_id: UUID
+    student_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
+class MembershipEnded(Event):
+    """A student left, or their teacher removed them."""
+
+    membership_id: UUID
+    class_id: UUID
+    teacher_id: UUID
+    student_id: UUID
+    how: str  # "revoked" | "left"
