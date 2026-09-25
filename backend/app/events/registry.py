@@ -9,12 +9,14 @@ from __future__ import annotations
 from app.events.bus import EventBus
 from app.events.catalog import (
     AssignmentShared,
+    AttemptCompleted,
+    BadgeAwarded,
     MembershipApproved,
     MembershipEnded,
     MembershipRejected,
     MembershipRequested,
 )
-from app.events.subscribers import notifications
+from app.events.subscribers import notifications, realtime
 
 
 def build_bus() -> EventBus:
@@ -24,4 +26,7 @@ def build_bus() -> EventBus:
     bus.subscribe(MembershipRejected, notifications.join_rejected)
     bus.subscribe(MembershipEnded, notifications.membership_ended)
     bus.subscribe(AssignmentShared, notifications.assignment_shared)
+    bus.subscribe(AttemptCompleted, notifications.attempt_completed)
+    bus.subscribe(AttemptCompleted, realtime.leaderboard_changed)
+    bus.subscribe(BadgeAwarded, notifications.badge_awarded)
     return bus

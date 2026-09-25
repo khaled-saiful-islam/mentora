@@ -9,6 +9,7 @@ from __future__ import annotations
 from app.db.models.artifact import Artifact, ArtifactVersion
 from app.db.models.artifact_share import ArtifactShare
 from app.db.models.artifact_state import ArtifactState
+from app.db.models.attempt import Attempt, AttemptAnswer, StudentBadge
 from app.db.models.classroom import (
     ClassGroup,
     ClassInvite,
@@ -37,6 +38,8 @@ __all__ = [
     "Artifact",
     "ArtifactShare",
     "Assignment",
+    "Attempt",
+    "AttemptAnswer",
     "AssignmentGroup",
     "ArtifactState",
     "ArtifactVersion",
@@ -57,5 +60,6 @@ __all__ = [
     "MessageSource",
     "Notification",
     "RateLimitHit",
+    "StudentBadge",
     "User",
 ]

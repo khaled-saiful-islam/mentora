@@ -64,3 +64,28 @@ class AssignmentShared(Event):
     teacher_name: str
     student_ids: tuple[UUID, ...]
     due_at: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class AttemptCompleted(Event):
+    attempt_id: UUID
+    student_id: UUID
+    student_name: str
+    set_id: UUID
+    title: str
+    kind: str
+    percent: float
+    # Null for practice, which nobody else is told about.
+    assignment_id: UUID | None = None
+    teacher_id: UUID | None = None
+    class_name: str | None = None
+    audience: tuple[UUID, ...] = ()
+    leaderboard: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class BadgeAwarded(Event):
+    student_id: UUID
+    badge: str
+    name: str
+    reason: str

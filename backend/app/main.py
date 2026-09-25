@@ -28,6 +28,8 @@ from app.api.routes import (
     me,
     memories,
     notifications,
+    play,
+    results,
     shares,
 )
 from app.core.config import deployment_warnings, get_settings
@@ -133,6 +135,8 @@ def create_app() -> FastAPI:
     app.include_router(me.router, prefix="/api")
     app.include_router(memories.router, prefix="/api")
     app.include_router(notifications.router, prefix="/api")
+    app.include_router(play.router, prefix="/api")
+    app.include_router(results.router, prefix="/api")
     app.include_router(shares.owner_router, prefix="/api")
     app.include_router(shares.public_router, prefix="/api")
     return app

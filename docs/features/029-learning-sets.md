@@ -3,7 +3,7 @@
 ## What it does
 
 - **Two new tiles sit above the chat box**: Quiz (tangerine) and Flashcards
-  (lagoon), each playing a few seconds of what it makes. Pelita's studio
+  (lagoon), each playing a few seconds of what it makes. The studio
   artifacts (poster, slides, website, app, game) moved to the top of the
   screen, where the news used to be. That is for staff only; students see the
   learning tiles only.

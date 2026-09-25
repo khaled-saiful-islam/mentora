@@ -11,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.notifications import Kind
 from app.events.catalog import (
     AssignmentShared,
+    AttemptCompleted,
+    BadgeAwarded,
     MembershipApproved,
     MembershipEnded,
     MembershipRejected,
@@ -92,3 +94,29 @@ async def assignment_shared(event: AssignmentShared, session: AsyncSession) -> N
             # One per assignment per student, even if it is shared again.
             group_key=f"assignment:{event.assignment_id}",
         )
+
+
+async def attempt_completed(event: AttemptCompleted, session: AsyncSession) -> None:
+    if event.assignment_id is None or event.teacher_id is None:
+        return  # practice is the student's own business
+    await NotificationService(session).notify(
+        user_id=event.teacher_id,
+        kind=Kind.COMPLETION,
+        actor_id=event.student_id,
+        payload={
+            "assignment_id": str(event.assignment_id),
+            "title": event.title,
+            "class_name": event.class_name,
+            "actors": [event.student_name],
+        },
+        # Five students finishing is one line that says five.
+        group_key=f"completion:{event.assignment_id}",
+    )
+
+
+async def badge_awarded(event: BadgeAwarded, session: AsyncSession) -> None:
+    await NotificationService(session).notify(
+        user_id=event.student_id,
+        kind=Kind.BADGE_AWARDED,
+        payload={"badge": event.badge, "badge_name": event.name, "reason": event.reason},
+    )

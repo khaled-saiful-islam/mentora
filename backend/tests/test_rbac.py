@@ -24,6 +24,14 @@ SHARE_OWNER_PREFIX = "/api/conversations/{conversation_id}/share"
 ADMIN_PREFIX = "/api/admin"
 CLASS_PREFIX = "/api/classes"
 ASSIGN_PREFIX = "/api/assignments"
+PLAY_PREFIXES = (
+    "/api/me/assignments",
+    "/api/me/attempts",
+    "/api/me/practice",
+    "/api/me/home",
+    "/api/me/results",
+    "/api/me/badges",
+)
 
 
 def _concrete(path: str) -> str:
@@ -66,11 +74,15 @@ def _client_as(role: Role) -> tuple[httpx.AsyncClient, object]:
     return client, app
 
 
-async def _walk(role: Role, prefixes: tuple[str, ...]) -> dict[tuple[str, str], int]:
+async def _walk(
+    role: Role, prefixes: tuple[str, ...], skip: tuple[str, ...] = ()
+) -> dict[tuple[str, str], int]:
     client, app = _client_as(role)
     statuses: dict[tuple[str, str], int] = {}
     async with client as c:
         for method, path in _routes(app, prefixes):
+            if path in skip:
+                continue
             response = await c.request(method, _concrete(path), json={})
             statuses[(method, path)] = response.status_code
     return statuses
@@ -87,8 +99,13 @@ async def test_a_student_cannot_manage_conversation_share_links() -> None:
     assert set(statuses.values()) == {403}
 
 
+# Open to students on purpose: a class quiz's leaderboard is theirs to see.
+# Who may see which one is decided inside (tests/test_play.py covers it).
+STUDENT_READABLE = ("/api/assignments/{assignment_id}/leaderboard",)
+
+
 async def test_a_student_is_refused_every_class_management_route() -> None:
-    statuses = await _walk(Role.STUDENT, (CLASS_PREFIX, ASSIGN_PREFIX))
+    statuses = await _walk(Role.STUDENT, (CLASS_PREFIX, ASSIGN_PREFIX), skip=STUDENT_READABLE)
     assert set(statuses.values()) == {403}
 
 
@@ -140,3 +157,8 @@ def test_with_the_studio_the_artifact_tools_are_there() -> None:
         pytest.skip("no artifact model configured in this environment")
     names = set(build_tools(settings, studio=True))
     assert {"create_artifact", "edit_artifact"} <= names
+
+
+async def test_a_teacher_is_refused_every_student_play_route() -> None:
+    statuses = await _walk(Role.TEACHER, PLAY_PREFIXES)
+    assert set(statuses.values()) == {403}

@@ -107,6 +107,9 @@ class Assignment(Base):
     leaderboard_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # When the podium badges went out. Set once, when the leaderboard is final
+    # (closed, or past due), so a medal is never handed out twice or taken back.
+    ranks_awarded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = created_at()
 
     __table_args__ = (
