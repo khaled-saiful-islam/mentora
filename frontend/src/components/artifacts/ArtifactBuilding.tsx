@@ -126,7 +126,7 @@ export function ArtifactBuilding({ build }: { build: ArtifactBuild }) {
                   </div>
                   <p className="mt-1.5 flex items-start gap-1 text-xs leading-snug">
                     <Check className="mt-[3px] size-3 shrink-0 text-success" aria-hidden />
-                    <span className="line-clamp-2 min-w-0">{part.title}</span>
+                    <span className="break-words min-w-0">{part.title}</span>
                   </p>
                 </div>
               ))}

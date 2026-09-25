@@ -365,21 +365,18 @@
      Each tile is lit in its own colour through `--tile`, set on the element,
      so one set of rules serves every kind — including one added later. */
 
+  /* Colour and motion only: the card lays itself out with utilities, which
+     these rules — outside any layer — would otherwise beat. */
   .make-tile {
     --tile: hsl(var(--primary));
     position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 0;
-    border-radius: 16px;
+    border-radius: 1.5rem;
     border: 1px solid color-mix(in srgb, var(--tile) 20%, transparent);
     background: linear-gradient(
       165deg,
       color-mix(in srgb, var(--tile) 8%, hsl(var(--surface))),
       hsl(var(--surface)) 72%
     );
-    padding: 7px 7px 10px;
     text-align: left;
     cursor: pointer;
     transition:
@@ -406,12 +403,8 @@
     transform: translateY(-1px) scale(0.985);
   }
 
+  /* The soft stage a studio kind's scene plays on, in the kind's colour. */
   .make-stage {
-    display: grid;
-    height: 60px;
-    place-items: center;
-    overflow: hidden;
-    border-radius: 11px;
     color: var(--tile);
     background:
       radial-gradient(
@@ -422,8 +415,9 @@
       color-mix(in srgb, var(--tile) 7%, hsl(var(--surface)));
   }
 
-  /* The example, changed each time the tile is lit. Remounted by key, so it
-     rises into place rather than swapping in a blink. */
+  /* The example, changed each time the card is lit. Remounted by key, so it
+     rises into place rather than swapping in a blink — and never clamped:
+     an example cut short is no example. */
   @keyframes make-swap {
     from {
       opacity: 0;
@@ -435,12 +429,7 @@
     }
   }
 
-  .make-example {
-    display: -webkit-box;
-    min-height: 2.5em;
-    overflow: hidden;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+  .create-example {
     animation: make-swap 460ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
@@ -788,67 +777,9 @@
     }
   }
 
-  /* In a conversation: the same five, as chips, which step aside while
-     something is being typed or answered. Collapsed by grid rows rather than
-     hidden, so the composer eases down instead of jumping. */
-  .make-chips {
-    display: grid;
-    grid-template-rows: 1fr;
-    transition:
-      grid-template-rows 240ms ease,
-      opacity 200ms ease;
-  }
-
-  .make-chips > div {
-    overflow: hidden;
-  }
-
-  [data-typing='true'] .make-chips,
-  .make-chips[data-hidden='true'] {
-    grid-template-rows: 0fr;
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .make-chip {
-    --tile: hsl(var(--primary));
-    display: inline-flex;
-    flex-shrink: 0;
-    align-items: center;
-    gap: 6px;
-    border: 1px solid color-mix(in srgb, var(--tile) 24%, transparent);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--tile) 6%, hsl(var(--surface)));
-    padding: 3px 11px 3px 3px;
-    font-size: 12px;
-    font-weight: 500;
-    transition:
-      transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
-      border-color 200ms ease,
-      box-shadow 200ms ease;
-  }
-
-  .make-chip:hover,
-  .make-chip:focus-visible {
-    transform: translateY(-1px);
-    border-color: color-mix(in srgb, var(--tile) 55%, transparent);
-    box-shadow: 0 8px 18px -12px color-mix(in srgb, var(--tile) 80%, transparent);
-    outline: none;
-  }
-
-  .make-chip-glyph {
-    display: grid;
-    width: 22px;
-    height: 22px;
-    place-items: center;
-    border-radius: 999px;
-    background: var(--tile);
-    color: white;
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .make-tile,
-    .make-example {
+    .create-example {
       animation: none;
       transition: none;
     }
@@ -934,3 +865,42 @@
   }
 }
 
+/* The big box in the middle of an empty studio: a ring of the brand's
+   colours turning slowly round it. */
+@property --glow-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes composer-glow-spin {
+  to {
+    --glow-angle: 360deg;
+  }
+}
+
+.composer-glow {
+  border-radius: 1.9rem;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--glow-angle),
+    var(--color-grape-400),
+    var(--color-sky-400),
+    var(--color-mint-400),
+    var(--color-sun-400),
+    var(--color-coral-400),
+    var(--color-grape-400)
+  );
+  box-shadow: 0 24px 60px -32px var(--color-grape-500);
+  animation: composer-glow-spin 7s linear infinite;
+}
+
+/* A card's build under way: a stripe of its colour running along a track. */
+@keyframes artifact-sweep {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(320%);
+  }
+}

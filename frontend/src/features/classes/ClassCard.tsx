@@ -24,7 +24,7 @@ export function ClassCard({ room }: { room: ClassRoom }) {
           <p className="relative text-sm font-bold opacity-85">
             {[room.subject, room.grade_label].filter(Boolean).join(' · ') || 'Class'}
           </p>
-          <p className="relative mt-1 truncate font-display text-2xl font-semibold">{room.name}</p>
+          <p className="relative mt-1 break-words font-display text-2xl font-semibold">{room.name}</p>
           {room.pending > 0 && (
             <motion.span
               className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-coral-700 shadow"

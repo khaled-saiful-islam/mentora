@@ -197,8 +197,8 @@ export function Sidebar({
           <Link to="/profile" className="flex min-w-0 flex-1 items-center gap-2">
             <Avatar name={user ? nameOf(user) : '?'} seed={user?.id ?? ''} className="size-9" />
             <span className="min-w-0">
-              <span className="block truncate text-sm font-bold">{user ? nameOf(user) : ''}</span>
-              <span className="block truncate text-xs capitalize text-muted-foreground">
+              <span className="block break-words text-sm font-bold">{user ? nameOf(user) : ''}</span>
+              <span className="block break-words text-xs capitalize text-muted-foreground">
                 {user?.role === 'student' && user.grade_label ? user.grade_label : user?.role}
               </span>
             </span>
@@ -304,7 +304,7 @@ function ConversationRow({
             : 'font-semibold text-sidebar-foreground hover:bg-hover',
         )}
       >
-        <span className="truncate pr-6">{conversation.title}</span>
+        <span className="break-words pr-6">{conversation.title}</span>
       </button>
 
       <button

@@ -126,7 +126,7 @@ function History({ rows }: { rows: HistoryRow[] }) {
                   <look.Icon weight="fill" className="size-6" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-bold">{row.title}</span>
+                  <span className="block break-words font-bold leading-snug">{row.title}</span>
                   <span className="text-sm text-muted-foreground">
                     {row.purpose === 'practice' ? 'Practice' : 'Class'} · {timeAgo(row.completed_at)}
                   </span>

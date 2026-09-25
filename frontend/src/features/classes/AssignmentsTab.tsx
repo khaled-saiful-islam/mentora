@@ -55,7 +55,7 @@ export function AssignmentsTab({ classId }: { classId: string }) {
                 <look.Icon weight="duotone" className="size-7" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-display text-lg font-semibold">{a.title}</p>
+                <p className="break-words font-display text-lg font-semibold">{a.title}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
                   {a.group_names.length ? (
                     <Chip tone="grape"><UsersFour weight="bold" className="size-3.5" />{a.group_names.join(', ')}</Chip>

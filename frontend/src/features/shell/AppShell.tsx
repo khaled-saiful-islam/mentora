@@ -56,8 +56,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="mt-auto flex items-center gap-2 rounded-2xl bg-surface p-2 shadow-sm">
             <Avatar name={nameOf(user)} seed={user.id} className="size-9" />
             <Link to="/profile" className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold">{nameOf(user)}</p>
-              <p className="truncate text-xs capitalize text-muted-foreground">
+              <p className="break-words text-sm font-bold">{nameOf(user)}</p>
+              <p className="break-words text-xs capitalize text-muted-foreground">
                 {user.role === 'student' && user.grade_label ? user.grade_label : user.role}
               </p>
             </Link>

@@ -122,8 +122,8 @@ export function StudentsTab({ classId, onChange }: { classId: string; onChange: 
                 )}
                 <Avatar name={member.name} seed={member.student_id} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-bold">{member.name}</p>
-                  <p className="truncate text-sm text-muted-foreground">
+                  <p className="break-words font-bold">{member.name}</p>
+                  <p className="break-words text-sm text-muted-foreground">
                     {[member.username && `@${member.username}`, member.grade_label].filter(Boolean).join(' · ')}
                   </p>
                 </div>

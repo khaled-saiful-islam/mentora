@@ -65,7 +65,7 @@ function Chip({ file, onRemove }: { file: AttachedFile; onRemove: () => void }) 
       ) : (
         <FileText className="size-3.5 shrink-0 text-primary" aria-hidden />
       )}
-      <span className="truncate font-medium">{file.filename}</span>
+      <span className="break-all font-medium">{file.filename}</span>
       <span className="shrink-0 text-muted-foreground">{extent(file)}</span>
       <button
         type="button"
@@ -83,7 +83,7 @@ function Pending({ name }: { name: string }) {
   return (
     <span className="inline-flex max-w-[15rem] items-center gap-1.5 rounded-lg border border-dashed border-border px-2 py-1 text-xs text-muted-foreground">
       <CircleNotch className="size-3.5 shrink-0 animate-spin" aria-hidden />
-      <span className="truncate">Reading {name}…</span>
+      <span className="break-all">Reading {name}…</span>
     </span>
   )
 }
@@ -132,10 +132,10 @@ function Card({ file }: { file: AttachedFile }) {
         </span>
       )}
       <span className="min-w-0">
-        <span className="block truncate text-[0.8125rem] font-medium leading-tight">
+        <span className="block break-all text-[0.8125rem] font-medium leading-tight">
           {file.filename}
         </span>
-        <span className="block truncate text-xs text-muted-foreground">
+        <span className="block break-all text-xs text-muted-foreground">
           {file.unit === 'image' ? extent(file) : `${extent(file)} · ${formatBytes(file.size_bytes)}`}
         </span>
       </span>

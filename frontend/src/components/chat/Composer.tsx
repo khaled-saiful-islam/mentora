@@ -1,6 +1,8 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { useRef as useNodeRef } from 'react'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/utils'
+import { spring } from '@/motion'
 import type { SearchMode } from '@/hooks/useChat'
 import { acceptAttribute, type AttachedFile } from '@/hooks/useDocuments'
 import { Attachments } from './Attachments'
@@ -38,7 +40,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     streaming,
     disabled,
     searchEnabled,
-    above,
+    variant = 'dock',
+    tools,
     imagesEnabled = false,
     files,
     uploadingFile,
@@ -101,17 +104,21 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   )
 
   const canSend = value.trim().length > 0 && !streaming && !disabled
+  const hero = variant === 'hero'
 
   return (
     <div
-      className="sticky bottom-0 bg-gradient-to-t from-background via-background to-transparent pt-4"
+      className={cn(!hero && 'sticky bottom-0 bg-gradient-to-t from-background via-background to-transparent pt-4')}
       data-typing={value.trim().length > 0 ? 'true' : 'false'}
     >
-      <div className="mx-auto w-full max-w-[var(--message-column)] px-4 pb-4">
-        {above}
+      <div className={cn('mx-auto w-full', !hero && 'max-w-[var(--message-column)] px-4 pb-4')}>
+        {/* The same box in both places — the middle of an empty studio, and
+            the foot of a conversation — so it glides from one to the other. */}
+        <motion.div layoutId="composer" transition={spring.gentle} className={cn(hero && 'composer-glow')}>
         <div
           className={cn(
-            'rounded-[1.75rem] border-2 border-input bg-surface p-2.5 shadow-lg',
+            'rounded-[1.75rem] border-2 bg-surface p-2.5',
+            hero ? 'border-transparent shadow-none' : 'border-input shadow-lg',
             'transition-[border-color,box-shadow] focus-within:border-primary focus-within:ring-4 focus-within:ring-ring/20',
           )}
         >
@@ -120,7 +127,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         <div className="flex items-end gap-2">
           <textarea
             ref={textarea}
-            rows={1}
+            rows={hero ? 2 : 1}
             value={value}
             autoFocus={autoFocus}
             disabled={disabled}
@@ -129,7 +136,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             onKeyDown={onKeyDown}
             aria-label="Message"
             className={cn(
-              'flex-1 resize-none bg-transparent px-3 py-2.5 text-base leading-relaxed',
+              'flex-1 resize-none bg-transparent px-3 py-2.5 leading-relaxed',
+              hero ? 'text-lg' : 'text-base',
               'placeholder:truncate placeholder:text-muted-foreground focus:outline-none disabled:opacity-50',
             )}
           />
@@ -265,8 +273,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               </div>
             </>
           )}
+          {tools}
         </div>
         </div>
+        </motion.div>
 
         <p className="mt-2 text-center text-xs text-muted-foreground">{note}</p>
       </div>
@@ -281,9 +291,11 @@ interface ComposerProps {
   disabled?: boolean
   /** False when SERPAPI_KEY is unset; the toggle is shown but not usable. */
   searchEnabled: boolean
-  /** Shown directly above the box, inside the same sticky strip: what can be
-   *  made, on the new-chat screen and in a conversation. */
-  above?: React.ReactNode
+  /** `dock` sits at the foot of a conversation; `hero` is the big box in the
+   *  middle of an empty studio. */
+  variant?: 'dock' | 'hero'
+  /** More buttons for the toolbar, after Attach and Search — Create. */
+  tools?: React.ReactNode
   /** Whether the picker offers images, which needs a vision model. */
   imagesEnabled?: boolean
   files: AttachedFile[]

@@ -27,18 +27,18 @@ export function TodoCard({ todo, showClass = true }: { todo: Todo; showClass?: b
     <>
       <div className={cn('relative flex items-center gap-3 overflow-hidden p-4', kind.hero)}>
         <motion.span
-          className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white/20"
+          className="relative z-10 grid size-12 shrink-0 place-items-center rounded-2xl bg-white/20"
           whileHover={{ rotate: [0, -10, 10, 0] }}
         >
           <kind.Icon weight="fill" className="size-7" />
         </motion.span>
-        <div className="min-w-0">
+        <div className="relative z-10 min-w-0">
           <p className="text-sm font-bold opacity-90">
             {kind.label} · {nounOf(todo.kind, todo.item_count)}
           </p>
-          <p className="truncate font-display text-xl font-semibold">{todo.title}</p>
+          <p className="break-words font-display text-xl font-semibold">{todo.title}</p>
         </div>
-        <kind.Icon weight="fill" aria-hidden className="absolute -right-3 -bottom-4 size-24 opacity-15" />
+        <kind.Icon weight="fill" aria-hidden className="pointer-events-none absolute -right-3 -bottom-4 size-24 opacity-15" />
       </div>
       <div className="flex flex-wrap items-center gap-2 p-4">
         {showClass && (

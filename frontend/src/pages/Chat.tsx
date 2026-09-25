@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Alert } from '@/components/ui'
 import { Composer, type ComposerHandle } from '@/components/chat/Composer'
-import { MakeChips } from '@/components/make/MakeChips'
-import { MakeRail } from '@/components/make/MakeRail'
+import { CreateMenu } from '@/components/make/CreateMenu'
+import { CreatePanel } from '@/components/make/CreatePanel'
+import { creatables, type Creatable } from '@/components/make/creatables'
 import { inOrder, startWith, type Makeable } from '@/components/make/showcase'
 import { MessageList } from '@/components/chat/MessageList'
 import { Sidebar } from '@/components/sidebar/Sidebar'
@@ -17,7 +18,7 @@ import { useChat } from '@/hooks/useChat'
 import { useConversations } from '@/hooks/useConversations'
 import { useConfig } from '@/hooks/useConfig'
 import { useMakeable } from '@/hooks/useMakeable'
-import { LearnTiles } from '@/features/learning/LearnTiles'
+import type { LearningKindName } from '@/features/learning/api'
 import { ChatHeader } from '@/features/chat/ChatHeader'
 import { ChatWelcome } from '@/features/chat/ChatWelcome'
 import { profileOf } from '@/features/buddies'
@@ -56,11 +57,20 @@ export default function Chat() {
   const makeable = useMakeable()
   const kinds: Makeable[] = useMemo(() => inOrder(makeable.studio), [makeable.studio])
   const studio = useLearnStudio()
+  const staff = user?.role !== 'student'
+  const makes = useMemo(() => (staff ? creatables(kinds, makeable.learning) : []), [staff, kinds, makeable.learning])
 
-  /** A kind picked from the rail or the chips: its request, ready to edit. */
+  /** A studio kind picked: its request in the box, ready to edit. */
   function start(kind: Makeable, example?: string) {
     const { text, selection } = startWith(kind, example)
     composer.current?.fill(text, selection)
+  }
+
+  /** Something picked from the create panel or menu: a learning kind opens
+   *  its maker (with the example as the topic); a studio kind fills the box. */
+  function create(item: Creatable, example?: string) {
+    if (item.group === 'learning') studio.create(item.key as LearningKindName, example)
+    else if (item.makeable) start(item.makeable, example)
   }
 
   useEffect(() => {
@@ -115,6 +125,46 @@ export default function Chat() {
   const panelOpen = !!chat.openArtifact || !!building
   const panel = usePanelWidth()
 
+  // The studio's empty page has the box in the middle; everywhere else it
+  // sits at the foot. One component, so it glides between the two.
+  const hero = empty && staff
+  const box = (variant: 'dock' | 'hero') => (
+    <Composer
+      ref={composer}
+      variant={variant}
+      tools={variant === 'dock' && makes.length > 0 ? <CreateMenu items={makes} onPick={(item) => create(item)} /> : null}
+      onSend={(text, options) =>
+        chat.send(text, {
+          searchMode: options.searchMode,
+          // What is on screen, so "make it warmer" has a subject.
+          artifactId: chat.openArtifact,
+          // The pending files become cards on this message, and leave the
+          // composer — the server binds them to the same id.
+          documents: documents.pending,
+          onSent: documents.markSent,
+        })
+      }
+      onStop={chat.stop}
+      streaming={chat.streaming}
+      searchEnabled={config?.search_enabled ?? false}
+      imagesEnabled={config?.images_enabled ?? false}
+      files={documents.pending}
+      uploadingFile={documents.uploading}
+      atFileLimit={documents.files.length >= documents.maxFiles}
+      onAttach={attach}
+      onRemoveFile={(id) => {
+        if (activeConversationId) void documents.remove(id, activeConversationId)
+      }}
+      placeholder={user?.role === 'student' ? `Ask ${profileOf(user.buddy).name} anything…` : 'Ask, plan or make something…'}
+      note={
+        user?.role === 'student'
+          ? `${profileOf(user.buddy).name} can make mistakes too — check big things with your teacher.`
+          : 'Mentora can make mistakes. Check important information.'
+      }
+      autoFocus
+    />
+  )
+
   return (
     <div className="flex h-dvh overflow-hidden">
       <Sidebar
@@ -142,12 +192,8 @@ export default function Chat() {
         />
 
         {empty ? (
-          <ChatWelcome onPick={(text) => void chat.send(text)}>
-            {/* The studio artifacts, for staff: right at the top. */}
-            {kinds.length > 0 && <MakeRail kinds={kinds} onPick={start} />}
-            {/* What Mentora makes for learning, in the welcome rather than
-                over the box, so the box stays small and the welcome breathes. */}
-            <LearnTiles kinds={makeable.learning} onPick={studio.create} />
+          <ChatWelcome onPick={(text) => void chat.send(text)} composer={hero ? box('hero') : null}>
+            {staff && <CreatePanel items={makes} onPick={create} />}
           </ChatWelcome>
         ) : (
           <MessageList
@@ -178,46 +224,7 @@ export default function Chat() {
           <AttachmentError message={documents.error} onDismiss={documents.clearError} />
         )}
 
-        <Composer
-          ref={composer}
-          above={
-            empty ? null : (
-              <>
-                <LearnTiles compact kinds={makeable.learning} onPick={studio.create} />
-                {kinds.length > 0 && <MakeChips kinds={kinds} hidden={chat.streaming} onPick={(kind) => start(kind)} />}
-              </>
-            )
-          }
-          onSend={(text, options) =>
-            chat.send(text, {
-              searchMode: options.searchMode,
-              // What is on screen, so "make it warmer" has a subject.
-              artifactId: chat.openArtifact,
-              // The pending files become cards on this message, and leave the
-              // composer — the server binds them to the same id.
-              documents: documents.pending,
-              onSent: documents.markSent,
-            })
-          }
-          onStop={chat.stop}
-          streaming={chat.streaming}
-          searchEnabled={config?.search_enabled ?? false}
-          imagesEnabled={config?.images_enabled ?? false}
-          files={documents.pending}
-          uploadingFile={documents.uploading}
-          atFileLimit={documents.files.length >= documents.maxFiles}
-          onAttach={attach}
-          onRemoveFile={(id) => {
-            if (activeConversationId) void documents.remove(id, activeConversationId)
-          }}
-          placeholder={user?.role === 'student' ? `Ask ${profileOf(user.buddy).name} anything…` : 'Ask, plan or make something…'}
-          note={
-            user?.role === 'student'
-              ? `${profileOf(user.buddy).name} can make mistakes too — check big things with your teacher.`
-              : 'Mentora can make mistakes. Check important information.'
-          }
-          autoFocus
-        />
+        {!hero && box('dock')}
       </main>
 
       {panelOpen && (

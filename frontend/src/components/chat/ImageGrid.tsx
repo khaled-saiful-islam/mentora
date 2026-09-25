@@ -56,7 +56,7 @@ function Tile({ image }: { image: ImageResult }) {
           'text-[0.6875rem] font-medium text-white',
         )}
       >
-        <span className="truncate">{image.source || hostOf(image.url)}</span>
+        <span className="break-all">{image.source || hostOf(image.url)}</span>
         <ArrowSquareOut
           className="size-2.5 shrink-0 opacity-0 transition-opacity group-hover/tile:opacity-80"
           aria-hidden

@@ -89,7 +89,7 @@ export function Students({ students, onOpen }: { students: StudentResult[]; onOp
             >
               <BuddyAvatar buddy={s.buddy} size={40} />
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-bold">{s.name}</span>
+                <span className="block break-words font-bold">{s.name}</span>
                 <span className="flex flex-wrap gap-1.5">
                   <Chip tone={status.tone}>{status.label}</Chip>
                   {s.late && <Chip tone="coral"><Clock weight="bold" className="size-3" />Late</Chip>}

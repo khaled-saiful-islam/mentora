@@ -64,7 +64,7 @@ export function ClassFormDialog({
           transition={spring.gentle}
         >
           <p className="text-sm font-bold opacity-80">{draft.subject || 'Subject'}</p>
-          <p className="truncate font-display text-2xl font-semibold">{draft.name || 'Class name'}</p>
+          <p className="break-words font-display text-2xl font-semibold">{draft.name || 'Class name'}</p>
         </motion.div>
 
         <Field label="Class name" htmlFor="class-name">

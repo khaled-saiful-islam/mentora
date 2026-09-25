@@ -124,7 +124,7 @@ function Header({ look, set, generation, onClose }: { look: ReturnType<typeof lo
           <p className="text-sm font-bold opacity-85">
             {outcome.kind === 'running' ? `Making your ${look.label.toLowerCase()}…` : outcome.kind === 'done' ? 'Ready!' : "Couldn't make it"}
           </p>
-          <h2 className="truncate font-display text-2xl font-semibold">{title}</h2>
+          <h2 className="break-words font-display text-2xl font-semibold">{title}</h2>
           {set.grade_label && <p className="text-sm opacity-85">{set.grade_label}</p>}
         </div>
         <button type="button" onClick={onClose} aria-label="Close — it keeps going" title="Close — it keeps going" className="grid size-9 place-items-center rounded-full hover:bg-white/20">
@@ -168,7 +168,7 @@ function Stages({ generation, kind }: { generation: Generation; kind: string }) 
               <p className={cn('font-bold', state === 'waiting' && 'text-muted-foreground')}>{stage?.label ?? STAGE_WAITING[key]}</p>
               <AnimatePresence>
                 {stage?.detail && (
-                  <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="truncate text-sm text-muted-foreground">
+                  <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="break-words text-sm text-muted-foreground">
                     {stage.detail}
                   </motion.p>
                 )}
@@ -266,7 +266,7 @@ function Items({ items, kind }: { items: Item[]; kind: string }) {
                 )}
                 <div className="min-w-0">
                   <p className="font-bold">{item.heading}</p>
-                  <p className="line-clamp-2 text-sm text-muted-foreground">{item.points.join(' · ')}</p>
+                  <p className="break-words text-sm text-muted-foreground">{item.points.join(' · ')}</p>
                 </div>
               </div>
             ) : isQuiz(item) ? (
@@ -276,7 +276,7 @@ function Items({ items, kind }: { items: Item[]; kind: string }) {
                   {item.options.map((option, o) => (
                     <span key={o} className={cn('flex items-center gap-1.5 rounded-xl px-2 py-1 text-sm', o === item.answer ? OPTION_LOOKS[o].soft + ' font-bold' : 'bg-muted text-muted-foreground')}>
                       {o === item.answer && <CheckCircle weight="fill" className="size-4 shrink-0" />}
-                      <span className="truncate">{option}</span>
+                      <span className="break-words">{option}</span>
                     </span>
                   ))}
                 </div>

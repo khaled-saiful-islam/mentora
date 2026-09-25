@@ -1,13 +1,17 @@
-import { cn } from '@/lib/utils'
-import { lookOf } from '@/components/artifacts/kind-look'
+import { ArrowUpRight, CircleNotch, Eye, WarningCircle } from '@phosphor-icons/react'
+import { colourOf, lookOf } from '@/components/artifacts/kind-look'
+import { Scene } from '@/components/make/Scene'
 import type { Artifact, ArtifactBuild } from '@/lib/chat-types'
-import { CircleNotch, WarningCircle } from '@phosphor-icons/react'
+import { cn } from '@/lib/utils'
 
 /**
  * The artifact in the transcript.
  *
  * A card, never the document: a poster in a chat bubble is four hundred lines
- * of CSS nobody asked for, and the panel is where it belongs.
+ * of CSS nobody asked for, and the panel is where it belongs. The card wears
+ * its kind — colour and a few moving pixels of what it is — so three in one
+ * conversation can be told apart across the room, and says plainly what
+ * pressing it does.
  */
 export function ArtifactCard({
   artifact,
@@ -34,52 +38,63 @@ export function ArtifactCard({
       onClick={onOpen}
       disabled={busy}
       aria-label={busy ? `${title}, being made` : `Open ${title}`}
+      data-live={busy || active}
       className={cn(
-        'mb-3 flex w-full max-w-sm items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors',
-        // The card wears its kind, not just its icon. Three artifacts in one
-        // conversation should be tellable apart across the room.
-        failed
-          ? 'border-destructive/40 bg-destructive/5'
-          : cn(look.surface, look.border, !busy && look.hover),
-        active && 'ring-2 ring-offset-1 ring-offset-background',
+        'make-tile group mb-4 flex w-full max-w-md items-center gap-3 p-2.5 pr-3 text-left',
+        failed && 'border-destructive/40',
+        active && 'ring-2 ring-offset-2 ring-offset-background',
         active && !failed && look.ring,
       )}
+      style={{ ['--tile' as string]: failed ? 'hsl(var(--destructive))' : colourOf(kind) }}
     >
-      <span
-        className={cn(
-          'flex size-9 shrink-0 items-center justify-center rounded-lg shadow-sm',
-          failed ? 'bg-destructive/10' : look.tile,
-        )}
-      >
-        {busy ? (
-          <CircleNotch className="size-4 animate-spin" aria-hidden />
-        ) : failed ? (
-          <WarningCircle className="size-4 text-destructive" aria-hidden />
+      <span className="make-stage relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-2xl">
+        {failed ? (
+          <WarningCircle weight="duotone" className="size-7 text-destructive" aria-hidden />
         ) : (
-          <Glyph className="size-4" aria-hidden />
+          <span className="scale-[0.8]">
+            <Scene kind={kind} />
+          </span>
         )}
+        <span className={cn('absolute bottom-1 right-1 grid size-5 place-items-center rounded-md shadow-sm', failed ? 'bg-destructive text-white' : look.tile)}>
+          {busy ? <CircleNotch weight="bold" className="size-3 animate-spin" aria-hidden /> : <Glyph weight="bold" className="size-3" aria-hidden />}
+        </span>
       </span>
+
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">{title}</span>
-        <span
-          className={cn(
-            'block truncate text-xs',
-            failed ? 'text-destructive' : 'text-muted-foreground',
-          )}
-        >
-          {failed
-            ? `Could not finish — the ${kind === 'artifact' ? 'artifact' : kind} is unchanged`
-            : busy
-              ? (step?.label ?? 'Starting')
-              : null}
-          {!failed && !busy && (
+        <span className="block break-words font-display text-base font-bold leading-snug">{title}</span>
+        <span className={cn('mt-0.5 block text-sm', failed ? 'text-destructive' : 'text-muted-foreground')}>
+          {failed ? (
+            `Could not finish — the ${kind === 'artifact' ? 'artifact' : kind} is unchanged`
+          ) : busy ? (
+            <span className="shimmer font-semibold">{step?.label ?? 'Starting'}…</span>
+          ) : (
             <>
-              <span className={cn('font-medium', look.colour)}>{kind}</span>
-              {artifact && <span className="text-muted-foreground"> · v{artifact.version}</span>}
+              <span className="font-bold capitalize" style={{ color: 'var(--tile)' }}>
+                {kind}
+              </span>
+              {artifact && <span> · version {artifact.version}</span>}
             </>
           )}
         </span>
+        {busy && (
+          <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+            <span className="block h-full w-1/3 animate-[artifact-sweep_1.4s_ease-in-out_infinite] rounded-full" style={{ background: 'var(--tile)' }} />
+          </span>
+        )}
       </span>
+
+      {!busy && !failed && (
+        <span
+          className={cn(
+            'inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-sm font-bold transition-colors',
+            active ? 'text-white' : 'bg-muted text-foreground group-hover:bg-[var(--tile)] group-hover:text-white',
+          )}
+          style={active ? { background: 'var(--tile)' } : undefined}
+        >
+          {active ? <Eye weight="bold" className="size-4" aria-hidden /> : <ArrowUpRight weight="bold" className="size-4" aria-hidden />}
+          {active ? 'Showing' : 'Open'}
+        </span>
+      )}
     </button>
   )
 }

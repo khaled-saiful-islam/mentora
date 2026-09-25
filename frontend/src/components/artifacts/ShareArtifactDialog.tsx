@@ -106,7 +106,7 @@ export function ShareArtifactDialog({
               conversation it came from.
             </p>
             <div className="mt-4 flex items-center gap-2">
-              <code className="min-w-0 flex-1 truncate rounded-md bg-surface px-3 py-2 text-xs">
+              <code className="min-w-0 flex-1 break-all rounded-md bg-surface px-3 py-2 text-xs">
                 {share.url}
               </code>
               <Button variant="ghost" size="sm" onClick={copy} title="Copy the link">

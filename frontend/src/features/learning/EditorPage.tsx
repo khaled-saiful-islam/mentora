@@ -108,7 +108,8 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
       <section className={cn('relative mt-4 overflow-hidden rounded-[2rem] p-6 shadow-press sm:p-8', look.hero)}>
         <span className="blob -right-10 -top-16 size-56 bg-white/40" aria-hidden />
         <div className="relative flex flex-wrap items-end gap-4">
-          <div className="min-w-0 flex-1">
+          {/* Room for the title, or the buttons move underneath it. */}
+          <div className="min-w-[min(100%,18rem)] flex-1">
             <p className="inline-flex items-center gap-2 font-bold opacity-90">
               <look.Icon weight="duotone" className="size-5" />
               {[look.label, initial.subject, initial.grade_label].filter(Boolean).join(' · ')}
@@ -192,7 +193,7 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
         {dirty && (
           <motion.div initial={{ y: 80 }} animate={{ y: 0 }} exit={{ y: 80 }} transition={spring.snappy} className="fixed inset-x-0 bottom-20 z-40 mx-auto flex w-[min(40rem,calc(100%-2rem))] items-center gap-3 rounded-full border-2 border-grape-200 bg-surface py-2 pl-5 pr-2 shadow-lg md:bottom-6 dark:border-grape-700">
             {firstProblem >= 0 ? (
-              <p className="flex-1 truncate text-sm font-bold text-destructive"><WarningCircle weight="fill" className="mr-1 inline size-4" />{`#${firstProblem + 1}: ${problems[firstProblem]}`}</p>
+              <p className="flex-1 break-words text-sm font-bold text-destructive"><WarningCircle weight="fill" className="mr-1 inline size-4" />{`#${firstProblem + 1}: ${problems[firstProblem]}`}</p>
             ) : (
               <p className="flex-1 text-sm font-bold">Unsaved changes</p>
             )}

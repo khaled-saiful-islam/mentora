@@ -34,7 +34,7 @@ export function ChatHeader({
   const student = user?.role === 'student'
   const buddy = profileOf(user?.buddy)
   return (
-    <header className="@container flex h-16 min-w-0 shrink-0 items-center justify-between gap-2 overflow-hidden border-b border-border/60 bg-background/80 px-2 backdrop-blur sm:gap-4 sm:px-4">
+    <header className="@container flex min-h-16 min-w-0 shrink-0 items-center justify-between gap-2 overflow-hidden py-2 border-b border-border/60 bg-background/80 px-2 backdrop-blur sm:gap-4 sm:px-4">
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <Button variant="ghost" size="icon" onClick={onMenu} aria-label="Open menu" className="md:hidden">
           <List weight="bold" className="size-5" aria-hidden />
@@ -45,8 +45,8 @@ export function ChatHeader({
           </span>
         )}
         <div className="min-w-0">
-          <p className="truncate font-display text-base font-semibold leading-tight">{student ? `Chat with ${buddy.name}` : title || 'New chat'}</p>
-          <p className="truncate text-xs text-muted-foreground">{student ? title || 'Your study buddy' : 'Studio'}</p>
+          <p className="line-clamp-3 break-words font-display text-sm font-semibold leading-tight @md:text-base" title={student ? undefined : title}>{student ? `Chat with ${buddy.name}` : title || 'New chat'}</p>
+          <p className="text-xs text-muted-foreground">{student ? title || 'Your study buddy' : 'Studio'}</p>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">

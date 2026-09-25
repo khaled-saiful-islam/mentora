@@ -569,11 +569,13 @@ the same rule as search without a key.
 **A new kind** — a one-page app, a résumé, a certificate — is one file implementing
 `ArtifactKind` and one line in `artifacts/registry.py`. It brings its own
 prompt, canvas and sandbox policy. The tool's `kind` enum is built from the
-registry, and so is the Make rail above the composer — a new kind is offered to
-the model and shown to the person by existing, in the brand colour with a
-spinning mark and its own description as its example until somebody gives it a
-colour, a scene and examples of its own (`kind-look.ts`, `Scene.tsx`,
-`showcase.ts`).
+registry, and so is what the studio offers — the *Studio* tab of the Create
+panel on its front page and the *Create* menu in a conversation's box
+(`components/make/creatables.tsx`). A new kind is offered to the model and shown
+to the person by existing, in the brand colour with a spinning mark and its own
+description as its example until somebody gives it a colour, a scene, a short
+line and examples of its own (`kind-look.ts`, `Scene.tsx`, `showcase.ts`,
+`BLURBS` in `creatables.tsx`).
 
 **A build queue.** Generation runs inside the open SSE stream, which is right
 for a single-worker deployment. `ArtifactKind.build` is an interface; a queued

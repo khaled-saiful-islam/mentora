@@ -176,7 +176,7 @@ function Recent({ data }: { data: Teaching }) {
   return (
     <section className="mt-10">
       <h2 className="font-display text-2xl font-semibold">Shared lately</h2>
-      <motion.ul className="mt-4 grid gap-4 md:grid-cols-2" variants={stagger(0.06)} initial="hidden" animate="shown">
+      <motion.ul className="mt-4 grid gap-4 lg:grid-cols-2" variants={stagger(0.06)} initial="hidden" animate="shown">
         {data.recent.map((share) => {
           const look = lookOfKind(share.kind)
           const due = share.due_at && !share.closed ? dueLabel(share.due_at) : null
@@ -189,7 +189,7 @@ function Recent({ data }: { data: Teaching }) {
                     <look.Icon weight="fill" className={cn('size-4', look.text)} />
                     {share.class_name}
                   </span>
-                  <span className="block truncate font-display text-lg font-semibold">{share.title}</span>
+                  <span className="block break-words font-display text-lg font-semibold">{share.title}</span>
                   <span className="mt-1 flex flex-wrap gap-1.5">
                     {share.in_progress > 0 && <Chip tone="mint">{share.in_progress} going</Chip>}
                     {share.average !== null && <Chip tone="grape">average {Math.round(share.average)}%</Chip>}
@@ -211,7 +211,7 @@ function Ring({ done, of, tone }: { done: number; of: number; tone: string }) {
   const share = of ? done / of : 0
   return (
     <span className="relative grid size-16 shrink-0 place-items-center">
-      <svg viewBox="0 0 36 36" className="absolute inset-0 -rotate-90">
+      <svg viewBox="0 0 36 36" aria-hidden className="pointer-events-none absolute inset-0 -rotate-90">
         <circle cx={18} cy={18} r={15.5} fill="none" stroke="hsl(var(--foreground) / 0.08)" strokeWidth={4} />
         <motion.circle
           cx={18}

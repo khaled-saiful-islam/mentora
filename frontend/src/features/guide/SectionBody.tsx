@@ -63,7 +63,7 @@ export function SectionBody({
         <Chip tone="sun" className="text-sm">
           Part {number} of {total}
         </Chip>
-        {skill && <Chip className="min-w-0 max-w-[75%] truncate text-sm">{skill}</Chip>}
+        {skill && <Chip className="min-w-0 max-w-[75%] break-words text-sm">{skill}</Chip>}
       </div>
       <h1 className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight md:text-4xl">{section.heading}</h1>
 

@@ -67,7 +67,7 @@ export function GroupsTab({ classId, onChange }: { classId: string; onChange: ()
                   <Card className="overflow-hidden">
                     <div className={cn('flex items-center gap-2 px-5 py-4', look.hero, look.onHero)}>
                       <UsersFour weight="fill" className="size-6" />
-                      <p className="min-w-0 flex-1 truncate font-display text-xl font-semibold">{group.name}</p>
+                      <p className="min-w-0 flex-1 break-words font-display text-xl font-semibold">{group.name}</p>
                       <button type="button" aria-label={`Rename ${group.name}`} onClick={() => setEditing(group)} className="grid size-8 place-items-center rounded-full hover:bg-white/20">
                         <PencilSimple weight="bold" className="size-4" />
                       </button>

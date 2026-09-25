@@ -65,7 +65,7 @@ export function Citation({ rank, source }: { rank: number; source: Source }) {
           )}
         >
           <span className="flex items-center gap-1 text-[0.6875rem] text-muted-foreground">
-            <span className="truncate">{hostOf(source.url)}</span>
+            <span className="break-all">{hostOf(source.url)}</span>
             <ArrowSquareOut className="size-2.5 shrink-0" aria-hidden />
           </span>
 

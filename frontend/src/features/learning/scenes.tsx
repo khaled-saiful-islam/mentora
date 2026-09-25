@@ -1,85 +1,14 @@
-import { motion } from 'motion/react'
-import { ArrowUpRight, Check } from '@phosphor-icons/react'
-import { spring, useCalmMotion } from '@/motion'
-import { cn } from '@/lib/utils'
-import type { LearningKindInfo, LearningKindName } from './api'
-import { LOOKS } from './kinds'
-import { OPTION_LOOKS } from './options'
-
 /**
- * Quiz and Flashcards, right above the chat box: two living tiles, each
- * playing a few seconds of what it makes.
+ * A few seconds of what each learning kind makes, playing in a small space:
+ * options lighting up with a tick, a card flipping, a book turning its pages.
+ * Drawn on the kind's own gradient, in white.
  */
-export function LearnTiles({
-  kinds,
-  onPick,
-  compact = false,
-}: {
-  kinds: LearningKindInfo[]
-  onPick: (kind: LearningKindName) => void
-  compact?: boolean
-}) {
-  if (kinds.length === 0) return null
-  const practice = kinds[0]?.purpose === 'practice'
-  if (compact) {
-    return (
-      <div className="mb-2 flex gap-2 px-0.5">
-        {kinds.map((kind) => {
-          const look = LOOKS[kind.name]
-          return (
-            <motion.button key={kind.name} type="button" whileTap={{ scale: 0.94 }} onClick={() => onPick(kind.name)} className={cn('inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold', look.soft)}>
-              <look.Icon weight="duotone" className="size-4" />
-              {look.label}
-            </motion.button>
-          )
-        })}
-      </div>
-    )
-  }
-  return (
-    <section aria-label={practice ? 'Practise something' : 'Make something to learn'} className="mb-3">
-      <h2 className="mb-2 px-1 text-sm font-bold text-muted-foreground">{practice ? 'Practise any topic' : 'Make something to learn'}</h2>
-      <div className={cn('grid grid-cols-2 gap-3', kinds.length > 2 && 'lg:grid-cols-3')}>
-        {kinds.map((kind, index) => (
-          <Tile key={kind.name} kind={kind} index={index} onPick={() => onPick(kind.name)} wide={kinds.length > 2 && index === 2} />
-        ))}
-      </div>
-    </section>
-  )
-}
-
-function Tile({ kind, index, onPick, wide = false }: { kind: LearningKindInfo; index: number; onPick: () => void; wide?: boolean }) {
-  const Scene = SCENES[kind.name] ?? QuizScene
-  const look = LOOKS[kind.name]
-  return (
-    <motion.button
-      type="button"
-      onClick={onPick}
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0, transition: { ...spring.gentle, delay: index * 0.08 } }}
-      whileHover={{ y: -4 }}
-      whileTap={{ scale: 0.97 }}
-      // An odd tile out spans the row on a phone rather than sitting alone.
-      className={cn('group relative flex h-32 overflow-hidden rounded-[1.75rem] p-4 text-left shadow-press sm:h-36', wide && 'col-span-2 lg:col-span-1', look.hero)}
-      aria-label={`${look.label}: ${look.promise}`}
-    >
-      <span className="blob -right-8 -top-10 size-32 bg-white/40" aria-hidden />
-      <span className="relative z-10 flex flex-col justify-between">
-        <span className="inline-flex items-center gap-2">
-          <look.Icon weight="duotone" className="size-7" />
-          <span className="font-display text-xl font-semibold sm:text-2xl">{look.label}</span>
-        </span>
-        <span className="max-w-[12rem] text-sm font-semibold leading-snug opacity-90">
-          {kind.default_count} {kind.item_noun_plural}, from trusted sources
-        </span>
-      </span>
-      <span className="absolute bottom-3 right-3 sm:right-4" aria-hidden>
-        <Scene />
-      </span>
-      <ArrowUpRight weight="bold" className="absolute right-4 top-4 size-5 opacity-70 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-    </motion.button>
-  )
-}
+import { motion } from 'motion/react'
+import { Check } from '@phosphor-icons/react'
+import { useCalmMotion } from '@/motion'
+import { cn } from '@/lib/utils'
+import type { LearningKindName } from './api'
+import { OPTION_LOOKS } from './options'
 
 /** Four options light up in turn; one gets the tick. */
 function QuizScene() {
@@ -151,7 +80,7 @@ function GuideScene() {
   )
 }
 
-const SCENES: Partial<Record<LearningKindInfo['name'], () => React.ReactNode>> = {
+export const LEARN_SCENES: Record<LearningKindName, () => React.ReactNode> = {
   quiz: QuizScene,
   flashcard: FlashScene,
   study_guide: GuideScene,

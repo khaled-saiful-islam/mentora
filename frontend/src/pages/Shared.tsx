@@ -86,8 +86,8 @@ export default function Shared() {
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-6 py-3">
           <Logo className="size-6 shrink-0" />
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-sm font-medium">{conversation.title}</h1>
-            <p className="truncate text-xs text-muted-foreground">
+            <h1 className="break-words text-sm font-medium">{conversation.title}</h1>
+            <p className="break-words text-xs text-muted-foreground">
               Shared conversation ·{' '}
               {new Date(conversation.shared_at).toLocaleDateString(undefined, {
                 day: 'numeric',
@@ -168,10 +168,10 @@ function SharedAttachment({
         </span>
       )}
       <span className="min-w-0">
-        <span className="block truncate text-[0.8125rem] font-medium leading-tight">
+        <span className="block break-words text-[0.8125rem] font-medium leading-tight">
           {document.filename}
         </span>
-        <span className="block truncate text-xs text-muted-foreground">
+        <span className="block break-words text-xs text-muted-foreground">
           {document.unit === 'image'
             ? 'image'
             : `${document.unit_count} ${document.unit}${document.unit_count === 1 ? '' : 's'}`}

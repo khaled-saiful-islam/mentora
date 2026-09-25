@@ -137,9 +137,10 @@ function Hero({ room, onEdit, onArchive }: { room: ClassRoom; onEdit: () => void
     >
       <span className="blob -right-10 -top-16 size-56 bg-white/40" aria-hidden />
       <div className="relative flex flex-wrap items-end gap-4">
-        <div className="min-w-0 flex-1">
+        {/* Wide enough for the name, or the buttons move underneath it. */}
+        <div className="min-w-[min(100%,16rem)] flex-1">
           <p className="font-bold opacity-85">{[room.subject, room.grade_label].filter(Boolean).join(' · ') || 'Class'}</p>
-          <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">{room.name}</h1>
+          <h1 className="break-words font-display text-4xl font-semibold tracking-tight sm:text-5xl">{room.name}</h1>
           <p className="mt-2 font-bold opacity-90">
             {room.students} {room.students === 1 ? 'student' : 'students'} · {room.groups}{' '}
             {room.groups === 1 ? 'group' : 'groups'}

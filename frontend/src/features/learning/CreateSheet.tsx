@@ -38,11 +38,14 @@ const LANGUAGES = [
  */
 export function CreateSheet({
   kind,
+  initialTopic = '',
   onKind,
   onClose,
   onStarted,
 }: {
   kind: LearningKindName | null
+  /** What the topic starts as when the sheet opens — an example picked. */
+  initialTopic?: string
   onKind: (kind: LearningKindName) => void
   onClose: () => void
   onStarted: (set: SetSummary) => void
@@ -58,6 +61,11 @@ export function CreateSheet({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const example = useRotating(EXAMPLES, kind !== null)
+  const open = kind !== null
+  // On opening only: switching kind inside the sheet keeps what was typed.
+  useEffect(() => {
+    if (open && initialTopic) setTopic(initialTopic)
+  }, [open, initialTopic])
   const info = makeable.learning.find((k) => k.name === kind)
   const practice = info?.purpose === 'practice'
 

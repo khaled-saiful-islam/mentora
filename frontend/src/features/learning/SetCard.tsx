@@ -18,7 +18,7 @@ export function SetCard({ set, onWatch, onRetry }: { set: SetSummary; onWatch: (
       <div className={cn('relative h-24 overflow-hidden p-4', look.hero)}>
         <look.Icon weight="duotone" aria-hidden className="absolute -bottom-5 -right-3 size-24 rotate-[-10deg] opacity-25 transition-transform duration-500 group-hover:rotate-0 group-hover:scale-110" />
         <p className="relative text-sm font-bold opacity-85">{[look.label, set.subject, set.grade_label].filter(Boolean).join(' · ')}</p>
-        <p className="relative mt-0.5 line-clamp-2 font-display text-xl font-semibold leading-tight">{set.title}</p>
+        <p className="relative mt-0.5 break-words font-display text-xl font-semibold leading-tight">{set.title}</p>
         {making && <span className="skeleton absolute inset-0 opacity-25" aria-hidden />}
       </div>
       <div className="flex flex-wrap items-center gap-2 px-4 py-3 text-sm">

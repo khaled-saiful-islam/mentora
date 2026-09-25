@@ -7,7 +7,7 @@
  * Drawn in the tile's own colour (`currentColor`), out of plain elements, so
  * they cost nothing and scale with the tile.
  *
- * They only move while their tile is lit (see `MakeRail`); at rest each one
+ * They only move while their card is lit (see `CreatePanel`); at rest each one
  * holds its first frame, which is drawn to be worth looking at on its own.
  */
 export function Scene({ kind }: { kind: string }) {

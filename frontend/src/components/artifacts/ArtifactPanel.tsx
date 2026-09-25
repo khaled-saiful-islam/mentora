@@ -153,9 +153,9 @@ export function ArtifactPanel({
           <HeadGlyph weight="fill" className="size-5" aria-hidden />
         </motion.span>
         <div className="min-w-0 flex-1">
-          <h2 className="truncate font-display text-base font-extrabold leading-tight">{title}</h2>
+          <h2 className="break-words font-display text-base font-extrabold leading-tight">{title}</h2>
           {artifact ? (
-            <p className="truncate text-xs font-semibold text-muted-foreground">
+            <p className="break-words text-xs font-semibold text-muted-foreground">
               <span className="capitalize">{artifact.kind}</span> ·{' '}
               {site
                 ? `${pages.length} page${pages.length === 1 ? '' : 's'}`
@@ -485,7 +485,7 @@ function DeckControls({
       >
         <CaretLeft weight="bold" className="size-4" aria-hidden />
       </Button>
-      <span className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-muted-foreground">
+      <span className="min-w-0 flex-1 break-words text-center text-sm font-semibold text-muted-foreground">
         <span className="rounded-full bg-muted px-2 py-0.5 font-extrabold tabular-nums text-foreground">
           {current + 1} / {total}
         </span>

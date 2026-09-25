@@ -152,11 +152,11 @@ function UserRow({ user, onChange, onDeleted }: { user: ManagedUser; onChange: (
       <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-center gap-3 px-4 py-3 text-left">
         <Avatar name={nameOfUser(user)} seed={user.id} className="size-10" />
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-bold">
+          <span className="block break-words font-bold">
             {nameOfUser(user)}
             {self && <span className="ml-2 text-sm font-normal text-muted-foreground">(you)</span>}
           </span>
-          <span className="block truncate text-sm text-muted-foreground">{signInOf(user)}</span>
+          <span className="block break-words text-sm text-muted-foreground">{signInOf(user)}</span>
         </span>
         <span className="hidden flex-wrap justify-end gap-1.5 sm:flex">
           <Chip tone={user.role === 'admin' ? 'grape' : user.role === 'teacher' ? 'sky' : 'sun'} className="capitalize">{user.role}</Chip>

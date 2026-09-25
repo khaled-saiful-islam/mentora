@@ -62,8 +62,8 @@ export default function AssignmentResultsPage() {
             <span className={cn('grid size-12 place-items-center rounded-2xl shadow-press', look.hero)}>
               <look.Icon weight="fill" className="size-7" />
             </span>
-            <div className="min-w-0 flex-1">
-              <h1 className="truncate font-display text-3xl font-semibold">{data.assignment.title}</h1>
+            <div className="min-w-[min(100%,14rem)] flex-1">
+              <h1 className="break-words font-display text-3xl font-semibold">{data.assignment.title}</h1>
               <div className="mt-1 flex flex-wrap gap-1.5">
                 <Chip>{look.label}</Chip>
                 {due && <Chip tone={due.late ? 'coral' : 'sun'}>{due.late ? 'Past due' : due.text}</Chip>}

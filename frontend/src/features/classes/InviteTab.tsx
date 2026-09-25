@@ -56,7 +56,7 @@ export function InviteTab({ room }: { room: ClassRoom }) {
         <p className="mt-8 text-sm font-bold uppercase tracking-wider text-muted-foreground">Invite link</p>
         <div className="mt-2 flex items-center gap-2 rounded-2xl border-2 border-border bg-surface-raised p-2 pl-4">
           <LinkIcon weight="bold" className="size-5 shrink-0 text-muted-foreground" />
-          <span className="min-w-0 flex-1 truncate font-mono text-sm">{link}</span>
+          <span className="min-w-0 flex-1 break-all font-mono text-sm">{link}</span>
           <CopyButton text={link} />
         </div>
 

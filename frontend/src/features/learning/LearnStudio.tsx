@@ -11,7 +11,8 @@ import { GenerationPanel } from './GenerationPanel'
 import { useGeneration } from './useGeneration'
 
 interface StudioState {
-  create: (kind?: LearningKindName) => void
+  /** Open the maker, on a kind — and a topic to start from, if there is one. */
+  create: (kind?: LearningKindName, topic?: string) => void
   watch: (set: Pick<SetSummary, 'id' | 'kind' | 'title' | 'topic' | 'grade_label' | 'purpose'>) => void
   watching: string | null
 }
@@ -22,13 +23,17 @@ type Watched = Pick<SetSummary, 'id' | 'kind' | 'title' | 'topic' | 'grade_label
 
 export function LearnStudioProvider({ children }: { children: React.ReactNode }) {
   const [sheetKind, setSheetKind] = useState<LearningKindName | null>(null)
+  const [sheetTopic, setSheetTopic] = useState('')
   const [watched, setWatched] = useState<Watched | null>(null)
   const [panelOpen, setPanelOpen] = useState(false)
   const generation = useGeneration(watched?.id ?? null)
   const { toast } = useToast()
   const told = useRef<string | null>(null)
 
-  const create = useCallback((kind?: LearningKindName) => setSheetKind(kind ?? 'quiz'), [])
+  const create = useCallback((kind?: LearningKindName, topic?: string) => {
+    setSheetTopic(topic ?? '')
+    setSheetKind(kind ?? 'quiz')
+  }, [])
   const watch = useCallback((set: Watched) => {
     setWatched(set)
     setPanelOpen(true)
@@ -52,6 +57,7 @@ export function LearnStudioProvider({ children }: { children: React.ReactNode })
       {children}
       <CreateSheet
         kind={sheetKind}
+        initialTopic={sheetTopic}
         onKind={setSheetKind}
         onClose={() => setSheetKind(null)}
         onStarted={(set) => {

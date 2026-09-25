@@ -69,7 +69,7 @@ export function PictureFrame({
       {credit && (picture.source || picture.page) && (
         <figcaption className="flex items-center gap-1.5 px-4 py-2 text-xs text-muted-foreground">
           <Camera weight="bold" className="size-3.5 shrink-0" aria-hidden />
-          <span className="truncate">
+          <span className="break-words">
             Picture:{' '}
             {picture.page ? (
               <a href={picture.page} target="_blank" rel="noreferrer noopener" className="font-bold hover:underline">

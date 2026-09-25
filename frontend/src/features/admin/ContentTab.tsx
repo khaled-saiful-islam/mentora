@@ -89,7 +89,7 @@ function Sets({ search, onOpen }: { search: string; onOpen: (set: ContentSet) =>
                 <look.Icon weight="fill" className="size-6" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-bold">{set.title}</span>
+                <span className="block break-words font-bold">{set.title}</span>
                 <Owner name={set.owner.name} role={set.owner.role} />
                 <span className="mt-1 flex flex-wrap gap-1.5">
                   <Chip>{nounOf(set.kind, set.item_count)}</Chip>
@@ -121,7 +121,7 @@ function Studio({ search, onOpen }: { search: string; onOpen: (artifact: Content
               <Sparkle weight="fill" className="size-6" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate font-bold">{artifact.title}</span>
+              <span className="block break-words font-bold">{artifact.title}</span>
               <Owner name={artifact.owner.name} role={artifact.owner.role} />
               <span className="mt-1 flex gap-1.5">
                 <Chip className="capitalize">{artifact.kind}</Chip>

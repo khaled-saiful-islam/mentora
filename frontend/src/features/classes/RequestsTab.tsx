@@ -92,8 +92,8 @@ export function RequestsTab({ classId, onChange }: { classId: string; onChange: 
               <Card className="flex items-center gap-3 p-4">
                 <Avatar name={member.name} seed={member.student_id} className="size-12" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-bold">{member.name}</p>
-                  <p className="truncate text-sm text-muted-foreground">
+                  <p className="break-words font-bold">{member.name}</p>
+                  <p className="break-words text-sm text-muted-foreground">
                     {[member.username && `@${member.username}`, member.grade_label, timeAgo(member.requested_at)].filter(Boolean).join(' · ')}
                   </p>
                 </div>

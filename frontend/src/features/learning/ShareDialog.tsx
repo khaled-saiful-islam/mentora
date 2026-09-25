@@ -105,7 +105,7 @@ export function ShareDialog({ open, set, onClose }: { open: boolean; set: SetDet
                   <motion.button key={c.id} type="button" whileTap={{ scale: 0.97 }} onClick={() => setClassId(c.id)} aria-pressed={on} className={cn('flex items-center gap-3 rounded-2xl border-2 p-2.5 text-left', on ? 'border-primary bg-grape-50 dark:bg-grape-900/30' : 'border-border hover:border-hover-border')}>
                     <span className={cn('grid size-10 shrink-0 place-items-center rounded-xl', look.hero, look.onHero)}><UsersThree weight="fill" className="size-5" /></span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-bold">{c.name}</span>
+                      <span className="block break-words font-bold">{c.name}</span>
                       <span className="block text-xs text-muted-foreground">{c.students} students</span>
                     </span>
                     {on && <Check weight="bold" className="size-5 text-primary" />}

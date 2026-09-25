@@ -119,7 +119,7 @@ function Podium({ entries }: { entries: BoardEntry[] }) {
               </motion.span>
             )}
             <Buddy buddy={entry.buddy} size={entry.rank === 1 ? 104 : 84} mood={entry.rank === 1 ? 'dance' : 'happy'} interactive={false} track={false} lively={false} />
-            <p className={cn('mt-1 max-w-full truncate text-center font-display text-base font-semibold', entry.you && 'text-primary')}>
+            <p className={cn('mt-1 max-w-full break-words text-center font-display text-base font-semibold', entry.you && 'text-primary')}>
               {entry.you ? 'You!' : entry.name}
             </p>
             <p className="text-sm font-bold text-muted-foreground">{Math.round(entry.percent)}%</p>
@@ -149,7 +149,7 @@ function Row({ entry }: { entry: BoardEntry }) {
     >
       <span className="w-8 text-center font-display text-lg font-semibold text-muted-foreground">{entry.rank}</span>
       <BuddyAvatar buddy={entry.buddy} size={40} />
-      <span className="min-w-0 flex-1 truncate font-bold">
+      <span className="min-w-0 flex-1 break-words font-bold">
         {entry.name}
         {entry.you && <Chip tone="grape" className="ml-2">You</Chip>}
       </span>

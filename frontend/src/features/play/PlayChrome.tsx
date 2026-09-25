@@ -104,7 +104,7 @@ export function PlayHeader({
           <look.Icon weight="fill" className="size-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-display text-base font-semibold leading-tight">{title}</p>
+          <p className="break-words font-display text-base font-semibold leading-tight">{title}</p>
           <div className="mt-1.5">
             <ProgressSegments parts={parts} />
           </div>

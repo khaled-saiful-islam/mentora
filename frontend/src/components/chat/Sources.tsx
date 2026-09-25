@@ -40,13 +40,13 @@ export function Sources({ sources }: { sources: Source[] }) {
                 </span>
                 <span className="min-w-0">
                   <span className="flex items-center gap-1 text-sm font-medium">
-                    <span className="truncate">{source.title}</span>
+                    <span className="break-words">{source.title}</span>
                     <ArrowSquareOut
                       className="size-3 shrink-0 opacity-0 transition-opacity group-hover/source:opacity-60"
                       aria-hidden
                     />
                   </span>
-                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                  <span className="mt-0.5 block break-words text-xs text-muted-foreground">
                     {hostOf(source.url)}
                   </span>
                   {source.snippet && (
