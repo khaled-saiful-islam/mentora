@@ -83,6 +83,27 @@ def is_preferred(url: str) -> bool:
     )
 
 
+@dataclass(frozen=True, slots=True)
+class Picture:
+    """An image found for a set, and where it came from — a picture with no
+    page is not one anybody can check, or credit."""
+
+    image: str
+    thumbnail: str
+    page: str
+    source: str
+    title: str
+
+    def as_dict(self) -> dict[str, str]:
+        return {
+            "image": self.image,
+            "thumbnail": self.thumbnail,
+            "page": self.page,
+            "source": self.source,
+            "title": self.title,
+        }
+
+
 def listing(sources: list[Source]) -> str:
     return "\n\n".join(source.listing() for source in sources) or "(no sources were found)"
 
@@ -121,6 +142,34 @@ class Researcher:
             merged = await self._reader.enrich(merged, query=queries[0], limit=self._read)
         return [self._source(i, r) for i, r in enumerate(merged[: self._keep], start=1)]
 
+    async def pictures(self, query: str, *, limit: int = 4) -> list[Picture]:
+        """Pictures for a query, SafeSearch on, from hosts a child may be sent
+        to. Empty — never an error — when search is down or finds nothing."""
+        if self._search is None or not query.strip():
+            return []
+        try:
+            found = await self._search.search_images(query, limit=limit + 4)
+        except SearchUnavailable as exc:
+            logger.info("picture search failed for %r: %s", query, exc)
+            return []
+        pictures: list[Picture] = []
+        for result in found:
+            image = result.image_url or result.thumbnail_url
+            if not image.startswith("https://") or is_blocked(result.url):
+                continue
+            pictures.append(
+                Picture(
+                    image=image,
+                    # Google's copy: small, but it is there when a site refuses
+                    # to be shown on someone else's page.
+                    thumbnail=_https_or(result.thumbnail_url, image),
+                    page=result.url,
+                    source=(result.snippet or host_of(result.url))[:120],
+                    title=result.title[:200],
+                )
+            )
+        return pictures[:limit]
+
     async def _one(self, query: str) -> list[ToolResult]:
         try:
             return await self._search.search(query, limit=self._per_query)  # type: ignore[union-attr]
@@ -141,6 +190,10 @@ class Researcher:
             excerpt=text,
             published=result.published,
         )
+
+
+def _https_or(url: str, fallback: str) -> str:
+    return url if url.startswith("https://") else fallback
 
 
 def _merge(results: list[ToolResult]) -> list[ToolResult]:

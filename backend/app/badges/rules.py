@@ -92,6 +92,19 @@ class CardShark:
 
 
 @dataclass(frozen=True)
+class Bookworm:
+    key: str = "bookworm"
+    name: str = "Bookworm"
+    description: str = "Read a study guide from cover to cover and got every check right."
+    hint: str = "Finish a study guide with every check right."
+
+    def evaluate(self, ctx: Context) -> Award | None:
+        if ctx.kind == "study_guide" and ctx.percent >= 100:
+            return Award(self.key, ctx.scope, "Every page, every check!")
+        return None
+
+
+@dataclass(frozen=True)
 class SelfStarter:
     key: str = "self_starter"
     name: str = "Self-Starter"

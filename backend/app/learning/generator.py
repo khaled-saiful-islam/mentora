@@ -1,6 +1,6 @@
 """Making a learning set, grounded in the web, in stages you can watch.
 
-    check → research → skills → write ⟲ verify ⟲ repair → built
+    check → research → skills → write ⟲ verify ⟲ repair → [finish] → built
 
 Each stage yields what it did, so the panel can show the set being made
 rather than a spinner. Items are only announced once a second pass has
@@ -12,23 +12,40 @@ a worse set beats no set, and hiding the difference would be worse than both.
 
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 import math
 import re
 import time
 from collections.abc import AsyncIterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from app.core.grades import Grade, grade_for
 from app.learning import prompts
 from app.learning.base import Item, LearningKind, Skill
+from app.learning.enrich import Enriching, Finishing
 from app.learning.model import GenerationUnavailable, JsonModel, Meter
 from app.learning.research import Researcher, Source, listing
 from app.moderation.base import Decision
 from app.moderation.rules import InputRules
 
+logger = logging.getLogger(__name__)
+
 BATCH = 5
+DRAFT_TOKENS = 3500
+ITEM_TOKENS = 900
+
+
+def _budget(kind: LearningKind) -> tuple[int, int, int]:
+    """Items per call, and the token budgets for a batch and for one item.
+    A kind with long items says so; the rest share the defaults."""
+    return (
+        int(getattr(kind, "batch", BATCH)),
+        int(getattr(kind, "draft_tokens", DRAFT_TOKENS)),
+        int(getattr(kind, "item_tokens", ITEM_TOKENS)),
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,6 +71,8 @@ class GenerationResult:
     prompt_tokens: int
     completion_tokens: int
     build_ms: int
+    # What the set has besides its items — a study guide's opening and ending.
+    extras: dict[str, Any] = field(default_factory=dict)
 
 
 # --- what a build says as it goes ---------------------------------------------
@@ -82,6 +101,13 @@ class ItemsReady:
     items: tuple[Item, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class Pictured:
+    """Pictures found for items already announced, by item id."""
+
+    pictures: dict[str, dict[str, str]]
+
+
 REFUSED_TOPIC = "That topic isn't one we can make a set about. Try a school topic!"
 
 
@@ -100,7 +126,7 @@ class Built:
     result: GenerationResult
 
 
-Update = Stage | SourcesFound | SkillsMapped | ItemsReady | Refused | Built
+Update = Stage | SourcesFound | SkillsMapped | ItemsReady | Pictured | Refused | Built
 
 
 @dataclass(frozen=True, slots=True)
@@ -153,9 +179,54 @@ class LearningGenerator:
             "write", "done", f"Writing {count} {noun}", f"{len(items)} of {count} passed checks"
         )
 
-        yield Built(self._result(request, plan, items, skills, sources, count, started))
+        extras: dict[str, Any] = {}
+        if isinstance(self._kind, Enriching):
+            yield Stage("finish", "running", "Adding pictures and finishing touches")
+            items, extras = await self._finish(self._kind, request, plan, items, sources)
+            pictured = sum(1 for item in items if item.get("image"))
+            yield Pictured({item["id"]: item["image"] for item in items if item.get("image")})
+            yield Stage(
+                "finish",
+                "done",
+                "Adding pictures and finishing touches",
+                f"{pictured} of {len(items)} with a picture",
+            )
+
+        yield Built(self._result(request, plan, items, skills, sources, count, started, extras))
 
     # --- stages ---------------------------------------------------------------
+
+    async def _finish(
+        self,
+        kind: Enriching,
+        request: GenerationRequest,
+        plan: _Plan,
+        items: list[Item],
+        sources: list[Source],
+    ) -> tuple[list[Item], dict[str, Any]]:
+        """Pictures and the opening and ending, side by side. Either can come
+        back empty; neither can fail a set whose items are already written."""
+        finishing = Finishing(
+            title=plan.title,
+            topic=plan.topic,
+            grade=plan.grade,
+            language=request.language,
+            items=tuple(items),
+            sources=tuple(sources),
+        )
+        pictured, extras = await asyncio.gather(
+            kind.illustrate(items, topic=plan.topic, pictures=self._researcher),
+            kind.wrap(self._model, finishing),
+            return_exceptions=True,
+        )
+        for part, outcome in (("pictures", pictured), ("wrap", extras)):
+            if isinstance(outcome, BaseException):
+                # The set is whole without it; the log says which half is missing.
+                logger.warning("finishing %s: %s failed: %r", plan.topic, part, outcome)
+        return (
+            pictured if isinstance(pictured, list) else items,
+            extras if isinstance(extras, dict) else {},
+        )
 
     async def _check(self, request: GenerationRequest, grade: Grade | None) -> _Plan | Refused:
         # The fast rules first: "how to make a bomb" needs no model to refuse.
@@ -204,7 +275,7 @@ class LearningGenerator:
         skills: list[Skill] = []
         raw_skills = mapped.get("skills")
         for raw in raw_skills if isinstance(raw_skills, list) else []:
-            label = _short(raw.get("label") if isinstance(raw, dict) else raw, 60)
+            label = _words(raw.get("label") if isinstance(raw, dict) else raw, 60)
             if not label:
                 continue
             slug = _slug(raw.get("slug") if isinstance(raw, dict) and raw.get("slug") else label)
@@ -221,12 +292,13 @@ class LearningGenerator:
         count: int,
     ) -> AsyncIterator[list[Item]]:
         written: list[Item] = []
-        rounds = math.ceil(count / BATCH) + 1  # one round of top-up at most
+        batch = _budget(self._kind)[0]
+        rounds = math.ceil(count / batch) + 1  # one round of top-up at most
         for _ in range(rounds):
             if len(written) >= count:
                 return
             drafted = await self._draft(
-                request, plan, skills, sources, min(BATCH, count - len(written)), written
+                request, plan, skills, sources, min(batch, count - len(written)), written
             )
             kept = (await self._verified(plan, request, skills, sources, drafted))[
                 : count - len(written)
@@ -255,7 +327,8 @@ class LearningGenerator:
             listing=listing(sources),
             avoid=[self._kind.summary(i) for i in written],
         )
-        reply = await self._model.ask("draft", system, user, temperature=0.7, max_tokens=3500)
+        tokens = _budget(self._kind)[1]
+        reply = await self._model.ask("draft", system, user, temperature=0.7, max_tokens=tokens)
         return self._clean(reply.get("items"), skills, sources, written)
 
     async def _verified(
@@ -317,7 +390,8 @@ class LearningGenerator:
             listing=listing(sources),
             problems=described,
         )
-        reply = await self._model.ask("repair", system, user, temperature=0.4, max_tokens=2500)
+        tokens = _budget(self._kind)[1]
+        reply = await self._model.ask("repair", system, user, temperature=0.4, max_tokens=tokens)
         return self._clean(reply.get("items"), skills, sources, [])
 
     async def rewrite(
@@ -340,11 +414,47 @@ class LearningGenerator:
             item_json=json.dumps(item, ensure_ascii=False),
             instruction=instruction.strip(),
         )
-        reply = await self._model.ask("rewrite", system, user, temperature=0.7, max_tokens=900)
+        tokens = _budget(self._kind)[2]
+        reply = await self._model.ask("rewrite", system, user, temperature=0.7, max_tokens=tokens)
         raw = reply.get("item")
         if not isinstance(raw, dict):
             return None
         return self._kind.normalise(raw, skills=skills, source_ids={s.id for s in sources})
+
+    async def add(
+        self,
+        *,
+        topic: str,
+        existing: list[Item],
+        skills: tuple[Skill, ...],
+        sources: tuple[Source, ...],
+        grade_level: str | None,
+        language: str,
+        instruction: str,
+    ) -> Item | None:
+        """One more item on a teacher's word — "a section about evaporation".
+        A kind with pictures gets its picture too."""
+        system, user = prompts.add_one(
+            rules=self._kind.writing_rules(),
+            noun=self._kind.item_noun,
+            grade=grade_for(grade_level),
+            language=language,
+            listing=listing(list(sources)),
+            skills=_skill_lines(skills),
+            existing=[self._kind.summary(i) for i in existing],
+            instruction=instruction.strip(),
+        )
+        tokens = _budget(self._kind)[2]
+        reply = await self._model.ask("add", system, user, temperature=0.7, max_tokens=tokens)
+        raw = reply.get("item")
+        item = (
+            self._kind.normalise(raw, skills=skills, source_ids={s.id for s in sources})
+            if isinstance(raw, dict)
+            else None
+        )
+        if item is not None and isinstance(self._kind, Enriching):
+            [item] = await self._kind.illustrate([item], topic=topic, pictures=self._researcher)
+        return item
 
     # --- helpers -------------------------------------------------------------
 
@@ -377,6 +487,7 @@ class LearningGenerator:
         sources: list[Source],
         count: int,
         started: float,
+        extras: dict[str, Any] | None = None,
     ) -> GenerationResult:
         return GenerationResult(
             title=plan.title,
@@ -390,6 +501,7 @@ class LearningGenerator:
             prompt_tokens=self._meter.prompt_tokens,
             completion_tokens=self._meter.completion_tokens,
             build_ms=int((time.monotonic() - started) * 1000),
+            extras=extras or {},
         )
 
 
@@ -420,6 +532,16 @@ def _short(value: Any, limit: int) -> str | None:
         return None
     text = " ".join(value.split())
     return text[:limit] if text else None
+
+
+def _words(value: Any, limit: int) -> str | None:
+    """Like `_short`, but cut between words: "…for life on Ear" is worse
+    than a label a word shorter."""
+    text = _short(value, 10_000)
+    if text is None or len(text) <= limit:
+        return text
+    cut = text[:limit].rsplit(" ", 1)[0]
+    return cut or text[:limit]
 
 
 def _slug(value: Any) -> str:

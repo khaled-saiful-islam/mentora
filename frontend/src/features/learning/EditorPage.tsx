@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   ArrowUp,
   Broadcast,
+  Eye,
   FloppyDisk,
   Globe,
   MagicWand,
@@ -22,9 +23,10 @@ import { errorMessage } from '@/features/auth/errors'
 import { useResource } from '@/hooks/useResource'
 import { Page, spring } from '@/motion'
 import { cn } from '@/lib/utils'
+import { AddWithAI } from './AddWithAI'
 import { learningApi, type Item, type SetDetail } from './api'
 import { EDITORS } from './editors'
-import { lookOfKind } from './kinds'
+import { lookOfKind, nounOf } from './kinds'
 import { ShareDialog } from './ShareDialog'
 
 export default function EditorPage() {
@@ -51,7 +53,12 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
   const { toast } = useToast()
   const kind = EDITORS[initial.kind]
   const look = lookOfKind(initial.kind)
-  const dirty = title !== initial.title || JSON.stringify(items) !== JSON.stringify(initial.items)
+  const startExtras = useMemo(() => kind.extras?.from(initial.extras) ?? null, [kind, initial.extras])
+  const [extras, setExtras] = useState<unknown>(startExtras)
+  const dirty =
+    title !== initial.title ||
+    JSON.stringify(items) !== JSON.stringify(initial.items) ||
+    JSON.stringify(extras) !== JSON.stringify(startExtras)
   const problems = useMemo(() => items.map((item) => kind.problem(item)), [items, kind])
   const firstProblem = problems.findIndex(Boolean)
 
@@ -65,7 +72,11 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
   async function save() {
     setSaving(true)
     try {
-      const saved = await learningApi.edit(initial.id, { title, items })
+      const saved = await learningApi.edit(initial.id, {
+        title,
+        items,
+        ...(kind.extras ? { extras: extras as Parameters<typeof learningApi.edit>[1]['extras'] } : {}),
+      })
       toast(saved.version > initial.version ? `Saved as version ${saved.version}` : 'Saved', {
         body: saved.version > initial.version ? 'Students already working keep the version they were given.' : undefined,
       })
@@ -104,12 +115,23 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
             </p>
             <input aria-label="Title" value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full rounded-2xl bg-transparent font-display text-4xl font-semibold tracking-tight outline-none placeholder:text-white/60 focus-visible:bg-white/10 sm:text-5xl" />
             <p className="mt-2 font-bold opacity-90">
-              {items.length} {initial.kind === 'quiz' ? 'questions' : 'cards'} · version {initial.version}
+              {nounOf(initial.kind, items.length)} · version {initial.version}
               {initial.shares > 0 && ` · shared ${initial.shares}×`}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <TextSizeControl compact className="border-white/30 bg-white/15 text-white [&_button]:text-white" />
+            {kind.previewable && (
+              <Link
+                to={`/library/${initial.id}/preview`}
+                aria-disabled={dirty}
+                onClick={(event) => dirty && event.preventDefault()}
+                title={dirty ? 'Save your changes first' : 'See it as your students will'}
+                className={cn(buttonClass('secondary'), 'bg-white/15 text-white ring-1 ring-white/30 hover:bg-white/25', dirty && 'pointer-events-none opacity-50')}
+              >
+                <Eye weight="bold" className="size-5" /> Preview
+              </Link>
+            )}
             {initial.purpose === 'assign' && (
               <Button variant="secondary" onClick={() => setSharing(true)} disabled={dirty} title={dirty ? 'Save your changes first' : undefined} className="bg-white text-grape-900 hover:bg-white/90">
                 <Broadcast weight="bold" className="size-5" /> Share
@@ -132,6 +154,12 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_18rem]">
         <div className="space-y-4">
+          {kind.extras && extras !== null && (
+            <Card className="p-4 sm:p-5">
+              <h2 className="mb-3 font-display text-lg font-semibold">{kind.extras.title}</h2>
+              <kind.extras.Editor extras={extras} onChange={setExtras} />
+            </Card>
+          )}
           <AnimatePresence initial={false}>
             {items.map((item, index) => (
               <motion.div key={item.id} layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={spring.gentle}>
@@ -153,8 +181,9 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
             ))}
           </AnimatePresence>
           <Button variant="outline" size="lg" className="w-full border-dashed" onClick={add}>
-            <Plus weight="bold" className="size-5" /> Add a {initial.kind === 'quiz' ? 'question' : 'card'}
+            <Plus weight="bold" className="size-5" /> Add a {nounOf(initial.kind)}
           </Button>
+          <AddWithAI setId={initial.id} kind={initial.kind} onAdded={(item) => setItems((all) => [...all, item])} />
         </div>
         <SourcesPanel set={initial} />
       </div>
@@ -167,7 +196,7 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
             ) : (
               <p className="flex-1 text-sm font-bold">Unsaved changes</p>
             )}
-            <Button variant="ghost" size="sm" onClick={() => { setTitle(initial.title); setItems(initial.items) }}>Undo</Button>
+            <Button variant="ghost" size="sm" onClick={() => { setTitle(initial.title); setItems(initial.items); setExtras(startExtras) }}>Undo</Button>
             <Button onClick={() => void save()} loading={saving} disabled={firstProblem >= 0 || items.length === 0}>
               <FloppyDisk weight="bold" className="size-5" /> Save
             </Button>
@@ -177,7 +206,7 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
 
       {deleting !== null && (
         <Confirm
-          title={`Delete ${initial.kind === 'quiz' ? 'question' : 'card'} ${deleting + 1}?`}
+          title={`Delete ${nounOf(initial.kind)} ${deleting + 1}?`}
           body="It goes when you save. Students already working on a shared version keep theirs."
           onConfirm={() => { setItems((all) => all.filter((_, i) => i !== deleting)); setDeleting(null) }}
           onCancel={() => setDeleting(null)}

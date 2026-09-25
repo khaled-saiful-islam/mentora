@@ -6,7 +6,7 @@
  * here is given a question, so a tip can never hint at an answer.
  */
 
-export type TipPlace = 'home' | 'quiz' | 'flashcard' | 'results'
+export type TipPlace = 'home' | 'quiz' | 'flashcard' | 'guide' | 'results'
 
 export const TIPS: Record<TipPlace, readonly string[]> = {
   home: [
@@ -28,6 +28,13 @@ export const TIPS: Record<TipPlace, readonly string[]> = {
     'Be honest with "Not yet" — those cards come back in round two.',
     'Picture the answer in your mind first.',
     'Try making a silly story to remember a tricky card.',
+  ],
+  guide: [
+    'Tap a dotted word to see what it means!',
+    'Like listening? Press "Read it to me".',
+    'Too tricky? Try Simpler — same ideas, easier words.',
+    'Feeling brave? Switch to Challenge!',
+    'Look at the picture first — it tells half the story.',
   ],
   results: [
     'Look at what you missed — that is where the learning is.',

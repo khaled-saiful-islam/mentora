@@ -62,7 +62,8 @@ def map_skills(topic: str, grade: Grade | None, listing: str) -> tuple[str, str]
     system = (
         "Break a school topic into 3 to 6 subtopics or skills a teacher would assess "
         "separately, suited to the level. Reply with JSON: "
-        '{"skills": [{"slug": "kebab-case", "label": "Short label"}]}'
+        '{"skills": [{"slug": "kebab-case", "label": "Short label"}]}. A label is 2 to 4 '
+        'words, like "Evaporation" or "Parts of a plant" — never a sentence.'
     )
     user = f"Topic: {topic}\n{audience(grade, 'en')}\n\n<sources>\n{listing}\n</sources>"
     return system, user
@@ -139,4 +140,87 @@ def rewrite_one(
         f"The item to replace:\n{item_json}\n\n"
         f"The teacher asks: {instruction or 'a fresh item on the same skill, at the same level'}"
     )
+    return system, user
+
+
+def add_one(
+    *,
+    rules: str,
+    noun: str,
+    grade: Grade | None,
+    language: str,
+    listing: str,
+    skills: str,
+    existing: list[str],
+    instruction: str,
+) -> tuple[str, str]:
+    """One more item for a set that already exists, on a teacher's word."""
+    system = (
+        f"{VOICE}\n{audience(grade, language)}\n\n{rules}\n\n"
+        f'Write one new {noun} that fits alongside the others. Reply with JSON: {{"item": {{...}}}}'
+    )
+    already = "\n".join(f"- {line}" for line in existing) or "(none)"
+    user = (
+        f"Skills:\n{skills}\n\n<sources>\n{listing}\n</sources>\n\n"
+        f"Already in the set — do not repeat:\n{already}\n\n"
+        f"The teacher asks for: {instruction}"
+    )
+    return system, user
+
+
+def guide_section_rules(limits: dict[str, int]) -> str:
+    return (
+        "Each section is a JSON object:\n"
+        '{"heading": "...", "explain": {"simple": "...", "core": "...", "stretch": "..."}, '
+        '"points": ["...", "..."], '
+        '"terms": [{"term": "...", "meaning": "...", "translation": "..."}], '
+        '"hook": "...", "fact": "...", "example": "...", "image_query": "...", '
+        '"prompt": "...", "options": ["...", "...", "...", "..."], "answer": 0, '
+        '"explanation": "...", "skill": "<skill slug>", "difficulty": "easy|medium|hard", '
+        '"source_ids": ["s1"]}\n'
+        "- Together the sections teach the topic from the ground up, in order: each "
+        "builds on the one before. The heading is short and inviting.\n"
+        "- `explain.core` teaches the section at the audience's level: 2 or 3 short "
+        f"paragraphs separated by a blank line, under {limits['core']} characters.\n"
+        "- `explain.simple` teaches the same ideas to a reader who finds reading hard: "
+        f"short sentences, everyday words, under {limits['simple']} characters.\n"
+        "- `explain.stretch` takes the same ideas further for a strong reader — one more "
+        f"idea, a why or a how — under {limits['stretch']} characters.\n"
+        "- `points`: 2 to 4 things to remember, one short sentence each.\n"
+        "- `terms`: 1 to 4 key words from the section, each written exactly as it "
+        "appears in `explain.core`, with a meaning a child understands. `translation` "
+        "is the same word in Bahasa Melayu — or in English when you are writing in "
+        "Bahasa Melayu; leave it empty when it is the same.\n"
+        "- `hook`: a memory trick — a mnemonic, a rhyme or a vivid comparison.\n"
+        "- `fact`: one surprising and true 'did you know?' fact from the sources.\n"
+        "- `example`: where this shows up in everyday life, in Malaysia if you can.\n"
+        "- `image_query`: 3 to 6 words for a picture search that would show this idea "
+        "clearly — a diagram or a photo of the thing. Never a person's name.\n"
+        "- The check (`prompt`, `options`, `answer`, `explanation`) is one multiple-choice "
+        "question answerable from this section alone: exactly 4 different options, one "
+        "right; `answer` is its index (0-3), and vary its position between sections.\n"
+        "- `source_ids` names the sources the section's facts come from. Use only facts "
+        "the sources support."
+    )
+
+
+def wrap_guide(
+    *, title: str, topic: str, grade: Grade | None, language: str, outline: str
+) -> tuple[str, str]:
+    system = (
+        f"{VOICE}\n{audience(grade, language)}\n\n"
+        "You are finishing a study guide whose sections are already written. Reply "
+        "with JSON:\n"
+        '{"big_question": "...", "intro": "...", "summary": ["...", "..."], '
+        '"challenge": {"title": "...", "steps": ["...", "..."]}}\n'
+        "- `big_question`: one intriguing question the guide answers, that makes a "
+        "child want to read on.\n"
+        "- `intro`: two or three sentences saying what the guide is about and why it "
+        "matters.\n"
+        "- `summary`: 3 to 5 sentences a reader should remember, in order.\n"
+        "- `challenge`: a short, safe activity to try at home or in class that uses "
+        "what was learnt — a title and 2 to 4 steps. Nothing needing heat, sharp "
+        "tools or going anywhere alone."
+    )
+    user = f"Title: {title}\nTopic: {topic}\n\nSections:\n{outline}"
     return system, user

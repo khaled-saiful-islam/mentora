@@ -22,6 +22,7 @@ from app.events.catalog import (
     MembershipRequested,
     StudentNeedsSupport,
 )
+from app.learning.registry import build_learning_kinds
 from app.services.notification_service import NotificationService
 
 
@@ -78,12 +79,18 @@ async def _settle(bell: NotificationService, teacher_id, membership_id, resoluti
     )
 
 
+def _kind_word(kind: str) -> str:
+    """What the bell calls it: "quiz", "flashcards", "study guide"."""
+    found = build_learning_kinds().get(kind)
+    return found.label.lower() if found else "activity"
+
+
 async def assignment_shared(event: AssignmentShared, session: AsyncSession) -> None:
     bell = NotificationService(session)
     payload = {
         "assignment_id": str(event.assignment_id),
         "title": event.title,
-        "kind": "quiz" if event.kind == "quiz" else "flashcards",
+        "kind": _kind_word(event.kind),
         "class_id": str(event.class_id),
         "class_name": event.class_name,
         "teacher_name": event.teacher_name,

@@ -68,7 +68,7 @@ export default function PlayPage({ source }: { source: PlaySource }) {
   const playingKind = playing?.kind
   useEffect(() => {
     if (!playingId) return
-    const place = playingKind === 'flashcard' ? 'flashcard' : 'quiz'
+    const place = playingKind === 'flashcard' ? 'flashcard' : playingKind === 'study_guide' ? 'guide' : 'quiz'
     const hello = window.setTimeout(() => buddy.current?.cue('hello', { name: user ? firstName(user) : undefined }), 700)
     const tip = window.setTimeout(() => buddy.current?.say(tipFor(place)), 4400)
     return () => (window.clearTimeout(hello), window.clearTimeout(tip))

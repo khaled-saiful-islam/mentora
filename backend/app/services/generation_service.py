@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings
 from app.core.errors import ForbiddenError, RateLimitError, ValidationError
 from app.core.grades import is_grade
-from app.db.models.learning import LearningSet
+from app.db.models.learning import LearningSet, LearningSetVersion
 from app.db.models.user import User
 from app.learning.base import LearningKind, Skill
 from app.learning.generator import (
@@ -28,6 +28,7 @@ from app.learning.generator import (
     GenerationRequest,
     ItemsReady,
     LearningGenerator,
+    Pictured,
     Refused,
     SkillsMapped,
     SourcesFound,
@@ -76,6 +77,8 @@ class GenerationService:
     ) -> LearningSet:
         kind = self._kind(draft.kind)
         purpose = await self._purpose(session, owner)
+        if purpose == "practice" and not getattr(kind, "for_students", True):
+            raise ForbiddenError(f"{kind.label}s are made by teachers.")
         request = self._request(kind, draft)
         learning_set = LearningSet(
             owner_id=owner.id,
@@ -180,29 +183,75 @@ class GenerationService:
     ) -> dict[str, Any]:
         """A fresh version of one item, for the editor to put in place. Not
         saved: the teacher sees it first, and saving is the editor's job."""
-        sets = LearningSetService(session, self._kinds)
-        learning_set = await sets.owned(owner_id, set_id)
-        version = await sets.version(learning_set)
-        item = next((i for i in (version.items if version else []) if i.get("id") == item_id), None)
-        if version is None or item is None:
+        learning_set, version = await self._editing(session, owner_id, set_id)
+        item = next((i for i in version.items if i.get("id") == item_id), None)
+        if item is None:
             raise ValidationError("That item isn't in this set any more — save your changes first.")
+        kind = self._kinds[learning_set.kind]
         meter = Meter()
-        generator = self._make_generator(self._kinds[learning_set.kind], meter)
-        fresh = await generator.rewrite(
+        fresh = await self._make_generator(kind, meter).rewrite(
             item=item,
-            skills=tuple(Skill(s["slug"], s["label"]) for s in version.skills),
-            sources=tuple(Source(**s) for s in version.sources),
+            skills=_skills(version),
+            sources=_sources(version),
             grade_level=learning_set.grade_level,
             language=learning_set.language,
             instruction=instruction,
         )
-        # Spent on this set, so it counts toward the quota with the build.
+        await self._charge(session, version, meter)
+        if fresh is None:
+            raise GenerationUnavailable("Couldn't write a replacement just now. Try again?")
+        # What the teacher chose by hand — a picture — outlives new words.
+        kept = {key: item[key] for key in getattr(kind, "kept_on_rewrite", ()) if item.get(key)}
+        return {**fresh, **kept, "id": item_id}
+
+    async def add(
+        self, session: AsyncSession, owner_id: UUID, set_id: UUID, instruction: str
+    ) -> dict[str, Any]:
+        """One more item, for the editor to put in place — not saved, like a
+        rewrite. "A section about evaporation", "a harder question on maps"."""
+        learning_set, version = await self._editing(session, owner_id, set_id)
+        kind = self._kinds[learning_set.kind]
+        if len(version.items) >= kind.max_count:
+            raise ValidationError(
+                f"A set can hold at most {kind.max_count} {kind.item_noun_plural}."
+            )
+        wanted = " ".join(instruction.split())
+        if not 2 <= len(wanted) <= 300:
+            raise ValidationError(f"Say what the new {kind.item_noun} should be about.")
+        meter = Meter()
+        item = await self._make_generator(kind, meter).add(
+            topic=learning_set.topic,
+            existing=list(version.items),
+            skills=_skills(version),
+            sources=_sources(version),
+            grade_level=learning_set.grade_level,
+            language=learning_set.language,
+            instruction=wanted,
+        )
+        await self._charge(session, version, meter)
+        if item is None:
+            raise GenerationUnavailable(
+                f"Couldn't write that {kind.item_noun} just now. Try again?"
+            )
+        return item
+
+    async def _editing(
+        self, session: AsyncSession, owner_id: UUID, set_id: UUID
+    ) -> tuple[LearningSet, LearningSetVersion]:
+        sets = LearningSetService(session, self._kinds)
+        learning_set = await sets.owned(owner_id, set_id)
+        version = await sets.version(learning_set)
+        if version is None:
+            raise ValidationError("This set is still being made.")
+        return learning_set, version
+
+    async def _charge(
+        self, session: AsyncSession, version: LearningSetVersion, meter: Meter
+    ) -> None:
+        """Spent on this set, so it counts toward the quota with the build."""
         version.prompt_tokens += meter.prompt_tokens
         version.completion_tokens += meter.completion_tokens
         await session.flush()
-        if fresh is None:
-            raise GenerationUnavailable("Couldn't write a replacement just now. Try again?")
-        return {**fresh, "id": item_id}
 
     # --- validation -------------------------------------------------------
 
@@ -271,4 +320,14 @@ def _event(update: Update) -> dict[str, Any] | None:
         return {"type": "skills", "skills": [s.as_dict() for s in update.skills]}
     if isinstance(update, ItemsReady):
         return {"type": "items", "items": list(update.items)}
+    if isinstance(update, Pictured):
+        return {"type": "pictures", "pictures": update.pictures}
     return None
+
+
+def _skills(version: LearningSetVersion) -> tuple[Skill, ...]:
+    return tuple(Skill(s["slug"], s["label"]) for s in version.skills)
+
+
+def _sources(version: LearningSetVersion) -> tuple[Source, ...]:
+    return tuple(Source(**s) for s in version.sources)

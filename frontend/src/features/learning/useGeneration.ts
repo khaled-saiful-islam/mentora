@@ -4,9 +4,9 @@
  * whole picture, not just the tail of it.
  */
 import { useEffect, useReducer } from 'react'
-import type { Item, Skill } from './api'
+import type { GuidePicture, Item, Skill } from './api'
 
-export type StageKey = 'check' | 'research' | 'skills' | 'write'
+export type StageKey = 'check' | 'research' | 'skills' | 'write' | 'finish'
 
 export interface StageState {
   key: StageKey
@@ -35,6 +35,11 @@ export interface Generation {
 
 export const STAGE_ORDER: StageKey[] = ['check', 'research', 'skills', 'write']
 
+/** The stages a kind goes through: a study guide has a finishing one. */
+export function stagesFor(kind: string): StageKey[] {
+  return kind === 'study_guide' ? [...STAGE_ORDER, 'finish'] : STAGE_ORDER
+}
+
 const INITIAL: Generation = { stages: {}, sources: [], skills: [], items: [], outcome: { kind: 'running' } }
 
 type Action = { type: string; data: Record<string, unknown> } | { type: 'reset' }
@@ -53,6 +58,11 @@ export function reduce(state: Generation, action: Action): Generation {
       return { ...state, skills: (data.skills as Skill[]) ?? [] }
     case 'items':
       return { ...state, items: [...state.items, ...((data.items as Item[]) ?? [])] }
+    case 'pictures': {
+      // Pictures found for sections already shown, by section id.
+      const pictures = (data.pictures as Record<string, GuidePicture>) ?? {}
+      return { ...state, items: state.items.map((item) => (pictures[item.id] ? { ...item, image: pictures[item.id] } : item)) }
+    }
     case 'done':
       return {
         ...state,

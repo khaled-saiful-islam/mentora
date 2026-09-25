@@ -69,6 +69,7 @@ class SetDetail(SetSummary):
     items: list[dict[str, Any]]
     skills: list[dict[str, Any]]
     sources: list[dict[str, Any]]
+    extras: dict[str, Any]
 
     @classmethod
     def of(cls, view: SetView) -> SetDetail:  # type: ignore[override]
@@ -78,6 +79,7 @@ class SetDetail(SetSummary):
             items=list(v.items) if v else [],
             skills=list(v.skills) if v else [],
             sources=list(v.sources) if v else [],
+            extras=dict(v.extras or {}) if v else {},
         )
 
 
@@ -91,10 +93,17 @@ class SetList(BaseModel):
 class EditSetRequest(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
     items: list[dict[str, Any]] | None = Field(default=None, max_length=50)
+    # A study guide's opening and ending. Cleaned by the kind; ignored by a
+    # kind without any.
+    extras: dict[str, Any] | None = None
 
 
 class RewriteRequest(BaseModel):
     instruction: str = Field(default="", max_length=300)
+
+
+class AddItemRequest(BaseModel):
+    instruction: str = Field(min_length=2, max_length=300)
 
 
 class RewriteResponse(BaseModel):

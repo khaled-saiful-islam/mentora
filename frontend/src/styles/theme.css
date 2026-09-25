@@ -112,6 +112,8 @@
   --kind-quiz-vivid: 26 100% 55%;          /* Tangerine */
   --kind-flashcard: 174 90% 26%;
   --kind-flashcard-vivid: 174 84% 38%;     /* Lagoon */
+  --kind-study-guide: 224 76% 44%;
+  --kind-study-guide-vivid: 217 91% 58%;   /* Blueberry */
   --kind-poster: 342 75% 42%;
   --kind-poster-vivid: 342 89% 60%;        /* Rose */
   --kind-slides: 217 80% 45%;
@@ -253,6 +255,7 @@
 
     --kind-quiz: 28 100% 65%;
     --kind-flashcard: 172 70% 55%;
+    --kind-study-guide: 214 95% 72%;
     --kind-poster: 342 90% 72%;
     --kind-slides: 217 95% 72%;
     --kind-games: 283 90% 78%;
@@ -310,6 +313,7 @@
 
   --kind-quiz: 28 100% 65%;
   --kind-flashcard: 172 70% 55%;
+  --kind-study-guide: 214 95% 72%;
   --kind-poster: 342 90% 72%;
   --kind-slides: 217 95% 72%;
   --kind-games: 283 90% 78%;
@@ -364,6 +368,8 @@
   --color-kind-quiz-vivid: hsl(var(--kind-quiz-vivid));
   --color-kind-flashcard: hsl(var(--kind-flashcard));
   --color-kind-flashcard-vivid: hsl(var(--kind-flashcard-vivid));
+  --color-kind-study-guide: hsl(var(--kind-study-guide));
+  --color-kind-study-guide-vivid: hsl(var(--kind-study-guide-vivid));
   --color-kind-poster: hsl(var(--kind-poster));
   --color-kind-poster-vivid: hsl(var(--kind-poster-vivid));
   --color-kind-slides: hsl(var(--kind-slides));

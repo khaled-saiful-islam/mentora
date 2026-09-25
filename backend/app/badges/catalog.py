@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from app.badges.base import BadgeRule
 from app.badges.rules import (
+    Bookworm,
     CardShark,
     Comeback,
     EarlyBird,
@@ -33,6 +34,7 @@ RULES: tuple[BadgeRule, ...] = (
     Comeback(),
     EarlyBird(),
     CardShark(),
+    Bookworm(),
     SelfStarter(),
     PracticePro(),
     SkillMaster(),

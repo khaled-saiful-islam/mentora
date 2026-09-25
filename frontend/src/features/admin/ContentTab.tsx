@@ -11,7 +11,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Segmented } from '@/components/ui/Segmented'
 import { EmptyArt } from '@/features/classes/EmptyArt'
-import { lookOfKind } from '@/features/learning/kinds'
+import { lookOfKind, nounOf } from '@/features/learning/kinds'
 import { useResource } from '@/hooks/useResource'
 import { timeAgo } from '@/lib/time'
 import { cn } from '@/lib/utils'
@@ -92,7 +92,7 @@ function Sets({ search, onOpen }: { search: string; onOpen: (set: ContentSet) =>
                 <span className="block truncate font-bold">{set.title}</span>
                 <Owner name={set.owner.name} role={set.owner.role} />
                 <span className="mt-1 flex flex-wrap gap-1.5">
-                  <Chip>{set.item_count} {set.kind === 'quiz' ? 'questions' : 'cards'}</Chip>
+                  <Chip>{nounOf(set.kind, set.item_count)}</Chip>
                   {set.purpose === 'practice' && <Chip tone="sun">Practice</Chip>}
                   {set.shares > 0 && <Chip tone="mint">Shared {set.shares}×</Chip>}
                   {set.status !== 'ready' && <Chip tone="coral" className="capitalize">{set.status}</Chip>}

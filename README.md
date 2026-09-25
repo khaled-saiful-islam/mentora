@@ -33,6 +33,27 @@ comfort wrong ones.
 | ![The badge shelf with earned medals and the ones still to earn](docs/screenshots/badges.png) | <img src="docs/screenshots/phone-home.png" alt="The student home on a phone, with the buddy saying hello" width="300"> |
 | **Badges** for perfect scores, streaks and leaderboard places. | **Made for phones and tablets**, where most students are. |
 
+## Study guides
+
+A topic taught part by part, from real sources, with a picture in every part.
+Each part is written three times — **Simpler**, **Just right** and
+**Challenge** — so a whole class reads the same lesson at a pace that fits
+each child. Words to know open their meaning and their Malay, **Read it to me**
+reads a part aloud with the sentence lighting up, and every part ends with a
+quick check the teacher sees live.
+
+![A study guide's cover: a big question, the parts pinned like polaroids, how long it takes](docs/screenshots/study-guide-cover.png)
+
+| | |
+|---|---|
+| ![A part of the guide: a diagram credited to NASA, the reading level switch and Read it to me](docs/screenshots/study-guide-part.png) | ![Remember, a sticky-note memory trick, In real life, and a Did you know? the buddy reacts to](docs/screenshots/study-guide-helpers.png) |
+| **Pictures that teach** — whole diagrams, credited to their source, swappable by the teacher. | **What makes it stick** — key points, a memory trick, a Malaysian example, and a fact that makes the buddy's jaw drop. |
+
+Teachers generate a guide in about a minute, edit any part, **rewrite a part
+or add a new one with AI**, preview it as students will see it, and **print it
+as a handout** with an answer key. See
+[`docs/features/034-study-guides.md`](docs/features/034-study-guides.md).
+
 ## For teachers
 
 | | |
@@ -51,10 +72,13 @@ comfort wrong ones.
   not by hiding buttons.
 - **Classes and groups.** Invite links and codes, join requests, groups, and
   work shared with a whole class or one group.
-- **Grounded generation.** Quizzes and flashcards are written from sources the
+- **Grounded generation.** Quizzes, flashcards and study guides are written from sources the
   app searched and read, with every answer checked against them and the
   sources shown. Malaysian Year and Form grades, in English, Malay, Tamil,
   Chinese or Bengali.
+- **Study guides.** A topic taught part by part at three reading levels, with
+  pictures, words to know in Malay, read-aloud, a concept map, a check after
+  every part, and a printable handout.
 - **Practice sets.** Students make their own private quizzes and flashcards
   on any topic, within a daily limit.
 - **Results and skills.** Per-student, per-question and per-skill results,

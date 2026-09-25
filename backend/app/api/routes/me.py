@@ -32,11 +32,13 @@ async def makeable(user: CurrentUser, settings: SettingsDep) -> dict[str, object
     """
     caps = capabilities_for(user.role)
     kinds = build_kinds(settings).values() if caps.studio_artifacts else ()
-    learning = (
-        build_learning_kinds().values()
-        if caps.share_learning_sets or caps.make_practice_sets
-        else ()
-    )
+    learning = [
+        kind
+        for kind in build_learning_kinds().values()
+        # A student's practice is only the kinds made for students to make.
+        if caps.share_learning_sets
+        or (caps.make_practice_sets and getattr(kind, "for_students", True))
+    ]
     return {
         "studio": [
             {"name": kind.name, "label": kind.label, "description": kind.description}

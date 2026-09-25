@@ -6,6 +6,7 @@ import type { ComponentType, RefObject } from 'react'
 import type { BuddyHandle } from '@/features/buddies'
 import type { Attempt, PlayKind } from './api'
 import { FlashcardPlayer } from './FlashcardPlayer'
+import { GuidePlayer } from './GuidePlayer'
 import { QuizPlayer } from './QuizPlayer'
 
 export interface PlayerProps {
@@ -20,4 +21,5 @@ export interface PlayerProps {
 export const PLAYERS: Record<PlayKind, ComponentType<PlayerProps>> = {
   quiz: QuizPlayer,
   flashcard: FlashcardPlayer,
+  study_guide: GuidePlayer,
 }

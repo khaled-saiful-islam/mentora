@@ -7,23 +7,12 @@
  * something, share it — ticking itself off as they go.
  */
 import { motion } from 'motion/react'
-import {
-  ArrowRight,
-  Cards,
-  ChalkboardTeacher,
-  CheckCircle,
-  Circle,
-  Exam,
-  Plus,
-  Sparkle,
-  UserPlus,
-  UsersThree,
-  type Icon,
-} from '@phosphor-icons/react'
+import { ArrowRight, BookOpenText, Cards, ChalkboardTeacher, CheckCircle, Circle, Exam, Plus, Sparkle, UserPlus, UsersThree, type Icon } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { Alert, ButtonLink, Chip, Skeleton } from '@/components/ui'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { greeting } from '@/features/buddies'
+import type { LearningKindName } from '@/features/learning/api'
 import { lookOfKind } from '@/features/learning/kinds'
 import { useLearnStudio } from '@/features/learning/LearnStudio'
 import { useResource } from '@/hooks/useResource'
@@ -43,7 +32,7 @@ interface Teaching {
   recent: {
     id: string
     title: string
-    kind: 'quiz' | 'flashcard'
+    kind: LearningKindName
     class_id: string
     class_name: string
     due_at: string | null
@@ -75,6 +64,7 @@ export default function TeacherHome() {
         <div className="relative mt-5 flex flex-wrap gap-2">
           <Action Icon={Exam} label="Make a quiz" onClick={() => studio.create('quiz')} />
           <Action Icon={Cards} label="Make flashcards" onClick={() => studio.create('flashcard')} />
+          <Action Icon={BookOpenText} label="Make a study guide" onClick={() => studio.create('study_guide')} />
           <Action Icon={Plus} label="New class" to="/classes?new=1" />
           <Action Icon={Sparkle} label="Open the studio" to="/studio" />
         </div>

@@ -21,6 +21,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
@@ -76,6 +77,11 @@ class LearningSetVersion(Base):
     items: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False, default=list)
     skills: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False, default=list)
     sources: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False, default=list)
+    # What the set has besides its items: a study guide's big question,
+    # introduction, summary and challenge. Empty for kinds without any.
+    extras: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
     grounded: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     model: Mapped[str | None] = mapped_column(String(120))
     prompt_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

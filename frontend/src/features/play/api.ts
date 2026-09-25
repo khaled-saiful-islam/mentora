@@ -3,8 +3,9 @@
  * Shapes mirror `app/api/schemas/play.py`.
  */
 import { apiFetch } from '@/lib/api'
+import type { GuideExtras, GuideSection } from '@/features/learning/api'
 
-export type PlayKind = 'quiz' | 'flashcard'
+export type PlayKind = 'quiz' | 'flashcard' | 'study_guide'
 export type FeedbackMode = 'instant' | 'end'
 
 export interface QuizItem {
@@ -22,6 +23,9 @@ export interface CardItem {
   hint: string
   skill: string
 }
+
+/** A guide section as a student sees it: everything but the check's answer. */
+export type GuidePage = Omit<GuideSection, 'answer' | 'explanation' | 'alternatives' | 'image_query'>
 
 export interface Reveal {
   answer?: number
@@ -52,9 +56,13 @@ export interface Attempt {
   feedback_mode: FeedbackMode
   assignment_id: string | null
   set_id: string
-  items: (QuizItem | CardItem)[]
+  items: (QuizItem | CardItem | GuidePage)[]
   answered: Played[]
   skills: SkillInfo[]
+  /** A study guide's opening and ending; empty for other kinds. */
+  extras: Partial<GuideExtras>
+  /** What it is written in, e.g. `en` or `ms`. */
+  language: string
   score: number
   max_score: number
   percent: number

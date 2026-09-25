@@ -20,6 +20,7 @@ const QUIZ: Attempt = {
   ],
   answered: [], skills: [{ slug: 'light', label: 'Light energy' }], score: 0, max_score: 2, percent: 0,
   best_streak: 0, can_retake: false, attempts_used: 1, leaderboard: false, due_at: null,
+  extras: {}, language: 'en',
 }
 
 const CARDS: Attempt = {

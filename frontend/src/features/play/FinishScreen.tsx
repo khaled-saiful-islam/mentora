@@ -43,6 +43,7 @@ export function FinishScreen({
   const verdict = verdictFor(stars)
   const [headline] = useState(() => HEADLINE[verdict][Math.floor(Math.random() * 3)])
   const flashcards = attempt.kind === 'flashcard'
+  const guide = attempt.kind === 'study_guide'
 
   useEffect(() => {
     sound('finish')
@@ -66,6 +67,11 @@ export function FinishScreen({
           {headline}
         </motion.h1>
         <p className="mt-1 font-display text-lg text-muted-foreground">{attempt.title}</p>
+        {guide && (
+          <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-kind-study-guide-vivid/12 px-3 py-1 text-sm font-bold text-kind-study-guide">
+            Study guide complete — you read every part!
+          </p>
+        )}
 
         <div className="mt-6 flex flex-col items-center gap-5 sm:flex-row sm:gap-10">
           <ScoreRing percent={attempt.percent} score={attempt.score} total={attempt.max_score} label={flashcards ? 'knew' : 'right'} />

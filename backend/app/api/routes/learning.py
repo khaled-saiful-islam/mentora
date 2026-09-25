@@ -23,6 +23,7 @@ from app.api.deps import (
     require_any_capability,
 )
 from app.api.schemas.learning import (
+    AddItemRequest,
     EditSetRequest,
     GenerateRequest,
     RewriteRequest,
@@ -143,7 +144,7 @@ async def edit(
     set_id: UUID, body: EditSetRequest, user: CurrentUser, session: SessionDep
 ) -> SetDetail:
     view = await LearningSetService(session).edit(
-        user.id, set_id, title=body.title, items=body.items
+        user.id, set_id, title=body.title, items=body.items, extras=body.extras
     )
     return SetDetail.of(view)
 
@@ -163,6 +164,27 @@ async def rewrite(
 ) -> RewriteResponse:
     try:
         item = await service.rewrite(session, user.id, set_id, item_id[:40], body.instruction)
+    except GenerationUnavailable as exc:
+        raise ValidationError(str(exc)) from exc
+    return RewriteResponse(item=item)
+
+
+@router.post(
+    "/{set_id}/items",
+    response_model=RewriteResponse,
+    dependencies=[Depends(limit_generate)],
+)
+async def add_item(
+    set_id: UUID,
+    body: AddItemRequest,
+    user: CurrentUser,
+    session: SessionDep,
+    service: GenerationServiceDep,
+) -> RewriteResponse:
+    """One more item, written on the teacher's word. Returned for the editor
+    to place and save — nothing is saved here."""
+    try:
+        item = await service.add(session, user.id, set_id, body.instruction)
     except GenerationUnavailable as exc:
         raise ValidationError(str(exc)) from exc
     return RewriteResponse(item=item)

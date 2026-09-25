@@ -39,6 +39,11 @@ class AttemptResponse(BaseModel):
     items: list[dict[str, Any]]
     answered: list[PlayedResponse]
     skills: list[dict[str, Any]]
+    # A study guide's opening and ending; empty for other kinds.
+    extras: dict[str, Any]
+    # What it is written in: the voice that reads it aloud, and which way a
+    # word to know is translated.
+    language: str
     score: int
     max_score: int
     percent: float
@@ -64,6 +69,8 @@ class AttemptResponse(BaseModel):
             items=view.items,
             answered=[PlayedResponse.of(p) for p in view.answered],
             skills=view.skills,
+            extras=view.extras,
+            language=view.language,
             score=a.score if a.status == "completed" or view.feedback_mode == "instant" else 0,
             max_score=a.max_score,
             percent=float(a.percent),

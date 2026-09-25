@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import NotFoundError, ValidationError
 from app.db.models.learning import Assignment, LearningSet, LearningSetVersion
 from app.learning.base import Item, LearningKind, Skill
+from app.learning.enrich import Enriching
 from app.learning.generator import GenerationResult
 from app.learning.registry import build_learning_kinds
 
@@ -140,6 +141,7 @@ class LearningSetService:
                 items=list(result.items),
                 skills=[s.as_dict() for s in result.skills],
                 sources=[s.as_dict() for s in result.sources],
+                extras=dict(result.extras),
                 grounded=result.grounded,
                 model=result.model,
                 prompt_tokens=result.prompt_tokens,
@@ -166,6 +168,7 @@ class LearningSetService:
         *,
         title: str | None = None,
         items: list[dict[str, Any]] | None = None,
+        extras: dict[str, Any] | None = None,
     ) -> SetView:
         learning_set = await self.owned(owner_id, set_id)
         current = await self.version(learning_set)
@@ -173,12 +176,18 @@ class LearningSetService:
             raise ValidationError("This set is still being made.")
         if title is not None:
             learning_set.title = _title(title)
-        if items is not None:
-            cleaned = self._clean(learning_set.kind, current, items)
+        if items is not None or extras is not None:
+            cleaned = (
+                self._clean(learning_set.kind, current, items)
+                if items is not None
+                else current.items
+            )
+            kept = self._clean_extras(learning_set.kind, current, extras)
             if await self._version_shared(set_id, current.version):
-                current = await self._fork(learning_set, current, cleaned)
+                current = await self._fork(learning_set, current, cleaned, kept)
             else:
                 current.items = cleaned
+                current.extras = kept
         learning_set.updated_at = datetime.now(UTC)
         await self._session.flush()
         return SetView(learning_set, current, await self._shares(set_id))
@@ -209,8 +218,22 @@ class LearningSetService:
             cleaned.append(item)
         return cleaned
 
+    def _clean_extras(
+        self, kind_name: str, version: LearningSetVersion, extras: dict[str, Any] | None
+    ) -> dict[str, Any]:
+        """New extras, cleaned by the kind that has them — or what was there.
+        A kind without extras keeps none, whatever an editor sends."""
+        kind = self._kinds[kind_name]
+        if extras is None:
+            return dict(version.extras or {})
+        return kind.normalise_extras(extras) if isinstance(kind, Enriching) else {}
+
     async def _fork(
-        self, learning_set: LearningSet, base: LearningSetVersion, items: list[Item]
+        self,
+        learning_set: LearningSet,
+        base: LearningSetVersion,
+        items: list[Item],
+        extras: dict[str, Any],
     ) -> LearningSetVersion:
         fork = LearningSetVersion(
             set_id=learning_set.id,
@@ -218,6 +241,7 @@ class LearningSetService:
             items=items,
             skills=base.skills,
             sources=base.sources,
+            extras=extras,
             grounded=base.grounded,
             model=base.model,
         )

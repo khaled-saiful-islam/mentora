@@ -6,6 +6,7 @@
  * in). The crew itself only draws; this is the one place those wishes meet.
  */
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
+import { MotionGlobalConfig } from 'motion'
 import { pick, type BuddyHandle } from '@/features/buddies'
 import { celebrate as confetti, useCalmMotion } from '@/motion'
 
@@ -49,14 +50,16 @@ export function CrewProvider({ children }: { children: React.ReactNode }) {
   }, [each])
 
   const celebrate = useCallback(async () => {
+    // Animations switched off everywhere (as under test): nothing to wait for.
+    const still = calm || MotionGlobalConfig.skipAnimations === true
     setReaction('idle')
     each((handle) => {
       handle.play('celebrate')
       handle.burst('confetti', 8, 'top')
     }, 70)
     handles.current[LEAD]?.say(pick(CHEER_LINES), 2000)
-    confetti({ calm, power: 1.2, origin: { x: 0.5, y: 0.75 } })
-    await new Promise((resolve) => window.setTimeout(resolve, calm ? 200 : CELEBRATION_MS))
+    confetti({ calm: still, power: 1.2, origin: { x: 0.5, y: 0.75 } })
+    await new Promise((resolve) => window.setTimeout(resolve, still ? 0 : CELEBRATION_MS))
   }, [each, calm])
 
   const say = useCallback((line: string, who = LEAD) => handles.current[who]?.say(line, 3800), [])

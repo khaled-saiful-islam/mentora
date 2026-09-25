@@ -348,6 +348,8 @@ async def test_makeable_lists_the_learning_kinds_for_each_role(api, teacher, stu
         staff = (await c.get("/api/me/makeable")).json()["learning"]
     async with api(student) as c:
         kid = (await c.get("/api/me/makeable")).json()["learning"]
-    assert {k["name"] for k in staff} == {"quiz", "flashcard"}
+    assert {k["name"] for k in staff} == {"quiz", "flashcard", "study_guide"}
     assert {k["purpose"] for k in staff} == {"assign"}
+    # Study guides are for teachers to make; a student practises with the rest.
+    assert {k["name"] for k in kid} == {"quiz", "flashcard"}
     assert {k["purpose"] for k in kid} == {"practice"}

@@ -94,7 +94,7 @@ export function CreateSheet({
       size="md"
     >
       <form onSubmit={start} className="space-y-5">
-        <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="What to make">
+        <div className={cn('grid gap-3', makeable.learning.length > 2 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2')} role="radiogroup" aria-label="What to make">
           {(Object.keys(LOOKS) as LearningKindName[])
             .filter((name) => makeable.learning.some((k) => k.name === name))
             .map((name) => (

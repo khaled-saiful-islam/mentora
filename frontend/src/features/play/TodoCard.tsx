@@ -2,7 +2,7 @@ import { motion } from 'motion/react'
 import { ArrowRight, CalendarBlank, CheckCircle, Lock, PlayCircle } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { Chip } from '@/components/ui'
-import { lookOfKind } from '@/features/learning/kinds'
+import { lookOfKind, nounOf } from '@/features/learning/kinds'
 import { lookOf } from '@/lib/palette'
 import { dueLabel } from '@/lib/time'
 import { cn } from '@/lib/utils'
@@ -34,7 +34,7 @@ export function TodoCard({ todo, showClass = true }: { todo: Todo; showClass?: b
         </motion.span>
         <div className="min-w-0">
           <p className="text-sm font-bold opacity-90">
-            {kind.label} · {todo.item_count} {todo.kind === 'flashcard' ? 'cards' : 'questions'}
+            {kind.label} · {nounOf(todo.kind, todo.item_count)}
           </p>
           <p className="truncate font-display text-xl font-semibold">{todo.title}</p>
         </div>

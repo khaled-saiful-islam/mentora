@@ -38,6 +38,7 @@ def earned(ctx: Context) -> set[str]:
         ({"number": 2, "first_percent": 40, "percent": 70}, "comeback"),
         ({"due_at": NOW + timedelta(days=2)}, "early_bird"),
         ({"kind": "flashcard", "percent": 100}, "card_shark"),
+        ({"kind": "study_guide", "percent": 100}, "bookworm"),
         ({"purpose": "practice", "practice_completed": 1}, "self_starter"),
         ({"purpose": "practice", "practice_completed": 5}, "practice_pro"),
         ({"skills": (SkillTally("light", 9, 10, 3),)}, "skill_master"),

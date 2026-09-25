@@ -14,7 +14,7 @@ import { learningApi } from './api'
 import { useLearnStudio } from './LearnStudio'
 import { SetCard } from './SetCard'
 
-type Filter = 'all' | 'quiz' | 'flashcard' | 'archived'
+type Filter = 'all' | 'quiz' | 'flashcard' | 'study_guide' | 'archived'
 
 export default function LibraryPage() {
   const { user } = useAuth()
@@ -32,7 +32,7 @@ export default function LibraryPage() {
 
   const sets = useResource(`library:${filter}:${q}:${studio.watching}`, () =>
     learningApi.list({
-      kind: filter === 'quiz' || filter === 'flashcard' ? filter : undefined,
+      kind: filter === 'all' || filter === 'archived' ? undefined : filter,
       archived: filter === 'archived',
       q,
     }),
@@ -77,6 +77,7 @@ export default function LibraryPage() {
             { value: 'all', label: 'All' },
             { value: 'quiz', label: 'Quizzes' },
             { value: 'flashcard', label: 'Flashcards' },
+            ...(student ? [] : [{ value: 'study_guide' as const, label: 'Study guides' }]),
             { value: 'archived', label: 'Archived', icon: <Archive weight="bold" className="size-4" /> },
           ]}
         />

@@ -6,7 +6,7 @@ import { rise } from '@/motion'
 import { timeAgo } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import type { SetSummary } from './api'
-import { lookOfKind } from './kinds'
+import { lookOfKind, nounOf } from './kinds'
 
 /** A set at a glance: kind, title, how many, where it has been shared. */
 export function SetCard({ set, onWatch, onRetry }: { set: SetSummary; onWatch: () => void; onRetry: () => void }) {
@@ -27,7 +27,7 @@ export function SetCard({ set, onWatch, onRetry }: { set: SetSummary; onWatch: (
         ) : broken ? (
           <Chip tone="coral"><SmileySad weight="bold" className="size-3.5" /> {set.status === 'refused' ? 'Not a school topic' : "Couldn't be made"}</Chip>
         ) : (
-          <span className="font-bold text-muted-foreground">{set.item_count} {set.kind === 'quiz' ? 'questions' : 'cards'}</span>
+          <span className="font-bold text-muted-foreground">{nounOf(set.kind, set.item_count)}</span>
         )}
         {set.shares > 0 && <Chip tone="mint"><Broadcast weight="bold" className="size-3.5" /> Shared {set.shares}×</Chip>}
         {set.purpose === 'practice' && <Chip tone="sun">Practice</Chip>}

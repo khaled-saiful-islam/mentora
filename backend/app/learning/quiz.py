@@ -30,10 +30,10 @@ class QuizKind:
         self, raw: dict[str, Any], *, skills: tuple[Skill, ...], source_ids: set[str]
     ) -> Item | None:
         prompt = clean_text(raw.get("prompt") or raw.get("question"), 300)
-        options = _options(raw.get("options"))
+        options = options_from(raw.get("options"))
         if prompt is None or options is None:
             return None
-        answer = _answer(raw.get("answer"), options)
+        answer = answer_from(raw.get("answer"), options)
         if answer is None:
             return None
         difficulty = raw.get("difficulty")
@@ -85,7 +85,7 @@ class QuizKind:
         return item["prompt"]
 
 
-def _options(value: Any) -> list[str] | None:
+def options_from(value: Any) -> list[str] | None:
     if not isinstance(value, list) or len(value) != OPTIONS:
         return None
     options = [clean_text(v, 160) for v in value]
@@ -96,7 +96,7 @@ def _options(value: Any) -> list[str] | None:
     return options  # type: ignore[return-value]
 
 
-def _answer(value: Any, options: list[str]) -> int | None:
+def answer_from(value: Any, options: list[str]) -> int | None:
     if isinstance(value, bool):
         return None
     if isinstance(value, int) and 0 <= value < OPTIONS:

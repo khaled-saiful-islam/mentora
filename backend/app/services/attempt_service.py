@@ -59,6 +59,8 @@ class AttemptView:
     assignment: Assignment | None
     attempts_used: int
     can_retake: bool
+    extras: dict[str, Any] = field(default_factory=dict)
+    language: str = "en"
 
 
 @dataclass(frozen=True, slots=True)
@@ -237,6 +239,8 @@ class AttemptService:
             attempts_used=used,
             can_retake=finished
             and (loaded.assignment is None or _may_retake(loaded.assignment, used)),
+            extras=dict(loaded.version.extras or {}),
+            language=loaded.learning_set.language,
         )
 
     def _shown(self, loaded: Loaded, item_id: str) -> dict[str, Any]:

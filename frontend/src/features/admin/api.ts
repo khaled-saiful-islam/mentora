@@ -1,6 +1,7 @@
 /** The admin console's API. Shapes mirror `api/schemas/admin.py`. */
 import { apiFetch } from '@/lib/api'
 import type { Role } from '@/lib/user'
+import type { LearningKindName } from '@/features/learning/api'
 
 export interface ManagedUser {
   id: string
@@ -90,7 +91,7 @@ export interface ContentArtifact {
 
 export interface ContentSet {
   id: string
-  kind: 'quiz' | 'flashcard'
+  kind: LearningKindName
   purpose: 'assign' | 'practice'
   title: string
   topic: string

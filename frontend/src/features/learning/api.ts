@@ -1,6 +1,6 @@
 import { apiFetch } from '@/lib/api'
 
-export type LearningKindName = 'quiz' | 'flashcard'
+export type LearningKindName = 'quiz' | 'flashcard' | 'study_guide'
 export type SetStatus = 'generating' | 'ready' | 'failed' | 'refused'
 
 export interface QuizItem {
@@ -23,7 +23,56 @@ export interface FlashcardItem {
   source_ids: string[]
 }
 
-export type Item = QuizItem | FlashcardItem
+/** A picture found for a section, with the page it came from for credit. */
+export interface GuidePicture {
+  image: string
+  thumbnail: string
+  page: string
+  source: string
+  title: string
+}
+
+export interface GuideTerm {
+  term: string
+  meaning: string
+  /** The word in Bahasa Melayu — or English when the guide is in Malay. */
+  translation: string
+}
+
+export type ReadingLevel = 'simple' | 'core' | 'stretch'
+
+/** One section of a study guide: the teaching at three levels, what helps it
+ *  stick, a picture, and a check question graded like a quiz's. */
+export interface GuideSection {
+  id: string
+  heading: string
+  explain: Record<ReadingLevel, string>
+  points: string[]
+  terms: GuideTerm[]
+  hook: string
+  fact: string
+  example: string
+  image_query: string
+  image: GuidePicture | null
+  alternatives: GuidePicture[]
+  prompt: string
+  options: string[]
+  answer: number
+  explanation: string
+  skill: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  source_ids: string[]
+}
+
+/** What a study guide has besides its sections. */
+export interface GuideExtras {
+  big_question: string
+  intro: string
+  summary: string[]
+  challenge: { title: string; steps: string[] } | null
+}
+
+export type Item = QuizItem | FlashcardItem | GuideSection
 
 export interface Skill {
   slug: string
@@ -64,6 +113,8 @@ export interface SetDetail extends SetSummary {
   items: Item[]
   skills: Skill[]
   sources: Source[]
+  /** Empty for kinds without extras. */
+  extras: Partial<GuideExtras>
 }
 
 export interface GenerateDraft {
@@ -134,8 +185,11 @@ export const learningApi = {
     return apiFetch<{ items: SetSummary[]; total: number }>(`/learning-sets${suffix}`)
   },
   get: (id: string) => apiFetch<SetDetail>(`/learning-sets/${id}`),
-  edit: (id: string, patch: { title?: string; items?: Item[] }) =>
+  edit: (id: string, patch: { title?: string; items?: Item[]; extras?: GuideExtras }) =>
     apiFetch<SetDetail>(`/learning-sets/${id}`, { method: 'PATCH', ...json(patch) }),
+  /** One more item written by AI, returned for the editor to place and save. */
+  add: (id: string, instruction: string) =>
+    apiFetch<{ item: Item }>(`/learning-sets/${id}/items`, { method: 'POST', ...json({ instruction }) }),
   rewrite: (id: string, itemId: string, instruction: string) =>
     apiFetch<{ item: Item }>(`/learning-sets/${id}/items/${itemId}/rewrite`, {
       method: 'POST',
@@ -149,4 +203,6 @@ export const learningApi = {
     apiFetch<Assignment>(`/assignments/${id}`, { method: 'PATCH', ...json(patch) }),
 }
 
-export const isQuiz = (item: Item): item is QuizItem => 'options' in item
+export const isGuide = (item: Item): item is GuideSection => 'heading' in item
+// A guide section has options too — for its check — so it is ruled out first.
+export const isQuiz = (item: Item): item is QuizItem => 'options' in item && !('heading' in item)

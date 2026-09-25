@@ -14,6 +14,7 @@ import JoinPage from '@/features/classes/JoinPage'
 import { NewsPop } from '@/features/notifications/NewsPop'
 import { NotificationsProvider } from '@/features/notifications/NotificationsProvider'
 import EditorPage from '@/features/learning/EditorPage'
+import GuidePreviewPage from '@/features/guide/GuidePreviewPage'
 import LibraryPage from '@/features/learning/LibraryPage'
 import { LearnStudioProvider } from '@/features/learning/LearnStudio'
 import { AppShell } from '@/features/shell/AppShell'
@@ -73,6 +74,8 @@ export default function App() {
           <Route path="/classes/:classId/:tab" element={<Shell capability="manage_classes"><ClassPage /></Shell>} />
           <Route path="/library" element={<Shell capability={MAKES_SETS}><LibraryPage /></Shell>} />
           <Route path="/library/:setId" element={<Shell capability={MAKES_SETS}><EditorPage /></Shell>} />
+          {/* Outside the app frame, so it prints as a handout and nothing else. */}
+          <Route path="/library/:setId/preview" element={<Protected><Allowed capability="share_learning_sets"><GuidePreviewPage /></Allowed></Protected>} />
           <Route path="/buddy" element={<Shell><BuddyPage /></Shell>} />
           <Route path="/profile" element={<Shell><Profile /></Shell>} />
           <Route path="/settings" element={<Shell><Settings /></Shell>} />

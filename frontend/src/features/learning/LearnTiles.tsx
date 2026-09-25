@@ -39,16 +39,17 @@ export function LearnTiles({
   return (
     <section aria-label={practice ? 'Practise something' : 'Make something to learn'} className="mb-3">
       <h2 className="mb-2 px-1 text-sm font-bold text-muted-foreground">{practice ? 'Practise any topic' : 'Make something to learn'}</h2>
-      <div className="grid grid-cols-2 gap-3">
+      <div className={cn('grid grid-cols-2 gap-3', kinds.length > 2 && 'lg:grid-cols-3')}>
         {kinds.map((kind, index) => (
-          <Tile key={kind.name} kind={kind} index={index} onPick={() => onPick(kind.name)} />
+          <Tile key={kind.name} kind={kind} index={index} onPick={() => onPick(kind.name)} wide={kinds.length > 2 && index === 2} />
         ))}
       </div>
     </section>
   )
 }
 
-function Tile({ kind, index, onPick }: { kind: LearningKindInfo; index: number; onPick: () => void }) {
+function Tile({ kind, index, onPick, wide = false }: { kind: LearningKindInfo; index: number; onPick: () => void; wide?: boolean }) {
+  const Scene = SCENES[kind.name] ?? QuizScene
   const look = LOOKS[kind.name]
   return (
     <motion.button
@@ -58,7 +59,8 @@ function Tile({ kind, index, onPick }: { kind: LearningKindInfo; index: number; 
       animate={{ opacity: 1, y: 0, transition: { ...spring.gentle, delay: index * 0.08 } }}
       whileHover={{ y: -4 }}
       whileTap={{ scale: 0.97 }}
-      className={cn('group relative flex h-32 overflow-hidden rounded-[1.75rem] p-4 text-left shadow-press sm:h-36', look.hero)}
+      // An odd tile out spans the row on a phone rather than sitting alone.
+      className={cn('group relative flex h-32 overflow-hidden rounded-[1.75rem] p-4 text-left shadow-press sm:h-36', wide && 'col-span-2 lg:col-span-1', look.hero)}
       aria-label={`${look.label}: ${look.promise}`}
     >
       <span className="blob -right-8 -top-10 size-32 bg-white/40" aria-hidden />
@@ -72,7 +74,7 @@ function Tile({ kind, index, onPick }: { kind: LearningKindInfo; index: number; 
         </span>
       </span>
       <span className="absolute bottom-3 right-3 sm:right-4" aria-hidden>
-        {kind.name === 'quiz' ? <QuizScene /> : <FlashScene />}
+        <Scene />
       </span>
       <ArrowUpRight weight="bold" className="absolute right-4 top-4 size-5 opacity-70 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
     </motion.button>
@@ -122,4 +124,35 @@ function FlashScene() {
       </motion.span>
     </span>
   )
+}
+
+/** A little book, its pages turning one after another. */
+function GuideScene() {
+  const calm = useCalmMotion()
+  return (
+    <span className="relative flex h-14 w-20 items-end justify-center [perspective:500px] sm:h-16 sm:w-24">
+      <span className="absolute bottom-0 left-1 h-12 w-9 rounded-l-md bg-white/90 shadow sm:h-14 sm:w-10" />
+      <span className="absolute bottom-0 right-1 h-12 w-9 rounded-r-md bg-white shadow sm:h-14 sm:w-10">
+        <span className="absolute inset-x-1.5 top-2 space-y-1">
+          <span className="block h-1 rounded bg-kind-study-guide-vivid/50" />
+          <span className="block h-1 w-3/4 rounded bg-kind-study-guide-vivid/30" />
+          <span className="block h-3 rounded-sm bg-sun-300/80" />
+        </span>
+      </span>
+      {[0, 1].map((page) => (
+        <motion.span
+          key={page}
+          className="absolute bottom-0 left-1/2 h-12 w-9 origin-left rounded-r-md bg-sky-100 shadow-sm [backface-visibility:hidden] sm:h-14 sm:w-10"
+          animate={calm ? undefined : { rotateY: [0, 0, -180, -180] }}
+          transition={{ duration: 3.4, repeat: Infinity, delay: page * 0.5, times: [0, 0.3, 0.6, 1], ease: 'easeInOut' }}
+        />
+      ))}
+    </span>
+  )
+}
+
+const SCENES: Partial<Record<LearningKindInfo['name'], () => React.ReactNode>> = {
+  quiz: QuizScene,
+  flashcard: FlashScene,
+  study_guide: GuideScene,
 }

@@ -7,6 +7,7 @@ import {
   CheckCircle,
   CircleNotch,
   Globe,
+  Images,
   MagnifyingGlass,
   PuzzlePiece,
   Sparkle,
@@ -18,17 +19,18 @@ import {
 import { Button } from '@/components/ui'
 import { celebrate, spring, useCalmMotion } from '@/motion'
 import { cn } from '@/lib/utils'
-import { isQuiz, type Item, type SetSummary } from './api'
+import { isGuide, isQuiz, type Item, type SetSummary } from './api'
 import { lookOfKind } from './kinds'
 import { OPTION_LOOKS } from './options'
-import { STAGE_ORDER, type Generation, type StageKey } from './useGeneration'
+import { stagesFor, type Generation, type StageKey } from './useGeneration'
 
-const STAGE_ICONS = { check: ShieldCheck, research: MagnifyingGlass, skills: PuzzlePiece, write: PencilSimpleLine }
+const STAGE_ICONS = { check: ShieldCheck, research: MagnifyingGlass, skills: PuzzlePiece, write: PencilSimpleLine, finish: Images }
 const STAGE_WAITING: Record<StageKey, string> = {
   check: 'Checking the topic',
   research: 'Searching trusted sources',
   skills: 'Mapping the skills',
   write: 'Writing and checking every one',
+  finish: 'Adding pictures and finishing touches',
 }
 
 type Watched = Pick<SetSummary, 'id' | 'kind' | 'title' | 'topic' | 'grade_label' | 'purpose'>
@@ -78,7 +80,7 @@ export function GenerationPanel({
           >
             <Header look={look} set={set} generation={generation} onClose={onClose} />
             <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-6">
-              <Stages generation={generation} />
+              <Stages generation={generation} kind={set.kind} />
               <Sources generation={generation} />
               <Skills generation={generation} look={look} />
               <Items items={generation.items} kind={set.kind} />
@@ -138,10 +140,10 @@ function Header({ look, set, generation, onClose }: { look: ReturnType<typeof lo
   )
 }
 
-function Stages({ generation }: { generation: Generation }) {
+function Stages({ generation, kind }: { generation: Generation; kind: string }) {
   return (
     <ol className="space-y-2">
-      {STAGE_ORDER.map((key) => {
+      {stagesFor(kind).map((key) => {
         const stage = generation.stages[key]
         const Icon = STAGE_ICONS[key]
         const state = stage?.state ?? 'waiting'
@@ -255,7 +257,19 @@ function Items({ items, kind }: { items: Item[]; kind: string }) {
             style={{ boxShadow: `0 0 0 1px ${look.colour}22, 0 8px 22px -12px ${look.colour}` }}
           >
             <span className={cn('absolute -left-2 -top-2 grid size-7 place-items-center rounded-full text-xs font-bold shadow', look.hero)}>{i + 1}</span>
-            {isQuiz(item) ? (
+            {isGuide(item) ? (
+              <div className="flex gap-3">
+                {item.image ? (
+                  <motion.img initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={spring.bouncy} src={item.image.thumbnail || item.image.image} alt="" referrerPolicy="no-referrer" className="size-16 shrink-0 rounded-xl object-cover" />
+                ) : (
+                  <span className="grid size-16 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground"><Images weight="duotone" className="size-6" /></span>
+                )}
+                <div className="min-w-0">
+                  <p className="font-bold">{item.heading}</p>
+                  <p className="line-clamp-2 text-sm text-muted-foreground">{item.points.join(' · ')}</p>
+                </div>
+              </div>
+            ) : isQuiz(item) ? (
               <>
                 <p className="font-bold">{item.prompt}</p>
                 <div className="mt-2 grid grid-cols-2 gap-1.5">
