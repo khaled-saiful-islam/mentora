@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Check, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ArtifactBuild } from '@/lib/chat-types'
+import { Check, CircleNotch } from '@phosphor-icons/react'
 
 /**
  * What is happening while an artifact is made.
@@ -45,7 +45,7 @@ export function BuildSteps({ build }: { build: ArtifactBuild }) {
             <li key={`${step.label}-${index}`} className="flex items-start gap-2.5">
               <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
                 {running ? (
-                  <Loader2 className="size-3.5 animate-spin text-primary" aria-hidden />
+                  <CircleNotch className="size-3.5 animate-spin text-primary" aria-hidden />
                 ) : (
                   <Check className="size-3.5 text-success" aria-hidden />
                 )}

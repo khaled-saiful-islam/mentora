@@ -1,6 +1,6 @@
-import { AlertCircle, Check, Globe, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ToolActivity as Activity } from '@/hooks/useChat'
+import { Check, Globe, Sparkle, WarningCircle } from '@phosphor-icons/react'
 
 /**
  * What the assistant is doing before it starts writing.
@@ -31,24 +31,24 @@ function Row({ activity }: { activity: Activity }) {
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs',
+        'inline-flex items-center gap-2 rounded-full border-2 border-border bg-surface px-3 py-1.5 text-sm font-semibold',
         failed && 'border-destructive/30 text-destructive',
       )}
       role="status"
       aria-live="polite"
     >
       {failed ? (
-        <AlertCircle className="size-3.5 shrink-0" aria-hidden />
+        <WarningCircle weight="bold" className="size-4 shrink-0" aria-hidden />
       ) : running ? (
         // The globe means searching. A build is not a search, and showing one
         // while a website is made said the wrong thing twice over.
         MAKERS.has(activity.tool) ? (
-          <Sparkles className="size-3.5 shrink-0 animate-pulse text-primary" aria-hidden />
+          <Sparkle weight="bold" className="size-4 shrink-0 animate-pulse text-primary" aria-hidden />
         ) : (
-          <Globe className="size-3.5 shrink-0 animate-pulse text-primary" aria-hidden />
+          <Globe weight="bold" className="size-4 shrink-0 animate-spin text-primary [animation-duration:2.4s]" aria-hidden />
         )
       ) : (
-        <Check className="size-3.5 shrink-0 text-success" aria-hidden />
+        <Check weight="bold" className="size-4 shrink-0 text-success" aria-hidden />
       )}
 
       <span className={cn(running && 'shimmer', !running && !failed && 'text-muted-foreground')}>

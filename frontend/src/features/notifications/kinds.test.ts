@@ -33,6 +33,14 @@ describe('notification kinds', () => {
     expect(`${view.title(n)} ${view.body?.(n)}`).not.toContain('self_harm')
   })
 
+  it('never doubles the article when a title starts with "The"', () => {
+    // Every id picks a different line, so this walks all of them.
+    for (let id = 0; id < 40; id += 1) {
+      const n = { ...note('completion', { title: 'The Water Cycle', actors: ['Mei'] }, 4), id: String(id) }
+      expect(headlineOf(n)).not.toMatch(/\bthe the\b/i)
+    }
+  })
+
   it('says news in a fun way, the same way every time for the same note', () => {
     const n = note('badge_awarded', { badge_name: 'Hot Streak' })
     const line = headlineOf(n)

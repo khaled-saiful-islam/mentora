@@ -1,6 +1,6 @@
-import { FileText, Loader2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatBytes, type AttachedFile } from '@/hooks/useDocuments'
+import { CircleNotch, FileText, X } from '@phosphor-icons/react'
 
 /**
  * "27 lines", "3 pages" — or nothing for an image, where "1 image" says less
@@ -82,7 +82,7 @@ function Chip({ file, onRemove }: { file: AttachedFile; onRemove: () => void }) 
 function Pending({ name }: { name: string }) {
   return (
     <span className="inline-flex max-w-[15rem] items-center gap-1.5 rounded-lg border border-dashed border-border px-2 py-1 text-xs text-muted-foreground">
-      <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />
+      <CircleNotch className="size-3.5 shrink-0 animate-spin" aria-hidden />
       <span className="truncate">Reading {name}…</span>
     </span>
   )

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, Copy, RefreshCw, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Rating } from '@/hooks/useChat'
+import { ArrowsClockwise, Check, Copy, ThumbsDown, ThumbsUp } from '@phosphor-icons/react'
 
 /**
  * Hover actions under an assistant message.
@@ -55,12 +55,12 @@ export function MessageActions({
         )}
       >
         <ActionButton label={copied ? 'Copied' : 'Copy'} onClick={copy} active={copied}>
-          {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+          {copied ? <Check weight="bold" className="size-4" /> : <Copy weight="bold" className="size-4" />}
         </ActionButton>
 
         {canRegenerate && (
           <ActionButton label="Regenerate" onClick={onRegenerate}>
-            <RefreshCw className="size-3.5" />
+            <ArrowsClockwise weight="bold" className="size-4" />
           </ActionButton>
         )}
 
@@ -69,7 +69,7 @@ export function MessageActions({
           onClick={() => rate('up')}
           active={rating === 'up'}
         >
-          <ThumbsUp className="size-3.5" />
+          <ThumbsUp weight="bold" className="size-4" />
         </ActionButton>
 
         <ActionButton
@@ -77,7 +77,7 @@ export function MessageActions({
           onClick={() => rate('down')}
           active={rating === 'down'}
         >
-          <ThumbsDown className="size-3.5" />
+          <ThumbsDown weight="bold" className="size-4" />
         </ActionButton>
       </div>
 
@@ -113,8 +113,8 @@ function ActionButton({
       aria-label={label}
       aria-pressed={active}
       className={cn(
-        'grid size-7 place-items-center rounded-md transition-colors',
-        active ? 'text-primary' : 'text-muted-foreground hover:bg-hover hover:text-foreground',
+        'grid size-8 place-items-center rounded-full transition-[background-color,color,transform] active:scale-90',
+        active ? 'bg-grape-100 text-primary dark:bg-grape-800/40' : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >
       {children}

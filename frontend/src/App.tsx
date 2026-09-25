@@ -21,6 +21,7 @@ import BuddyPage from '@/features/buddies/BuddyPage'
 import { Welcome } from '@/features/buddies/Welcome'
 import StudentClassPage from '@/features/classes/StudentClassPage'
 import StudentHome from '@/features/home/StudentHome'
+import TeacherHome from '@/features/home/TeacherHome'
 import PlayPage from '@/features/play/PlayPage'
 import ResultsPage from '@/features/results/ResultsPage'
 import BadgesPage from '@/features/badges/BadgesPage'
@@ -55,8 +56,9 @@ export default function App() {
           <Route path="/s/:token" element={<Shared />} />
           <Route path="/a/:token" element={<SharedArtifact />} />
           <Route path="/" element={<Protected><Home /></Protected>} />
-          <Route path="/chat" element={<Protected><Chat /></Protected>} />
-          <Route path="/c/:conversationId" element={<Protected><Chat /></Protected>} />
+          <Route path="/chat" element={<Protected><Allowed capability="use_chat"><Chat /></Allowed></Protected>} />
+          <Route path="/studio" element={<Protected><Allowed capability="studio_artifacts"><Chat /></Allowed></Protected>} />
+          <Route path="/c/:conversationId" element={<Protected><Allowed capability="use_chat"><Chat /></Allowed></Protected>} />
           <Route path="/play/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="assignment" /></Allowed></Protected>} />
           <Route path="/practice/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="practice" /></Allowed></Protected>} />
           <Route path="/attempts/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="attempt" /></Allowed></Protected>} />
@@ -90,7 +92,8 @@ export default function App() {
   )
 }
 
-/** `/` is a student's home and everyone else's studio. */
+/** `/` is home: a student's, with their buddy and their work; a teacher's,
+ *  with their classes and what is happening in them. */
 function Home() {
   const { user } = useAuth()
   if (user?.role === 'student') {
@@ -102,7 +105,11 @@ function Home() {
       </AppShell>
     )
   }
-  return <Chat />
+  return (
+    <AppShell>
+      <TeacherHome />
+    </AppShell>
+  )
 }
 
 /** A class page: the teacher's workroom, or what a student sees of it. */

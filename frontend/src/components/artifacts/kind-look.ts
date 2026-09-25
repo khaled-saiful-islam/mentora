@@ -1,5 +1,4 @@
-import { AppWindow, Gamepad2, Image as ImageIcon, LayoutGrid, Presentation, Sparkles } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { AppWindow, GameController, type Icon, Image as ImageIcon, Presentation, Sparkle, SquaresFour } from '@phosphor-icons/react'
 
 /**
  * How a kind of artifact presents itself in the transcript.
@@ -17,7 +16,7 @@ import type { LucideIcon } from 'lucide-react'
  * neutral mark, and looks deliberate until someone gives it its own.
  */
 export interface KindLook {
-  icon: LucideIcon
+  icon: Icon
   /** The glyph's own colour, for the states that do not sit on the solid tile. */
   colour: string
   /** The tile behind the glyph: the colour at full strength. */
@@ -61,7 +60,7 @@ const LOOKS: Record<string, KindLook> = {
     ratio: '1600 / 900',
   },
   games: {
-    icon: Gamepad2,
+    icon: GameController,
     colour: 'text-kind-games',
     tile: 'bg-kind-games text-white',
     surface: 'bg-gradient-to-r from-kind-games/12 to-kind-games/[0.04]',
@@ -84,7 +83,7 @@ const LOOKS: Record<string, KindLook> = {
     ratio: '1280 / 800',
   },
   app: {
-    icon: LayoutGrid,
+    icon: SquaresFour,
     colour: 'text-kind-app',
     tile: 'bg-kind-app text-white',
     surface: 'bg-gradient-to-r from-kind-app/12 to-kind-app/[0.04]',
@@ -96,7 +95,7 @@ const LOOKS: Record<string, KindLook> = {
 }
 
 const UNKNOWN: KindLook = {
-  icon: Sparkles,
+  icon: Sparkle,
   colour: 'text-primary',
   tile: 'bg-primary text-primary-foreground',
   surface: 'bg-gradient-to-r from-primary/12 to-primary/[0.04]',

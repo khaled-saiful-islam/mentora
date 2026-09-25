@@ -1,10 +1,10 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { useRef as useNodeRef } from 'react'
-import { ArrowUp, Check, Globe, Paperclip, Square } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SearchMode } from '@/hooks/useChat'
 import { acceptAttribute, type AttachedFile } from '@/hooks/useDocuments'
 import { Attachments } from './Attachments'
+import { ArrowUp, Check, Globe, Paperclip, Square } from '@phosphor-icons/react'
 
 const MAX_HEIGHT_PX = 224 // matches --composer-max-height in theme.css
 const SEARCH_MODE_KEY = 'mentora-search-mode'
@@ -46,6 +46,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     onAttach,
     onRemoveFile,
     placeholder = 'Message Mentora…',
+    note = 'Mentora can make mistakes. Check important information.',
     autoFocus,
   },
   ref,
@@ -110,8 +111,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         {above}
         <div
           className={cn(
-            'rounded-2xl border border-input bg-surface p-2 shadow',
-            'transition-shadow focus-within:ring-2 focus-within:ring-ring',
+            'rounded-[1.75rem] border-2 border-input bg-surface p-2.5 shadow-lg',
+            'transition-[border-color,box-shadow] focus-within:border-primary focus-within:ring-4 focus-within:ring-ring/20',
           )}
         >
         <Attachments files={files} uploading={uploadingFile} onRemove={onRemoveFile} />
@@ -128,7 +129,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             onKeyDown={onKeyDown}
             aria-label="Message"
             className={cn(
-              'flex-1 resize-none bg-transparent px-2 py-2 text-sm leading-relaxed',
+              'flex-1 resize-none bg-transparent px-3 py-2.5 text-base leading-relaxed',
               'placeholder:text-muted-foreground focus:outline-none disabled:opacity-50',
             )}
           />
@@ -140,11 +141,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               aria-label="Stop generating"
               title="Stop generating"
               className={cn(
-                'grid size-9 shrink-0 place-items-center rounded-xl',
+                'grid size-11 shrink-0 place-items-center rounded-full',
                 'bg-foreground text-background transition-opacity hover:opacity-80',
               )}
             >
-              <Square className="size-3.5 fill-current" aria-hidden />
+              <Square weight="fill" className="size-4" aria-hidden />
             </button>
           ) : (
             <button
@@ -153,13 +154,13 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               disabled={!canSend}
               aria-label="Send message"
               className={cn(
-                'grid size-9 shrink-0 place-items-center rounded-xl transition-colors',
+                'grid size-11 shrink-0 place-items-center rounded-full transition-[background-color,transform,box-shadow]',
                 canSend
-                  ? 'bg-primary text-primary-foreground hover:bg-accent-600'
+                  ? 'bg-primary text-primary-foreground shadow-press hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none'
                   : 'bg-muted text-muted-foreground',
               )}
             >
-              <ArrowUp className="size-4" aria-hidden />
+              <ArrowUp weight="bold" className="size-5" aria-hidden />
             </button>
           )}
         </div>
@@ -188,13 +189,13 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             }
             aria-label="Attach a file"
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors',
+              'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold transition-colors',
               atFileLimit || uploadingFile
                 ? 'cursor-not-allowed text-muted-foreground/50'
                 : 'text-muted-foreground hover:bg-hover',
             )}
           >
-            <Paperclip className="size-3.5" aria-hidden />
+            <Paperclip weight="bold" className="size-4" aria-hidden />
             Attach
           </button>
 
@@ -210,14 +211,14 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 : 'Set SERPAPI_KEY in .env to enable web search'
             }
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors',
+              'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold transition-colors',
               !searchEnabled && 'cursor-not-allowed text-muted-foreground/50',
-              searchEnabled && searchMode === 'always' && 'bg-accent-100 text-accent-800',
+              searchEnabled && searchMode === 'always' && 'bg-grape-100 text-grape-800 dark:bg-grape-800/40 dark:text-grape-100',
               searchEnabled && searchMode === 'auto' && 'text-muted-foreground hover:bg-hover',
               searchEnabled && searchMode === 'off' && 'text-muted-foreground/60 hover:bg-hover',
             )}
           >
-            <Globe className="size-3.5" aria-hidden />
+            <Globe weight="bold" className="size-4" aria-hidden />
             Search
             <span className="opacity-70">
               {MODES.find((m) => m.value === searchMode)?.label}
@@ -229,7 +230,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} aria-hidden />
               <div
                 role="menu"
-                className="absolute bottom-8 left-0 z-20 w-64 overflow-hidden rounded-lg border border-border bg-surface py-1 shadow-lg"
+                className="absolute bottom-10 left-0 z-20 w-64 overflow-hidden rounded-2xl border border-border bg-surface py-1.5 shadow-lg"
               >
                 {MODES.map((mode) => (
                   <button
@@ -267,9 +268,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         </div>
         </div>
 
-        <p className="mt-2 text-center text-xs text-muted-foreground">
-          Mentora can make mistakes. Check important information.
-        </p>
+        <p className="mt-2 text-center text-xs text-muted-foreground">{note}</p>
       </div>
     </div>
   )
@@ -293,5 +292,7 @@ interface ComposerProps {
   onAttach: (file: File) => void
   onRemoveFile: (id: string) => void
   placeholder?: string
+  /** The small print under the box. */
+  note?: string
   autoFocus?: boolean
 }

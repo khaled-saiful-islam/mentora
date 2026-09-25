@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
-import { ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Source } from '@/hooks/useChat'
+import { ArrowSquareOut } from '@phosphor-icons/react'
 
 const OPEN_DELAY_MS = 120
 const CLOSE_DELAY_MS = 140
@@ -66,7 +66,7 @@ export function Citation({ rank, source }: { rank: number; source: Source }) {
         >
           <span className="flex items-center gap-1 text-[0.6875rem] text-muted-foreground">
             <span className="truncate">{hostOf(source.url)}</span>
-            <ExternalLink className="size-2.5 shrink-0" aria-hidden />
+            <ArrowSquareOut className="size-2.5 shrink-0" aria-hidden />
           </span>
 
           <span className="mt-1 block text-sm font-medium leading-snug">{source.title}</span>

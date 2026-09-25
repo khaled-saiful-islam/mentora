@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import PlainTextResponse
 
-from app.api.deps import CurrentUser, SessionDep, SettingsDep
+from app.api.deps import CurrentUser, SessionDep, SettingsDep, require_capability
 from app.api.schemas.chat import (
     ConversationDetail,
     ConversationList,
@@ -24,7 +24,12 @@ from app.services.chat_service import list_conversations
 from app.services.export_service import filename_for, to_markdown
 from app.services.feedback_service import FeedbackService
 
-router = APIRouter(prefix="/conversations", tags=["conversations"])
+# Closed to anyone without chat, whatever the route below it checks.
+router = APIRouter(
+    prefix="/conversations",
+    tags=["conversations"],
+    dependencies=[Depends(require_capability("use_chat"))],
+)
 
 
 @router.get("", response_model=ConversationList)

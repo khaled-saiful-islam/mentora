@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { FileText } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { Alert, Spinner } from '@/components/ui'
 import { Markdown } from '@/components/chat/Markdown'
 import { Sources } from '@/components/chat/Sources'
 import { apiFetch } from '@/lib/api'
 import type { Source } from '@/lib/chat-types'
+import { FileText } from '@phosphor-icons/react'
 
 interface PublicMessage {
   role: string

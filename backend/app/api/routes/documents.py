@@ -10,13 +10,18 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, UploadFile, status
 
-from app.api.deps import CurrentUser, SessionDep, SettingsDep, limit_upload
+from app.api.deps import CurrentUser, SessionDep, SettingsDep, limit_upload, require_capability
 from app.api.schemas.document import DocumentList, DocumentResponse
 from app.core.errors import ValidationError
 from app.services.document_service import DocumentService, human_size
 from app.vision.registry import build_image_reader
 
-router = APIRouter(prefix="/conversations/{conversation_id}/documents", tags=["documents"])
+# Closed to anyone without chat, whatever the route below it checks.
+router = APIRouter(
+    prefix="/conversations/{conversation_id}/documents",
+    tags=["documents"],
+    dependencies=[Depends(require_capability("use_chat"))],
+)
 
 
 def _service(session, settings) -> DocumentService:

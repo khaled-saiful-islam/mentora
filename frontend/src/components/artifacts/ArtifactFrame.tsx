@@ -23,12 +23,15 @@ export function ArtifactFrame({
   height,
   sandbox,
   title,
+  zoom = 1,
 }: {
   html: string
   width: number
   height: number
   sandbox: string
   title: string
+  /** Drawn this much bigger than fitted, scrolling past the panel's edge. */
+  zoom?: number
 }) {
   const box = useRef<HTMLDivElement>(null)
   const frame = useRef<HTMLIFrameElement>(null)
@@ -76,21 +79,22 @@ export function ArtifactFrame({
     return () => observer.disconnect()
   }, [real.width, real.height])
 
+  const shown = scale * zoom
+
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden p-4">
-      <div
-        ref={box}
-        className="flex min-h-0 min-w-0 flex-1 items-center justify-center"
-      >
+      {/* Centred by the child's own margins rather than by the box: centring
+          content bigger than its box pushes the top and left out of reach. */}
+      <div ref={box} className="flex min-h-0 min-w-0 flex-1 overflow-auto">
       <div
         style={{
-          width: real.width * scale,
-          height: real.height * scale,
+          width: real.width * shown,
+          height: real.height * shown,
           // Hidden until measured rather than shown at full size and snapped
           // down, which reads as the panel breaking and then recovering.
           visibility: scale > 0 ? 'visible' : 'hidden',
         }}
-        className="shrink-0 overflow-hidden rounded-md shadow-lg ring-1 ring-border"
+        className="m-auto shrink-0 overflow-hidden rounded-xl shadow-lg ring-1 ring-border"
       >
         <iframe
           ref={frame}
@@ -104,7 +108,7 @@ export function ArtifactFrame({
           style={{
             width: real.width,
             height: real.height,
-            transform: `scale(${scale})`,
+            transform: `scale(${shown})`,
             transformOrigin: 'top left',
             border: 0,
             display: 'block',

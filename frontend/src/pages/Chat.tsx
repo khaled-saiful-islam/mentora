@@ -1,15 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Download, Link2, Menu } from 'lucide-react'
-import { Alert, Button } from '@/components/ui'
-import { Logo } from '@/components/Logo'
+import { Alert } from '@/components/ui'
 import { Composer, type ComposerHandle } from '@/components/chat/Composer'
 import { MakeChips } from '@/components/make/MakeChips'
 import { MakeRail } from '@/components/make/MakeRail'
 import { inOrder, startWith, type Makeable } from '@/components/make/showcase'
 import { MessageList } from '@/components/chat/MessageList'
 import { Sidebar } from '@/components/sidebar/Sidebar'
-import { ConversationUsage } from '@/components/chat/Usage'
 import { AttachmentError } from '@/components/chat/AttachmentError'
 import { Suggestions } from '@/components/chat/Suggestions'
 import { ShareDialog } from '@/components/chat/ShareDialog'
@@ -21,6 +18,9 @@ import { useConversations } from '@/hooks/useConversations'
 import { useConfig } from '@/hooks/useConfig'
 import { useMakeable } from '@/hooks/useMakeable'
 import { LearnTiles } from '@/features/learning/LearnTiles'
+import { ChatHeader } from '@/features/chat/ChatHeader'
+import { ChatWelcome } from '@/features/chat/ChatWelcome'
+import { profileOf } from '@/features/buddies'
 import { useLearnStudio } from '@/features/learning/LearnStudio'
 import { useDocuments } from '@/hooks/useDocuments'
 import { apiFetch } from '@/lib/api'
@@ -133,62 +133,22 @@ export default function Chat() {
       />
 
       <main className="flex min-w-0 flex-1 flex-col">
-        {empty && (
-          // The empty screen has no header of its own, so the drawer needs its
-          // own way in on mobile.
-          <div className="flex h-12 shrink-0 items-center px-2 md:hidden">
-            <MenuButton onClick={() => setMenuOpen(true)} />
-          </div>
-        )}
-
-        {!empty && (
-          <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-2 sm:gap-4 sm:px-4">
-            <div className="flex min-w-0 items-center gap-1">
-              <MenuButton onClick={() => setMenuOpen(true)} className="md:hidden" />
-              <h1 className="truncate text-sm font-medium">{chat.title}</h1>
-            </div>
-            <div className="flex shrink-0 items-center gap-3">
-              {chat.totals && <ConversationUsage totals={chat.totals} />}
-            {activeConversationId && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSharing(true)}
-                title="Share a public link"
-              >
-                <Link2 className="size-4" aria-hidden />
-                <span className="hidden sm:inline">Share</span>
-              </Button>
-            )}
-            {activeConversationId && (
-              // A plain link, not fetch-and-blob: the browser already knows how
-              // to save a file the server marked as an attachment.
-              <a
-                href={`/api/conversations/${activeConversationId}/export`}
-                download
-                className="shrink-0"
-                title="Export as Markdown"
-              >
-                <Button variant="ghost" size="sm">
-                  <Download className="size-4" aria-hidden />
-                  <span className="hidden sm:inline">Export</span>
-                </Button>
-              </a>
-            )}
-            </div>
-          </header>
-        )}
+        <ChatHeader
+          title={empty ? '' : (chat.title ?? '')}
+          conversationId={empty ? null : activeConversationId}
+          totals={chat.totals}
+          onMenu={() => setMenuOpen(true)}
+          onShare={() => setSharing(true)}
+        />
 
         {empty ? (
-          <>
-            {/* Where the news used to be: the studio artifacts, for staff. */}
-            {kinds.length > 0 && (
-              <div className="mx-auto w-full max-w-[var(--message-column)] px-4 pt-4">
-                <MakeRail kinds={kinds} onPick={start} />
-              </div>
-            )}
-            <EmptyState canMake={kinds.length > 0} learns={makeable.learning.length > 0} />
-          </>
+          <ChatWelcome onPick={(text) => void chat.send(text)}>
+            {/* The studio artifacts, for staff: right at the top. */}
+            {kinds.length > 0 && <MakeRail kinds={kinds} onPick={start} />}
+            {/* What Mentora makes for learning, in the welcome rather than
+                over the box, so the box stays small and the welcome breathes. */}
+            <LearnTiles kinds={makeable.learning} onPick={studio.create} />
+          </ChatWelcome>
         ) : (
           <MessageList
             messages={chat.messages}
@@ -221,10 +181,7 @@ export default function Chat() {
         <Composer
           ref={composer}
           above={
-            empty ? (
-              // Right above the box: what Mentora makes for learning.
-              <LearnTiles kinds={makeable.learning} onPick={studio.create} />
-            ) : (
+            empty ? null : (
               <>
                 <LearnTiles compact kinds={makeable.learning} onPick={studio.create} />
                 {kinds.length > 0 && <MakeChips kinds={kinds} hidden={chat.streaming} onPick={(kind) => start(kind)} />}
@@ -253,6 +210,12 @@ export default function Chat() {
           onRemoveFile={(id) => {
             if (activeConversationId) void documents.remove(id, activeConversationId)
           }}
+          placeholder={user?.role === 'student' ? `Ask ${profileOf(user.buddy).name} anything…` : 'Ask, plan or make something…'}
+          note={
+            user?.role === 'student'
+              ? `${profileOf(user.buddy).name} can make mistakes too — check big things with your teacher.`
+              : 'Mentora can make mistakes. Check important information.'
+          }
           autoFocus
         />
       </main>
@@ -285,38 +248,6 @@ export default function Chat() {
           onClose={() => setSharing(false)}
         />
       )}
-    </div>
-  )
-}
-
-function MenuButton({ onClick, className }: { onClick: () => void; className?: string }) {
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={onClick}
-      aria-label="Open menu"
-      className={className}
-    >
-      <Menu className="size-4" aria-hidden />
-    </Button>
-  )
-}
-
-function EmptyState({ canMake, learns }: { canMake: boolean; learns: boolean }) {
-  return (
-    <div className="flex flex-1 items-center justify-center px-4 py-6">
-      <div className="flex flex-col items-center text-center">
-        <Logo className="size-10" />
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight">How can I help?</h1>
-        <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-          {canMake
-            ? 'Ask anything, make a quiz or flashcards for your class, or design a poster, deck, game, website or app.'
-            : learns
-              ? 'Ask me anything about your lessons — or make a quiz or flashcards to practise.'
-              : 'Ask anything. Mentora replies in the language you write in.'}
-        </p>
-      </div>
     </div>
   )
 }

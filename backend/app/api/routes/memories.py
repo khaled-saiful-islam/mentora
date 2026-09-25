@@ -8,9 +8,9 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
-from app.api.deps import CurrentUser, SessionDep, SettingsDep
+from app.api.deps import CurrentUser, SessionDep, SettingsDep, require_capability
 from app.api.schemas.memory import (
     CreateMemoryRequest,
     MemoryList,
@@ -19,7 +19,12 @@ from app.api.schemas.memory import (
 )
 from app.services.memory_service import MemoryService
 
-router = APIRouter(prefix="/memories", tags=["memories"])
+# Closed to anyone without chat, whatever the route below it checks.
+router = APIRouter(
+    prefix="/memories",
+    tags=["memories"],
+    dependencies=[Depends(require_capability("use_chat"))],
+)
 
 
 @router.get("", response_model=MemoryList)

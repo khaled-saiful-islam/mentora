@@ -1,7 +1,7 @@
-import { AlertCircle, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { lookOf } from '@/components/artifacts/kind-look'
 import type { Artifact, ArtifactBuild } from '@/lib/chat-types'
+import { CircleNotch, WarningCircle } from '@phosphor-icons/react'
 
 /**
  * The artifact in the transcript.
@@ -52,9 +52,9 @@ export function ArtifactCard({
         )}
       >
         {busy ? (
-          <Loader2 className="size-4 animate-spin" aria-hidden />
+          <CircleNotch className="size-4 animate-spin" aria-hidden />
         ) : failed ? (
-          <AlertCircle className="size-4 text-destructive" aria-hidden />
+          <WarningCircle className="size-4 text-destructive" aria-hidden />
         ) : (
           <Glyph className="size-4" aria-hidden />
         )}

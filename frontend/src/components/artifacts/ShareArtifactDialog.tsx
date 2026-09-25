@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Check, Copy, Link2, Loader2, RefreshCw, Trash2 } from 'lucide-react'
 import { Alert, Button } from '@/components/ui'
 import { ApiError, apiFetch } from '@/lib/api'
+import { ArrowsClockwise, Check, CircleNotch, Copy, LinkSimple, Trash } from '@phosphor-icons/react'
 
 interface ArtifactShare {
   token: string
@@ -97,7 +97,7 @@ export function ShareArtifactDialog({
 
         {loading ? (
           <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" aria-hidden /> Checking
+            <CircleNotch className="size-4 animate-spin" aria-hidden /> Checking
           </div>
         ) : share ? (
           <>
@@ -124,10 +124,10 @@ export function ShareArtifactDialog({
             <div className="mt-5 flex items-center justify-between gap-2">
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm" disabled={busy} onClick={() => act('POST')}>
-                  <RefreshCw className="size-4" aria-hidden /> Update to v{version}
+                  <ArrowsClockwise className="size-4" aria-hidden /> Update to v{version}
                 </Button>
                 <Button variant="ghost" size="sm" disabled={busy} onClick={() => act('DELETE')}>
-                  <Trash2 className="size-4" aria-hidden /> Stop sharing
+                  <Trash className="size-4" aria-hidden /> Stop sharing
                 </Button>
               </div>
               <Button size="sm" onClick={onClose}>
@@ -146,7 +146,7 @@ export function ShareArtifactDialog({
                 Cancel
               </Button>
               <Button size="sm" disabled={busy} onClick={() => act('POST')}>
-                <Link2 className="size-4" aria-hidden /> Create a link
+                <LinkSimple className="size-4" aria-hidden /> Create a link
               </Button>
             </div>
           </>

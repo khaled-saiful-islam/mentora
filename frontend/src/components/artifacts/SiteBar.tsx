@@ -1,12 +1,11 @@
-import { Monitor, Smartphone, Tablet } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import { DEVICES, type Device, type SitePage } from '@/lib/site'
 import { cn } from '@/lib/utils'
+import { DeviceMobile, DeviceTablet, type Icon, Monitor } from '@phosphor-icons/react'
 
-const GLYPHS: Record<Device, LucideIcon> = {
+const GLYPHS: Record<Device, Icon> = {
   desktop: Monitor,
-  tablet: Tablet,
-  phone: Smartphone,
+  tablet: DeviceTablet,
+  phone: DeviceMobile,
 }
 
 /**

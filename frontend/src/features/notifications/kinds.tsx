@@ -60,7 +60,7 @@ function finished(n: Notification): string[] {
   if (n.count > 1) {
     return [
       others(n, `finished ${title}`),
-      `The ${title} crowd is growing: ${n.count} done!`,
+      `${title} crowd is growing: ${n.count} done!`,
       `${n.count} finished ${title} — latest is ${who}`,
     ]
   }

@@ -78,12 +78,14 @@ export function EditableFrame({
   height,
   title,
   onChange,
+  zoom = 1,
 }: {
   html: string
   width: number
   height: number
   title: string
   onChange: (index: number, text: string) => void
+  zoom?: number
 }) {
   const box = useRef<HTMLDivElement>(null)
   const frame = useRef<HTMLIFrameElement>(null)
@@ -115,16 +117,18 @@ export function EditableFrame({
     return () => window.removeEventListener('message', onMessage)
   }, [onChange])
 
+  const shown = scale * zoom
+
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden p-4">
-      <div ref={box} className="flex min-h-0 min-w-0 flex-1 items-center justify-center">
+      <div ref={box} className="flex min-h-0 min-w-0 flex-1 overflow-auto">
         <div
           style={{
-            width: real.width * scale,
-            height: real.height * scale,
+            width: real.width * shown,
+            height: real.height * shown,
             visibility: scale > 0 ? 'visible' : 'hidden',
           }}
-          className="shrink-0 overflow-hidden rounded-md shadow-lg ring-2 ring-primary"
+          className="m-auto shrink-0 overflow-hidden rounded-xl shadow-lg ring-2 ring-primary"
         >
           <iframe
             ref={frame}
@@ -137,7 +141,7 @@ export function EditableFrame({
             style={{
               width: real.width,
               height: real.height,
-              transform: `scale(${scale})`,
+              transform: `scale(${shown})`,
               transformOrigin: 'top left',
               border: 0,
               display: 'block',

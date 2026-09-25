@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Download } from 'lucide-react'
 import { Button } from '@/components/ui'
+import { DownloadSimple } from '@phosphor-icons/react'
 
 /**
  * Saving the poster.
@@ -39,9 +39,9 @@ export function DownloadMenu({
         size="sm"
         onClick={() => setOpen((was) => !was)}
         aria-expanded={open}
-        title="Download"
+        title="DownloadSimple"
       >
-        <Download className="size-4" aria-hidden />
+        <DownloadSimple className="size-4" aria-hidden />
       </Button>
       {open && (
         <>

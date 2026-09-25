@@ -22,6 +22,7 @@ export function DeckFrame({
   current,
   sandbox,
   title,
+  zoom = 1,
 }: {
   html: string
   width: number
@@ -30,6 +31,7 @@ export function DeckFrame({
   current: number
   sandbox: string
   title: string
+  zoom?: number
 }) {
   const box = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0)
@@ -47,16 +49,18 @@ export function DeckFrame({
     return () => observer.disconnect()
   }, [width, height])
 
+  const shown = scale * zoom
+
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden p-4">
-      <div ref={box} className="flex min-h-0 min-w-0 flex-1 items-center justify-center">
+      <div ref={box} className="flex min-h-0 min-w-0 flex-1 overflow-auto">
         <div
           style={{
-            width: width * scale,
-            height: height * scale,
+            width: width * shown,
+            height: height * shown,
             visibility: scale > 0 ? 'visible' : 'hidden',
           }}
-          className="relative shrink-0 overflow-hidden rounded-lg shadow-2xl ring-1 ring-border"
+          className="relative m-auto shrink-0 overflow-hidden rounded-xl shadow-2xl ring-1 ring-border"
         >
           <iframe
             title={title}
@@ -67,7 +71,7 @@ export function DeckFrame({
               width,
               // The whole deck, stacked. Moving it is what changes slide.
               height: height * Math.max(count, 1),
-              transform: `scale(${scale}) translateY(${-current * height}px)`,
+              transform: `scale(${shown}) translateY(${-current * height}px)`,
               transformOrigin: 'top left',
               transition: 'transform 380ms cubic-bezier(0.22, 1, 0.36, 1)',
               border: 0,

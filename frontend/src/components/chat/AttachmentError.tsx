@@ -1,4 +1,4 @@
-import { AlertCircle, X } from 'lucide-react'
+import { WarningCircle, X } from '@phosphor-icons/react'
 
 /**
  * A rejected upload, shown in the message column.
@@ -20,7 +20,7 @@ export function AttachmentError({
       className="mx-auto w-full max-w-[var(--message-column)] px-4 pb-2"
     >
       <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-        <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <WarningCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
         <p className="min-w-0 flex-1">{message}</p>
         <button
           type="button"

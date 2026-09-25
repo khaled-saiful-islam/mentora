@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Archive, ChalkboardTeacher, Plus } from '@phosphor-icons/react'
 import { Alert, Button, Skeleton } from '@/components/ui'
@@ -16,7 +16,9 @@ import { useLive } from '@/lib/bus'
 
 export default function TeacherClassesPage() {
   const [view, setView] = useState<'active' | 'archived'>('active')
-  const [creating, setCreating] = useState(false)
+  // `?new=1` — "New class" on the home page — opens straight into the form.
+  const [params] = useSearchParams()
+  const [creating, setCreating] = useState(params.get('new') === '1')
   const classes = useResource(`classes:${view}`, () => classesApi.list(view === 'archived'))
   useLive(['members', 'assignments'], () => void classes.reload())
   const navigate = useNavigate()

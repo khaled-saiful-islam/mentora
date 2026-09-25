@@ -18,6 +18,13 @@ What each role may do is decided in one place,
   the chat route's `artifact_id`, and — the last line — never has the artifact
   tools built into their turn at all.
 - **Public share links** to a conversation are for teachers and admins.
+- **The chat is closed to students for now** (`use_chat`). They make practice
+  quizzes and flashcards from Practice (`POST /api/learning-sets`, which is not part
+  of the chat) and take their class's work. Every chat route — the stream,
+  conversations, their files and memories — refuses them with a 403 at the
+  router, and the menu, `/chat` and `/c/…` are hidden and redirect home.
+  Re-opening it is `use_chat=True` on the student row of the capability table;
+  the guardrails in `032-guardrails.md` still screen every student turn.
 - **Admin routes** are admin-only, with the gate on the router itself.
 
 The grade scale is Malaysian: Year 1–6, Form 1–5, Lower Six, Upper Six

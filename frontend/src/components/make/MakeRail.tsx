@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowUpRight, Sparkles } from 'lucide-react'
 import { colourOf } from '@/components/artifacts/kind-look'
 import { Scene } from '@/components/make/Scene'
 import { showcaseOf, type Makeable } from '@/components/make/showcase'
+import { ArrowUpRight, Sparkle } from '@phosphor-icons/react'
 
 /** How long each tile holds the light before it moves on. */
 const SPOTLIGHT_MS = 3400
@@ -59,7 +59,7 @@ export function MakeRail({
     <section aria-label="Make something" className="mb-3">
       <div className="mb-2 flex items-center justify-between px-1">
         <h2 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-          <Sparkles className="size-3.5 text-primary" aria-hidden />
+          <Sparkle className="size-3.5 text-primary" aria-hidden />
           Make something
         </h2>
         <span className="hidden text-[11px] text-muted-foreground sm:inline">

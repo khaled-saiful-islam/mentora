@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Check, Copy, Link2, Loader2, RefreshCw, Trash2 } from 'lucide-react'
 import { Alert, Button } from '@/components/ui'
 import { ApiError, apiFetch } from '@/lib/api'
+import { ArrowsClockwise, Check, CircleNotch, Copy, LinkSimple, Trash } from '@phosphor-icons/react'
 
 interface Share {
   token: string
@@ -101,7 +101,7 @@ export function ShareDialog({
         aria-label="Share this chat"
       >
         <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <Link2 className="size-5 text-primary" aria-hidden />
+          <LinkSimple className="size-5 text-primary" aria-hidden />
           Share this chat
         </h2>
 
@@ -113,7 +113,7 @@ export function ShareDialog({
 
         {loading ? (
           <div className="mt-6 flex justify-center">
-            <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden />
+            <CircleNotch className="size-5 animate-spin text-muted-foreground" aria-hidden />
           </div>
         ) : share ? (
           <>
@@ -157,11 +157,11 @@ export function ShareDialog({
 
             <div className="mt-5 flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => void act('POST')} disabled={busy}>
-                <RefreshCw className="size-4" aria-hidden />
+                <ArrowsClockwise className="size-4" aria-hidden />
                 Update to latest
               </Button>
               <Button variant="danger" onClick={() => void act('DELETE')} disabled={busy}>
-                <Trash2 className="size-4" aria-hidden />
+                <Trash className="size-4" aria-hidden />
                 Stop sharing
               </Button>
               <Button variant="ghost" onClick={onClose} className="ml-auto">
@@ -182,7 +182,7 @@ export function ShareDialog({
             </p>
             <div className="mt-5 flex gap-2">
               <Button onClick={() => void act('POST')} loading={busy}>
-                <Link2 className="size-4" aria-hidden />
+                <LinkSimple className="size-4" aria-hidden />
                 Create link
               </Button>
               <Button variant="ghost" onClick={onClose}>

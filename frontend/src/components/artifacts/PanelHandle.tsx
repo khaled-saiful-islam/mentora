@@ -1,5 +1,5 @@
-import { GripVertical } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { DotsSixVertical } from '@phosphor-icons/react'
 
 /**
  * The edge you drag to resize the panel.
@@ -55,7 +55,7 @@ export function PanelHandle({
           dragging && 'border-primary text-primary',
         )}
       >
-        <GripVertical className="size-3" />
+        <DotsSixVertical className="size-3" />
       </span>
     </div>
   )

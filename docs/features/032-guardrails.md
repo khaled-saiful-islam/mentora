@@ -1,5 +1,9 @@
 # 032 — Guardrails: keeping a student's chat safe
 
+> **Students have no chat for now** (`use_chat` is off for them — see
+> `025-roles-and-signup.md`), so none of this runs today. It stays in place,
+> tested, for the day the chat is opened to them again.
+
 ## What it does
 
 - **A student at risk is answered with care, not by the model.** A message

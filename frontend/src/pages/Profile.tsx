@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Check } from 'lucide-react'
 import { Alert, Button, Card, Field, Input } from '@/components/ui'
 import { apiFetch } from '@/lib/api'
 import { useAuth, type User } from '@/lib/auth'
+import { ArrowLeft, Check } from '@phosphor-icons/react'
 
 export default function Profile() {
   const { user, updateUser } = useAuth()

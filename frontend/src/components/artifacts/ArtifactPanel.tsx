@@ -1,19 +1,6 @@
+import { motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
-import {
-  AlertTriangle,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Code2,
-  Image as ImageIcon,
-  Link2,
-  Loader2,
-  Pencil,
-  RotateCcw,
-  SquareArrowOutUpRight,
-  X,
-} from 'lucide-react'
-import { Alert, Button } from '@/components/ui'
+import { Alert, Button, buttonClass } from '@/components/ui'
 import { BuildSteps } from '@/components/artifacts/BuildSteps'
 import { ArtifactFrame } from '@/components/artifacts/ArtifactFrame'
 import { DeckFrame } from '@/components/artifacts/DeckFrame'
@@ -33,6 +20,9 @@ import { isApp, isFluid, isSite, sitePages, withState, type Device } from '@/lib
 import { useAppState } from '@/hooks/useAppState'
 import { Confirm } from '@/components/ui/Confirm'
 import type { ArtifactBuild } from '@/lib/chat-types'
+import { spring } from '@/motion'
+import { ZoomControl } from '@/components/artifacts/ZoomControl'
+import { ArrowCounterClockwise, ArrowSquareOut, CaretLeft, CaretRight, Check, CircleNotch, Code, Eye, LinkSimple, PencilSimple, Sparkle, Warning, X } from '@phosphor-icons/react'
 
 /**
  * The panel beside the conversation.
@@ -65,6 +55,9 @@ export function ArtifactPanel({
   const [saving, setSaving] = useState(false)
   // Collected rather than sent per keystroke: one save, not one per letter.
   const [changes, setChanges] = useState<Map<number, string>>(new Map())
+  // Kept across artifacts and versions: someone who needed it bigger for one
+  // needs it bigger for the next.
+  const [zoom, setZoom] = useState(1)
 
   const building = !artifactId && !!build
   const headLook = lookOf(artifact?.kind ?? build?.kind)
@@ -149,20 +142,21 @@ export function ArtifactPanel({
 
   return (
     <div className="flex min-w-0 flex-1 flex-col bg-surface">
-      <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background px-2 sm:px-3">
-        <span
-          className={cn(
-            'flex size-7 shrink-0 items-center justify-center rounded-md',
-            headLook.tile,
-          )}
+      <header className="flex min-h-16 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b-2 border-border bg-background px-3 py-2.5 sm:px-4">
+        <motion.span
+          key={artifact?.kind ?? build?.kind ?? 'none'}
+          initial={{ scale: 0.5, rotate: -14 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={spring.bouncy}
+          className={cn('grid size-10 shrink-0 place-items-center rounded-2xl shadow-sm', headLook.tile)}
         >
-          <HeadGlyph className="size-3.5" aria-hidden />
-        </span>
+          <HeadGlyph weight="fill" className="size-5" aria-hidden />
+        </motion.span>
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-sm font-medium leading-tight">{title}</h2>
-          {artifact && (
-            <p className="truncate text-[11px] leading-tight text-muted-foreground">
-              {artifact.kind} ·{' '}
+          <h2 className="truncate font-display text-base font-extrabold leading-tight">{title}</h2>
+          {artifact ? (
+            <p className="truncate text-xs font-semibold text-muted-foreground">
+              <span className="capitalize">{artifact.kind}</span> ·{' '}
               {site
                 ? `${pages.length} page${pages.length === 1 ? '' : 's'}`
                 : app
@@ -170,27 +164,29 @@ export function ArtifactPanel({
                   : `${artifact.width}×${artifact.height}`}
               {artifact.versions.length > 1 && ` · v${artifact.version}`}
             </p>
-          )}
+          ) : building ? (
+            <p className="shimmer text-xs font-bold text-primary">Being made…</p>
+          ) : null}
         </div>
 
-        <div className="flex shrink-0 items-center gap-0.5">
+        <div className="flex shrink-0 flex-wrap items-center gap-1">
           {artifact && !editing && (
-            <div className="mr-1 flex rounded-md bg-muted p-0.5">
-              <Tab active={showing === 'preview'} onClick={() => setShowing('preview')}>
-                <ImageIcon className="size-3.5" aria-hidden />
-                <span className="hidden lg:inline">Preview</span>
+            <div className="flex rounded-full border-2 border-border bg-surface p-0.5">
+              <Tab active={showing === 'preview'} onClick={() => setShowing('preview')} label="Preview">
+                <Eye weight="bold" className="size-4" aria-hidden />
               </Tab>
-              <Tab active={showing === 'source'} onClick={() => setShowing('source')}>
-                <Code2 className="size-3.5" aria-hidden />
-                <span className="hidden lg:inline">Code</span>
+              <Tab active={showing === 'source'} onClick={() => setShowing('source')} label="Code">
+                <Code weight="bold" className="size-4" aria-hidden />
               </Tab>
             </div>
           )}
 
+          {artifact && <ZoomControl zoom={zoom} onZoom={setZoom} />}
+
           {artifact && artifact.versions.length > 1 && !editing && (
             <select
               aria-label="Version"
-              className="mr-1 rounded-md border border-border bg-background px-1.5 py-1 text-xs"
+              className="h-9 rounded-full border-2 border-border bg-surface px-2.5 text-xs font-bold"
               value={artifact.version}
               onChange={(event) => void reload(artifact.id, Number(event.target.value))}
             >
@@ -205,17 +201,18 @@ export function ArtifactPanel({
           {artifact && showing === 'preview' && (
             <Button
               variant={editing ? 'primary' : 'ghost'}
-              size="sm"
+              size={editing ? 'sm' : 'icon'}
               disabled={saving}
               onClick={() => (editing ? void saveText() : setEditing(true))}
               title={editing ? 'Save the words' : 'Edit the words in place'}
+              aria-label={editing ? 'Save the words' : 'Edit the words in place'}
             >
               {saving ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
+                <CircleNotch weight="bold" className="size-4 animate-spin" aria-hidden />
               ) : editing ? (
-                <Check className="size-4" aria-hidden />
+                <Check weight="bold" className="size-4" aria-hidden />
               ) : (
-                <Pencil className="size-4" aria-hidden />
+                <PencilSimple weight="bold" className="size-[1.1rem]" aria-hidden />
               )}
               {editing && (
                 <span className="hidden sm:inline">
@@ -227,8 +224,8 @@ export function ArtifactPanel({
 
           {artifact && !editing && (
             <>
-              <Button variant="ghost" size="sm" onClick={() => setSharing(true)} title="Share a link">
-                <Link2 className="size-4" aria-hidden />
+              <Button variant="ghost" size="icon" onClick={() => setSharing(true)} title="Share a link" aria-label="Share a link">
+                <LinkSimple weight="bold" className="size-[1.1rem]" aria-hidden />
               </Button>
               <DownloadMenu artifact={artifact} deck={deck} playable={playable} site={site} app={app} />
               <a
@@ -236,18 +233,27 @@ export function ArtifactPanel({
                 target="_blank"
                 rel="noreferrer noopener"
                 title="Open in a new tab, where it can also be printed"
+                aria-label="Open in a new tab"
+                className={buttonClass('ghost', 'icon')}
               >
-                <Button variant="ghost" size="sm">
-                  <SquareArrowOutUpRight className="size-4" aria-hidden />
-                </Button>
+                <ArrowSquareOut weight="bold" className="size-[1.1rem]" aria-hidden />
               </a>
             </>
           )}
 
-          <span className="mx-1 h-5 w-px bg-border" aria-hidden />
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close the panel">
-            <X className="size-4" aria-hidden />
-          </Button>
+          <span className="mx-0.5 h-6 w-0.5 rounded-full bg-border" aria-hidden />
+          <motion.button
+            type="button"
+            onClick={onClose}
+            aria-label="Close the panel"
+            title="Close"
+            whileHover={{ rotate: 90 }}
+            whileTap={{ scale: 0.85 }}
+            transition={spring.snappy}
+            className={buttonClass('ghost', 'icon')}
+          >
+            <X weight="bold" className="size-[1.1rem]" aria-hidden />
+          </motion.button>
         </div>
       </header>
 
@@ -266,8 +272,8 @@ export function ArtifactPanel({
         {error && <Alert className="m-4">{error}</Alert>}
 
         {loading && !building && (
-          <div className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" aria-hidden /> Loading
+          <div className="flex flex-1 items-center justify-center gap-2 text-sm font-bold text-muted-foreground">
+            <CircleNotch weight="bold" className="size-5 animate-spin text-primary" aria-hidden /> Opening it up…
           </div>
         )}
 
@@ -289,7 +295,7 @@ export function ArtifactPanel({
                       onClick={() => setStartingOver(true)}
                       title="Clear what this app has saved and open it empty"
                     >
-                      <RotateCcw className="size-3.5" aria-hidden />
+                      <ArrowCounterClockwise weight="bold" className="size-4" aria-hidden />
                       <span className="hidden lg:inline">Start over</span>
                     </Button>
                   ) : null
@@ -302,7 +308,7 @@ export function ArtifactPanel({
               </p>
             )}
             {editing && (
-              <p className="mx-4 mt-3 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs">
+              <p className="mx-4 mt-3 rounded-2xl border-2 border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-semibold">
                 Click any words on the {site ? 'site' : 'poster'} to change them.
                 {site && ' Use the pages above to reach the others.'} Only the words
                 change — nothing else moves, and it is saved without redrawing.
@@ -310,10 +316,10 @@ export function ArtifactPanel({
             )}
             {!editing && fit && !fit.fits && (
               <div
-                className="mx-4 mt-3 flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs"
+                className="mx-4 mt-3 flex items-start gap-2 rounded-2xl border-2 border-warning/40 bg-warning/10 px-4 py-2.5 text-sm font-semibold"
                 role="status"
               >
-                <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden />
+                <Warning weight="bold" className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
                 <span>
                   Some text does not fit inside the poster
                   {fit.problems[0]?.text ? ` — “${fit.problems[0].text}”` : ''}. Ask for it to be
@@ -329,6 +335,7 @@ export function ArtifactPanel({
                   title={artifact.title}
                   device={device}
                   fit
+                  zoom={zoom}
                   onStore={kept.save}
                   onEdit={
                     editing
@@ -337,8 +344,8 @@ export function ArtifactPanel({
                   }
                 />
               ) : (
-                <div className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin" aria-hidden /> Opening
+                <div className="flex flex-1 items-center justify-center gap-2 text-sm font-bold text-muted-foreground">
+                  <CircleNotch weight="bold" className="size-5 animate-spin text-primary" aria-hidden /> Opening it up…
                 </div>
               )
             ) : site ? (
@@ -347,6 +354,7 @@ export function ArtifactPanel({
                 sandbox={artifact.sandbox}
                 title={artifact.title}
                 device={device}
+                zoom={zoom}
                 page={sitePage}
                 onPage={setSitePage}
                 onEdit={
@@ -365,6 +373,7 @@ export function ArtifactPanel({
                   current={current}
                   sandbox={artifact.sandbox}
                   title={artifact.title}
+                  zoom={zoom}
                 />
                 <DeckControls
                   current={current}
@@ -379,6 +388,7 @@ export function ArtifactPanel({
                 width={artifact.width}
                 height={artifact.height}
                 title={artifact.title}
+                zoom={zoom}
                 onChange={(index, text) =>
                   setChanges((current) => new Map(current).set(index, text))
                 }
@@ -390,13 +400,17 @@ export function ArtifactPanel({
                 height={artifact.height}
                 sandbox={artifact.sandbox}
                 title={artifact.title}
+                zoom={zoom}
               />
             )}
           </>
         )}
 
         {artifact && showing === 'source' && (
-          <pre className="flex-1 overflow-auto bg-background p-4 text-[11px] leading-relaxed">
+          <pre
+            className="flex-1 overflow-auto bg-background p-4 leading-relaxed"
+            style={{ fontSize: `${0.6875 * zoom}rem` }}
+          >
             <code>{artifact.html}</code>
           </pre>
         )}
@@ -415,8 +429,11 @@ export function ArtifactPanel({
       )}
 
       {artifact && !editing && (
-        <footer className="shrink-0 border-t border-border px-4 py-2 text-[11px] text-muted-foreground">
-          Ask for a change in the chat. To fix a word, use the pencil — it is instant.
+        <footer className="flex shrink-0 items-center gap-2 border-t-2 border-border px-4 py-2.5 text-xs font-semibold text-muted-foreground">
+          <Sparkle weight="fill" className="size-3.5 shrink-0 text-star" aria-hidden />
+          <span>
+            Ask for a change in the chat. To fix a word, tap the pencil — it is instant.
+          </span>
         </footer>
       )}
 
@@ -466,10 +483,10 @@ function DeckControls({
         onClick={() => onGo(current - 1)}
         aria-label="Previous slide"
       >
-        <ChevronLeft className="size-4" aria-hidden />
+        <CaretLeft weight="bold" className="size-4" aria-hidden />
       </Button>
-      <span className="min-w-0 flex-1 truncate text-center text-xs text-muted-foreground">
-        <span className="font-mono tabular-nums">
+      <span className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-muted-foreground">
+        <span className="rounded-full bg-muted px-2 py-0.5 font-extrabold tabular-nums text-foreground">
           {current + 1} / {total}
         </span>
         {heading && <span className="ml-2">{heading}</span>}
@@ -481,7 +498,7 @@ function DeckControls({
         onClick={() => onGo(current + 1)}
         aria-label="Next slide"
       >
-        <ChevronRight className="size-4" aria-hidden />
+        <CaretRight weight="bold" className="size-4" aria-hidden />
       </Button>
     </div>
   )
@@ -490,10 +507,12 @@ function DeckControls({
 function Tab({
   active,
   onClick,
+  label,
   children,
 }: {
   active: boolean
   onClick: () => void
+  label: string
   children: React.ReactNode
 }) {
   return (
@@ -501,14 +520,24 @@ function Tab({
       type="button"
       onClick={onClick}
       aria-pressed={active}
+      title={label}
       className={cn(
-        'flex items-center gap-1.5 rounded px-2 py-1 text-xs transition-colors',
-        active
-          ? 'bg-background text-foreground shadow-sm'
-          : 'text-muted-foreground hover:text-foreground',
+        'relative flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs font-bold transition-colors',
+        active ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
       )}
     >
-      {children}
+      {active && (
+        <motion.span
+          layoutId="artifact-tab"
+          transition={spring.snappy}
+          className="absolute inset-0 rounded-full bg-primary"
+          aria-hidden
+        />
+      )}
+      <span className="relative flex items-center gap-1.5">
+        {children}
+        <span className="hidden xl:inline">{label}</span>
+      </span>
     </button>
   )
 }

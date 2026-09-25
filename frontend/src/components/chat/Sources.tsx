@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { ChevronDown, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Source } from '@/hooks/useChat'
+import { ArrowSquareOut, CaretDown } from '@phosphor-icons/react'
 
 /**
  * Citations under an answer.
@@ -21,7 +21,7 @@ export function Sources({ sources }: { sources: Source[] }) {
         aria-expanded={open}
         className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
       >
-        <ChevronDown className={cn('size-3.5 transition-transform', open && 'rotate-180')} aria-hidden />
+        <CaretDown className={cn('size-3.5 transition-transform', open && 'rotate-180')} aria-hidden />
         {sources.length} source{sources.length === 1 ? '' : 's'}
       </button>
 
@@ -41,7 +41,7 @@ export function Sources({ sources }: { sources: Source[] }) {
                 <span className="min-w-0">
                   <span className="flex items-center gap-1 text-sm font-medium">
                     <span className="truncate">{source.title}</span>
-                    <ExternalLink
+                    <ArrowSquareOut
                       className="size-3 shrink-0 opacity-0 transition-opacity group-hover/source:opacity-60"
                       aria-hidden
                     />

@@ -16,7 +16,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Response, status
 from sse_starlette.sse import EventSourceResponse
 
-from app.api.deps import ChatServiceDep, CurrentUser, SessionDep, limit_chat
+from app.api.deps import ChatServiceDep, CurrentUser, SessionDep, limit_chat, require_capability
 from app.api.schemas.chat import FeedbackRequest, FeedbackResponse, SendMessageRequest
 from app.core.errors import ForbiddenError
 from app.policies.capabilities import capabilities_for
@@ -47,7 +47,12 @@ from app.services.live_turns import live_turns
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/chat", tags=["chat"])
+# Closed to anyone without chat, whatever the route below it checks.
+router = APIRouter(
+    prefix="/chat",
+    tags=["chat"],
+    dependencies=[Depends(require_capability("use_chat"))],
+)
 
 
 def _to_sse(event: object) -> dict[str, str] | None:

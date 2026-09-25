@@ -12,6 +12,7 @@ from app.api.deps import client_address
 from app.core.config import Settings
 from app.core.errors import RateLimitError
 from app.db.models.rate_limit import RateLimitHit
+from app.services import rate_limit
 from app.services.rate_limit import Limit, RateLimiter, _floor
 
 
@@ -21,6 +22,24 @@ class FakeRequest:
     def __init__(self, headers: dict[str, str] | None = None, peer: str | None = "10.0.0.1"):
         self.headers = headers or {}
         self.client = type("Client", (), {"host": peer})() if peer else None
+
+
+@pytest.fixture(autouse=True)
+def _mid_window(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Holds the limiter's clock twenty seconds into the current minute.
+
+    A window is a fixed minute, so a test that happened to straddle a minute
+    boundary split its count across two windows and the limit never tripped —
+    a flaky test, not a bug in the limiter. Pinned, every count lands in one.
+    """
+    moment = datetime.now(UTC).replace(second=20, microsecond=0)
+
+    class Pinned(datetime):
+        @classmethod
+        def now(cls, tz=None):  # the signature datetime.now has
+            return moment if tz else moment.replace(tzinfo=None)
+
+    monkeypatch.setattr(rate_limit, "datetime", Pinned)
 
 
 # --- windows ------------------------------------------------------------

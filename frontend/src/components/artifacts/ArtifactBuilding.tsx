@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, Loader2 } from 'lucide-react'
 import { accentOn, readableOn } from '@/lib/contrast'
 import { Forming } from '@/components/artifacts/Forming'
 import { arrivesInPieces } from '@/components/artifacts/arrives-in-pieces'
 import type { ArtifactBuild } from '@/lib/chat-types'
+import { Check, CircleNotch } from '@phosphor-icons/react'
 
 /**
  * An artifact being made.
@@ -97,7 +97,7 @@ export function ArtifactBuilding({ build }: { build: ArtifactBuild }) {
         <>
           {made.size < total && (
             <p className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Loader2 className="size-3 shrink-0 animate-spin text-primary" aria-hidden />
+              <CircleNotch className="size-3 shrink-0 animate-spin text-primary" aria-hidden />
               <span className="shimmer">
                 Writing {noun} {made.size + 1}
                 {planned[made.size] ? ` — ${planned[made.size]}` : ''}

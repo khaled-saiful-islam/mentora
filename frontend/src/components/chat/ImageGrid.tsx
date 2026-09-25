@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ImageResult } from '@/hooks/useChat'
+import { ArrowSquareOut } from '@phosphor-icons/react'
 
 /**
  * Image results, shown above the answer.
@@ -57,7 +57,7 @@ function Tile({ image }: { image: ImageResult }) {
         )}
       >
         <span className="truncate">{image.source || hostOf(image.url)}</span>
-        <ExternalLink
+        <ArrowSquareOut
           className="size-2.5 shrink-0 opacity-0 transition-opacity group-hover/tile:opacity-80"
           aria-hidden
         />

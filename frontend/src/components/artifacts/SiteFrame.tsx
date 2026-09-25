@@ -28,6 +28,7 @@ export function SiteFrame({
   onEdit,
   onStore,
   fit = false,
+  zoom = 1,
 }: {
   html: string
   sandbox: string
@@ -43,6 +44,9 @@ export function SiteFrame({
   onStore?: (text: string) => void
   /** Laid out at the panel's own width on a desktop: an app is used here. */
   fit?: boolean
+  /** Laid out this much narrower and drawn this much bigger — a browser's own
+   *  zoom — so the text grows and reflows instead of running off the side. */
+  zoom?: number
 }) {
   const box = useRef<HTMLDivElement>(null)
   const frame = useRef<HTMLIFrameElement>(null)
@@ -99,8 +103,9 @@ export function SiteFrame({
   const bezel = handheld ? 14 : 0
   const layout = siteLayout(device, Math.max(0, room.width - bezel), fit)
   const inner = Math.max(0, room.height - bezel)
+  const drawn = layout.scale * zoom
   // Taller than the room by the scale, so that once shrunk it fills it.
-  const height = layout.scale > 0 ? inner / layout.scale : 0
+  const height = drawn > 0 ? inner / drawn : 0
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden p-3 sm:p-4">
@@ -132,9 +137,9 @@ export function SiteFrame({
             sandbox={editing ? 'allow-scripts' : sandbox}
             referrerPolicy="no-referrer"
             style={{
-              width: layout.width,
+              width: layout.width / zoom,
               height,
-              transform: `scale(${layout.scale})`,
+              transform: `scale(${drawn})`,
               transformOrigin: 'top left',
               border: 0,
               display: 'block',

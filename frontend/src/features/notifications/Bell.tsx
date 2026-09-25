@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, useAnimationControls } from 'motion/react'
 import { Bell as BellIcon, Check, Checks } from '@phosphor-icons/react'
@@ -12,6 +13,7 @@ import type { Notification } from './api'
 import { JoinRequestActions } from './JoinRequestActions'
 import { headlineOf, kindOf } from './kinds'
 import { useNotifications } from './NotificationsProvider'
+import { place, type Placement } from './place'
 
 const NUDGE_MS = 25_000
 const RING = { rotate: [0, -24, 20, -14, 10, -5, 0], transition: { duration: 0.9 } }
@@ -28,6 +30,7 @@ export function Bell({ className, align = 'left' }: { className?: string; align?
   const swing = useAnimationControls()
   const calm = useCalmMotion()
   const first = useRef(true)
+  const trigger = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (first.current) {
@@ -49,6 +52,7 @@ export function Bell({ className, align = 'left' }: { className?: string; align?
   return (
     <div className={cn('relative', className)}>
       <button
+        ref={trigger}
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
@@ -87,7 +91,13 @@ export function Bell({ className, align = 'left' }: { className?: string; align?
           )}
         </AnimatePresence>
       </button>
-      <AnimatePresence>{open && <Panel align={align} onClose={() => setOpen(false)} />}</AnimatePresence>
+      {/* On the body, so nothing that holds the bell can clip the panel. */}
+      {createPortal(
+        <AnimatePresence>
+          {open && <Panel anchor={trigger} align={align} onClose={() => setOpen(false)} />}
+        </AnimatePresence>,
+        document.body,
+      )}
     </div>
   )
 }
@@ -112,16 +122,58 @@ function Waves() {
   )
 }
 
-function Panel({ onClose, align }: { onClose: () => void; align: 'left' | 'right' }) {
+/** Below this the panel spans the screen under the top bar instead. */
+const PHONE = 640
+
+/** Under the bell and inside the window, kept there as the window changes. */
+function useAnchored(
+  anchor: RefObject<HTMLElement>,
+  panel: RefObject<HTMLElement>,
+  align: 'left' | 'right',
+): Placement | null {
+  const [at, setAt] = useState<Placement | null>(null)
+  useLayoutEffect(() => {
+    const update = () => {
+      const bell = anchor.current?.getBoundingClientRect()
+      const width = panel.current?.offsetWidth ?? 0
+      const viewport = { width: window.innerWidth, height: window.innerHeight }
+      setAt(bell && width && viewport.width >= PHONE ? place(bell, width, align, viewport) : null)
+    }
+    update()
+    window.addEventListener('resize', update)
+    // Capture, so a scroll inside the sidebar moves the panel with its bell.
+    window.addEventListener('scroll', update, true)
+    return () => {
+      window.removeEventListener('resize', update)
+      window.removeEventListener('scroll', update, true)
+    }
+  }, [anchor, panel, align])
+  return at
+}
+
+function Panel({
+  anchor,
+  onClose,
+  align,
+}: {
+  anchor: RefObject<HTMLButtonElement>
+  onClose: () => void
+  align: 'left' | 'right'
+}) {
   const { items, unread, hasMore, loadMore, markAllRead } = useNotifications()
   const [sweeping, setSweeping] = useState(false)
   const panel = useRef<HTMLDivElement>(null)
+  const at = useAnchored(anchor, panel, align)
   const fresh = items.filter((n) => !n.read)
   const earlier = items.filter((n) => n.read)
 
   useEffect(() => {
     const onDown = (event: MouseEvent) => {
-      if (panel.current && !panel.current.contains(event.target as Node)) onClose()
+      const target = event.target as Node
+      // The bell toggles the panel itself. Closing here as well would close
+      // it on the press and open it again on the click.
+      if (anchor.current?.contains(target)) return
+      if (panel.current && !panel.current.contains(target)) onClose()
     }
     const onKey = (event: KeyboardEvent) => event.key === 'Escape' && onClose()
     // A tick later, so the click that opened the panel does not close it.
@@ -132,7 +184,7 @@ function Panel({ onClose, align }: { onClose: () => void; align: 'left' | 'right
       document.removeEventListener('mousedown', onDown)
       window.removeEventListener('keydown', onKey)
     }
-  }, [onClose])
+  }, [onClose, anchor])
 
   // Every dot turns into a tick, one after another, and then they are read.
   function readAll() {
@@ -151,10 +203,11 @@ function Panel({ onClose, align }: { onClose: () => void; align: 'left' | 'right
       initial={{ opacity: 0, y: -8, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1, transition: spring.snappy }}
       exit={{ opacity: 0, y: -6, scale: 0.98, transition: { duration: 0.12 } }}
+      style={at ? { top: at.top, left: at.left, maxHeight: `min(75dvh, ${at.maxHeight}px)` } : undefined}
       className={cn(
         'fixed inset-x-3 top-16 z-50 flex max-h-[75dvh] flex-col overflow-hidden rounded-[1.5rem] border border-border bg-surface shadow-lg',
-        'sm:absolute sm:inset-x-auto sm:top-12 sm:w-[25rem]',
-        align === 'left' ? 'sm:left-0 sm:origin-top-left' : 'sm:right-0 sm:origin-top-right',
+        'sm:inset-x-auto sm:w-[25rem]',
+        align === 'left' ? 'origin-top-left' : 'origin-top-right',
       )}
     >
       <header className="flex items-center justify-between border-b border-border px-5 py-3">

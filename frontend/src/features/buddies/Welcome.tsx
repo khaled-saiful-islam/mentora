@@ -1,6 +1,9 @@
 /**
  * A new student's first minute: choose a study buddy, meet them, go.
- * Saves the buddy and marks the student onboarded, so it shows once.
+ *
+ * Saved the moment a buddy is chosen, not on the last button: a student who
+ * closed the tab on the meeting screen was shown the picker again at every
+ * sign-in, having already picked. The meeting screen is only the celebration.
  */
 import { AnimatePresence, motion } from 'motion/react'
 import { ArrowRight } from '@phosphor-icons/react'
@@ -26,17 +29,22 @@ export function Welcome() {
   const [chosen, setChosen] = useState<BuddyKey | null>(isBuddyKey(user?.buddy) ? user.buddy : null)
   const [step, setStep] = useState<'choose' | 'meet'>('choose')
   const [saving, setSaving] = useState(false)
+  // The account as saved, applied on "Let's go" — applying it sooner would
+  // lift the gate and skip the meeting.
+  const [saved, setSaved] = useState<User | null>(null)
   const buddy = useRef<BuddyHandle>(null)
   const name = user ? firstName(user) : 'friend'
 
-  async function start() {
+  async function choose() {
     if (!user || !chosen) return
     setSaving(true)
     try {
       await apiFetch<User>('/auth/me', { method: 'PATCH', body: JSON.stringify({ buddy: chosen }) })
-      updateUser(await apiFetch<User>('/auth/me/onboarded', { method: 'POST' }))
+      setSaved(await apiFetch<User>('/auth/me/onboarded', { method: 'POST' }))
+      setStep('meet')
     } catch (error) {
       toast('Could not save that', { tone: 'error', body: errorMessage(error) })
+    } finally {
       setSaving(false)
     }
   }
@@ -53,7 +61,7 @@ export function Welcome() {
               <BuddyPicker value={chosen} onChange={setChosen} />
             </div>
             <div className="mt-6 flex justify-end">
-              <Button size="lg" disabled={!chosen} onClick={() => setStep('meet')}>
+              <Button size="lg" disabled={!chosen} loading={saving} onClick={() => void choose()}>
                 {chosen ? `Choose ${BUDDIES[chosen].name}` : 'Choose one'}
                 <ArrowRight weight="bold" className="size-5" />
               </Button>
@@ -82,10 +90,10 @@ export function Welcome() {
                   ))}
                 </ul>
                 <div className="mt-7 flex flex-wrap justify-center gap-3">
-                  <Button size="lg" variant="ghost" onClick={() => setStep('choose')} disabled={saving}>
+                  <Button size="lg" variant="ghost" onClick={() => setStep('choose')}>
                     Pick again
                   </Button>
-                  <Button size="lg" variant="sun" onClick={() => void start()} loading={saving}>
+                  <Button size="lg" variant="sun" onClick={() => saved && updateUser(saved)}>
                     Let's go!
                     <ArrowRight weight="bold" className="size-5" />
                   </Button>

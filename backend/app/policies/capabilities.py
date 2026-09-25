@@ -18,6 +18,8 @@ from app.core.roles import Role, parse_role
 
 @dataclass(frozen=True, slots=True)
 class Capabilities:
+    # The open-ended chat: conversations, their files and their memories.
+    use_chat: bool = False
     # Posters, slides, games, websites and apps — the studio artifacts.
     studio_artifacts: bool = False
     # Quizzes and flashcards made to be assigned to a class.
@@ -40,6 +42,7 @@ class Capabilities:
 
 
 _TEACHING = {
+    "use_chat": True,
     "studio_artifacts": True,
     "share_learning_sets": True,
     "manage_classes": True,
@@ -50,6 +53,10 @@ _TEACHING = {
 _BY_ROLE: dict[Role, Capabilities] = {
     Role.ADMIN: Capabilities(**_TEACHING, moderate=True, manage_users=True),
     Role.TEACHER: Capabilities(**_TEACHING),
+    # No chat for students for now: they make practice sets and take their
+    # class's work, and the chat is closed to them at the API, not only hidden.
+    # Turning it back on is `use_chat=True` here — the guardrails, the buddy
+    # persona and the safety queue for student chat are all still in place.
     Role.STUDENT: Capabilities(
         make_practice_sets=True, join_classes=True, take_assignments=True
     ),
