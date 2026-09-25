@@ -3,7 +3,13 @@ import { Link, useParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { ChalkboardTeacher, Confetti, HourglassMedium, LinkBreak, PaperPlaneTilt, SignIn, UserPlus } from '@phosphor-icons/react'
 import { Button, Spinner } from '@/components/ui'
-import { AuthLayout } from '@/features/auth/AuthLayout'
+import { AuthLayout, Glow } from '@/features/auth/AuthLayout'
+
+const INVITE_LINES = [
+  'Your teacher saved you a seat.',
+  'Quizzes and flashcards, made for your class.',
+  'A study buddy to cheer you on.',
+] as const
 import { errorMessage } from '@/features/auth/errors'
 import { useAuth } from '@/lib/auth'
 import { lookOf } from '@/lib/palette'
@@ -49,7 +55,15 @@ export default function JoinPage() {
   }, [loading, student, state, key])
 
   return (
-    <AuthLayout heroTitle="You're invited!" heroSubtitle="Join your class on Mentora to play the quizzes and flashcards your teacher shares.">
+    <AuthLayout
+      title={
+        <>
+          You're <Glow>invited!</Glow>
+        </>
+      }
+      taglines={INVITE_LINES}
+      greeting="A class is waiting for you!"
+    >
       {state.phase === 'loading' || state.phase === 'joining' ? (
         <div className="grid place-items-center py-24">
           <Spinner className="size-10" />

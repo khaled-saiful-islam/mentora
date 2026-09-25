@@ -23,10 +23,14 @@ export function UsernameField({
   value,
   onChange,
   onValidity,
+  onFocus,
+  onBlur,
 }: {
   value: string
   onChange: (value: string) => void
   onValidity: (ok: boolean) => void
+  onFocus?: () => void
+  onBlur?: () => void
 }) {
   const [check, setCheck] = useState<Check>({ state: 'idle' })
 
@@ -78,6 +82,8 @@ export function UsernameField({
           aria-describedby="username-status"
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onFocus={onFocus}
+          onBlur={onBlur}
           className="pr-12"
         />
         <span className="absolute inset-y-0 right-3 grid place-items-center" aria-hidden>

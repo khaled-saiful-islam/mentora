@@ -1,13 +1,15 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { ArrowLeft, ArrowRight, Backpack, Sparkle } from '@phosphor-icons/react'
+import { ArrowLeft, ArrowRight, At, GraduationCap, LockKey, Smiley, Sparkle } from '@phosphor-icons/react'
 import { Alert, Button, Input } from '@/components/ui'
 import { useAuth } from '@/lib/auth'
 import { useToast } from '@/components/ui/Toast'
+import { StepStones, type Stone } from './StepStones'
+import { useCrew, useLookingAway, useWatching } from './scene/crew'
 import { spring } from '@/motion'
 import { cn } from '@/lib/utils'
-import { AuthLayout } from './AuthLayout'
+import { AuthLayout, Glow } from './AuthLayout'
 import { GradePicker } from './GradePicker'
 import { PasswordInput } from './PasswordInput'
 import { UsernameField } from './UsernameField'
@@ -16,6 +18,12 @@ import { errorMessage } from './errors'
 
 type Step = 'name' | 'grade' | 'username' | 'password'
 const STEPS: readonly Step[] = ['name', 'grade', 'username', 'password']
+const STONES: readonly Stone[] = [
+  { label: 'Name', Icon: Smiley },
+  { label: 'Year', Icon: GraduationCap },
+  { label: 'Username', Icon: At },
+  { label: 'Password', Icon: LockKey },
+]
 
 interface Draft {
   name: string
@@ -33,9 +41,25 @@ const slide = {
 
 /**
  * Four small questions instead of one long form — a nine-year-old finishes
- * four questions; a wall of fields is where they give up.
+ * four questions; a wall of fields is where they give up. Kiko hops along
+ * the stones as they go, and the buddies below cheer each answer.
  */
 export default function StudentSignUp() {
+  return (
+    <AuthLayout
+      title={
+        <>
+          Ready to learn <Glow>and play?</Glow>
+        </>
+      }
+      greeting="Yay! Let's make your account together."
+    >
+      <StudentForm />
+    </AuthLayout>
+  )
+}
+
+function StudentForm() {
   const [draft, setDraft] = useState<Draft>({ name: '', grade: '', username: '', password: '' })
   const [index, setIndex] = useState(0)
   const [direction, setDirection] = useState(1)
@@ -43,6 +67,7 @@ export default function StudentSignUp() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const { signUpStudent } = useAuth()
+  const crew = useCrew()
   const { toast } = useToast()
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -57,6 +82,9 @@ export default function StudentSignUp() {
   }[step]
 
   function go(to: number) {
+    // The field that had focus is about to go without a blur; the next
+    // one's autofocus sets the buddies again.
+    crew.setReaction('idle')
     setDirection(to > index ? 1 : -1)
     setError(null)
     setIndex(to)
@@ -72,7 +100,7 @@ export default function StudentSignUp() {
         username: draft.username,
         password: draft.password,
         invite_token: invite,
-      })
+      }, crew.celebrate)
       if (join && join.status !== 'invalid') {
         toast(`Asked to join ${join.class_name}!`, { body: `${join.teacher_name} will let you in soon.` })
         navigate('/classes', { replace: true })
@@ -84,6 +112,7 @@ export default function StudentSignUp() {
       }
     } catch (err) {
       setError(errorMessage(err))
+      crew.oops()
     } finally {
       setBusy(false)
     }
@@ -92,26 +121,40 @@ export default function StudentSignUp() {
   function next(event?: React.FormEvent) {
     event?.preventDefault()
     if (!ready || busy) return
-    if (index < STEPS.length - 1) go(index + 1)
-    else void submit()
+    if (index < STEPS.length - 1) {
+      cheer(step)
+      go(index + 1)
+    } else void submit()
   }
+
+  // A word from a buddy after each answer — never the same one twice running.
+  const cheerer = useRef(0)
+  function cheer(done: Step) {
+    const first = draft.name.trim().split(/\s+/)[0]
+    const line = {
+      name: `${first}! What a great name!`,
+      grade: 'Ooh, great year to be in!',
+      username: "That one's all yours!",
+      password: '',
+    }[done]
+    if (!line) return
+    cheerer.current = (cheerer.current + 2) % 5
+    crew.say(line, cheerer.current)
+  }
+
+  // Everyone leans in to listen while a box has focus.
+  const watching = useWatching()
+  const lookingAway = useLookingAway()
+
 
   const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }))
 
   return (
-    <AuthLayout
-      heroTitle="Ready to learn and play?"
-      heroSubtitle="Quizzes that cheer you on, flashcards that flip, and badges to collect. Let's make your account!"
-    >
-      <div className="flex items-center gap-3">
-        <span className="grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-sun-300 to-sun-400 text-grape-900 shadow-press">
-          <Backpack weight="duotone" className="size-7" />
-        </span>
-        <Progress index={index} />
-      </div>
+    <>
+      <StepStones stones={STONES} index={index} />
 
-      <form onSubmit={next} className="mt-8">
-        <div className="relative min-h-[19rem]">
+      <form onSubmit={next} className="mt-6">
+        <div className="relative min-h-[17rem]">
           <AnimatePresence mode="wait" custom={direction} initial={false}>
             <motion.div
               key={step}
@@ -121,7 +164,14 @@ export default function StudentSignUp() {
               animate="centre"
               exit="exit"
             >
-              <StepBody step={step} draft={draft} set={set} onUsernameValidity={setUsernameOk} />
+              <StepBody
+                step={step}
+                draft={draft}
+                set={set}
+                onUsernameValidity={setUsernameOk}
+                watching={watching}
+                lookingAway={lookingAway}
+              />
             </motion.div>
           </AnimatePresence>
         </div>
@@ -156,45 +206,26 @@ export default function StudentSignUp() {
           Sign in
         </Link>
       </p>
-    </AuthLayout>
+    </>
   )
 }
 
-function Progress({ index }: { index: number }) {
-  return (
-    <div className="flex-1">
-      <p className="text-sm font-bold text-muted-foreground">
-        Step {index + 1} of {STEPS.length}
-      </p>
-      <div
-        className="mt-1.5 h-3 overflow-hidden rounded-full bg-muted"
-        role="progressbar"
-        aria-valuemin={1}
-        aria-valuemax={STEPS.length}
-        aria-valuenow={index + 1}
-        aria-label="Sign-up progress"
-      >
-        <motion.div
-          className="h-full rounded-full bg-gradient-to-r from-sun-400 via-coral-400 to-grape-500"
-          initial={false}
-          animate={{ width: `${((index + 1) / STEPS.length) * 100}%` }}
-          transition={spring.gentle}
-        />
-      </div>
-    </div>
-  )
-}
+type Wiring = { onFocus: () => void; onBlur: () => void }
 
 function StepBody({
   step,
   draft,
   set,
   onUsernameValidity,
+  watching,
+  lookingAway,
 }: {
   step: Step
   draft: Draft
   set: (patch: Partial<Draft>) => void
   onUsernameValidity: (ok: boolean) => void
+  watching: Wiring
+  lookingAway: Wiring & { onShownChange: (shown: boolean) => void }
 }) {
   const { grades } = useGrades()
   const first = draft.name.trim().split(/\s+/)[0]
@@ -213,6 +244,7 @@ function StepBody({
             value={draft.name}
             onChange={(e) => set({ name: e.target.value })}
             className="h-14 text-xl"
+            {...watching}
           />
         </Question>
       )
@@ -232,6 +264,7 @@ function StepBody({
             value={draft.username}
             onChange={(username) => set({ username })}
             onValidity={onUsernameValidity}
+            {...watching}
           />
         </Question>
       )
@@ -247,6 +280,7 @@ function StepBody({
             value={draft.password}
             onChange={(e) => set({ password: e.target.value })}
             className="h-14 text-xl"
+            {...lookingAway}
           />
           <PasswordDots length={draft.password.length} />
         </Question>

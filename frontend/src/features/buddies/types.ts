@@ -24,6 +24,10 @@ export type Mood =
   | 'trick'
   | 'listen'
   | 'yawn'
+  // Hands over the eyes — someone is typing a password.
+  | 'shy'
+  // The same, with one eye let through: the password is being shown.
+  | 'peek'
 
 /** The parts of a rig that move. Every rig wires its own drawing to these,
  *  so one choreography animates five very different bodies. */

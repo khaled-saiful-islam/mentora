@@ -54,6 +54,8 @@ export const MOUTH_FOR: Record<Mood, MouthShape> = {
   trick: 'grin',
   listen: 'smile',
   yawn: 'yawn',
+  shy: 'flat',
+  peek: 'o',
 }
 
 const OPEN: ReadonlySet<MouthShape> = new Set(['grin', 'roar', 'yawn'])
@@ -122,7 +124,10 @@ export function eyeShapeFor(mood: Mood, side: 'left' | 'right'): EyeShape {
       return 'star'
     case 'sleepy':
     case 'yawn':
+    case 'shy':
       return 'closed'
+    case 'peek':
+      return side === 'right' ? 'open' : 'closed'
     case 'oops':
       return 'dizzy'
     case 'trick':

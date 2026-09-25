@@ -25,7 +25,7 @@ describe('choreograph', () => {
   })
 
   it('ends every momentary mood where it started, so it can settle', () => {
-    const momentary = MOODS.filter((m) => HOLD_MS[m] > 0 && !['think', 'dance', 'celebrate', 'sleepy', 'listen', 'oops'].includes(m))
+    const momentary = MOODS.filter((m) => HOLD_MS[m] > 0 && !['think', 'dance', 'celebrate', 'sleepy', 'listen', 'oops', 'shy', 'peek'].includes(m))
     for (const mood of momentary) {
       for (const [joint, move] of Object.entries(MOVES[mood])) {
         for (const [key, value] of Object.entries(move ?? {})) {

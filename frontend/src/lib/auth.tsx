@@ -35,13 +35,28 @@ export interface StudentSignUp {
   invite_token?: string
 }
 
+/**
+ * Run once the server has said yes and before the app moves on — the
+ * signed-out pages leave the moment there is a user, so a welcome that should
+ * be seen happens here. It cannot fail the sign-in: the account is real.
+ */
+export type BeforeEntering = () => Promise<void>
+
+async function settle(before?: BeforeEntering): Promise<void> {
+  try {
+    await before?.()
+  } catch {
+    // A flourish that broke must not keep someone out of their account.
+  }
+}
+
 interface AuthState {
   user: User | null
   /** True until the first /auth/me resolves, so routes do not flash. */
   loading: boolean
-  signIn: (identifier: string, password: string) => Promise<void>
-  signUpTeacher: (details: TeacherSignUp) => Promise<void>
-  signUpStudent: (details: StudentSignUp) => Promise<JoinAtSignUp | null>
+  signIn: (identifier: string, password: string, before?: BeforeEntering) => Promise<void>
+  signUpTeacher: (details: TeacherSignUp, before?: BeforeEntering) => Promise<void>
+  signUpStudent: (details: StudentSignUp, before?: BeforeEntering) => Promise<JoinAtSignUp | null>
   signOut: () => Promise<void>
   updateUser: (user: User) => void
 }
@@ -65,30 +80,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoading(false))
   }, [])
 
-  const signIn = useCallback(async (identifier: string, password: string) => {
-    setUser(
-      await apiFetch<User>('/auth/signin', {
-        method: 'POST',
-        body: JSON.stringify({ identifier, password }),
-      }),
-    )
+  const signIn = useCallback(async (identifier: string, password: string, before?: BeforeEntering) => {
+    const account = await apiFetch<User>('/auth/signin', {
+      method: 'POST',
+      body: JSON.stringify({ identifier, password }),
+    })
+    await settle(before)
+    setUser(account)
   }, [])
 
-  const signUpTeacher = useCallback(async (details: TeacherSignUp) => {
-    setUser(
-      await apiFetch<User>('/auth/signup/teacher', {
-        method: 'POST',
-        body: JSON.stringify(details),
-      }),
-    )
+  const signUpTeacher = useCallback(async (details: TeacherSignUp, before?: BeforeEntering) => {
+    const account = await apiFetch<User>('/auth/signup/teacher', {
+      method: 'POST',
+      body: JSON.stringify(details),
+    })
+    await settle(before)
+    setUser(account)
   }, [])
 
-  const signUpStudent = useCallback(async (details: StudentSignUp) => {
+  const signUpStudent = useCallback(async (details: StudentSignUp, before?: BeforeEntering) => {
     const created = await apiFetch<User & { join?: JoinAtSignUp | null }>('/auth/signup/student', {
       method: 'POST',
       body: JSON.stringify(details),
     })
     const { join = null, ...account } = created
+    await settle(before)
     setUser(account)
     return join
   }, [])

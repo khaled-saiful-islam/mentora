@@ -195,6 +195,29 @@ export const MOVES: Record<Mood, Dance> = {
     ...arms([null, 160, 160, 0], once(2, { times: [0, 0.3, 0.7, 1] })),
     ...ears([null, -12, -12, 0], once(2)),
   },
+  // Both hands across the face, ears down, a little bashful wriggle — so
+  // it is plain nobody is looking while a password is typed.
+  shy: {
+    body: { scaleY: [0.97, 0.95, 0.97], y: 2, transition: loop(1.8) },
+    head: { rotate: [-3, 3, -3], y: 3, transition: loop(2.4) },
+    armL: { rotate: -148 },
+    armR: { rotate: 148 },
+    ...ears(-24, SETTLE),
+    tail: { rotate: [0, 8, 0], transition: loop(1.4) },
+    extra: { rotate: -12 },
+    shadow: { scaleX: 1.02 },
+  },
+  // One hand drops and the head tips to see round it: the password is shown.
+  peek: {
+    body: { rotate: 3, scaleY: 0.97, y: 2 },
+    head: { rotate: [8, 11, 8], y: 2, transition: loop(1.6) },
+    armL: { rotate: -148 },
+    armR: { rotate: [60, 72, 60], transition: loop(1.6) },
+    earL: { rotate: -20 },
+    earR: { rotate: 8 },
+    tail: { rotate: [0, 14, 0], transition: loop(0.9) },
+    extra: { rotate: 10 },
+  },
 }
 
 /** How long a mood plays when it is a reaction rather than the screen's mood. */
@@ -211,6 +234,8 @@ export const HOLD_MS: Record<Mood, number> = {
   trick: 1500,
   listen: 1600,
   yawn: 2100,
+  shy: 1800,
+  peek: 1800,
 }
 
 /** The same move for the other side of the body: turns and sideways

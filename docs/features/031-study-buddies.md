@@ -44,6 +44,26 @@ Five companions keep a student company:
   is never given a question, so it has nothing it could give away. On the
   home page, a tip can name a skill the student could practise.
 
+### On the signed-out screens
+
+All five buddies stand on the hills behind sign-in, sign-up and invite pages
+(`features/auth/scene/`). Their eyes follow the pointer, and they react to the
+form through `crew.tsx`:
+
+- a text field has focus → they lean in to listen (`listen`)
+- the password field has focus → eyes shut, ears down (`shy`), and one says
+  "No peeking — promise!" now and then
+- the password is shown → one eye opens (`peek`)
+- a wrong password → they wince (`oops`) and say so
+- the account is accepted → they celebrate with confetti, and only then does
+  the app move on: `signIn`, `signUpTeacher` and `signUpStudent` take an
+  optional `before` step that runs after the server says yes and before the
+  user is set, because the signed-out pages leave the moment there is a user.
+  A failure in it never blocks the sign-in.
+
+Student sign-up shows its four steps as stepping stones, with Kiko hopping to
+the current one (`StepStones.tsx`).
+
 ## How it works
 
 ```
