@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.notifications import Kind
 from app.events.catalog import (
+    AssignmentShared,
     MembershipApproved,
     MembershipEnded,
     MembershipRejected,
@@ -69,3 +70,25 @@ async def _settle(bell: NotificationService, teacher_id, membership_id, resoluti
         match={"membership_id": str(membership_id)},
         resolution=resolution,
     )
+
+
+async def assignment_shared(event: AssignmentShared, session: AsyncSession) -> None:
+    bell = NotificationService(session)
+    payload = {
+        "assignment_id": str(event.assignment_id),
+        "title": event.title,
+        "kind": "quiz" if event.kind == "quiz" else "flashcards",
+        "class_id": str(event.class_id),
+        "class_name": event.class_name,
+        "teacher_name": event.teacher_name,
+        "due_at": event.due_at,
+    }
+    for student_id in event.student_ids:
+        await bell.notify(
+            user_id=student_id,
+            kind=Kind.ASSIGNMENT_SHARED,
+            actor_id=event.teacher_id,
+            payload=payload,
+            # One per assignment per student, even if it is shared again.
+            group_key=f"assignment:{event.assignment_id}",
+        )

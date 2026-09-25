@@ -65,8 +65,8 @@ async def test_a_failing_subscriber_does_not_stop_the_others(session, db_user) -
     bus.subscribe(Happened, writer)
     await bus.publish(Happened("x"), session)
 
-    found = (await session.execute(select(Memory.content))).scalars().all()
-    assert "still written" in found
+    mine = select(Memory.content).where(Memory.user_id == db_user.id)
+    assert "still written" in (await session.execute(mine)).scalars().all()
 
 
 async def test_a_failing_statement_does_not_poison_the_transaction(session, db_user) -> None:
@@ -83,4 +83,5 @@ async def test_a_failing_statement_does_not_poison_the_transaction(session, db_u
 
     session.add(Memory(user_id=db_user.id, content="after", source="user", enabled=True))
     await session.flush()
-    assert (await session.execute(select(Memory.content))).scalars().all() == ["after"]
+    mine = select(Memory.content).where(Memory.user_id == db_user.id)
+    assert (await session.execute(mine)).scalars().all() == ["after"]

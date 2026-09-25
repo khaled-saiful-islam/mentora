@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from app.api.routes import (
     admin,
     artifacts,
+    assignments,
     auth,
     chat,
     classes,
@@ -23,6 +24,7 @@ from app.api.routes import (
     documents,
     health,
     invites,
+    learning,
     me,
     memories,
     notifications,
@@ -54,9 +56,11 @@ async def lifespan(app: FastAPI):
     # nobody can receive, and the process will not exit until it finishes.
     from app.artifacts.raster import shutdown as close_renderer
     from app.db.session import engine
+    from app.services.jobs import jobs
     from app.services.live_turns import live_turns
 
     await live_turns.close_all()
+    await jobs.close_all()
     # The renderer holds a browser process; a reload that left one behind would
     # leak one per restart.
     await close_renderer()
@@ -118,12 +122,14 @@ def create_app() -> FastAPI:
     app.include_router(artifacts.router, prefix="/api")
     app.include_router(artifacts.by_conversation, prefix="/api")
     app.include_router(artifacts.public_router, prefix="/api")
+    app.include_router(assignments.router, prefix="/api")
     app.include_router(auth.router, prefix="/api")
     app.include_router(chat.router, prefix="/api")
     app.include_router(classes.router, prefix="/api")
     app.include_router(conversations.router, prefix="/api")
     app.include_router(documents.router, prefix="/api")
     app.include_router(invites.router, prefix="/api")
+    app.include_router(learning.router, prefix="/api")
     app.include_router(me.router, prefix="/api")
     app.include_router(memories.router, prefix="/api")
     app.include_router(notifications.router, prefix="/api")

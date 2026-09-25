@@ -20,6 +20,12 @@ from app.db.models.conversation import Conversation, Message
 from app.db.models.document import Document
 from app.db.models.feedback import MessageFeedback
 from app.db.models.guard_event import GuardEvent
+from app.db.models.learning import (
+    Assignment,
+    AssignmentGroup,
+    LearningSet,
+    LearningSetVersion,
+)
 from app.db.models.memory import Memory
 from app.db.models.notification import Notification
 from app.db.models.rate_limit import RateLimitHit
@@ -30,6 +36,8 @@ from app.db.models.user import User
 __all__ = [
     "Artifact",
     "ArtifactShare",
+    "Assignment",
+    "AssignmentGroup",
     "ArtifactState",
     "ArtifactVersion",
     "ClassGroup",
@@ -41,6 +49,8 @@ __all__ = [
     "Document",
     "GroupMember",
     "GuardEvent",
+    "LearningSet",
+    "LearningSetVersion",
     "Memory",
     "Message",
     "MessageFeedback",

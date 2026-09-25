@@ -23,6 +23,7 @@ STUDIO_PREFIXES = ("/api/artifacts", "/api/conversations/{conversation_id}/artif
 SHARE_OWNER_PREFIX = "/api/conversations/{conversation_id}/share"
 ADMIN_PREFIX = "/api/admin"
 CLASS_PREFIX = "/api/classes"
+ASSIGN_PREFIX = "/api/assignments"
 
 
 def _concrete(path: str) -> str:
@@ -87,7 +88,7 @@ async def test_a_student_cannot_manage_conversation_share_links() -> None:
 
 
 async def test_a_student_is_refused_every_class_management_route() -> None:
-    statuses = await _walk(Role.STUDENT, (CLASS_PREFIX,))
+    statuses = await _walk(Role.STUDENT, (CLASS_PREFIX, ASSIGN_PREFIX))
     assert set(statuses.values()) == {403}
 
 

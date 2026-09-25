@@ -51,3 +51,16 @@ class MembershipEnded(Event):
     teacher_id: UUID
     student_id: UUID
     how: str  # "revoked" | "left"
+
+
+@dataclass(frozen=True, slots=True)
+class AssignmentShared(Event):
+    assignment_id: UUID
+    title: str
+    kind: str
+    class_id: UUID
+    class_name: str
+    teacher_id: UUID
+    teacher_name: str
+    student_ids: tuple[UUID, ...]
+    due_at: str | None

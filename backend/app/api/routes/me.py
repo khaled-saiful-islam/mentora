@@ -16,6 +16,7 @@ from app.api.schemas.classes import StudentClassList, StudentClassResponse
 from app.artifacts.registry import build_kinds
 from app.db.models.user import User
 from app.events.registry import build_bus
+from app.learning.registry import build_learning_kinds
 from app.policies.capabilities import capabilities_for
 from app.services.membership_service import MembershipService
 
@@ -29,13 +30,32 @@ async def makeable(user: CurrentUser, settings: SettingsDep) -> dict[str, object
     Empty for a student — not a 403 — because asking "what can I make?" is a
     fair question with an honest answer of "none of these".
     """
-    studio = capabilities_for(user.role).studio_artifacts
-    kinds = build_kinds(settings).values() if studio else ()
+    caps = capabilities_for(user.role)
+    kinds = build_kinds(settings).values() if caps.studio_artifacts else ()
+    learning = (
+        build_learning_kinds().values()
+        if caps.share_learning_sets or caps.make_practice_sets
+        else ()
+    )
     return {
         "studio": [
             {"name": kind.name, "label": kind.label, "description": kind.description}
             for kind in kinds
         ],
+        # Teachers make sets to share; students make private practice sets.
+        "learning": [
+            {
+                "name": kind.name,
+                "label": kind.label,
+                "item_noun": kind.item_noun,
+                "item_noun_plural": kind.item_noun_plural,
+                "default_count": kind.default_count,
+                "max_count": kind.max_count,
+                "purpose": "assign" if caps.share_learning_sets else "practice",
+            }
+            for kind in learning
+        ],
+        "grounded": settings.search_enabled,
     }
 
 

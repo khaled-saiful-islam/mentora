@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import RateLimitError
 from app.db.models.conversation import Conversation, Message
+from app.db.models.learning import LearningSet, LearningSetVersion
 
 logger = logging.getLogger(__name__)
 
@@ -57,13 +58,22 @@ class TokenQuota:
         stays true after a message is deleted and needs nothing kept in step.
         """
         since = datetime.now(UTC) - WINDOW
-        total = await self._session.scalar(
+        chat = await self._session.scalar(
             select(func.coalesce(func.sum(Message.prompt_tokens + Message.completion_tokens), 0))
             .select_from(Message)
             .join(Conversation, Conversation.id == Message.conversation_id)
             .where(Conversation.user_id == user_id, Message.created_at >= since)
         )
-        return Usage(tokens=int(total or 0), limit=limit)
+        # Making a quiz or a deck of cards spends tokens too, and a quota that
+        # ignored them would be a quota on chatting, not on spending.
+        spent = LearningSetVersion.prompt_tokens + LearningSetVersion.completion_tokens
+        building = await self._session.scalar(
+            select(func.coalesce(func.sum(spent), 0))
+            .select_from(LearningSetVersion)
+            .join(LearningSet, LearningSet.id == LearningSetVersion.set_id)
+            .where(LearningSet.owner_id == user_id, LearningSetVersion.created_at >= since)
+        )
+        return Usage(tokens=int(chat or 0) + int(building or 0), limit=limit)
 
     async def check(self, user_id, limit: int | None) -> Usage:
         """Raise if the account is out of allowance, otherwise report it.

@@ -52,8 +52,12 @@ class SerpApiSearch(SearchProvider):
         base_url: str = "https://serpapi.com/search",
         timeout: float = 20.0,
         country: str = "",
+        safe: bool = False,
     ) -> None:
         self._api_key = api_key
+        # Google SafeSearch. On for everything a learning set is made from:
+        # the results a child's quiz is grounded in are filtered at the source.
+        self._safe = safe
         self._base_url = base_url
         self._timeout = timeout
         # Google's `gl`: whose prices, whose weather, whose "the election".
@@ -86,6 +90,8 @@ class SerpApiSearch(SearchProvider):
         """One request path, so both engines fail the same readable way."""
         if self._country:
             params = {**params, "gl": self._country}
+        if self._safe:
+            params = {**params, "safe": "active"}
         try:
             async with httpx.AsyncClient(timeout=self._timeout) as client:
                 response = await client.get(

@@ -21,6 +21,8 @@ from app.db.models.user import User
 from app.db.repositories.users import SqlUserRepository
 from app.db.session import SessionFactory, session_scope
 from app.guards.registry import build_guards
+from app.learning.factory import build_generator
+from app.learning.registry import build_learning_kinds
 from app.policies.capabilities import Capabilities, capabilities_for
 from app.providers.base import TokenBudget
 from app.providers.registry import build_provider
@@ -28,6 +30,7 @@ from app.services.accounting_service import Pricing
 from app.services.auth_service import AuthService
 from app.services.cancellation import registry as cancellation_registry
 from app.services.chat_service import ChatService, TurnSettings
+from app.services.generation_service import GenerationService
 from app.services.quota import TokenQuota
 from app.services.rate_limit import Limit, RateLimiter
 from app.tools.registry import build_tools
@@ -154,6 +157,22 @@ def require_capability(name: str) -> Callable[[User], Awaitable[User]]:
     return dependency
 
 
+def require_any_capability(*names: str) -> Callable[[User], Awaitable[User]]:
+    """Any one of these will do — making sets is for teachers (to share) and
+    students (to practise), and each gets their own kind of set."""
+    for name in names:
+        if name not in Capabilities.__dataclass_fields__:
+            raise ValueError(f"unknown capability {name!r}")
+
+    async def dependency(user: CurrentUser) -> User:
+        caps = capabilities_for(user.role)
+        if not any(getattr(caps, name) for name in names):
+            raise ForbiddenError("Your account cannot do that.")
+        return user
+
+    return dependency
+
+
 current_admin = require_roles(Role.ADMIN)
 AdminUser = Annotated[User, Depends(current_admin)]
 StaffUser = Annotated[User, Depends(require_roles(Role.ADMIN, Role.TEACHER))]
@@ -261,6 +280,27 @@ async def limit_invite(request: Request, session: SessionDep, settings: Settings
     await RateLimiter(session, enabled=settings.rate_limit_enabled).check(
         "invite", client_address(request, settings), Limit(settings.rate_limit_invite_per_minute)
     )
+
+
+async def limit_generate(session: SessionDep, settings: SettingsDep, user: CurrentUser) -> None:
+    """A build is a dozen model calls and several searches, so it is limited
+    per person per minute and counted against their token allowance."""
+    await RateLimiter(session, enabled=settings.rate_limit_enabled).check(
+        "generate", str(user.id), Limit(settings.rate_limit_generate_per_minute)
+    )
+    await TokenQuota(session).check(user.id, user.daily_token_limit)
+
+
+def get_generation_service(settings: SettingsDep) -> GenerationService:
+    return GenerationService(
+        kinds=build_learning_kinds(),
+        settings=settings,
+        session_maker=session_scope,
+        generator_factory=lambda kind, meter: build_generator(settings, kind, meter),
+    )
+
+
+GenerationServiceDep = Annotated[GenerationService, Depends(get_generation_service)]
 
 
 async def limit_auth(request: Request, session: SessionDep, settings: SettingsDep) -> None:

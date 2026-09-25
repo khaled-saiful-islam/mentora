@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from app.events.bus import EventBus
 from app.events.catalog import (
+    AssignmentShared,
     MembershipApproved,
     MembershipEnded,
     MembershipRejected,
@@ -22,4 +23,5 @@ def build_bus() -> EventBus:
     bus.subscribe(MembershipApproved, notifications.join_approved)
     bus.subscribe(MembershipRejected, notifications.join_rejected)
     bus.subscribe(MembershipEnded, notifications.membership_ended)
+    bus.subscribe(AssignmentShared, notifications.assignment_shared)
     return bus

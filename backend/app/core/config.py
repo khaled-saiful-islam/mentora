@@ -126,6 +126,18 @@ class Settings(BaseSettings):
     # model call, so this is the cost ceiling as much as the loop guard.
     tool_max_iterations: int = 3
 
+    # ---- Learning sets ---------------------------------------------------
+    # Quizzes and flashcards. Empty values fall back to the chat model's.
+    learning_model: str = ""
+    learning_base_url: str = ""
+    learning_api_key: str = ""
+    learning_timeout_seconds: float = 120.0
+    # Pages read in full per build, beyond the search snippets.
+    learning_read_pages: int = 4
+    # Builds per person per minute, and a student's practice sets per day.
+    rate_limit_generate_per_minute: int = 4
+    student_practice_per_day: int = 10
+
     # ---- Artifacts -------------------------------------------------------
     # An artifact is one self-contained HTML document — a poster today, a deck
     # or a small app later. Composing one needs a much larger output budget
@@ -161,6 +173,18 @@ class Settings(BaseSettings):
     @property
     def artifacts_available(self) -> bool:
         return self.artifacts_enabled and bool(self.artifact_model.strip())
+
+    @property
+    def resolved_learning_model(self) -> str:
+        return self.learning_model or self.llm_model
+
+    @property
+    def resolved_learning_base_url(self) -> str:
+        return (self.learning_base_url or self.llm_base_url).rstrip("/")
+
+    @property
+    def resolved_learning_api_key(self) -> str:
+        return self.learning_api_key or self.llm_api_key
 
     @property
     def resolved_artifact_base_url(self) -> str:

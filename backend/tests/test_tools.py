@@ -287,3 +287,17 @@ def test_search_snippets_decode_html_entities() -> None:
     assert parsed[0].title == "A & B"
     assert "&nbsp;" not in parsed[0].snippet
     assert "&#39;" not in parsed[0].snippet
+
+
+async def test_safe_search_asks_google_to_filter(monkeypatch) -> None:
+    sent: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append(dict(request.url.params))
+        return httpx.Response(200, json={"organic_results": []})
+
+    patch_http(monkeypatch, handler)
+    await SerpApiSearch(api_key="k", safe=True).search("photosynthesis")
+    await SerpApiSearch(api_key="k").search("photosynthesis")
+    assert sent[0]["safe"] == "active"
+    assert "safe" not in sent[1]
