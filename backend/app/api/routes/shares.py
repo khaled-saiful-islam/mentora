@@ -15,13 +15,25 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, Response, status
 
-from app.api.deps import CurrentUser, SessionDep, SettingsDep, limit_share
+from app.api.deps import (
+    CurrentUser,
+    SessionDep,
+    SettingsDep,
+    limit_share,
+    require_capability,
+)
 from app.api.schemas.share import PublicConversationResponse, ShareResponse
 from app.core.errors import NotFoundError
 from app.db.models.share import ConversationShare
 from app.services.share_service import ShareService
 
-owner_router = APIRouter(prefix="/conversations/{conversation_id}/share", tags=["shares"])
+# A public link to a child's conversation is not something to hand out, so only
+# teachers and admins may make one.
+owner_router = APIRouter(
+    prefix="/conversations/{conversation_id}/share",
+    tags=["shares"],
+    dependencies=[Depends(require_capability("share_conversations"))],
+)
 public_router = APIRouter(prefix="/shares", tags=["shares"])
 
 

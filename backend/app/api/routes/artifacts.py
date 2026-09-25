@@ -14,7 +14,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, Response, status
 
-from app.api.deps import CurrentUser, SessionDep, SettingsDep, limit_share
+from app.api.deps import (
+    CurrentUser,
+    SessionDep,
+    SettingsDep,
+    limit_share,
+    require_capability,
+)
 from app.api.schemas.artifact import (
     AppState,
     ArtifactDetail,
@@ -35,8 +41,13 @@ from app.db.models.artifact_share import ArtifactShare
 from app.db.repositories.artifacts import SqlArtifactRepository
 from app.services.artifact_share_service import ArtifactShareService
 
-router = APIRouter(prefix="/artifacts", tags=["artifacts"])
-by_conversation = APIRouter(prefix="/conversations/{conversation_id}/artifacts", tags=["artifacts"])
+# Studio artifacts are for teachers and admins. The gate is on the router, so a
+# route added here later is gated without anyone remembering to gate it.
+_STUDIO = [Depends(require_capability("studio_artifacts"))]
+router = APIRouter(prefix="/artifacts", tags=["artifacts"], dependencies=_STUDIO)
+by_conversation = APIRouter(
+    prefix="/conversations/{conversation_id}/artifacts", tags=["artifacts"], dependencies=_STUDIO
+)
 public_router = APIRouter(prefix="/shares/artifacts", tags=["artifacts"])
 
 # What a shared or downloaded document is served with, alongside the kind's own

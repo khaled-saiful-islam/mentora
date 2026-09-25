@@ -21,6 +21,7 @@ from app.api.routes import (
     conversations,
     documents,
     health,
+    me,
     memories,
     shares,
 )
@@ -118,6 +119,7 @@ def create_app() -> FastAPI:
     app.include_router(chat.router, prefix="/api")
     app.include_router(conversations.router, prefix="/api")
     app.include_router(documents.router, prefix="/api")
+    app.include_router(me.router, prefix="/api")
     app.include_router(memories.router, prefix="/api")
     app.include_router(shares.owner_router, prefix="/api")
     app.include_router(shares.public_router, prefix="/api")

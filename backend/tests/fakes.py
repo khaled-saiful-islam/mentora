@@ -50,19 +50,23 @@ class FakeUserRepository(UserRepository):
 
 def make_user(
     *,
-    username: str = "someone",
-    email: str = "someone@example.com",
+    username: str | None = "someone",
+    email: str | None = "someone@example.com",
     password_hash: str = "x",  # noqa: S107
     is_admin: bool = False,
     is_active: bool = True,
+    role: str | None = None,
+    grade_level: str | None = None,
 ) -> User:
     user = User(
         username=username,
         email=email,
         password_hash=password_hash,
         display_name=username,
-        is_admin=is_admin,
+        role=role or ("admin" if is_admin else "teacher"),
         is_active=is_active,
+        grade_level=grade_level,
+        preferences={},
     )
     user.id = uuid4()
     user.created_at = datetime.now(UTC)

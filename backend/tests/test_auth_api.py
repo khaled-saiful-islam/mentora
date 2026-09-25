@@ -120,31 +120,96 @@ async def test_signout_clears_the_cookie(client) -> None:
     assert 'mentora_session=""' in response.headers["set-cookie"]
 
 
-async def test_signup_creates_an_account_and_signs_it_in(client, repo) -> None:
+async def test_a_teacher_signup_creates_an_account_and_signs_it_in(client, repo) -> None:
     async with client as c:
         response = await c.post(
-            "/api/auth/signup",
+            "/api/auth/signup/teacher",
+            json={"name": "Cikgu Ana", "email": "ana@school.my", "password": "hunter2hunter2"},
+        )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["role"] == "teacher"
+    assert body["is_admin"] is False
+    assert body["username"] is None
+    assert body["capabilities"]["studio_artifacts"] is True
+    assert "mentora_session=" in response.headers["set-cookie"]
+    assert repo.count == 2
+
+
+async def test_a_student_signup_has_a_grade_and_no_email(client) -> None:
+    async with client as c:
+        response = await c.post(
+            "/api/auth/signup/student",
             json={
-                "username": "newbie",
-                "email": "newbie@example.com",
+                "name": "Adam",
+                "grade_level": "year_4",
+                "username": "adam4",
                 "password": "hunter2hunter2",
             },
         )
 
     assert response.status_code == 201
-    assert response.json()["is_admin"] is False
-    assert "mentora_session=" in response.headers["set-cookie"]
-    assert repo.count == 2
+    body = response.json()
+    assert body["role"] == "student"
+    assert body["email"] is None
+    assert body["grade_label"] == "Year 4"
+    assert body["capabilities"]["studio_artifacts"] is False
+    assert body["capabilities"]["join_classes"] is True
+    assert body["preferences"]["text_scale"] > 100
+
+
+async def test_a_student_signup_with_a_made_up_grade_is_refused(client) -> None:
+    async with client as c:
+        response = await c.post(
+            "/api/auth/signup/student",
+            json={"name": "A", "grade_level": "g7", "username": "a7", "password": "hunter2hunter2"},
+        )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "validation_error"
 
 
 async def test_duplicate_signup_is_a_conflict_not_a_crash(client) -> None:
     async with client as c:
         response = await c.post(
-            "/api/auth/signup",
-            json={"username": "admin", "email": "other@example.com", "password": "hunter2hunter2"},
+            "/api/auth/signup/teacher",
+            json={"name": "Again", "email": "admin@test.com", "password": "hunter2hunter2"},
         )
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "conflict"
+
+
+async def test_the_username_check_offers_alternatives(client) -> None:
+    async with client as c:
+        taken = (await c.get("/api/auth/username-available", params={"u": "admin"})).json()
+        free = (await c.get("/api/auth/username-available", params={"u": "brand_new"})).json()
+    assert taken["available"] is False
+    assert taken["suggestions"]
+    assert free == {"available": True, "reason": None, "suggestions": []}
+
+
+async def test_preferences_can_be_changed_and_reset(client) -> None:
+    async with client as c:
+        await c.post(
+            "/api/auth/signin", json={"identifier": "admin", "password": "hunter2hunter2"}
+        )
+        bigger = await c.patch("/api/auth/me/preferences", json={"text_scale": 130})
+        reset = await c.patch("/api/auth/me/preferences", json={"text_scale": None})
+        bad = await c.patch("/api/auth/me/preferences", json={"text_scale": 3})
+
+    assert bigger.json()["preferences"]["text_scale"] == 130
+    assert reset.json()["preferences"]["text_scale"] == 100
+    assert bad.status_code == 422
+
+
+async def test_onboarding_is_remembered(client) -> None:
+    async with client as c:
+        await c.post(
+            "/api/auth/signin", json={"identifier": "admin", "password": "hunter2hunter2"}
+        )
+        before = (await c.get("/api/auth/me")).json()["onboarded"]
+        after = (await c.post("/api/auth/me/onboarded")).json()["onboarded"]
+    assert (before, after) == (False, True)
 
 
 async def test_profile_update_requires_authentication(client) -> None:

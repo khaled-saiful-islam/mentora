@@ -18,6 +18,8 @@ from sse_starlette.sse import EventSourceResponse
 
 from app.api.deps import ChatServiceDep, CurrentUser, SessionDep, limit_chat
 from app.api.schemas.chat import FeedbackRequest, FeedbackResponse, SendMessageRequest
+from app.core.errors import ForbiddenError
+from app.policies.capabilities import capabilities_for
 from app.services.events import (
     AccountingEvent,
     ArtifactDeltaEvent,
@@ -241,6 +243,10 @@ async def stream(
     rendering a complete answer. curl does not mind, which is what makes it
     easy to ship.
     """
+    if payload.artifact_id is not None and not capabilities_for(user.role).studio_artifacts:
+        # The tools are already absent for this account; this closes the door
+        # before a turn is started at all, and says why.
+        raise ForbiddenError("Posters, slides, games, websites and apps are for teachers.")
     turn = live_turns.begin(
         user_id=user.id,
         source=chat.stream_turn(

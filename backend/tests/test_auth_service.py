@@ -87,45 +87,167 @@ def test_invalid_emails_are_rejected(bad: str) -> None:
         normalise_email(bad)
 
 
-# --- sign up ------------------------------------------------------------
+# --- sign up: teachers --------------------------------------------------
 
 
-async def test_sign_up_creates_a_non_admin_user_with_a_token(service, repo) -> None:
-    result = await service.sign_up(
-        username="Aisyah", email="Aisyah@Example.com", password="hunter2hunter2"
+async def test_a_teacher_signs_up_with_name_email_and_password(service, repo) -> None:
+    result = await service.sign_up_teacher(
+        name="  Cikgu Aisyah ", email="Aisyah@Example.com", password="hunter2hunter2"
     )
-    assert result.user.username == "aisyah"
+    assert result.user.role == "teacher"
+    assert result.user.display_name == "Cikgu Aisyah"
     assert result.user.email == "aisyah@example.com"
-    assert result.user.is_admin is False
+    assert result.user.username is None
     assert decode_access_token(result.access_token) == result.user.id
     assert repo.count == 1
 
 
 async def test_sign_up_never_stores_the_plain_password(service) -> None:
-    result = await service.sign_up(
-        username="zara", email="zara@example.com", password="hunter2hunter2"
+    result = await service.sign_up_teacher(
+        name="Zara", email="zara@example.com", password="hunter2hunter2"
     )
     assert "hunter2hunter2" not in result.user.password_hash
     assert verify_password("hunter2hunter2", result.user.password_hash)
 
 
-@pytest.mark.parametrize(
-    ("field", "value"),
-    [("username", "taken"), ("email", "taken@example.com")],
-)
-async def test_sign_up_rejects_duplicates(service, repo, field, value) -> None:
-    repo._users.clear()  # noqa: SLF001
+async def test_a_teacher_email_can_only_be_registered_once(service, repo) -> None:
     await repo.add(make_user(username="taken", email="taken@example.com"))
+    with pytest.raises(ConflictError, match="email"):
+        await service.sign_up_teacher(
+            name="Again", email="TAKEN@example.com", password="hunter2hunter2"
+        )
 
-    kwargs = {"username": "fresh", "email": "fresh@example.com", "password": "hunter2hunter2"}
-    kwargs[field] = value
-    with pytest.raises(ConflictError):
-        await service.sign_up(**kwargs)
+
+@pytest.mark.parametrize("name", ["", "   ", "x" * 121])
+async def test_a_name_is_required_and_bounded(service, name: str) -> None:
+    with pytest.raises(ValidationError, match="Name"):
+        await service.sign_up_teacher(name=name, email="n@example.com", password="hunter2hunter2")
 
 
 async def test_sign_up_rejects_a_short_password(service) -> None:
     with pytest.raises(ValidationError, match="at least 8"):
-        await service.sign_up(username="bob", email="bob@example.com", password="short")
+        await service.sign_up_teacher(name="Bob", email="bob@example.com", password="short")
+
+
+# --- sign up: students --------------------------------------------------
+
+
+async def test_a_student_signs_up_with_name_grade_username_and_password(service) -> None:
+    result = await service.sign_up_student(
+        name="Adam", grade_level="year_5", username="Adam_5B", password="hunter2hunter2"
+    )
+    user = result.user
+    assert user.role == "student"
+    assert user.is_student
+    assert user.username == "adam_5b"
+    assert user.email is None
+    assert user.grade_level == "year_5"
+    assert user.display_name == "Adam"
+
+
+async def test_a_student_needs_a_real_grade(service) -> None:
+    with pytest.raises(ValidationError, match="grade"):
+        await service.sign_up_student(
+            name="Adam", grade_level="grade_7", username="adam", password="hunter2hunter2"
+        )
+
+
+async def test_a_student_username_can_only_be_taken_once(service, repo) -> None:
+    await repo.add(make_user(username="adam", email="a@example.com"))
+    with pytest.raises(ConflictError, match="username"):
+        await service.sign_up_student(
+            name="Adam", grade_level="year_5", username="ADAM", password="hunter2hunter2"
+        )
+
+
+async def test_a_student_username_follows_the_username_rules(service) -> None:
+    with pytest.raises(ValidationError):
+        await service.sign_up_student(
+            name="Adam", grade_level="year_5", username="has space", password="hunter2hunter2"
+        )
+
+
+async def test_a_student_signs_in_with_their_username(service) -> None:
+    await service.sign_up_student(
+        name="Mei", grade_level="form_2", username="mei", password="hunter2hunter2"
+    )
+    result = await service.sign_in(identifier="MEI", password="hunter2hunter2")
+    assert result.user.role == "student"
+
+
+async def test_a_teacher_signs_in_with_their_email(service) -> None:
+    await service.sign_up_teacher(name="Ravi", email="ravi@school.my", password="hunter2hunter2")
+    result = await service.sign_in(identifier="Ravi@School.my", password="hunter2hunter2")
+    assert result.user.role == "teacher"
+
+
+# --- username availability ----------------------------------------------
+
+
+async def test_a_free_username_is_available(service) -> None:
+    status = await service.username_status("fresh_name")
+    assert status.available is True
+    assert status.suggestions == ()
+
+
+async def test_a_taken_username_comes_with_free_suggestions(service, repo) -> None:
+    await repo.add(make_user(username="adam", email="a@example.com"))
+    await repo.add(make_user(username="adam1", email="b@example.com"))
+    status = await service.username_status("Adam")
+    assert status.available is False
+    assert status.suggestions
+    assert "adam" not in status.suggestions
+    assert "adam1" not in status.suggestions
+    for suggestion in status.suggestions:
+        assert await repo.get_by_username(suggestion) is None
+
+
+async def test_an_invalid_username_says_why_and_suggests_nothing(service) -> None:
+    status = await service.username_status("a b")
+    assert status.available is False
+    assert status.reason
+    assert status.suggestions == ()
+
+
+# --- preferences and buddy ----------------------------------------------
+
+
+async def test_preferences_are_merged_and_saved(service, repo) -> None:
+    user = await repo.add(make_user(username="p", email="p@example.com"))
+    updated = await service.update_preferences(user.id, {"text_scale": 130})
+    assert updated.preferences == {"text_scale": 130}
+    updated = await service.update_preferences(user.id, {"sound": True})
+    assert updated.preferences == {"text_scale": 130, "sound": True}
+
+
+async def test_an_invalid_preference_changes_nothing(service, repo) -> None:
+    user = await repo.add(make_user(username="p", email="p@example.com"))
+    with pytest.raises(ValidationError):
+        await service.update_preferences(user.id, {"text_scale": 7})
+    assert user.preferences in ({}, None)
+
+
+async def test_a_student_can_pick_a_buddy(service) -> None:
+    result = await service.sign_up_student(
+        name="Siti", grade_level="year_3", username="siti", password="hunter2hunter2"
+    )
+    updated = await service.choose_buddy(result.user.id, "Rimau")
+    assert updated.buddy == "rimau"
+
+
+async def test_an_unknown_buddy_is_refused(service) -> None:
+    result = await service.sign_up_student(
+        name="Siti", grade_level="year_3", username="siti", password="hunter2hunter2"
+    )
+    with pytest.raises(ValidationError, match="buddy"):
+        await service.choose_buddy(result.user.id, "godzilla")
+
+
+async def test_finishing_onboarding_is_remembered(service, repo) -> None:
+    user = await repo.add(make_user(username="o", email="o@example.com"))
+    assert user.onboarded_at is None
+    updated = await service.finish_onboarding(user.id)
+    assert updated.onboarded_at is not None
 
 
 # --- sign in ------------------------------------------------------------
@@ -133,7 +255,13 @@ async def test_sign_up_rejects_a_short_password(service) -> None:
 
 @pytest.fixture
 async def registered(service, repo):
-    await service.sign_up(username="ravi", email="ravi@example.com", password="hunter2hunter2")
+    await repo.add(
+        make_user(
+            username="ravi",
+            email="ravi@example.com",
+            password_hash=hash_password("hunter2hunter2"),
+        )
+    )
     return repo
 
 

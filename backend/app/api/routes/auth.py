@@ -13,9 +13,12 @@ from app.api.deps import AuthServiceDep, CurrentUser, SessionDep, SettingsDep, l
 from app.api.schemas.admin import UsageResponse
 from app.api.schemas.auth import (
     ChangePasswordRequest,
+    PreferencesRequest,
     SignInRequest,
-    SignUpRequest,
+    StudentSignUpRequest,
+    TeacherSignUpRequest,
     UpdateProfileRequest,
+    UsernameStatusResponse,
     UserResponse,
 )
 from app.core.config import Settings
@@ -42,22 +45,61 @@ def _set_session_cookie(response: Response, token: str, settings: Settings) -> N
 
 
 @router.post(
-    "/signup",
+    "/signup/teacher",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(limit_auth)],
 )
-async def sign_up(
-    payload: SignUpRequest,
+async def sign_up_teacher(
+    payload: TeacherSignUpRequest,
     auth: AuthServiceDep,
     settings: SettingsDep,
     response: Response,
 ) -> UserResponse:
-    result = await auth.sign_up(
-        username=payload.username, email=payload.email, password=payload.password
+    result = await auth.sign_up_teacher(
+        name=payload.name, email=payload.email, password=payload.password
     )
     _set_session_cookie(response, result.access_token, settings)
-    return UserResponse.model_validate(result.user)
+    return UserResponse.of(result.user)
+
+
+@router.post(
+    "/signup/student",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(limit_auth)],
+)
+async def sign_up_student(
+    payload: StudentSignUpRequest,
+    auth: AuthServiceDep,
+    settings: SettingsDep,
+    response: Response,
+) -> UserResponse:
+    result = await auth.sign_up_student(
+        name=payload.name,
+        grade_level=payload.grade_level,
+        username=payload.username,
+        password=payload.password,
+    )
+    _set_session_cookie(response, result.access_token, settings)
+    return UserResponse.of(result.user)
+
+
+@router.get(
+    "/username-available",
+    response_model=UsernameStatusResponse,
+    dependencies=[Depends(limit_auth)],
+)
+async def username_available(u: str, auth: AuthServiceDep) -> UsernameStatusResponse:
+    """Rate-limited per address with sign-in, because it says whether an
+    account exists — useful to a child choosing a name, and to nobody else in
+    bulk."""
+    status_ = await auth.username_status(u[:64])
+    return UsernameStatusResponse(
+        available=status_.available,
+        reason=status_.reason,
+        suggestions=list(status_.suggestions),
+    )
 
 
 @router.post("/signin", response_model=UserResponse, dependencies=[Depends(limit_auth)])
@@ -69,7 +111,7 @@ async def sign_in(
 ) -> UserResponse:
     result = await auth.sign_in(identifier=payload.identifier, password=payload.password)
     _set_session_cookie(response, result.access_token, settings)
-    return UserResponse.model_validate(result.user)
+    return UserResponse.of(result.user)
 
 
 @router.post("/signout", status_code=status.HTTP_204_NO_CONTENT)
@@ -94,7 +136,7 @@ async def my_usage(user: CurrentUser, session: SessionDep) -> UsageResponse:
 
 @router.get("/me", response_model=UserResponse)
 async def me(user: CurrentUser) -> UserResponse:
-    return UserResponse.model_validate(user)
+    return UserResponse.of(user)
 
 
 @router.patch("/me", response_model=UserResponse)
@@ -104,7 +146,23 @@ async def update_profile(
     updated = await auth.update_profile(
         user.id, display_name=payload.display_name, email=payload.email
     )
-    return UserResponse.model_validate(updated)
+    if payload.buddy is not None:
+        updated = await auth.choose_buddy(user.id, payload.buddy)
+    return UserResponse.of(updated)
+
+
+@router.patch("/me/preferences", response_model=UserResponse)
+async def update_preferences(
+    payload: PreferencesRequest, auth: AuthServiceDep, user: CurrentUser
+) -> UserResponse:
+    # Only the fields that were sent: an explicit null resets, absence keeps.
+    patch = payload.model_dump(exclude_unset=True)
+    return UserResponse.of(await auth.update_preferences(user.id, patch))
+
+
+@router.post("/me/onboarded", response_model=UserResponse)
+async def finish_onboarding(auth: AuthServiceDep, user: CurrentUser) -> UserResponse:
+    return UserResponse.of(await auth.finish_onboarding(user.id))
 
 
 @router.post(

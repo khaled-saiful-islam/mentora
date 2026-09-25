@@ -6,7 +6,7 @@ arguments and knows nothing about requests.
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Annotated
 
 from fastapi import Cookie, Depends, Header, Request
@@ -15,11 +15,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.context.registry import build_contributors
 from app.core.config import Settings, get_settings
 from app.core.errors import AuthError, ForbiddenError
+from app.core.roles import Role
 from app.core.security import decode_access_token
 from app.db.models.user import User
 from app.db.repositories.users import SqlUserRepository
 from app.db.session import SessionFactory, session_scope
 from app.guards.registry import build_guards
+from app.policies.capabilities import Capabilities, capabilities_for
 from app.providers.base import TokenBudget
 from app.providers.registry import build_provider
 from app.services.accounting_service import Pricing
@@ -81,29 +83,78 @@ async def current_user(
 CurrentUser = Annotated[User, Depends(current_user)]
 
 
-async def current_admin(user: CurrentUser) -> User:
-    """A dependency rather than a check inside each handler.
+# --- roles and capabilities --------------------------------------------
+#
+# Dependencies rather than checks inside each handler: a check you have to
+# remember is a check someone forgets on the one route that matters. What each
+# role may do is decided in `app.policies.capabilities`; these only enforce it.
 
-    A check you have to remember is a check someone forgets on the one route
-    that matters.
-    """
-    if not user.is_admin:
-        raise ForbiddenError("This needs an administrator account.")
-    return user
+_ROLE_REFUSALS: dict[frozenset[Role], str] = {
+    frozenset({Role.ADMIN}): "This needs an administrator account.",
+    frozenset({Role.ADMIN, Role.TEACHER}): "This is for teachers.",
+    frozenset({Role.STUDENT}): "This is for students.",
+}
+
+# Said when a capability is missing, in words the person refused will follow.
+_CAPABILITY_REFUSALS: dict[str, str] = {
+    "studio_artifacts": "Posters, slides, games, websites and apps are for teachers.",
+    "share_conversations": "Share links are for teachers.",
+    "manage_classes": "Classes are run by teachers.",
+    "share_learning_sets": "Sharing quizzes and flashcards is for teachers.",
+    "join_classes": "Only students join classes.",
+    "take_assignments": "Only students take assignments.",
+    "make_practice_sets": "Practice sets are for students.",
+    "moderate": "This needs an administrator account.",
+    "manage_users": "This needs an administrator account.",
+}
 
 
+def require_roles(*roles: Role) -> Callable[[User], Awaitable[User]]:
+    allowed = frozenset(roles)
+    refusal = _ROLE_REFUSALS.get(allowed, "Your account cannot do that.")
+
+    async def dependency(user: CurrentUser) -> User:
+        if user.role not in allowed:
+            raise ForbiddenError(refusal)
+        return user
+
+    return dependency
+
+
+def require_capability(name: str) -> Callable[[User], Awaitable[User]]:
+    if name not in Capabilities.__dataclass_fields__:
+        raise ValueError(f"unknown capability {name!r}")  # a typo, caught at import
+    refusal = _CAPABILITY_REFUSALS.get(name, "Your account cannot do that.")
+
+    async def dependency(user: CurrentUser) -> User:
+        if not getattr(capabilities_for(user.role), name):
+            raise ForbiddenError(refusal)
+        return user
+
+    return dependency
+
+
+current_admin = require_roles(Role.ADMIN)
 AdminUser = Annotated[User, Depends(current_admin)]
+StaffUser = Annotated[User, Depends(require_roles(Role.ADMIN, Role.TEACHER))]
+StudentUser = Annotated[User, Depends(require_roles(Role.STUDENT))]
 
 
-def get_chat_service(settings: SettingsDep) -> ChatService:
+def get_chat_service(settings: SettingsDep, user: CurrentUser) -> ChatService:
     """Built per request, but cheap: the provider holds no connection pool,
-    contributors are stateless, and tools are thin wrappers."""
+    contributors are stateless, and tools are thin wrappers.
+
+    The tools depend on who is asking. A student's turn is built without the
+    studio artifact tools at all, so no prompt can talk the model into making
+    a poster: the tool it would call does not exist on that turn.
+    """
+    studio = capabilities_for(user.role).studio_artifacts
     return ChatService(
         session_maker=session_scope,
         provider=build_provider(settings),
         contributor_factory=lambda memories: build_contributors(settings, memories=memories),
         cancellation=cancellation_registry,
-        tools=build_tools(settings),
+        tools=build_tools(settings, studio=studio),
         guards=build_guards(settings),
         settings=TurnSettings(
             budget=TokenBudget(

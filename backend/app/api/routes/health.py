@@ -10,8 +10,8 @@ from __future__ import annotations
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from app.artifacts.registry import build_kinds
 from app.core.config import get_settings
+from app.core.grades import GRADES
 from app.db.session import check_connection
 
 router = APIRouter(tags=["health"])
@@ -43,10 +43,11 @@ async def public_config() -> dict[str, object]:
         "images_enabled": settings.vision_enabled,
         "currency": settings.llm_price_currency,
         "supported_languages": settings.supported_language_list,
-        # What can be made, straight from the registry, so a kind added there
-        # appears in the composer without anybody editing a list.
-        "makeable": [
-            {"name": kind.name, "label": kind.label, "description": kind.description}
-            for kind in build_kinds(settings).values()
+        # The school levels, in picker order, for signup and set creation.
+        # What each person may *make* depends on who they are, so it is not
+        # here: see /api/me/makeable.
+        "grades": [
+            {"code": grade.code, "label": grade.label, "stage": grade.stage}
+            for grade in GRADES
         ],
     }

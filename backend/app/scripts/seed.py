@@ -11,6 +11,7 @@ import logging
 
 from app.core.config import get_settings
 from app.core.logging import configure_logging
+from app.core.roles import Role
 from app.core.security import hash_password
 from app.db.models.user import User
 from app.db.repositories.users import SqlUserRepository
@@ -37,7 +38,7 @@ async def seed_admin() -> None:
                     email=email,
                     password_hash=hash_password(settings.seed_admin_password),
                     display_name="Administrator",
-                    is_admin=True,
+                    role=Role.ADMIN.value,
                     is_active=True,
                 )
             )

@@ -21,8 +21,12 @@ from app.tools.serpapi import SerpApiSearch
 from app.tools.web_search import ImageSearchTool, WebSearchTool
 
 
-def build_tools(settings: Settings | None = None) -> dict[str, Tool]:
-    """Keyed by name, so a selection step can look one up without a scan."""
+def build_tools(settings: Settings | None = None, *, studio: bool = True) -> dict[str, Tool]:
+    """Keyed by name, so a selection step can look one up without a scan.
+
+    `studio` is whether this turn may make posters, slides, games, websites
+    and apps. Without it the artifact tools are not built at all.
+    """
     settings = settings or get_settings()
     tools: list[Tool] = []
 
@@ -47,7 +51,7 @@ def build_tools(settings: Settings | None = None) -> dict[str, Tool]:
 
     # Same rule, one layer up: no artifact model means no kinds, and no kinds
     # means the tool is never offered rather than offered and always failing.
-    kinds = build_kinds(settings)
+    kinds = build_kinds(settings) if studio else {}
     if kinds:
         tools.append(CreateArtifactTool(kinds))
         # Offered only on a turn that has one open. `_tools_to_offer` decides

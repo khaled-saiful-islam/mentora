@@ -9,9 +9,9 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
-from app.api.deps import AdminUser, SessionDep
+from app.api.deps import AdminUser, SessionDep, current_admin
 from app.api.schemas.admin import (
     AdminUserList,
     AdminUserResponse,
@@ -19,21 +19,25 @@ from app.api.schemas.admin import (
     UpdateUserRequest,
 )
 from app.services.admin_service import AdminService, ManagedUser
+from app.services.quota import TokenQuota, Usage
 
-router = APIRouter(prefix="/admin/users", tags=["admin"])
+router = APIRouter(prefix="/admin/users", tags=["admin"], dependencies=[Depends(current_admin)])
 
 
 def _response(managed: ManagedUser) -> AdminUserResponse:
+    user = managed.user
     return AdminUserResponse(
-        id=managed.user.id,
-        username=managed.user.username,
-        email=managed.user.email,
-        display_name=managed.user.display_name,
-        is_admin=managed.user.is_admin,
-        is_active=managed.user.is_active,
-        daily_token_limit=managed.user.daily_token_limit,
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        display_name=user.display_name,
+        role=user.role,
+        grade_level=user.grade_level,
+        is_admin=user.is_admin,
+        is_active=user.is_active,
+        daily_token_limit=user.daily_token_limit,
         tokens_used_24h=managed.usage.tokens,
-        created_at=managed.user.created_at,
+        created_at=user.created_at,
     )
 
 
@@ -50,24 +54,15 @@ async def create(
 ) -> AdminUserResponse:
     user = await AdminService(session).create(
         username=body.username,
-        email=str(body.email),
+        email=str(body.email) if body.email else None,
         password=body.password,
         display_name=body.display_name,
-        is_admin=body.is_admin,
+        role="admin" if body.is_admin else body.role,
+        grade_level=body.grade_level,
         daily_token_limit=body.daily_token_limit,
     )
     # Freshly created, so nothing has been spent yet.
-    return AdminUserResponse(
-        id=user.id,
-        username=user.username,
-        email=user.email,
-        display_name=user.display_name,
-        is_admin=user.is_admin,
-        is_active=user.is_active,
-        daily_token_limit=user.daily_token_limit,
-        tokens_used_24h=0,
-        created_at=user.created_at,
-    )
+    return _response(ManagedUser(user=user, usage=Usage(tokens=0, limit=user.daily_token_limit)))
 
 
 @router.patch("/{user_id}", response_model=AdminUserResponse)
@@ -85,7 +80,5 @@ async def update(
         daily_token_limit=body.daily_token_limit,
         clear_limit=body.clear_limit,
     )
-    from app.services.quota import TokenQuota
-
     usage = await TokenQuota(session).usage(user.id, user.daily_token_limit)
     return _response(ManagedUser(user=user, usage=usage))

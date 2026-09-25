@@ -26,6 +26,20 @@ async def test_config_exposes_capabilities_without_a_database(client) -> None:
     assert body["supported_languages"]
 
 
+async def test_config_lists_the_grades_in_picker_order(client) -> None:
+    async with client as c:
+        grades = (await c.get("/api/config")).json()["grades"]
+    assert grades[0] == {"code": "year_1", "label": "Year 1", "stage": "Primary"}
+    assert grades[-1]["label"] == "Upper Six"
+
+
+async def test_config_does_not_say_what_can_be_made(client) -> None:
+    """That depends on who is asking, and /config does not know."""
+    async with client as c:
+        body = (await c.get("/api/config")).json()
+    assert "makeable" not in body
+
+
 async def test_config_never_leaks_secrets(client) -> None:
     """The browser learns whether a capability works, never how it is configured."""
     async with client as c:
