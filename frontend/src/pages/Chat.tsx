@@ -19,6 +19,7 @@ import { usePanelWidth } from '@/hooks/usePanelWidth'
 import { useChat } from '@/hooks/useChat'
 import { useConversations } from '@/hooks/useConversations'
 import { useConfig } from '@/hooks/useConfig'
+import { useMakeable } from '@/hooks/useMakeable'
 import { useDocuments } from '@/hooks/useDocuments'
 import { apiFetch } from '@/lib/api'
 
@@ -47,7 +48,8 @@ export default function Chat() {
   const documents = useDocuments(activeConversationId, { images: config?.images_enabled ?? false })
   const [sharing, setSharing] = useState(false)
   const composer = useRef<ComposerHandle>(null)
-  const kinds: Makeable[] = useMemo(() => inOrder(config?.makeable ?? []), [config])
+  const makeable = useMakeable()
+  const kinds: Makeable[] = useMemo(() => inOrder(makeable), [makeable])
 
   /** A kind picked from the rail or the chips: its request, ready to edit. */
   function start(kind: Makeable, example?: string) {

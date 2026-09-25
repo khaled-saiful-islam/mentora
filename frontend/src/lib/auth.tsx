@@ -9,14 +9,23 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { ApiError, apiFetch } from './api'
+import type { User } from './user'
 
-export interface User {
-  id: string
-  username: string
+export type { User } from './user'
+
+export interface TeacherSignUp {
+  name: string
   email: string
-  display_name: string | null
-  is_admin: boolean
-  created_at: string
+  password: string
+}
+
+export interface StudentSignUp {
+  name: string
+  grade_level: string
+  username: string
+  password: string
+  /** From a class invite link: signing up through one also asks to join. */
+  invite_token?: string
 }
 
 interface AuthState {
@@ -24,7 +33,8 @@ interface AuthState {
   /** True until the first /auth/me resolves, so routes do not flash. */
   loading: boolean
   signIn: (identifier: string, password: string) => Promise<void>
-  signUp: (username: string, email: string, password: string) => Promise<void>
+  signUpTeacher: (details: TeacherSignUp) => Promise<void>
+  signUpStudent: (details: StudentSignUp) => Promise<void>
   signOut: () => Promise<void>
   updateUser: (user: User) => void
 }
@@ -57,11 +67,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
   }, [])
 
-  const signUp = useCallback(async (username: string, email: string, password: string) => {
+  const signUpTeacher = useCallback(async (details: TeacherSignUp) => {
     setUser(
-      await apiFetch<User>('/auth/signup', {
+      await apiFetch<User>('/auth/signup/teacher', {
         method: 'POST',
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify(details),
+      }),
+    )
+  }, [])
+
+  const signUpStudent = useCallback(async (details: StudentSignUp) => {
+    setUser(
+      await apiFetch<User>('/auth/signup/student', {
+        method: 'POST',
+        body: JSON.stringify(details),
       }),
     )
   }, [])
@@ -76,8 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const value = useMemo(
-    () => ({ user, loading, signIn, signUp, signOut, updateUser: setUser }),
-    [user, loading, signIn, signUp, signOut],
+    () => ({ user, loading, signIn, signUpTeacher, signUpStudent, signOut, updateUser: setUser }),
+    [user, loading, signIn, signUpTeacher, signUpStudent, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

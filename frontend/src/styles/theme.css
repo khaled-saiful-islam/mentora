@@ -1,11 +1,14 @@
 /* ==========================================================================
    Mentora theme — the whole look lives here.
 
-   Change the values in this file and every surface, border, shadow and accent
-   in the application follows. Nothing else in the codebase hardcodes a colour;
-   components only ever reference these tokens through Tailwind utilities.
+   One palette for everyone, in a light and a dark variant: grape for the
+   brand, sunshine for stars and highlights, mint for "got it", coral for
+   "try again", sky for information. Every surface, border, shadow and accent
+   in the app reads these tokens through Tailwind utilities; no component
+   hardcodes a colour.
 
-   To rebrand: edit the `--accent-*` ramp and the neutrals. That is the change.
+   Tokens are bare HSL triplets (`252 80% 56%`) so they can take an alpha:
+   `hsl(var(--primary) / 0.2)`.
    ========================================================================== */
 
 /* Dark mode has three states: explicit dark, explicit light, and the system
@@ -14,87 +17,138 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  /* --- Accent ramp: Mentora amber ---------------------------------------- */
-  --accent-50: 48 96% 95%;
-  --accent-100: 48 96% 89%;
-  --accent-200: 45 97% 77%;
-  --accent-300: 43 96% 66%;
-  --accent-400: 41 96% 57%;
-  --accent-500: 38 92% 50%;   /* #F59E0B — the brand colour */
-  --accent-600: 32 95% 44%;
-  --accent-700: 26 90% 37%;
-  --accent-800: 23 83% 31%;
-  --accent-900: 22 78% 26%;
+  /* --- Brand ramps ------------------------------------------------------ */
+  --grape-50: 252 100% 97%;
+  --grape-100: 252 100% 94%;
+  --grape-200: 252 100% 88%;
+  --grape-300: 252 100% 80%;
+  --grape-400: 252 100% 72%;
+  --grape-500: 252 100% 65%;   /* #6D4AFF — the brand colour */
+  --grape-600: 252 80% 56%;
+  --grape-700: 252 64% 47%;
+  --grape-800: 252 60% 37%;
+  --grape-900: 252 58% 27%;
 
-  /* --- Semantic surfaces ------------------------------------------------ */
-  --background: 40 33% 98%;
-  --foreground: 24 10% 12%;
+  --sun-100: 44 100% 92%;
+  --sun-300: 43 100% 74%;
+  --sun-400: 41 100% 62%;      /* #FFC23D — stars, streaks, highlights */
+  --sun-600: 36 100% 42%;
+
+  --mint-100: 162 70% 92%;
+  --mint-400: 162 77% 41%;     /* #18B98A — correct */
+  --mint-700: 162 80% 26%;
+
+  --coral-100: 0 100% 95%;
+  --coral-400: 0 100% 71%;     /* #FF6B6B — try again */
+  --coral-700: 0 70% 45%;
+
+  --sky-100: 209 100% 94%;
+  --sky-400: 209 100% 61%;     /* #3AA0FF — information */
+  --sky-700: 209 80% 38%;
+
+  /* The accent ramp older components use is the brand ramp. */
+  --accent-50: var(--grape-50);
+  --accent-100: var(--grape-100);
+  --accent-200: var(--grape-200);
+  --accent-300: var(--grape-300);
+  --accent-400: var(--grape-400);
+  --accent-500: var(--grape-500);
+  --accent-600: var(--grape-600);
+  --accent-700: var(--grape-700);
+  --accent-800: var(--grape-800);
+  --accent-900: var(--grape-900);
+
+  /* --- Semantic surfaces: warm paper and deep ink ------------------------ */
+  --background: 36 100% 97%;   /* #FFF9F0 */
+  --foreground: 245 37% 17%;   /* #1E1B3A */
 
   --surface: 0 0% 100%;
-  --surface-foreground: 24 10% 12%;
-  --surface-raised: 40 30% 96%;
+  --surface-foreground: 245 37% 17%;
+  --surface-raised: 36 70% 95%;
 
-  --sidebar: 40 24% 96%;
-  --sidebar-foreground: 24 8% 28%;
+  --sidebar: 36 60% 95%;
+  --sidebar-foreground: 245 22% 30%;
 
-  --muted: 40 20% 94%;
-  --muted-foreground: 25 6% 45%;
+  --muted: 36 45% 93%;
+  --muted-foreground: 245 14% 42%;
 
-  --border: 35 18% 89%;
-  --input: 35 18% 89%;
-  --ring: var(--accent-500);
+  --border: 36 30% 86%;
+  --input: 36 30% 84%;
+  --ring: var(--grape-500);
 
-  /* --- Interaction ------------------------------------------------------
-     What a thing looks like under the pointer, and what the one you are on
-     looks like. These are the brand's, not a neutral grey: hovering a row
-     should feel like this application and not like any other. Derived from
-     the accent ramp so a rebrand carries them along. */
-  --hover: 45 90% 95%;
-  --hover-border: var(--accent-400);
-  --selected: 45 92% 88%;
+  /* --- Interaction ------------------------------------------------------ */
+  --hover: var(--grape-50);
+  --hover-border: var(--grape-300);
+  --selected: var(--grape-100);
 
-  /* --- What kind of artifact ---------------------------------------------
-     One colour each, so a poster, a deck and a game are told apart at a
-     glance in a transcript that may hold all three. Deliberately off the
-     accent ramp: these are categories, not emphasis, and three tints of the
-     brand would read as three states of one thing. */
-  --kind-poster: 350 68% 48%;
-  --kind-slides: 199 80% 38%;
-  --kind-games: 264 60% 55%;
-  --kind-website: 162 72% 33%;
-  --kind-app: 84 76% 30%;
+  --primary: var(--grape-600);
+  --primary-foreground: 0 0% 100%;
 
-  --primary: var(--accent-500);
-  --primary-foreground: 26 65% 13%;
+  --secondary: 36 45% 92%;
+  --secondary-foreground: 245 30% 22%;
 
-  --secondary: 40 20% 94%;
-  --secondary-foreground: 24 10% 20%;
-
-  --destructive: 0 72% 51%;
+  --destructive: 0 72% 50%;
   --destructive-foreground: 0 0% 100%;
 
-  --success: 142 65% 36%;
-  --warning: 38 92% 45%;
+  --success: var(--mint-700);
+  --warning: var(--sun-600);
+  --info: var(--sky-700);
 
-  /* Message bubbles are their own tokens: the surface a user message sits on
-     is a design decision independent of cards and panels. */
-  --bubble-user: 40 28% 93%;
-  --bubble-user-foreground: 24 10% 15%;
+  /* Answer feedback: fills are vivid, text on them is ink. */
+  --correct: var(--mint-400);
+  --correct-soft: var(--mint-100);
+  --wrong: var(--coral-400);
+  --wrong-soft: var(--coral-100);
+  --star: var(--sun-400);
+  --star-soft: var(--sun-100);
 
-  /* --- Shape and depth -------------------------------------------------- */
-  --radius-sm: 0.375rem;
-  --radius: 0.625rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
+  --bubble-user: var(--grape-100);
+  --bubble-user-foreground: 245 37% 17%;
 
-  --shadow-sm: 0 1px 2px 0 hsl(24 20% 12% / 0.05);
-  --shadow: 0 2px 8px -2px hsl(24 20% 12% / 0.08), 0 1px 2px hsl(24 20% 12% / 0.04);
-  --shadow-lg: 0 12px 32px -8px hsl(24 20% 12% / 0.14);
+  /* --- What kind of thing ------------------------------------------------
+     Each kind has its own colour, used on its tile, card, header and player.
+     `--kind-x` is safe for text on the page; `--kind-x-vivid` is the fill. */
+  --kind-quiz: 20 95% 40%;
+  --kind-quiz-vivid: 26 100% 55%;          /* Tangerine */
+  --kind-flashcard: 174 90% 26%;
+  --kind-flashcard-vivid: 174 84% 38%;     /* Lagoon */
+  --kind-poster: 342 75% 42%;
+  --kind-poster-vivid: 342 89% 60%;        /* Rose */
+  --kind-slides: 217 80% 45%;
+  --kind-slides-vivid: 217 91% 60%;        /* Blue */
+  --kind-games: 283 60% 45%;
+  --kind-games-vivid: 283 84% 62%;         /* Orchid */
+  --kind-website: 84 80% 27%;
+  --kind-website-vivid: 84 81% 44%;        /* Lime */
+  --kind-app: 142 70% 28%;
+  --kind-app-vivid: 142 71% 45%;           /* Leaf */
 
-  /* --- Typography ------------------------------------------------------- */
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  /* --- Shape and depth: round and tactile ------------------------------ */
+  --radius-sm: 0.5rem;
+  --radius: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+  --radius-2xl: 2.25rem;
+
+  --shadow-sm: 0 1px 2px 0 hsl(252 40% 20% / 0.06);
+  --shadow: 0 2px 4px -1px hsl(252 40% 20% / 0.06), 0 8px 24px -8px hsl(252 60% 40% / 0.16);
+  --shadow-lg: 0 18px 44px -12px hsl(252 60% 30% / 0.26);
+  /* The chunky bottom edge of a pressable thing. */
+  --shadow-press: 0 4px 0 0 hsl(252 60% 30% / 0.22);
+
+  /* --- Typography ------------------------------------------------------ */
+  --font-display: "Fredoka Variable", "Fredoka", ui-rounded, system-ui, sans-serif;
+  --font-body: "Nunito Variable", "Nunito", ui-rounded, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-celebrate: "Lilita One", "Fredoka Variable", ui-rounded, system-ui, sans-serif;
+  --font-easy: "Andika", "Nunito Variable", system-ui, sans-serif;
+  --font-sans: var(--font-body);
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Every text size is multiplied by this; spacing is not, so a bigger text
+     setting makes words bigger without making the layout balloon. Set from
+     the person's preference, and overridable on any container. */
+  --text-scale: 1;
 
   /* --- Layout ----------------------------------------------------------- */
   --sidebar-width: 17rem;
@@ -102,104 +156,135 @@
   --composer-max-height: 14rem;
 }
 
+/* Font styles. Playful is the display face on headings; classic keeps the
+   rounded body face throughout; easy read is Andika, drawn for early readers. */
+:root[data-font="classic"] {
+  --font-display: "Nunito Variable", "Nunito", ui-rounded, system-ui, sans-serif;
+}
+:root[data-font="easy"] {
+  --font-display: var(--font-easy);
+  --font-body: var(--font-easy);
+  --font-celebrate: var(--font-easy);
+}
+
 /* System preference, unless the user has explicitly chosen light. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --background: 24 10% 8%;
-    --foreground: 40 18% 94%;
+    --background: 250 35% 9%;
+    --foreground: 250 60% 96%;
 
-    --surface: 24 9% 11%;
-    --surface-foreground: 40 18% 94%;
-    --surface-raised: 24 8% 14%;
+    --surface: 250 30% 13%;
+    --surface-foreground: 250 60% 96%;
+    --surface-raised: 250 28% 17%;
 
-    --sidebar: 24 10% 10%;
-    --sidebar-foreground: 40 12% 72%;
+    --sidebar: 250 33% 11%;
+    --sidebar-foreground: 250 25% 78%;
 
-    --muted: 24 8% 16%;
-    --muted-foreground: 35 10% 62%;
+    --muted: 250 25% 19%;
+    --muted-foreground: 250 20% 72%;
 
-    --border: 24 8% 20%;
-    --input: 24 8% 22%;
+    --border: 250 22% 23%;
+    --input: 250 22% 26%;
 
-    --hover: 35 30% 17%;
-    --hover-border: var(--accent-500);
-    --selected: 35 34% 22%;
+    --hover: 252 40% 19%;
+    --hover-border: var(--grape-400);
+    --selected: 252 45% 25%;
 
-    --kind-poster: 350 80% 68%;
-    --kind-slides: 199 82% 62%;
-    --kind-games: 264 82% 75%;
-    --kind-website: 160 64% 56%;
-    --kind-app: 84 62% 55%;
+    --primary: 252 100% 74%;
+    --primary-foreground: 250 50% 10%;
 
-    --primary: var(--accent-400);
-    --primary-foreground: 26 70% 10%;
+    --secondary: 250 25% 20%;
+    --secondary-foreground: 250 40% 90%;
 
-    --secondary: 24 8% 17%;
-    --secondary-foreground: 40 15% 88%;
+    --destructive: 0 80% 64%;
+    --success: 162 65% 55%;
+    --warning: 41 100% 62%;
+    --info: 209 100% 70%;
 
-    --destructive: 0 62% 55%;
-    --success: 142 55% 45%;
-    --warning: 38 90% 58%;
+    --correct: 162 70% 48%;
+    --correct-soft: 162 45% 18%;
+    --wrong: 0 100% 71%;
+    --wrong-soft: 0 45% 20%;
+    --star-soft: 41 50% 18%;
 
-    --bubble-user: 24 8% 17%;
-    --bubble-user-foreground: 40 16% 92%;
+    --bubble-user: 252 40% 24%;
+    --bubble-user-foreground: 250 60% 96%;
 
-    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
-    --shadow: 0 2px 10px -2px hsl(0 0% 0% / 0.45);
-    --shadow-lg: 0 16px 40px -10px hsl(0 0% 0% / 0.6);
+    --kind-quiz: 28 100% 65%;
+    --kind-flashcard: 172 70% 55%;
+    --kind-poster: 342 90% 72%;
+    --kind-slides: 217 95% 72%;
+    --kind-games: 283 90% 78%;
+    --kind-website: 84 70% 58%;
+    --kind-app: 142 60% 58%;
+
+    --shadow-sm: 0 1px 2px 0 hsl(250 60% 2% / 0.4);
+    --shadow: 0 2px 4px -1px hsl(250 60% 2% / 0.4), 0 10px 28px -8px hsl(250 80% 2% / 0.6);
+    --shadow-lg: 0 20px 48px -12px hsl(250 80% 2% / 0.7);
+    --shadow-press: 0 4px 0 0 hsl(250 60% 2% / 0.55);
   }
 }
 
 /* Explicit choice always wins, in both directions. */
 [data-theme="dark"] {
-  --background: 24 10% 8%;
-  --foreground: 40 18% 94%;
+  --background: 250 35% 9%;
+  --foreground: 250 60% 96%;
 
-  --surface: 24 9% 11%;
-  --surface-foreground: 40 18% 94%;
-  --surface-raised: 24 8% 14%;
+  --surface: 250 30% 13%;
+  --surface-foreground: 250 60% 96%;
+  --surface-raised: 250 28% 17%;
 
-  --sidebar: 24 10% 10%;
-  --sidebar-foreground: 40 12% 72%;
+  --sidebar: 250 33% 11%;
+  --sidebar-foreground: 250 25% 78%;
 
-  --muted: 24 8% 16%;
-  --muted-foreground: 35 10% 62%;
+  --muted: 250 25% 19%;
+  --muted-foreground: 250 20% 72%;
 
-  --border: 24 8% 20%;
-  --input: 24 8% 22%;
+  --border: 250 22% 23%;
+  --input: 250 22% 26%;
 
-  --hover: 35 30% 17%;
-  --hover-border: var(--accent-500);
-  --selected: 35 34% 22%;
+  --hover: 252 40% 19%;
+  --hover-border: var(--grape-400);
+  --selected: 252 45% 25%;
 
-  --kind-poster: 350 80% 68%;
-  --kind-slides: 199 82% 62%;
-  --kind-games: 264 82% 75%;
-  --kind-website: 160 64% 56%;
-  --kind-app: 84 62% 55%;
+  --primary: 252 100% 74%;
+  --primary-foreground: 250 50% 10%;
 
-  --primary: var(--accent-400);
-  --primary-foreground: 26 70% 10%;
+  --secondary: 250 25% 20%;
+  --secondary-foreground: 250 40% 90%;
 
-  --secondary: 24 8% 17%;
-  --secondary-foreground: 40 15% 88%;
+  --destructive: 0 80% 64%;
+  --success: 162 65% 55%;
+  --warning: 41 100% 62%;
+  --info: 209 100% 70%;
 
-  --destructive: 0 62% 55%;
-  --success: 142 55% 45%;
-  --warning: 38 90% 58%;
+  --correct: 162 70% 48%;
+  --correct-soft: 162 45% 18%;
+  --wrong: 0 100% 71%;
+  --wrong-soft: 0 45% 20%;
+  --star-soft: 41 50% 18%;
 
-  --bubble-user: 24 8% 17%;
-  --bubble-user-foreground: 40 16% 92%;
+  --bubble-user: 252 40% 24%;
+  --bubble-user-foreground: 250 60% 96%;
 
-  --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
-  --shadow: 0 2px 10px -2px hsl(0 0% 0% / 0.45);
-  --shadow-lg: 0 16px 40px -10px hsl(0 0% 0% / 0.6);
+  --kind-quiz: 28 100% 65%;
+  --kind-flashcard: 172 70% 55%;
+  --kind-poster: 342 90% 72%;
+  --kind-slides: 217 95% 72%;
+  --kind-games: 283 90% 78%;
+  --kind-website: 84 70% 58%;
+  --kind-app: 142 60% 58%;
+
+  --shadow-sm: 0 1px 2px 0 hsl(250 60% 2% / 0.4);
+  --shadow: 0 2px 4px -1px hsl(250 60% 2% / 0.4), 0 10px 28px -8px hsl(250 80% 2% / 0.6);
+  --shadow-lg: 0 20px 48px -12px hsl(250 80% 2% / 0.7);
+  --shadow-press: 0 4px 0 0 hsl(250 60% 2% / 0.55);
 }
 
 /* --- Expose the tokens to Tailwind --------------------------------------
-   Everything above is plain CSS. This block is the only Tailwind-specific
-   part, and it exists so `bg-surface` and `text-muted-foreground` resolve to
-   the tokens rather than to a second, competing palette. */
+   `inline` matters for the text sizes: the utility carries the calc itself,
+   so `--text-scale` is read where the text is, and a container can set its
+   own scale without touching the rest of the page. */
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -216,11 +301,6 @@
   --color-hover: hsl(var(--hover));
   --color-hover-border: hsl(var(--hover-border));
   --color-selected: hsl(var(--selected));
-  --color-kind-poster: hsl(var(--kind-poster));
-  --color-kind-slides: hsl(var(--kind-slides));
-  --color-kind-games: hsl(var(--kind-games));
-  --color-kind-website: hsl(var(--kind-website));
-  --color-kind-app: hsl(var(--kind-app));
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-secondary: hsl(var(--secondary));
@@ -229,8 +309,54 @@
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-success: hsl(var(--success));
   --color-warning: hsl(var(--warning));
+  --color-info: hsl(var(--info));
+  --color-correct: hsl(var(--correct));
+  --color-correct-soft: hsl(var(--correct-soft));
+  --color-wrong: hsl(var(--wrong));
+  --color-wrong-soft: hsl(var(--wrong-soft));
+  --color-star: hsl(var(--star));
+  --color-star-soft: hsl(var(--star-soft));
   --color-bubble-user: hsl(var(--bubble-user));
   --color-bubble-user-foreground: hsl(var(--bubble-user-foreground));
+
+  --color-kind-quiz: hsl(var(--kind-quiz));
+  --color-kind-quiz-vivid: hsl(var(--kind-quiz-vivid));
+  --color-kind-flashcard: hsl(var(--kind-flashcard));
+  --color-kind-flashcard-vivid: hsl(var(--kind-flashcard-vivid));
+  --color-kind-poster: hsl(var(--kind-poster));
+  --color-kind-poster-vivid: hsl(var(--kind-poster-vivid));
+  --color-kind-slides: hsl(var(--kind-slides));
+  --color-kind-slides-vivid: hsl(var(--kind-slides-vivid));
+  --color-kind-games: hsl(var(--kind-games));
+  --color-kind-games-vivid: hsl(var(--kind-games-vivid));
+  --color-kind-website: hsl(var(--kind-website));
+  --color-kind-website-vivid: hsl(var(--kind-website-vivid));
+  --color-kind-app: hsl(var(--kind-app));
+  --color-kind-app-vivid: hsl(var(--kind-app-vivid));
+
+  --color-grape-50: hsl(var(--grape-50));
+  --color-grape-100: hsl(var(--grape-100));
+  --color-grape-200: hsl(var(--grape-200));
+  --color-grape-300: hsl(var(--grape-300));
+  --color-grape-400: hsl(var(--grape-400));
+  --color-grape-500: hsl(var(--grape-500));
+  --color-grape-600: hsl(var(--grape-600));
+  --color-grape-700: hsl(var(--grape-700));
+  --color-grape-800: hsl(var(--grape-800));
+  --color-grape-900: hsl(var(--grape-900));
+  --color-sun-100: hsl(var(--sun-100));
+  --color-sun-300: hsl(var(--sun-300));
+  --color-sun-400: hsl(var(--sun-400));
+  --color-sun-600: hsl(var(--sun-600));
+  --color-mint-100: hsl(var(--mint-100));
+  --color-mint-400: hsl(var(--mint-400));
+  --color-mint-700: hsl(var(--mint-700));
+  --color-coral-100: hsl(var(--coral-100));
+  --color-coral-400: hsl(var(--coral-400));
+  --color-coral-700: hsl(var(--coral-700));
+  --color-sky-100: hsl(var(--sky-100));
+  --color-sky-400: hsl(var(--sky-400));
+  --color-sky-700: hsl(var(--sky-700));
 
   --color-accent-50: hsl(var(--accent-50));
   --color-accent-100: hsl(var(--accent-100));
@@ -247,11 +373,28 @@
   --radius-DEFAULT: var(--radius);
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
 
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-celebrate: var(--font-celebrate);
   --font-mono: var(--font-mono);
 
   --shadow-sm: var(--shadow-sm);
   --shadow-DEFAULT: var(--shadow);
   --shadow-lg: var(--shadow-lg);
+  --shadow-press: var(--shadow-press);
+
+  /* Every text size follows the person's text-size setting. */
+  --text-xs: calc(0.75rem * var(--text-scale));
+  --text-sm: calc(0.875rem * var(--text-scale));
+  --text-base: calc(1rem * var(--text-scale));
+  --text-lg: calc(1.125rem * var(--text-scale));
+  --text-xl: calc(1.25rem * var(--text-scale));
+  --text-2xl: calc(1.5rem * var(--text-scale));
+  --text-3xl: calc(1.875rem * var(--text-scale));
+  --text-4xl: calc(2.25rem * var(--text-scale));
+  --text-5xl: calc(3rem * var(--text-scale));
+  --text-6xl: calc(3.75rem * var(--text-scale));
+  --text-7xl: calc(4.5rem * var(--text-scale));
 }

@@ -392,7 +392,7 @@ Then: Review answers · Try again (if allowed) · Home.
   - **Lilita One** for big moments (scores, podium, badge names)
   - **Andika** for the "Easy read" style (designed for early readers: single-storey a/g)
 - Students choose a **font style**: *Playful* (default), *Easy read*, *Classic*.
-- **Text size control**: four steps, A− / A / A+ / A++ = 100 / 115 / 130 / 150%. It sits in the **artifact panel** and the players, and drives the CSS variable `--text-scale`. Students default to **A+** and teachers to **A**. It's saved in `users.preferences` so it follows the user across devices.
+- **Text size control**: five steps = 90 / 100 / 115 / 130 / 150%. It sits in the **artifact panel** and the players, and drives the CSS variable `--text-scale`. Students default to **115%** and teachers to **100%**. It's saved in `users.preferences` so it follows the user across devices.
   - For Pelita HTML artifacts (fixed-canvas posters and slides), the same control **zooms** the frame rather than reflowing it (§17).
 
 ### 8.8 Private practice (students)

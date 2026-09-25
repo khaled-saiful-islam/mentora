@@ -1,33 +1,37 @@
 /**
  * The primitives everything else is built from.
  *
- * Deliberately small and hand-rolled on the theme tokens rather than pulled in
- * wholesale: a template is read more often than it is extended, and eight
- * components you can read beat a dependency you have to look up. Every colour
- * here is a token from theme.css, so restyling happens in one file.
+ * Round, bold and tactile: a button has a pressable edge and sinks under a
+ * finger, an input is soft and glows grape when it has focus. Every colour is
+ * a token from theme.css, so restyling happens in one file.
  */
 
 import { forwardRef } from 'react'
-import { Loader2 } from 'lucide-react'
+import { CircleNotch, Info, WarningCircle, XCircle } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 // --- Button -------------------------------------------------------------
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline'
-type ButtonSize = 'sm' | 'md' | 'icon'
+type ButtonVariant = 'primary' | 'sun' | 'secondary' | 'ghost' | 'danger' | 'outline'
+type ButtonSize = 'sm' | 'md' | 'lg' | 'icon'
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-primary text-primary-foreground hover:bg-accent-600 shadow-sm',
+  primary:
+    'bg-primary text-primary-foreground shadow-press hover:brightness-110 active:shadow-none',
+  sun: 'bg-sun-400 text-grape-900 shadow-press hover:brightness-105 active:shadow-none',
   secondary: 'bg-secondary text-secondary-foreground hover:bg-hover',
-  ghost: 'hover:bg-hover text-foreground',
-  outline: 'border border-border bg-transparent hover:border-hover-border hover:bg-hover',
-  danger: 'bg-destructive text-destructive-foreground hover:opacity-90',
+  ghost: 'text-foreground hover:bg-hover',
+  outline:
+    'border-2 border-border bg-surface text-foreground hover:border-hover-border hover:bg-hover',
+  danger:
+    'bg-destructive text-destructive-foreground shadow-press hover:brightness-110 active:shadow-none',
 }
 
 const BUTTON_SIZES: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 text-xs gap-1.5',
-  md: 'h-10 px-4 text-sm gap-2',
-  icon: 'size-8 p-0',
+  sm: 'h-9 px-4 text-sm gap-1.5',
+  md: 'h-11 px-5 text-base gap-2',
+  lg: 'h-14 px-7 text-lg gap-2.5',
+  icon: 'size-10 p-0',
 }
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -45,15 +49,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center rounded-lg font-medium whitespace-nowrap',
-        'transition-colors disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex select-none items-center justify-center whitespace-nowrap rounded-full font-bold',
+        'transition-[transform,box-shadow,filter,background-color,border-color] duration-150',
+        'active:translate-y-[2px] disabled:pointer-events-none disabled:opacity-50',
         BUTTON_VARIANTS[variant],
         BUTTON_SIZES[size],
         className,
       )}
       {...props}
     >
-      {loading && <Loader2 className="size-4 animate-spin" aria-hidden />}
+      {loading && <CircleNotch weight="bold" className="size-[1.1em] animate-spin" aria-hidden />}
       {children}
     </button>
   )
@@ -67,9 +72,11 @@ export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTML
       <input
         ref={ref}
         className={cn(
-          'h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm',
-          'placeholder:text-muted-foreground',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0',
+          'h-12 w-full rounded-2xl border-2 border-input bg-surface px-4 text-base font-semibold',
+          'placeholder:font-normal placeholder:text-muted-foreground',
+          'transition-[border-color,box-shadow] duration-150',
+          'focus-visible:border-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20',
+          'aria-invalid:border-wrong aria-invalid:ring-wrong/20',
           'disabled:cursor-not-allowed disabled:opacity-50',
           className,
         )}
@@ -84,7 +91,7 @@ export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTML
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
-      className={cn('text-sm font-medium text-foreground/80 select-none', className)}
+      className={cn('select-none text-sm font-bold text-foreground/85', className)}
       {...props}
     />
   )
@@ -96,41 +103,59 @@ export function Field({
   label,
   htmlFor,
   hint,
+  error,
   children,
 }: {
   label: string
   htmlFor: string
-  hint?: string
+  hint?: React.ReactNode
+  error?: string | null
   children: React.ReactNode
 }) {
   return (
     <div className="space-y-1.5">
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {error ? (
+        <p id={`${htmlFor}-error`} className="text-sm font-semibold text-destructive">
+          {error}
+        </p>
+      ) : (
+        hint && <div className="text-sm text-muted-foreground">{hint}</div>
+      )}
     </div>
   )
 }
 
 // --- Alert --------------------------------------------------------------
 
+const ALERT_TONES = {
+  error: { box: 'border-destructive/25 bg-destructive/10 text-destructive', Icon: XCircle },
+  warning: { box: 'border-warning/30 bg-warning/10 text-warning', Icon: WarningCircle },
+  info: { box: 'border-border bg-muted text-muted-foreground', Icon: Info },
+} as const
+
 export function Alert({
   tone = 'error',
   children,
   className,
 }: {
-  tone?: 'error' | 'warning' | 'info'
+  tone?: keyof typeof ALERT_TONES
   children: React.ReactNode
   className?: string
 }) {
-  const tones = {
-    error: 'border-destructive/30 bg-destructive/10 text-destructive',
-    warning: 'border-warning/30 bg-warning/10 text-warning',
-    info: 'border-border bg-muted text-muted-foreground',
-  }
+  const { box, Icon } = ALERT_TONES[tone]
   return (
-    <div role="alert" className={cn('rounded-lg border px-3 py-2 text-sm', tones[tone], className)}>
-      {children}
+    <div
+      role="alert"
+      className={cn(
+        'flex items-start gap-2.5 rounded-2xl border-2 px-4 py-3 text-sm font-semibold',
+        box,
+        className,
+      )}
+    >
+      <Icon weight="fill" className="mt-0.5 size-[1.15em] shrink-0" aria-hidden />
+      <div className="min-w-0">{children}</div>
     </div>
   )
 }
@@ -140,7 +165,7 @@ export function Alert({
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('rounded-xl border border-border bg-surface shadow', className)}
+      className={cn('rounded-[1.5rem] border border-border bg-surface shadow', className)}
       {...props}
     />
   )
@@ -149,5 +174,47 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 // --- Spinner ------------------------------------------------------------
 
 export function Spinner({ className }: { className?: string }) {
-  return <Loader2 className={cn('size-4 animate-spin text-muted-foreground', className)} aria-hidden />
+  return (
+    <CircleNotch
+      weight="bold"
+      className={cn('size-5 animate-spin text-primary', className)}
+      aria-hidden
+    />
+  )
+}
+
+// --- Chip ---------------------------------------------------------------
+
+export function Chip({
+  className,
+  tone = 'neutral',
+  ...props
+}: React.HTMLAttributes<HTMLSpanElement> & {
+  tone?: 'neutral' | 'grape' | 'sun' | 'mint' | 'coral' | 'sky'
+}) {
+  const tones = {
+    neutral: 'bg-muted text-muted-foreground',
+    grape: 'bg-grape-100 text-grape-800 dark:bg-grape-800/40 dark:text-grape-200',
+    sun: 'bg-sun-100 text-sun-600 dark:bg-sun-600/25 dark:text-sun-300',
+    mint: 'bg-mint-100 text-mint-700 dark:bg-mint-700/30 dark:text-mint-100',
+    coral: 'bg-coral-100 text-coral-700 dark:bg-coral-700/30 dark:text-coral-100',
+    sky: 'bg-sky-100 text-sky-700 dark:bg-sky-700/30 dark:text-sky-100',
+  }
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold',
+        tones[tone],
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+// --- Skeleton -----------------------------------------------------------
+
+/** A shimmering placeholder in the shape of what is loading. */
+export function Skeleton({ className }: { className?: string }) {
+  return <div aria-hidden className={cn('skeleton rounded-xl', className)} />
 }

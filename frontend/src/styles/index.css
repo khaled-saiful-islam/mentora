@@ -15,11 +15,31 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: var(--font-sans);
+    font-family: var(--font-body);
+    /* Text without a size class still follows the text-size setting. */
+    font-size: calc(1rem * var(--text-scale));
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     margin: 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  :root[data-font="easy"] body {
+    letter-spacing: 0.02em;
+    word-spacing: 0.08em;
+  }
+
+  ::selection {
+    background-color: hsl(var(--grape-200));
+    color: hsl(var(--grape-900));
   }
 
   :focus-visible {
@@ -843,3 +863,74 @@
       transform: none;
     }
   }
+
+/* --- Brand motion ---------------------------------------------------------
+   The spark over the logo twinkles on welcome and loading screens. */
+@keyframes mentora-twinkle {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  45% { transform: scale(1.18) rotate(18deg); opacity: 0.85; }
+  60% { transform: scale(0.92) rotate(10deg); opacity: 1; }
+}
+.logo-spark {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.logo-spark-twinkle {
+  animation: mentora-twinkle 2.6s ease-in-out infinite;
+}
+
+/* A loading placeholder that shimmers left to right. */
+@keyframes mentora-shimmer-sweep {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    100deg,
+    hsl(var(--muted)) 20%,
+    hsl(var(--surface-raised)) 40%,
+    hsl(var(--muted)) 60%
+  );
+  background-size: 200% 100%;
+  animation: mentora-shimmer-sweep 1.4s ease-in-out infinite;
+}
+
+/* Soft blobs of colour that drift behind a hero or a stage. */
+@keyframes mentora-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(4%, -6%) scale(1.08); }
+  66% { transform: translate(-5%, 4%) scale(0.95); }
+}
+.blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(48px);
+  opacity: 0.55;
+  animation: mentora-drift 18s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* --- Holding still -------------------------------------------------------
+   One switch for every CSS animation in the app: the person's own setting
+   (data-motion, from their preferences) and, unless they asked for full
+   motion, the system's. Motion components follow the same setting through
+   <MotionConfig>. */
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) *,
+  :root:not([data-motion="full"]) *::before,
+  :root:not([data-motion="full"]) *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+

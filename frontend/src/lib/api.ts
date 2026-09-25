@@ -62,10 +62,24 @@ export interface PublicConfig {
   images_enabled: boolean
   currency: string
   supported_languages: string[]
-  /** What this deployment can make. Straight from the registry, so a kind
-   *  added there appears in the UI without a list to edit. */
-  makeable?: { name: string; label: string; description: string }[]
+  /** The school levels, in picker order. */
+  grades: Grade[]
 }
+
+export interface Grade {
+  code: string
+  label: string
+  stage: string
+}
+
+export interface MakeableKind {
+  name: string
+  label: string
+  description: string
+}
+
+/** What this person may make. Depends on who is asking, so not in /config. */
+export const getMakeable = () => apiFetch<{ studio: MakeableKind[] }>('/me/makeable')
 
 export const getConfig = () => apiFetch<PublicConfig>('/config')
 

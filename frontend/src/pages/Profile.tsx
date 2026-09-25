@@ -21,7 +21,7 @@ export default function Profile() {
 
       <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Signed in as <span className="font-mono">{user.username}</span>
+        Signed in as <span className="font-mono">{user.username ?? user.email}</span>
         {user.is_admin && (
           <span className="ml-2 rounded bg-accent-100 px-1.5 py-0.5 text-xs font-medium text-accent-800">
             admin
@@ -45,12 +45,14 @@ export default function Profile() {
 
 function DetailsCard({ user, onSaved }: { user: User; onSaved: (u: User) => void }) {
   const [displayName, setDisplayName] = useState(user.display_name ?? '')
-  const [email, setEmail] = useState(user.email)
+  const [email, setEmail] = useState(user.email ?? '')
+  // Students sign in with a username and have no email; the field is not theirs.
+  const hasEmail = user.role !== 'student'
   const form = useSubmit(async () => {
     onSaved(
       await apiFetch<User>('/auth/me', {
         method: 'PATCH',
-        body: JSON.stringify({ display_name: displayName, email }),
+        body: JSON.stringify(hasEmail ? { display_name: displayName, email } : { display_name: displayName }),
       }),
     )
   })
@@ -68,15 +70,17 @@ function DetailsCard({ user, onSaved }: { user: User; onSaved: (u: User) => void
             maxLength={120}
           />
         </Field>
-        <Field label="Email" htmlFor="profile_email">
-          <Input
-            id="profile_email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </Field>
+        {hasEmail && (
+          <Field label="Email" htmlFor="profile_email">
+            <Input
+              id="profile_email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </Field>
+        )}
         <FormFooter {...form} label="Save changes" savedLabel="Saved" />
       </form>
     </Card>

@@ -2,10 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Mentora — where teachers and students learn together." />
+    <meta name="theme-color" content="#6D4AFF" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#110E24" media="(prefers-color-scheme: dark)" />
     <link rel="icon" type="image/svg+xml" href="/mentora.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#F59E0B" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>Mentora</title>
+    <script>
+      // Before first paint: the theme, text size and font style from the last
+      // visit, so the page does not flash light-then-dark or small-then-big.
+      // The real values arrive with /auth/me and replace these.
+      try {
+        var root = document.documentElement
+        var theme = localStorage.getItem('mentora-theme')
+        if (theme === 'light' || theme === 'dark') root.setAttribute('data-theme', theme)
+        var prefs = JSON.parse(localStorage.getItem('mentora-prefs') || '{}')
+        if (typeof prefs.text_scale === 'number') root.style.setProperty('--text-scale', String(prefs.text_scale / 100))
+        if (typeof prefs.font_style === 'string') root.setAttribute('data-font', prefs.font_style)
+      } catch (e) {
+        // Blocked storage: the defaults in theme.css apply.
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
