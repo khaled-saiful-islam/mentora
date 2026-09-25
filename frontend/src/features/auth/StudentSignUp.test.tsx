@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AuthProvider } from '@/lib/auth'
 import { PreferencesProvider } from '@/lib/prefs'
+import { ToastProvider } from '@/components/ui/Toast'
 import StudentSignUp from './StudentSignUp'
 
 const GRADES = [
@@ -46,10 +47,12 @@ function mount(path = '/signup/student') {
     <MemoryRouter initialEntries={[path]}>
       <AuthProvider>
         <PreferencesProvider>
+          <ToastProvider>
           <Routes>
             <Route path="/signup/student" element={<StudentSignUp />} />
             <Route path="/" element={<p>home</p>} />
           </Routes>
+          </ToastProvider>
         </PreferencesProvider>
       </AuthProvider>
     </MemoryRouter>,

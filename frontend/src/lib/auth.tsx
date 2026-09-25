@@ -19,6 +19,13 @@ export interface TeacherSignUp {
   password: string
 }
 
+/** What happened to the invite a student signed up through. */
+export interface JoinAtSignUp {
+  status: 'requested' | 'pending' | 'member' | 'invalid'
+  class_name: string | null
+  teacher_name: string | null
+}
+
 export interface StudentSignUp {
   name: string
   grade_level: string
@@ -34,7 +41,7 @@ interface AuthState {
   loading: boolean
   signIn: (identifier: string, password: string) => Promise<void>
   signUpTeacher: (details: TeacherSignUp) => Promise<void>
-  signUpStudent: (details: StudentSignUp) => Promise<void>
+  signUpStudent: (details: StudentSignUp) => Promise<JoinAtSignUp | null>
   signOut: () => Promise<void>
   updateUser: (user: User) => void
 }
@@ -77,12 +84,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signUpStudent = useCallback(async (details: StudentSignUp) => {
-    setUser(
-      await apiFetch<User>('/auth/signup/student', {
-        method: 'POST',
-        body: JSON.stringify(details),
-      }),
-    )
+    const created = await apiFetch<User & { join?: JoinAtSignUp | null }>('/auth/signup/student', {
+      method: 'POST',
+      body: JSON.stringify(details),
+    })
+    const { join = null, ...account } = created
+    setUser(account)
+    return join
   }, [])
 
   const signOut = useCallback(async () => {

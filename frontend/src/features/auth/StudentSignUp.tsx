@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { ArrowLeft, ArrowRight, Backpack, Sparkle } from '@phosphor-icons/react'
 import { Alert, Button, Input } from '@/components/ui'
 import { useAuth } from '@/lib/auth'
+import { useToast } from '@/components/ui/Toast'
 import { spring } from '@/motion'
 import { cn } from '@/lib/utils'
 import { AuthLayout } from './AuthLayout'
@@ -42,6 +43,7 @@ export default function StudentSignUp() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const { signUpStudent } = useAuth()
+  const { toast } = useToast()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const invite = params.get('invite') ?? undefined
@@ -64,14 +66,22 @@ export default function StudentSignUp() {
     setBusy(true)
     setError(null)
     try {
-      await signUpStudent({
+      const join = await signUpStudent({
         name: draft.name,
         grade_level: draft.grade,
         username: draft.username,
         password: draft.password,
         invite_token: invite,
       })
-      navigate('/', { replace: true })
+      if (join && join.status !== 'invalid') {
+        toast(`Asked to join ${join.class_name}!`, { body: `${join.teacher_name} will let you in soon.` })
+        navigate('/classes', { replace: true })
+      } else {
+        if (join?.status === 'invalid') {
+          toast('Your account is ready', { tone: 'info', body: "That invite had stopped working — ask your teacher for a class code." })
+        }
+        navigate('/', { replace: true })
+      }
     } catch (err) {
       setError(errorMessage(err))
     } finally {

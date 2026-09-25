@@ -8,6 +8,13 @@ import SignInPage from '@/features/auth/SignInPage'
 import SignUpChooser from '@/features/auth/SignUpChooser'
 import StudentSignUp from '@/features/auth/StudentSignUp'
 import TeacherSignUp from '@/features/auth/TeacherSignUp'
+import ClassPage from '@/features/classes/ClassPage'
+import ClassesPage from '@/features/classes/ClassesPage'
+import JoinPage from '@/features/classes/JoinPage'
+import { NotificationsProvider } from '@/features/notifications/NotificationsProvider'
+import { AppShell } from '@/features/shell/AppShell'
+import { ToastProvider } from '@/components/ui/Toast'
+import type { Capabilities } from '@/lib/user'
 import Chat from '@/pages/Chat'
 import Profile from '@/pages/Profile'
 import Admin from '@/pages/Admin'
@@ -22,6 +29,8 @@ export default function App() {
       <AuthProvider>
       <PreferencesProvider>
       <MotionProvider>
+      <ToastProvider>
+      <NotificationsProvider>
         <Routes>
           <Route path="/signin" element={<PublicOnly><SignInPage /></PublicOnly>} />
           <Route path="/signup" element={<PublicOnly><SignUpChooser /></PublicOnly>} />
@@ -33,11 +42,18 @@ export default function App() {
           <Route path="/a/:token" element={<SharedArtifact />} />
           <Route path="/" element={<Protected><Chat /></Protected>} />
           <Route path="/c/:conversationId" element={<Protected><Chat /></Protected>} />
-          <Route path="/profile" element={<Protected><Profile /></Protected>} />
-          <Route path="/settings" element={<Protected><Settings /></Protected>} />
-          <Route path="/admin" element={<Protected><AdminOnly><Admin /></AdminOnly></Protected>} />
+          {/* Signed in or out: the page decides what an invite means for you. */}
+          <Route path="/join/:key" element={<JoinPage />} />
+          <Route path="/classes" element={<Shell><ClassesPage /></Shell>} />
+          <Route path="/classes/:classId" element={<Shell capability="manage_classes"><ClassPage /></Shell>} />
+          <Route path="/classes/:classId/:tab" element={<Shell capability="manage_classes"><ClassPage /></Shell>} />
+          <Route path="/profile" element={<Shell><Profile /></Shell>} />
+          <Route path="/settings" element={<Shell><Settings /></Shell>} />
+          <Route path="/admin" element={<Shell capability="manage_users"><Admin /></Shell>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+      </NotificationsProvider>
+      </ToastProvider>
       </MotionProvider>
       </PreferencesProvider>
       </AuthProvider>
@@ -78,11 +94,23 @@ function PublicOnly({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-/** The server refuses non-admins either way; this just avoids showing a page
- *  of refusals to someone who followed an old link. */
-function AdminOnly({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth()
-  if (!user?.capabilities.manage_users) return <Navigate to="/" replace />
-  return <>{children}</>
+/**
+ * A signed-in page inside the app frame. `capability` sends someone without it
+ * home — the server refuses them either way; this just avoids a page of
+ * refusals for someone who followed an old link.
+ */
+function Shell({ children, capability }: { children: React.ReactNode; capability?: keyof Capabilities }) {
+  return (
+    <Protected>
+      <Allowed capability={capability}>
+        <AppShell>{children}</AppShell>
+      </Allowed>
+    </Protected>
+  )
 }
 
+function Allowed({ children, capability }: { children: React.ReactNode; capability?: keyof Capabilities }) {
+  const { user } = useAuth()
+  if (capability && !user?.capabilities[capability]) return <Navigate to="/" replace />
+  return <>{children}</>
+}

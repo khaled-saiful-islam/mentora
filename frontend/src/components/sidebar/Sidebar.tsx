@@ -18,6 +18,8 @@ import { Button, Spinner } from '@/components/ui'
 import { Confirm } from '@/components/ui/Confirm'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth'
+import { Bell } from '@/features/notifications/Bell'
+import { navFor } from '@/features/shell/nav'
 import type { ConversationSummary } from '@/hooks/useConversations'
 
 /** Buckets by recency, the way every chat sidebar people already know does. */
@@ -134,6 +136,7 @@ export function Sidebar({
           New chat
         </button>
 
+        <Bell />
         <Button
           variant="ghost"
           size="icon"
@@ -155,6 +158,8 @@ export function Sidebar({
           <X className="size-4" aria-hidden />
         </Button>
       </div>
+
+      <PlacesNav folded={folded} />
 
       <nav
         className={cn('flex-1 overflow-y-auto px-2 pb-2', folded && 'md:hidden')}
@@ -433,6 +438,7 @@ function Rail({
       <RailButton label="New chat" onClick={onNew} strong>
         <PenSquare className="size-4" aria-hidden />
       </RailButton>
+      <Bell />
 
       <div className="mt-auto flex flex-col items-center gap-1">
         <Link to="/profile" aria-label="Profile" title="Profile">
@@ -487,3 +493,28 @@ function RailButton({
     </Tag>
   )
 }
+
+/**
+ * The other places in Mentora, from the same table as the rest of the app's
+ * navigation — so a page added for a role shows up here too.
+ */
+function PlacesNav({ folded }: { folded: boolean }) {
+  const { user } = useAuth()
+  const places = navFor(user).filter((item) => item.key !== 'studio' && item.key !== 'chat' && item.key !== 'settings')
+  if (places.length === 0) return null
+  return (
+    <div className={cn('px-3 pb-2', folded && 'md:hidden')}>
+      {places.map((item) => (
+        <Link
+          key={item.key}
+          to={item.to}
+          className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-bold text-sidebar-foreground transition-colors hover:bg-hover"
+        >
+          <item.Icon weight="duotone" className="size-5 text-primary" />
+          {item.label}
+        </Link>
+      ))}
+    </div>
+  )
+}
+
