@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Backpack, CheckCircle, HourglassMedium, SignOut, Sparkle, UsersThree } from '@phosphor-icons/react'
+import { ArrowRight, Backpack, CheckCircle, HourglassMedium, SignOut, Sparkle, UsersThree } from '@phosphor-icons/react'
+import { Link } from 'react-router-dom'
 import { Alert, Button, Card, Chip, Skeleton } from '@/components/ui'
 import { Confirm } from '@/components/ui/Confirm'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -97,12 +98,20 @@ function ClassTile({ room, onLeave }: { room: StudentClass; onLeave: () => void 
   return (
     <motion.li variants={rise} layout>
       <Card className="overflow-hidden">
-        <div className={cn('relative p-5', look.hero, look.onHero)}>
+        <Link
+          to={`/classes/${room.class_id}`}
+          className={cn('group relative block p-5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40', look.hero, look.onHero)}
+        >
           <p className="text-sm font-bold opacity-85">{room.subject ?? 'Class'}</p>
           <p className="font-display text-2xl font-semibold">{room.class_name}</p>
           <p className="text-sm opacity-90">with {room.teacher_name}</p>
-          <UsersThree weight="duotone" aria-hidden className="absolute -bottom-3 right-3 size-20 opacity-25" />
-        </div>
+          {!waiting && (
+            <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-white/25 px-3 py-1 text-sm font-bold transition-transform group-hover:translate-x-1">
+              Open class <ArrowRight weight="bold" className="size-4" />
+            </span>
+          )}
+          <UsersThree weight="duotone" aria-hidden className="absolute -bottom-3 right-3 size-20 opacity-25 transition-transform group-hover:rotate-6" />
+        </Link>
         <div className="flex flex-wrap items-center gap-2 p-4">
           {waiting ? (
             <Chip tone="sun">

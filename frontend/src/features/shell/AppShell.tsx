@@ -93,7 +93,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 function TabBar({ pathname }: { pathname: string }) {
   const { user } = useAuth()
-  const items = navFor(user).filter((item) => item.key !== 'admin')
+  const items = navFor(user).filter((item) => item.key !== 'admin' && item.tab !== false)
   return (
     <nav
       aria-label="Main"

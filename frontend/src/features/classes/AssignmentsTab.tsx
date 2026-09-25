@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { CalendarBlank, LockSimple, LockSimpleOpen, Sparkle, UsersFour, UsersThree } from '@phosphor-icons/react'
-import { Alert, Button, Card, Chip, Skeleton } from '@/components/ui'
+import { CalendarBlank, ChartBar, LockSimple, LockSimpleOpen, Sparkle, UsersFour, UsersThree } from '@phosphor-icons/react'
+import { Alert, Button, ButtonLink, Card, Chip, Skeleton } from '@/components/ui'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/features/auth/errors'
@@ -68,6 +68,10 @@ export function AssignmentsTab({ classId }: { classId: string }) {
                   <span>· shared {timeAgo(a.created_at)}</span>
                 </div>
               </div>
+              <ButtonLink to={`/assignments/${a.id}`} size="sm">
+                <ChartBar weight="bold" className="size-4" />
+                Results
+              </ButtonLink>
               <Button variant="outline" size="sm" onClick={() => void toggle(a)}>
                 {a.closed ? <LockSimpleOpen weight="bold" className="size-4" /> : <LockSimple weight="bold" className="size-4" />}
                 {a.closed ? 'Reopen' : 'Close'}

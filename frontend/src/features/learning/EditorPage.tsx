@@ -9,11 +9,12 @@ import {
   FloppyDisk,
   Globe,
   MagicWand,
+  Play,
   Plus,
   Trash,
   WarningCircle,
 } from '@phosphor-icons/react'
-import { Alert, Button, Card, Input, Skeleton } from '@/components/ui'
+import { Alert, Button, buttonClass, Card, Input, Skeleton } from '@/components/ui'
 import { Confirm } from '@/components/ui/Confirm'
 import { TextSizeControl } from '@/components/ui/TextSizeControl'
 import { useToast } from '@/components/ui/Toast'
@@ -113,6 +114,17 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
               <Button variant="secondary" onClick={() => setSharing(true)} disabled={dirty} title={dirty ? 'Save your changes first' : undefined} className="bg-white text-grape-900 hover:bg-white/90">
                 <Broadcast weight="bold" className="size-5" /> Share
               </Button>
+            )}
+            {initial.purpose === 'practice' && (
+              <Link
+                to={`/practice/${initial.id}`}
+                aria-disabled={dirty}
+                onClick={(event) => dirty && event.preventDefault()}
+                title={dirty ? 'Save your changes first' : undefined}
+                className={cn(buttonClass('sun'), dirty && 'pointer-events-none opacity-50')}
+              >
+                <Play weight="fill" className="size-5" /> Practise
+              </Link>
             )}
           </div>
         </div>

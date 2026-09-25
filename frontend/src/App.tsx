@@ -16,6 +16,15 @@ import EditorPage from '@/features/learning/EditorPage'
 import LibraryPage from '@/features/learning/LibraryPage'
 import { LearnStudioProvider } from '@/features/learning/LearnStudio'
 import { AppShell } from '@/features/shell/AppShell'
+import BuddyPage from '@/features/buddies/BuddyPage'
+import { Welcome } from '@/features/buddies/Welcome'
+import StudentClassPage from '@/features/classes/StudentClassPage'
+import StudentHome from '@/features/home/StudentHome'
+import PlayPage from '@/features/play/PlayPage'
+import ResultsPage from '@/features/results/ResultsPage'
+import BadgesPage from '@/features/badges/BadgesPage'
+import LeaderboardPage from '@/features/results/LeaderboardPage'
+import AssignmentResultsPage from '@/features/results/AssignmentResultsPage'
 import { ToastProvider } from '@/components/ui/Toast'
 import type { Capabilities } from '@/lib/user'
 import Chat from '@/pages/Chat'
@@ -44,15 +53,24 @@ export default function App() {
               shared link would defeat the entire feature. */}
           <Route path="/s/:token" element={<Shared />} />
           <Route path="/a/:token" element={<SharedArtifact />} />
-          <Route path="/" element={<Protected><Chat /></Protected>} />
+          <Route path="/" element={<Protected><Home /></Protected>} />
+          <Route path="/chat" element={<Protected><Chat /></Protected>} />
           <Route path="/c/:conversationId" element={<Protected><Chat /></Protected>} />
+          <Route path="/play/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="assignment" /></Allowed></Protected>} />
+          <Route path="/practice/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="practice" /></Allowed></Protected>} />
+          <Route path="/attempts/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="attempt" /></Allowed></Protected>} />
+          <Route path="/results" element={<Shell capability="take_assignments"><ResultsPage /></Shell>} />
+          <Route path="/badges" element={<Shell capability="take_assignments"><BadgesPage /></Shell>} />
+          <Route path="/leaderboard/:assignmentId" element={<Shell><LeaderboardPage /></Shell>} />
+          <Route path="/assignments/:assignmentId" element={<Shell capability="share_learning_sets"><AssignmentResultsPage /></Shell>} />
           {/* Signed in or out: the page decides what an invite means for you. */}
           <Route path="/join/:key" element={<JoinPage />} />
           <Route path="/classes" element={<Shell><ClassesPage /></Shell>} />
-          <Route path="/classes/:classId" element={<Shell capability="manage_classes"><ClassPage /></Shell>} />
+          <Route path="/classes/:classId" element={<Shell capability={SEES_CLASSES}><ClassRoute /></Shell>} />
           <Route path="/classes/:classId/:tab" element={<Shell capability="manage_classes"><ClassPage /></Shell>} />
           <Route path="/library" element={<Shell capability={MAKES_SETS}><LibraryPage /></Shell>} />
           <Route path="/library/:setId" element={<Shell capability={MAKES_SETS}><EditorPage /></Shell>} />
+          <Route path="/buddy" element={<Shell><BuddyPage /></Shell>} />
           <Route path="/profile" element={<Shell><Profile /></Shell>} />
           <Route path="/settings" element={<Shell><Settings /></Shell>} />
           <Route path="/admin" element={<Shell capability="manage_users"><Admin /></Shell>} />
@@ -67,6 +85,27 @@ export default function App() {
       </ThemeProvider>
     </BrowserRouter>
   )
+}
+
+/** `/` is a student's home and everyone else's studio. */
+function Home() {
+  const { user } = useAuth()
+  if (user?.role === 'student') {
+    // A new student meets their buddy first; everything else can wait.
+    if (!user.onboarded) return <Welcome />
+    return (
+      <AppShell>
+        <StudentHome />
+      </AppShell>
+    )
+  }
+  return <Chat />
+}
+
+/** A class page: the teacher's workroom, or what a student sees of it. */
+function ClassRoute() {
+  const { user } = useAuth()
+  return user?.capabilities.manage_classes ? <ClassPage /> : <StudentClassPage />
 }
 
 /** Blocks render until the session is known, so routes do not flash. */
@@ -107,6 +146,7 @@ function PublicOnly({ children }: { children: React.ReactNode }) {
  * refusals for someone who followed an old link.
  */
 const MAKES_SETS: (keyof Capabilities)[] = ['share_learning_sets', 'make_practice_sets']
+const SEES_CLASSES: (keyof Capabilities)[] = ['manage_classes', 'join_classes']
 
 type Needs = keyof Capabilities | (keyof Capabilities)[]
 

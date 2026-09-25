@@ -7,6 +7,7 @@
  */
 
 import { forwardRef } from 'react'
+import { Link, type LinkProps } from 'react-router-dom'
 import { CircleNotch, Info, WarningCircle, XCircle } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
@@ -40,6 +41,18 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   loading?: boolean
 }
 
+/** A button's look, for something that is not a `<button>` — a link. */
+export function buttonClass(variant: ButtonVariant = 'primary', size: ButtonSize = 'md', className?: string): string {
+  return cn(
+    'inline-flex select-none items-center justify-center whitespace-nowrap rounded-full font-bold',
+    'transition-[transform,box-shadow,filter,background-color,border-color] duration-150',
+    'active:translate-y-[2px] disabled:pointer-events-none disabled:opacity-50',
+    BUTTON_VARIANTS[variant],
+    BUTTON_SIZES[size],
+    className,
+  )
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { className, variant = 'primary', size = 'md', loading, disabled, children, ...props },
   ref,
@@ -48,14 +61,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <button
       ref={ref}
       disabled={disabled || loading}
-      className={cn(
-        'inline-flex select-none items-center justify-center whitespace-nowrap rounded-full font-bold',
-        'transition-[transform,box-shadow,filter,background-color,border-color] duration-150',
-        'active:translate-y-[2px] disabled:pointer-events-none disabled:opacity-50',
-        BUTTON_VARIANTS[variant],
-        BUTTON_SIZES[size],
-        className,
-      )}
+      className={buttonClass(variant, size, className)}
       {...props}
     >
       {loading && <CircleNotch weight="bold" className="size-[1.1em] animate-spin" aria-hidden />}
@@ -63,6 +69,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     </button>
   )
 })
+
+/** Navigation that looks like a button: somewhere to go, not something to do. */
+export function ButtonLink({
+  variant = 'primary',
+  size = 'md',
+  className,
+  ...props
+}: LinkProps & { variant?: ButtonVariant; size?: ButtonSize }) {
+  return <Link className={buttonClass(variant, size, className)} {...props} />
+}
 
 // --- Input --------------------------------------------------------------
 

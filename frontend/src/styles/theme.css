@@ -123,6 +123,47 @@
   --kind-app: 142 70% 28%;
   --kind-app-vivid: 142 71% 45%;           /* Leaf */
 
+  /* --- Buddies -----------------------------------------------------------
+     Each study buddy's own colours. A character is known by its colours, so
+     these are the same in both themes; a buddy always stands on its own
+     backdrop. Art reads them as `hsl(var(--buddy-…))`. */
+  --buddy-ink: 265 45% 14%;
+  --buddy-shine: 0 0% 100%;
+  --buddy-blush: 350 100% 80%;
+  --buddy-tongue: 352 88% 70%;
+  --buddy-ground: 252 40% 20%;
+
+  --buddy-kiko: 25 72% 56%;           /* Kiko the kancil: caramel */
+  --buddy-kiko-deep: 20 58% 36%;
+  --buddy-kiko-cream: 36 100% 92%;
+  --buddy-kiko-leaf: 128 58% 46%;
+
+  --buddy-bolt: 204 88% 62%;          /* Bolt the robot: sky steel */
+  --buddy-bolt-deep: 212 64% 40%;
+  --buddy-bolt-light: 200 100% 88%;
+  --buddy-bolt-screen: 232 48% 15%;
+  --buddy-bolt-glow: 186 100% 62%;
+  --buddy-bolt-bulb: 44 100% 60%;
+
+  --buddy-ollie: 256 68% 66%;         /* Ollie the owl: grape feathers */
+  --buddy-ollie-deep: 256 48% 42%;
+  --buddy-ollie-belly: 258 100% 93%;
+  --buddy-ollie-beak: 32 100% 58%;
+  --buddy-ollie-iris: 42 100% 62%;
+
+  --buddy-momo: 156 56% 52%;          /* Momo the baby dragon: mint scales */
+  --buddy-momo-deep: 162 58% 32%;
+  --buddy-momo-belly: 48 100% 86%;
+  --buddy-momo-wing: 350 92% 74%;
+  --buddy-momo-horn: 38 88% 76%;
+  --buddy-momo-flame: 30 100% 58%;
+
+  --buddy-rimau: 26 96% 56%;          /* Rimau the tiger cub: jungle orange */
+  --buddy-rimau-deep: 20 80% 38%;
+  --buddy-rimau-cream: 36 100% 97%;
+  --buddy-rimau-stripe: 262 32% 16%;
+  --buddy-rimau-nose: 350 82% 70%;
+
   /* --- Shape and depth: round and tactile ------------------------------ */
   --radius-sm: 0.5rem;
   --radius: 0.75rem;
@@ -333,6 +374,12 @@
   --color-kind-website-vivid: hsl(var(--kind-website-vivid));
   --color-kind-app: hsl(var(--kind-app));
   --color-kind-app-vivid: hsl(var(--kind-app-vivid));
+
+  --color-buddy-kiko: hsl(var(--buddy-kiko));
+  --color-buddy-bolt: hsl(var(--buddy-bolt));
+  --color-buddy-ollie: hsl(var(--buddy-ollie));
+  --color-buddy-momo: hsl(var(--buddy-momo));
+  --color-buddy-rimau: hsl(var(--buddy-rimau));
 
   --color-grape-50: hsl(var(--grape-50));
   --color-grape-100: hsl(var(--grape-100));

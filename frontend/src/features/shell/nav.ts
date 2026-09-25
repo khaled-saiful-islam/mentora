@@ -3,7 +3,7 @@
  * the phone tab bar and the chat sidebar, so a page added for a role is one
  * line here. `show` reads the same capabilities the API enforces.
  */
-import { Books, ChatsCircle, GearSix, ShieldStar, Sparkle, Barbell, UsersThree, type Icon } from '@phosphor-icons/react'
+import { Books, ChatsCircle, ChartLineUp, GearSix, House, Medal, ShieldStar, Smiley, Sparkle, Barbell, UsersThree, type Icon } from '@phosphor-icons/react'
 import { can, type User } from '@/lib/user'
 
 export interface NavItem {
@@ -14,10 +14,19 @@ export interface NavItem {
   show: (user: User) => boolean
   /** Which paths light this item up. */
   matches: (path: string) => boolean
+  /** Also in the phone's tab bar, which has room for about six. */
+  tab?: boolean
 }
 
 const under = (prefix: string) => (path: string) => path === prefix || path.startsWith(`${prefix}/`)
 const chatPaths = (path: string) => path === '/' || path.startsWith('/c/')
+const studentChatPaths = (path: string) => path === '/chat' || path.startsWith('/c/')
+const isStudent = (u: User) => u.role === 'student'
+
+/** Where a new chat starts: a student's `/` is their home, so theirs is `/chat`. */
+export function chatRoot(user: User | null): string {
+  return user && isStudent(user) ? '/chat' : '/'
+}
 
 export const NAV: NavItem[] = [
   {
@@ -29,12 +38,12 @@ export const NAV: NavItem[] = [
     matches: chatPaths,
   },
   {
-    key: 'chat',
+    key: 'home',
     to: '/',
-    label: 'Study buddy',
-    Icon: ChatsCircle,
-    show: (u) => u.role === 'student',
-    matches: chatPaths,
+    label: 'Home',
+    Icon: House,
+    show: isStudent,
+    matches: (path) => path === '/' || path.startsWith('/play/') || path.startsWith('/attempts/'),
   },
   {
     key: 'classes',
@@ -59,6 +68,40 @@ export const NAV: NavItem[] = [
     Icon: Barbell,
     show: (u) => can(u, 'make_practice_sets'),
     matches: under('/library'),
+  },
+  {
+    key: 'chat',
+    to: '/chat',
+    label: 'Chat',
+    Icon: ChatsCircle,
+    show: isStudent,
+    matches: studentChatPaths,
+  },
+  {
+    key: 'results',
+    to: '/results',
+    label: 'Results',
+    Icon: ChartLineUp,
+    show: (u) => can(u, 'take_assignments'),
+    matches: under('/results'),
+    tab: false,
+  },
+  {
+    key: 'badges',
+    to: '/badges',
+    label: 'Badges',
+    Icon: Medal,
+    show: (u) => can(u, 'take_assignments'),
+    matches: (path) => under('/badges')(path) || under('/leaderboard')(path),
+  },
+  {
+    key: 'buddy',
+    to: '/buddy',
+    label: 'My buddy',
+    Icon: Smiley,
+    show: isStudent,
+    matches: under('/buddy'),
+    tab: false,
   },
   {
     key: 'admin',

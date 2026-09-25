@@ -9,6 +9,7 @@
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@/lib/auth'
+import { emit } from '@/lib/bus'
 import { notificationsApi, type Notification } from './api'
 
 const POLL_MS = 60_000
@@ -125,6 +126,10 @@ function connect(refresh: () => Promise<void>): () => void {
       void refresh()
     })
     source.addEventListener('notifications', () => void refresh())
+    source.addEventListener('leaderboard', (event) => {
+      const id = leaderboardOf((event as MessageEvent<string>).data)
+      if (id) emit('leaderboard-changed', id)
+    })
     source.onerror = () => {
       source?.close()
       startPolling()
@@ -146,6 +151,19 @@ function connect(refresh: () => Promise<void>): () => void {
     stopPolling()
     document.removeEventListener('visibilitychange', onFocus)
   }
+}
+
+/** The assignment a leaderboard push is about, or null for a garbled one. */
+export function leaderboardOf(data: string): string | null {
+  try {
+    const parsed: unknown = JSON.parse(data)
+    if (parsed && typeof parsed === 'object' && 'assignment_id' in parsed && typeof parsed.assignment_id === 'string') {
+      return parsed.assignment_id
+    }
+  } catch {
+    // Not JSON: nothing to update.
+  }
+  return null
 }
 
 export function useNotifications(): NotificationsState {

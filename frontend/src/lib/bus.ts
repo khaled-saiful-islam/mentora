@@ -1,12 +1,15 @@
 /**
  * Tiny typed events between parts of the page that do not share state — the
- * bell letting a student in, and the class page showing the count.
+ * bell letting a student in and the class page showing the count, or the
+ * live line saying a leaderboard someone has open just moved.
  */
 import { useEffect, useRef } from 'react'
 
 export interface AppEvents {
   /** Something about this class's members or groups changed. */
   'class-changed': string
+  /** Someone finished this assignment; its leaderboard may have moved. */
+  'leaderboard-changed': string
 }
 
 const target = new EventTarget()

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { ArrowClockwise, Broadcast, CircleNotch, Globe, SmileySad, WarningCircle } from '@phosphor-icons/react'
-import { Chip } from '@/components/ui'
+import { ArrowClockwise, Broadcast, CircleNotch, Globe, PencilSimple, Play, SmileySad, WarningCircle } from '@phosphor-icons/react'
+import { buttonClass, Chip } from '@/components/ui'
 import { rise } from '@/motion'
 import { timeAgo } from '@/lib/time'
 import { cn } from '@/lib/utils'
@@ -49,6 +49,18 @@ export function SetCard({ set, onWatch, onRetry }: { set: SetSummary; onWatch: (
             <button type="button" onClick={onRetry} className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline">
               <ArrowClockwise weight="bold" className="size-4" /> Try again
             </button>
+          </div>
+        </div>
+      ) : set.purpose === 'practice' ? (
+        <div className={frame}>
+          <Link to={`/library/${set.id}`} className="block">{body}</Link>
+          <div className="flex gap-2 border-t border-border px-4 py-3">
+            <Link to={`/practice/${set.id}`} className={buttonClass('sun', 'sm', 'flex-1')}>
+              <Play weight="fill" className="size-4" /> Practise
+            </Link>
+            <Link to={`/library/${set.id}`} className={buttonClass('ghost', 'sm')}>
+              <PencilSimple weight="bold" className="size-4" /> Edit
+            </Link>
           </div>
         </div>
       ) : (

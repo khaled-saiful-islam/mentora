@@ -24,10 +24,13 @@ import { LearnTiles } from '@/features/learning/LearnTiles'
 import { useLearnStudio } from '@/features/learning/LearnStudio'
 import { useDocuments } from '@/hooks/useDocuments'
 import { apiFetch } from '@/lib/api'
+import { useAuth } from '@/lib/auth'
+import { chatRoot } from '@/features/shell/nav'
 
 export default function Chat() {
   const { conversationId: routeId } = useParams<{ conversationId: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const list = useConversations()
   const config = useConfig()
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -72,7 +75,7 @@ export default function Chat() {
   function startNew() {
     reset()
     documents.reset()
-    navigate('/')
+    navigate(chatRoot(user))
     setMenuOpen(false)
   }
 
