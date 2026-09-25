@@ -12,11 +12,13 @@ import { classesApi, type ClassDraft } from './api'
 import { ClassCard } from './ClassCard'
 import { ClassFormDialog } from './ClassFormDialog'
 import { EmptyArt } from './EmptyArt'
+import { useLive } from '@/lib/bus'
 
 export default function TeacherClassesPage() {
   const [view, setView] = useState<'active' | 'archived'>('active')
   const [creating, setCreating] = useState(false)
   const classes = useResource(`classes:${view}`, () => classesApi.list(view === 'archived'))
+  useLive(['members', 'assignments'], () => void classes.reload())
   const navigate = useNavigate()
   const { toast } = useToast()
 

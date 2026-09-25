@@ -9,7 +9,7 @@
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@/lib/auth'
-import { emit } from '@/lib/bus'
+import { emit, type LiveMessage } from '@/lib/bus'
 import { notificationsApi, type Notification } from './api'
 
 const POLL_MS = 60_000
@@ -22,6 +22,8 @@ interface NotificationsState {
   /** Bumps whenever new unread news arrives, for a wiggle or a toast. */
   arrivals: number
   latestArrival: Notification | null
+  /** The live line is up: pages can say they are live. */
+  live: boolean
   refresh: () => Promise<void>
   loadMore: () => Promise<void>
   markRead: (id: string) => Promise<void>
@@ -37,6 +39,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const [cursor, setCursor] = useState<string | null>(null)
   const [arrivals, setArrivals] = useState(0)
   const [latestArrival, setLatestArrival] = useState<Notification | null>(null)
+  const [live, setLive] = useState(false)
   const seen = useRef<Set<string> | null>(null)
 
   const refresh = useCallback(async () => {
@@ -64,7 +67,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       return
     }
     void refresh()
-    return connect(refresh)
+    return connect(refresh, setLive)
   }, [user, refresh])
 
   const loadMore = useCallback(async () => {
@@ -91,15 +94,15 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   }, [refresh])
 
   const value = useMemo(
-    () => ({ items, unread, hasMore: cursor !== null, arrivals, latestArrival, refresh, loadMore, markRead, markAllRead }),
-    [items, unread, cursor, arrivals, latestArrival, refresh, loadMore, markRead, markAllRead],
+    () => ({ items, unread, hasMore: cursor !== null, arrivals, latestArrival, live, refresh, loadMore, markRead, markAllRead }),
+    [items, unread, cursor, arrivals, latestArrival, live, refresh, loadMore, markRead, markAllRead],
   )
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>
 }
 
 /** The live line: SSE with backoff, polling while it is down, a refresh on
  *  coming back to the tab. Returns the cleanup. */
-function connect(refresh: () => Promise<void>): () => void {
+function connect(refresh: () => Promise<void>, setLive: (up: boolean) => void): () => void {
   let source: EventSource | null = null
   let retry: number | undefined
   let poll: number | undefined
@@ -121,16 +124,20 @@ function connect(refresh: () => Promise<void>): () => void {
     }
     source = new EventSource('/api/notifications/stream')
     source.addEventListener('ready', () => {
+      setLive(true)
       backoff = 2_000
       stopPolling()
       void refresh()
     })
     source.addEventListener('notifications', () => void refresh())
-    source.addEventListener('leaderboard', (event) => {
-      const id = leaderboardOf((event as MessageEvent<string>).data)
-      if (id) emit('leaderboard-changed', id)
-    })
+    for (const topic of LIVE_TOPICS) {
+      source.addEventListener(topic, (event) => {
+        const message = liveOf((event as MessageEvent<string>).data)
+        if (message) emit('live', message)
+      })
+    }
     source.onerror = () => {
+      setLive(false)
       source?.close()
       startPolling()
       retry = window.setTimeout(open, backoff)
@@ -146,6 +153,7 @@ function connect(refresh: () => Promise<void>): () => void {
 
   return () => {
     closed = true
+    setLive(false)
     source?.close()
     window.clearTimeout(retry)
     stopPolling()
@@ -153,12 +161,15 @@ function connect(refresh: () => Promise<void>): () => void {
   }
 }
 
-/** The assignment a leaderboard push is about, or null for a garbled one. */
-export function leaderboardOf(data: string): string | null {
+/** The pushes that are about pages, not the bell. */
+export const LIVE_TOPICS = ['classes', 'members', 'assignments', 'progress', 'leaderboard', 'moderation'] as const
+
+/** A live push, or null for a garbled one. */
+export function liveOf(data: string): LiveMessage | null {
   try {
     const parsed: unknown = JSON.parse(data)
-    if (parsed && typeof parsed === 'object' && 'assignment_id' in parsed && typeof parsed.assignment_id === 'string') {
-      return parsed.assignment_id
+    if (parsed && typeof parsed === 'object' && 'topic' in parsed && typeof parsed.topic === 'string') {
+      return parsed as LiveMessage
     }
   } catch {
     // Not JSON: nothing to update.

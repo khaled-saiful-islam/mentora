@@ -18,14 +18,19 @@ import { useAuth } from '@/lib/auth'
 import { firstName } from '@/lib/user'
 import { cn } from '@/lib/utils'
 import { Page, pop, stagger } from '@/motion'
+import { useLive } from '@/lib/bus'
 
 export default function StudentHome() {
   const { user } = useAuth()
   const home = useResource('student-home', () => playApi.home())
+  // Live: a new share, a closed quiz or a class approval shows up at once.
+  useLive(['assignments', 'classes'], () => void home.reload())
   const buddy = useRef<BuddyHandle>(null)
   const data = home.data
 
-  // Hello first, then a tip that knows what they could practise.
+  // Hello first, then a tip that knows what they could practise — once, when
+  // the page first has something to say, not on every live refresh.
+  const ready = Boolean(data)
   useEffect(() => {
     if (!data) return
     const hello = window.setTimeout(() => buddy.current?.cue('hello', { name: user ? firstName(user) : undefined }), 600)
@@ -34,7 +39,8 @@ export default function StudentHome() {
       5200,
     )
     return () => (window.clearTimeout(hello), window.clearTimeout(tip))
-  }, [data, user])
+    // `data` is read when ready first turns true; refreshes must not re-greet.
+  }, [ready])
 
   return (
     <Page className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-8">

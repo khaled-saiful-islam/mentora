@@ -8,13 +8,14 @@ import { AnimatePresence, LayoutGroup, motion } from 'motion/react'
 import { CaretLeft, Crown, Lock, Ranking } from '@phosphor-icons/react'
 import { useParams } from 'react-router-dom'
 import { Alert, ButtonLink, Chip, Skeleton } from '@/components/ui'
+import { LiveBadge } from '@/components/ui/LiveBadge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Buddy, BuddyAvatar } from '@/features/buddies'
 import { EmptyArt } from '@/features/classes/EmptyArt'
 import { playApi, type Board, type BoardEntry } from '@/features/play/api'
 import { useResource } from '@/hooks/useResource'
 import { useAuth } from '@/lib/auth'
-import { useOn } from '@/lib/bus'
+import { useLive } from '@/lib/bus'
 import { cn } from '@/lib/utils'
 import { Page, spring } from '@/motion'
 
@@ -30,7 +31,7 @@ export default function LeaderboardPage() {
   const { assignmentId = '' } = useParams()
   const { user } = useAuth()
   const board = useResource(`board-${assignmentId}`, () => playApi.leaderboard(assignmentId))
-  useOn('leaderboard-changed', (id) => id === assignmentId && void board.reload())
+  useLive(['leaderboard'], (m) => m.assignment_id === assignmentId && void board.reload())
   const back = user?.role === 'student' ? '/' : `/assignments/${assignmentId}`
 
   return (
@@ -47,8 +48,9 @@ export default function LeaderboardPage() {
           <h1 className="font-display text-3xl font-semibold">Leaderboard</h1>
           <p className="text-sm text-muted-foreground">First tries only · ties share a place</p>
         </div>
+        <LiveBadge className="ml-auto" />
         {board.data?.final && (
-          <Chip tone="grape" className="ml-auto text-sm">
+          <Chip tone="grape" className="text-sm">
             <Lock weight="bold" className="size-3.5" />
             Final — medals awarded
           </Chip>

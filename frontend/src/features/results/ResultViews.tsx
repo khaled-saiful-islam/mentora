@@ -8,7 +8,7 @@ import { Chip } from '@/components/ui'
 import { BuddyAvatar } from '@/features/buddies'
 import { cn } from '@/lib/utils'
 import { rise, stagger } from '@/motion'
-import { band, type AssignmentResults, type QuestionResult, type StudentResult } from './api'
+import { band, isActive, type AssignmentResults, type QuestionResult, type StudentResult } from './api'
 
 const BAND = {
   strong: 'bg-correct text-white',
@@ -96,7 +96,7 @@ export function Students({ students, onOpen }: { students: StudentResult[]; onOp
                   {s.attempts > 1 && <Chip>{s.attempts} tries · best {pct(s.best)}</Chip>}
                 </span>
               </span>
-              <span className="font-display text-xl font-semibold">{pct(s.first)}</span>
+              {s.status === 'in_progress' ? <LiveProgress student={s} /> : <span className="font-display text-xl font-semibold">{pct(s.first)}</span>}
               {s.status !== 'not_started' && <CaretRight weight="bold" className="size-4 text-muted-foreground" />}
             </button>
           </motion.li>
@@ -205,5 +205,27 @@ export function SkillHeatmap({ results }: { results: AssignmentResults }) {
         </tbody>
       </table>
     </div>
+  )
+}
+
+/** A student taking it right now: how far along, filling as they answer. */
+function LiveProgress({ student }: { student: StudentResult }) {
+  const active = isActive(student)
+  const share = student.total ? student.answered / student.total : 0
+  return (
+    <span className="flex w-36 flex-col items-end gap-1">
+      <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
+        {active && (
+          <span className="relative flex size-2">
+            <motion.span className="absolute inline-flex size-full rounded-full bg-mint-400" animate={{ scale: [1, 2.4], opacity: [0.7, 0] }} transition={{ duration: 1.4, repeat: Infinity }} />
+            <span className="relative inline-flex size-2 rounded-full bg-mint-400" />
+          </span>
+        )}
+        {active ? 'Taking it now' : 'Paused'} · {student.answered}/{student.total}
+      </span>
+      <span className="h-2 w-full overflow-hidden rounded-full bg-muted">
+        <motion.span className="block h-full rounded-full bg-primary" initial={false} animate={{ width: `${Math.max(4, share * 100)}%` }} transition={{ type: 'spring', stiffness: 140, damping: 20 }} />
+      </span>
+    </span>
   )
 }

@@ -43,7 +43,7 @@
   topic is logged.
 - **Everything that acted is logged** in `moderation_events` for the admin's
   review (`033-admin-console.md`). That includes prompt-injection findings,
-  which Pelita never saved.
+  which were never saved before.
 
 ## How it works
 

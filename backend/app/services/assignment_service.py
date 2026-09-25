@@ -22,7 +22,7 @@ from app.db.models.learning import Assignment, AssignmentGroup, LearningSet
 from app.db.models.user import User
 from app.db.repositories.classes import ClassRepository
 from app.events.bus import EventBus
-from app.events.catalog import AssignmentShared
+from app.events.catalog import AssignmentChanged, AssignmentShared
 
 FEEDBACK_MODES = ("instant", "end")
 
@@ -122,6 +122,16 @@ class AssignmentService:
         if closed is not None:
             assignment.closed_at = datetime.now(UTC) if closed else None
         await self._session.flush()
+        await self._bus.publish(
+            AssignmentChanged(
+                assignment_id=assignment.id,
+                class_id=assignment.class_id,
+                teacher_id=teacher_id,
+                audience=tuple(await self.audience(assignment)),
+                closed=assignment.closed_at is not None,
+            ),
+            self._session,
+        )
         return await self.get(teacher_id, assignment_id)
 
     async def audience(self, assignment: Assignment) -> list[UUID]:

@@ -28,6 +28,8 @@ from app.core.errors import NotFoundError, ValidationError
 from app.db.models.attempt import Attempt, AttemptAnswer
 from app.db.models.learning import Assignment, LearningSet, LearningSetVersion
 from app.db.models.user import User
+from app.events.bus import EventBus
+from app.events.catalog import AttemptProgressed
 from app.learning.base import Item, LearningKind
 from app.learning.registry import build_learning_kinds
 from app.policies.access import assignment_for_student
@@ -80,9 +82,34 @@ class Loaded:
 
 
 class AttemptService:
-    def __init__(self, session: AsyncSession, kinds: dict[str, LearningKind] | None = None) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        kinds: dict[str, LearningKind] | None = None,
+        *,
+        bus: EventBus | None = None,
+    ) -> None:
         self._session = session
         self._kinds = kinds or build_learning_kinds()
+        # Optional: with one, starting and answering are announced, so a
+        # teacher watching the results sees each step.
+        self._bus = bus
+
+    async def _progressed(
+        self, loaded_attempt: Attempt, assignment: Assignment | None, answered: int
+    ) -> None:
+        if self._bus is None or assignment is None:
+            return
+        await self._bus.publish(
+            AttemptProgressed(
+                assignment_id=assignment.id,
+                teacher_id=assignment.teacher_id,
+                student_id=loaded_attempt.student_id,
+                answered=answered,
+                total=len(loaded_attempt.plan["order"]),
+            ),
+            self._session,
+        )
 
     # --- starting --------------------------------------------------------
 
@@ -141,6 +168,7 @@ class AttemptService:
             if running is None:
                 raise
             return await self.view(student.id, running.id)
+        await self._progressed(attempt, assignment, 0)
         return await self.view(student.id, attempt.id)
 
     async def _running(
@@ -265,6 +293,7 @@ class AttemptService:
         streak = _streak(answers)
         attempt.best_streak = max(attempt.best_streak, streak)
         await self._session.flush()
+        await self._progressed(attempt, loaded.assignment, len(answers))
         instant = _feedback(loaded) == "instant"
         return AnswerResult(
             played=self._played(loaded, existing, reveal=instant),

@@ -11,6 +11,7 @@ import TeacherSignUp from '@/features/auth/TeacherSignUp'
 import ClassPage from '@/features/classes/ClassPage'
 import ClassesPage from '@/features/classes/ClassesPage'
 import JoinPage from '@/features/classes/JoinPage'
+import { NewsPop } from '@/features/notifications/NewsPop'
 import { NotificationsProvider } from '@/features/notifications/NotificationsProvider'
 import EditorPage from '@/features/learning/EditorPage'
 import LibraryPage from '@/features/learning/LibraryPage'
@@ -77,6 +78,7 @@ export default function App() {
           <Route path="/admin/:tab" element={<Shell capability="manage_users"><AdminPage /></Shell>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <NewsPop />
       </LearnStudioProvider>
       </NotificationsProvider>
       </ToastProvider>

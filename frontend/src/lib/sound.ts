@@ -6,7 +6,7 @@
 import { useCallback } from 'react'
 import { usePreferences } from './prefs'
 
-export type Sound = 'tap' | 'correct' | 'wrong' | 'flip' | 'streak' | 'finish' | 'badge'
+export type Sound = 'tap' | 'correct' | 'wrong' | 'flip' | 'streak' | 'finish' | 'badge' | 'notify'
 
 // [frequency Hz, start s, length s, wave]
 type Note = [number, number, number, OscillatorType]
@@ -35,6 +35,11 @@ const TUNES: Record<Sound, Note[]> = {
     [659, 0.12, 0.14, 'triangle'],
     [784, 0.24, 0.14, 'triangle'],
     [1047, 0.36, 0.34, 'triangle'],
+  ],
+  // A two-note doorbell: news, not an alarm.
+  notify: [
+    [784, 0, 0.12, 'sine'],
+    [1047, 0.11, 0.22, 'sine'],
   ],
   badge: [
     [880, 0, 0.1, 'sine'],

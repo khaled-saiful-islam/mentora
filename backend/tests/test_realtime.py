@@ -100,3 +100,44 @@ async def test_a_commit_sends_what_was_queued_once(session) -> None:
     except TimeoutError:
         pass
     await stream.aclose()
+
+
+class _Session:
+    """Just enough of a Session for the commit hooks."""
+
+    def __init__(self, *, nested: bool) -> None:
+        self.info: dict = {}
+        self._nested = nested
+
+    def in_nested_transaction(self) -> bool:
+        return self._nested
+
+
+def test_a_savepoint_commit_does_not_send_what_the_outer_transaction_queued() -> None:
+    from app.services import realtime
+
+    user = uuid4()
+    session = _Session(nested=True)
+    session.info[realtime._PENDING] = [(user, {"topic": "members"})]
+    realtime._send(session)  # a subscriber's savepoint releasing
+    assert session.info[realtime._PENDING] == [(user, {"topic": "members"})]
+    realtime._discard(session)  # another subscriber's savepoint failing
+    assert session.info[realtime._PENDING] == [(user, {"topic": "members"})]
+
+
+async def test_the_real_commit_sends_and_a_real_rollback_discards() -> None:
+    from app.services import realtime
+
+    user = uuid4()
+    stream = hub.subscribe(user)
+    heard = asyncio.create_task(_first(stream))
+    await asyncio.sleep(0)
+    session = _Session(nested=False)
+    session.info[realtime._PENDING] = [(user, {"topic": "members"})]
+    realtime._send(session)
+    assert await heard == {"topic": "members"}
+    await stream.aclose()
+
+    session.info[realtime._PENDING] = [(user, {"topic": "classes"})]
+    realtime._discard(session)
+    assert realtime._PENDING not in session.info

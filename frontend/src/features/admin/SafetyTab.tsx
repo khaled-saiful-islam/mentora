@@ -18,6 +18,7 @@ import {
 } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
 import { useCallback, useEffect, useState } from 'react'
+import { useLive } from '@/lib/bus'
 import { Alert, Button, Chip, Skeleton } from '@/components/ui'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Segmented } from '@/components/ui/Segmented'
@@ -86,6 +87,8 @@ export function SafetyTab({ onChange }: { onChange: () => void }) {
     setItems(null)
     void load()
   }, [load])
+  // Live: a new item lands in the queue while it is open.
+  useLive(['moderation'], () => void load())
 
   const decided = (item: ModerationItem) => {
     setItems((now) => (status === 'all' ? now?.map((i) => (i.id === item.id ? item : i)) : now?.filter((i) => i.id !== item.id)) ?? null)

@@ -112,6 +112,9 @@ async def attempt_completed(event: AttemptCompleted, session: AsyncSession) -> N
             "title": event.title,
             "class_name": event.class_name,
             "actors": [event.student_name],
+            # The latest finisher's score, for the pop-up that says so.
+            "percent": round(event.percent),
+            "kind": event.kind,
         },
         # Five students finishing is one line that says five.
         group_key=f"completion:{event.assignment_id}",

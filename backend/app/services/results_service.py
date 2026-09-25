@@ -11,11 +11,12 @@ from __future__ import annotations
 
 import statistics
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import NotFoundError
@@ -43,6 +44,10 @@ class StudentRow:
     late: bool
     completed_at: Any
     latest_attempt_id: UUID | None
+    # While they are taking it: how far along, and when they last answered.
+    answered: int = 0
+    total: int = 0
+    active_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,7 +87,9 @@ class ResultsService:
         version = await self._version(assignment.set_id, assignment.version)
         students = await self._audience(assignment, group_id)
         attempts = await self._attempts_by_student(assignment.id)
-        rows = [_row(user, attempts.get(user.id, [])) for user in students]
+        live = await self._live([a for s in students for a in attempts.get(s.id, [])])
+        total = len(version.items)
+        rows = [_with_live(_row(user, attempts.get(user.id, [])), live, total) for user in students]
         firsts = {r.student_id: r.first for r in rows if r.first is not None}
         firsts_ids = [
             a.id for s in students for a in attempts.get(s.id, [])[:1] if a.status == "completed"
@@ -206,6 +213,22 @@ class ResultsService:
             grouped[attempt.student_id].append(attempt)
         return grouped
 
+    async def _live(self, attempts: list[Attempt]) -> dict[UUID, tuple[int, datetime]]:
+        """Answers so far and the latest one's time, per running attempt."""
+        running = {a.id: a for a in attempts if a.status == "in_progress"}
+        if not running:
+            return {}
+        rows = await self._session.execute(
+            select(AttemptAnswer.attempt_id, func.count(), func.max(AttemptAnswer.answered_at))
+            .where(AttemptAnswer.attempt_id.in_(running))
+            .group_by(AttemptAnswer.attempt_id)
+        )
+        found = {attempt_id: (int(n), last) for attempt_id, n, last in rows.all()}
+        return {
+            attempt_id: found.get(attempt_id, (0, attempt.started_at))
+            for attempt_id, attempt in running.items()
+        }
+
     async def _answers(self, attempt_ids: list[UUID]) -> list[AttemptAnswer]:
         if not attempt_ids:
             return []
@@ -237,6 +260,13 @@ def _row(user: User, attempts: list[Attempt]) -> StudentRow:
         completed_at=first.completed_at if first else None,
         latest_attempt_id=latest.id if latest else None,
     )
+
+
+def _with_live(row: StudentRow, live: dict[UUID, tuple[int, datetime]], total: int) -> StudentRow:
+    if row.status != "in_progress" or row.latest_attempt_id not in live:
+        return row
+    answered, active_at = live[row.latest_attempt_id]
+    return replace(row, answered=answered, total=total, active_at=active_at)
 
 
 def _questions(items: list[dict[str, Any]], answers: list[AttemptAnswer]) -> list[QuestionRow]:

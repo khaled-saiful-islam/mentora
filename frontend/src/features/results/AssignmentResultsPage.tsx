@@ -3,21 +3,21 @@
  * how the scores spread, which questions tripped people up, and each
  * student's skills — filterable by group, and live as students finish.
  */
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { CaretLeft, ChartBar, Check, Lock, Question, Ranking, Student, X } from '@phosphor-icons/react'
 import { useParams } from 'react-router-dom'
 import { Alert, ButtonLink, Chip, Skeleton } from '@/components/ui'
+import { LiveBadge } from '@/components/ui/LiveBadge'
 import { Dialog } from '@/components/ui/Dialog'
 import { Segmented } from '@/components/ui/Segmented'
 import { classesApi } from '@/features/classes/api'
 import { lookOfKind } from '@/features/learning/kinds'
-import { useNotifications } from '@/features/notifications/NotificationsProvider'
 import { useResource } from '@/hooks/useResource'
-import { useOn } from '@/lib/bus'
+import { useLive } from '@/lib/bus'
 import { dueLabel } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { Page } from '@/motion'
-import { resultsApi, type StudentDrill, type StudentResult } from './api'
+import { isActive, resultsApi, type AssignmentResults, type StudentDrill, type StudentResult } from './api'
 import { Distribution, Questions, SkillHeatmap, Students, Summary } from './ResultViews'
 
 type View = 'students' | 'questions' | 'skills'
@@ -37,13 +37,8 @@ export default function AssignmentResultsPage() {
   const classId = results.data?.assignment.class_id
   const groups = useResource(classId ? `groups-${classId}` : null, () => classesApi.groups(classId ?? ''))
 
-  // Live: a student finishing moves the board and rings the bell.
-  const { arrivals } = useNotifications()
-  useOn('leaderboard-changed', (id) => id === assignmentId && void results.reload())
-  useEffect(() => {
-    if (arrivals > 0) void results.reload()
-    // Only on news: `results` changes on every load, and would loop.
-  }, [arrivals])
+  // Live: every student starting, answering and finishing shows up here.
+  useLive(['progress', 'assignments'], (m) => m.assignment_id === assignmentId && void results.reload())
 
   const data = results.data
   const look = lookOfKind(data?.assignment.kind ?? 'quiz')
@@ -75,6 +70,7 @@ export default function AssignmentResultsPage() {
                 {data.assignment.closed && <Chip tone="grape"><Lock weight="bold" className="size-3" />Closed</Chip>}
               </div>
             </div>
+            <LiveNow results={data} />
             {data.assignment.leaderboard && data.assignment.kind === 'quiz' && (
               <ButtonLink to={`/leaderboard/${assignmentId}`} variant="sun">
                 <Ranking weight="fill" className="size-5" />
@@ -154,5 +150,20 @@ function Attempts({ drill }: { drill: StudentDrill }) {
         </section>
       ))}
     </div>
+  )
+}
+
+/** Live, and how many are taking it this minute. */
+function LiveNow({ results }: { results: AssignmentResults }) {
+  const now = results.students.filter((s) => isActive(s)).length
+  return (
+    <span className="flex items-center gap-2">
+      <LiveBadge />
+      {now > 0 && (
+        <Chip tone="mint" className="text-sm">
+          {now} taking it now
+        </Chip>
+      )}
+    </span>
   )
 }

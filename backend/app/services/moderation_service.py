@@ -21,6 +21,7 @@ from app.db.models.user import User
 from app.events.bus import EventBus
 from app.events.catalog import StudentNeedsSupport
 from app.moderation.base import Flag
+from app.services.realtime import push_after_commit
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,7 @@ class ModerationService:
         )
         self._session.add(event)
         await self._session.flush()
+        await self._tell_admins(event)
         if flag.kind == "support" and self._bus and where.user_id:
             student = await self._session.get(User, where.user_id)
             await self._bus.publish(
@@ -81,6 +83,15 @@ class ModerationService:
                 self._session,
             )
         return event
+
+    async def _tell_admins(self, event: ModerationEvent) -> None:
+        """A safety queue someone has open refreshes by itself."""
+        admins = await self._session.execute(
+            select(User.id).where(User.role == "admin", User.is_active.is_(True))
+        )
+        message = {"topic": "moderation", "severity": event.severity}
+        for admin_id in admins.scalars():
+            push_after_commit(self._session, admin_id, message)
 
     async def record_quietly(self, flags: list[Flag], where: Where) -> None:
         for flag in flags:

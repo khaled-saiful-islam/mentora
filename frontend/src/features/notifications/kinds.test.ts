@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Notification } from './api'
-import { kindOf } from './kinds'
+import { headlineOf, kindOf } from './kinds'
 
 function note(type: string, payload: Record<string, unknown>, count = 1): Notification {
   return { id: '1', type, payload, count, read: false, created_at: '', updated_at: '' }
@@ -31,6 +31,25 @@ describe('notification kinds', () => {
     expect(view.title(n)).toBe('Adam may need support')
     expect(view.href?.(n)).toBe('/admin/safety')
     expect(`${view.title(n)} ${view.body?.(n)}`).not.toContain('self_harm')
+  })
+
+  it('says news in a fun way, the same way every time for the same note', () => {
+    const n = note('badge_awarded', { badge_name: 'Hot Streak' })
+    const line = headlineOf(n)
+    expect(line).toContain('Hot Streak')
+    expect(headlineOf(n)).toBe(line)
+    expect(line).not.toBe(kindOf(n).title(n))
+  })
+
+  it('celebrates a high score in the teacher\'s headline', () => {
+    const n = note('completion', { title: 'Plants', actors: ['Mei'], percent: 95 })
+    expect(headlineOf(n)).toMatch(/Mei (aced Plants — 95%!|scored 95% on Plants)/)
+  })
+
+  it('never jokes about a child who may need support', () => {
+    const n = note('safety_alert', { student_name: 'Adam' })
+    expect(headlineOf(n)).toBe('Adam may need support')
+    expect(kindOf(n).serious).toBe(true)
   })
 
   it('does not break on a kind this page has never heard of', () => {

@@ -69,6 +69,11 @@ def push_after_commit(session: AsyncSession, user_id: UUID, message: dict[str, A
 
 @event.listens_for(Session, "after_commit")
 def _send(sync_session: Session) -> None:
+    # SQLAlchemy fires this for a savepoint too — and every event subscriber
+    # runs in one. Sending then would announce a change the outer
+    # transaction has not committed yet; wait for the real commit.
+    if sync_session.in_nested_transaction():
+        return
     for user_id, message in sync_session.info.pop(_PENDING, []):
         try:
             hub.publish(user_id, message)
@@ -79,4 +84,9 @@ def _send(sync_session: Session) -> None:
 
 @event.listens_for(Session, "after_rollback")
 def _discard(sync_session: Session) -> None:
+    # A subscriber's savepoint rolling back must not drop what the others
+    # queued. Its own pushes stay too: a spare "something changed" only
+    # makes a page refetch and find nothing new.
+    if sync_session.in_nested_transaction():
+        return
     sync_session.info.pop(_PENDING, None)

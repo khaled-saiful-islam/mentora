@@ -14,11 +14,13 @@ import { lookOf, THEME_KEYS, THEMES, type ThemeKey } from '@/lib/palette'
 import { cn } from '@/lib/utils'
 import { classesApi, type Group, type Member } from './api'
 import { EmptyArt } from './EmptyArt'
+import { useLive } from '@/lib/bus'
 
 /** Groups inside a class — a student can be in as many as the teacher likes. */
 export function GroupsTab({ classId, onChange }: { classId: string; onChange: () => void }) {
   const groups = useResource(`groups:${classId}`, () => classesApi.groups(classId))
   const students = useResource(`members:${classId}:approved:all`, () => classesApi.members(classId, { status: 'approved' }))
+  useLive(['members'], (m) => m.class_id === classId && void students.reload())
   const [editing, setEditing] = useState<Group | 'new' | null>(null)
   const [picking, setPicking] = useState<Group | null>(null)
   const [deleting, setDeleting] = useState<Group | null>(null)

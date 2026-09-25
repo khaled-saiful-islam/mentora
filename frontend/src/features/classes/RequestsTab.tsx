@@ -12,10 +12,12 @@ import { spring } from '@/motion'
 import { timeAgo } from '@/lib/time'
 import { classesApi, type Member } from './api'
 import { EmptyArt } from './EmptyArt'
+import { useLive } from '@/lib/bus'
 
 /** Who is waiting to be let in — answer one by one, or everyone at once. */
 export function RequestsTab({ classId, onChange }: { classId: string; onChange: () => void }) {
   const waiting = useResource(`requests:${classId}`, () => classesApi.members(classId, { status: 'pending' }))
+  useLive(['members'], (m) => m.class_id === classId && void waiting.reload())
   const [busy, setBusy] = useState<string | null>(null)
   const { toast } = useToast()
   const items = waiting.data?.items ?? []

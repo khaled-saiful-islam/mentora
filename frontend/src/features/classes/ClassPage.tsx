@@ -10,8 +10,7 @@ import { useResource } from '@/hooks/useResource'
 import { Page, spring } from '@/motion'
 import { lookOf } from '@/lib/palette'
 import { cn } from '@/lib/utils'
-import { useOn } from '@/lib/bus'
-import { useNotifications } from '@/features/notifications/NotificationsProvider'
+import { useLive, useOn } from '@/lib/bus'
 import { classesApi, type ClassDraft, type ClassRoom } from './api'
 import { ClassFormDialog } from './ClassFormDialog'
 import { GroupsTab } from './GroupsTab'
@@ -29,11 +28,10 @@ export default function ClassPage() {
   // the bell, or a join request arriving live — so every tab refetches.
   const [version, setVersion] = useState(0)
   const room = useResource(`class:${classId}`, () => classesApi.get(classId))
-  const { arrivals, latestArrival } = useNotifications()
   useOn('class-changed', (changed) => changed === classId && setVersion((v) => v + 1))
-  useEffect(() => {
-    if (latestArrival?.payload.class_id === classId) setVersion((v) => v + 1)
-  }, [arrivals]) // only on a new arrival
+  // Live: the counts in the hero follow joins and shares as they happen; each
+  // tab refreshes its own list in place.
+  useLive(['members', 'assignments'], (m) => m.class_id === classId && void room.reload())
   const { reload } = room
   useEffect(() => {
     // Refetch in place, without blanking the hero back to a skeleton.

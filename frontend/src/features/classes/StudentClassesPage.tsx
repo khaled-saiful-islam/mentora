@@ -14,9 +14,11 @@ import { cn } from '@/lib/utils'
 import { classesApi, type StudentClass } from './api'
 import { CodeInput } from './CodeInput'
 import { EmptyArt } from './EmptyArt'
+import { useLive } from '@/lib/bus'
 
 export default function StudentClassesPage() {
   const classes = useResource('my-classes', () => classesApi.mine())
+  useLive(['classes'], () => void classes.reload())
   const [leaving, setLeaving] = useState<StudentClass | null>(null)
   const { toast } = useToast()
   const items = classes.data?.items ?? []

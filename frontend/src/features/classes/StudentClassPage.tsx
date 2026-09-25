@@ -15,11 +15,17 @@ import { cn } from '@/lib/utils'
 import { Page, stagger } from '@/motion'
 import { classesApi } from './api'
 import { EmptyArt } from './EmptyArt'
+import { useLive } from '@/lib/bus'
 
 export default function StudentClassPage() {
   const { classId = '' } = useParams()
   const classes = useResource('my-classes', () => classesApi.mine())
   const work = useResource(`my-work-${classId}`, () => playApi.assignments())
+  useLive(['assignments', 'classes'], (m) => {
+    if (m.class_id && m.class_id !== classId) return
+    void work.reload()
+    void classes.reload()
+  })
   const room = classes.data?.items.find((c) => c.class_id === classId)
   const mine = (work.data ?? []).filter((t) => t.class_id === classId)
   const open = mine.filter((t) => t.status === 'todo' || t.status === 'in_progress')

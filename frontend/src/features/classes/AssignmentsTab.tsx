@@ -12,10 +12,12 @@ import { rise, stagger } from '@/motion'
 import { timeAgo } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { EmptyArt } from './EmptyArt'
+import { useLive } from '@/lib/bus'
 
 /** What this class has been given, newest first. */
 export function AssignmentsTab({ classId }: { classId: string }) {
   const shared = useResource(`assignments:${classId}`, () => learningApi.assignments(classId))
+  useLive(['assignments'], (m) => m.class_id === classId && void shared.reload())
   const { toast } = useToast()
 
   async function toggle(assignment: Assignment) {

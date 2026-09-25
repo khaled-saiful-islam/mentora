@@ -59,6 +59,9 @@ async def assignment_results(
                 "attempts": s.attempts,
                 "late": s.late,
                 "completed_at": s.completed_at,
+                "answered": s.answered,
+                "total": s.total,
+                "active_at": s.active_at,
             }
             for s in found.students
         ],

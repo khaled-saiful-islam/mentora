@@ -142,6 +142,8 @@ async def test_finishing_tells_the_teacher_once_and_collapses(session, teacher, 
     )
     assert len(notes) == 1
     assert notes[0].count == 3
+    # 2 of 5 right: the latest finisher's score rides along for the pop-up.
+    assert (notes[0].payload["percent"], notes[0].payload["kind"]) == (40, "quiz")
 
 
 async def test_the_leaderboard_ranks_first_tries_and_ties_share_a_place(

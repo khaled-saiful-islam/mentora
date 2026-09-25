@@ -6,6 +6,7 @@ import { ChartLineUp, FolderOpen, ShieldCheck, UsersThree } from '@phosphor-icon
 import { useParams } from 'react-router-dom'
 import { Tabs } from '@/components/ui/Tabs'
 import { useResource } from '@/hooks/useResource'
+import { useLive } from '@/lib/bus'
 import { Page } from '@/motion'
 import { adminApi } from './api'
 import { ContentTab } from './ContentTab'
@@ -20,6 +21,7 @@ export default function AdminPage() {
   const { tab = 'overview' } = useParams()
   const active: Tab = (TABS as readonly string[]).includes(tab) ? (tab as Tab) : 'overview'
   const overview = useResource('admin-overview', () => adminApi.overview())
+  useLive(['moderation', 'members', 'assignments'], () => void overview.reload())
   const open = overview.data?.safety.open ?? 0
 
   return (

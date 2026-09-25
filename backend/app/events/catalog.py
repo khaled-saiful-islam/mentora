@@ -84,6 +84,29 @@ class AttemptCompleted(Event):
 
 
 @dataclass(frozen=True, slots=True)
+class AssignmentChanged(Event):
+    """A teacher closed, reopened or moved the due date of something shared."""
+
+    assignment_id: UUID
+    class_id: UUID
+    teacher_id: UUID
+    audience: tuple[UUID, ...]
+    closed: bool
+
+
+@dataclass(frozen=True, slots=True)
+class AttemptProgressed(Event):
+    """A student started or answered one item of something shared — so a
+    teacher watching the results sees it happen."""
+
+    assignment_id: UUID
+    teacher_id: UUID
+    student_id: UUID
+    answered: int
+    total: int
+
+
+@dataclass(frozen=True, slots=True)
 class BadgeAwarded(Event):
     student_id: UUID
     badge: str

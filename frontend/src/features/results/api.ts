@@ -15,6 +15,10 @@ export interface StudentResult {
   attempts: number
   late: boolean
   completed_at: string | null
+  /** While they are taking it: how far along, and when they last answered. */
+  answered: number
+  total: number
+  active_at: string | null
 }
 
 export interface QuestionResult {
@@ -68,4 +72,9 @@ export const resultsApi = {
 export function band(share: number): 'strong' | 'growing' | 'practise' {
   if (share >= 0.8) return 'strong'
   return share >= 0.5 ? 'growing' : 'practise'
+}
+
+/** Answered in the last two minutes: they are taking it right now. */
+export function isActive(student: Pick<StudentResult, 'status' | 'active_at'>, now: number = Date.now()): boolean {
+  return student.status === 'in_progress' && !!student.active_at && now - new Date(student.active_at).getTime() < 120_000
 }

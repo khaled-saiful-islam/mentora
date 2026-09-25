@@ -60,7 +60,9 @@ async def home(user: CurrentUser, session: SessionDep) -> dict[str, object]:
 async def start(assignment_id: UUID, user: CurrentUser, session: SessionDep) -> AttemptResponse:
     """Start, or resume the one already going, or — if no more tries are
     allowed — the last finished one, for its results."""
-    return AttemptResponse.of(await AttemptService(session).start(user, assignment_id))
+    return AttemptResponse.of(
+        await AttemptService(session, bus=build_bus()).start(user, assignment_id)
+    )
 
 
 @router.post("/practice/{set_id}/attempts", response_model=AttemptResponse)
@@ -80,7 +82,7 @@ async def answer(
     if (body.choice is None) == (body.knew is None):
         raise ValidationError("Send a choice for a question, or knew for a card.")
     response = {"choice": body.choice} if body.choice is not None else {"knew": body.knew}
-    result = await AttemptService(session).answer(
+    result = await AttemptService(session, bus=build_bus()).answer(
         user.id, attempt_id, body.item_id, response, body.time_ms
     )
     return AnswerResponse.of(result)
