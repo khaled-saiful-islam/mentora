@@ -130,7 +130,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             aria-label="Message"
             className={cn(
               'flex-1 resize-none bg-transparent px-3 py-2.5 text-base leading-relaxed',
-              'placeholder:text-muted-foreground focus:outline-none disabled:opacity-50',
+              'placeholder:truncate placeholder:text-muted-foreground focus:outline-none disabled:opacity-50',
             )}
           />
 
