@@ -9,6 +9,7 @@ function handlers(): StreamHandlers {
     onImages: vi.fn(),
     onSources: vi.fn(),
     onToken: vi.fn(),
+    onRetract: vi.fn(),
     onUsage: vi.fn(),
     onArtifactStart: vi.fn(),
     onArtifactStep: vi.fn(),
@@ -76,5 +77,14 @@ describe('artifact frames', () => {
     const h = handlers()
     dispatchFrame({ event: 'artifact.invented', data: '{}' }, h)
     expect(Object.values(h).every((fn) => (fn as ReturnType<typeof vi.fn>).mock.calls.length === 0)).toBe(true)
+  })
+})
+
+describe('a withdrawn answer', () => {
+  it('routes retract with the text that replaces the answer', () => {
+    const h = handlers()
+    dispatchFrame({ event: 'retract', data: '{"text":"Oops — taken back."}' }, h)
+    expect(h.onRetract).toHaveBeenCalledWith('Oops — taken back.')
+    expect(h.onToken).not.toHaveBeenCalled()
   })
 })

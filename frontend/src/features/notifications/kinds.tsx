@@ -5,7 +5,7 @@
  * from this table. Unknown kinds (a newer server than this page) fall back to
  * a plain bell rather than breaking the list.
  */
-import { Bell, Confetti, Medal, Sparkle, Trophy, UserPlus, type Icon } from '@phosphor-icons/react'
+import { Bell, Confetti, Heartbeat, Medal, Sparkle, Trophy, UserPlus, type Icon } from '@phosphor-icons/react'
 import type { Notification } from './api'
 
 export interface KindView {
@@ -53,6 +53,13 @@ export const KINDS: Record<string, KindView> = {
     title: (n) => others(n, `finished ${text(n, 'title')}`),
     body: (n) => text(n, 'class_name') || null,
     href: (n) => (n.payload.assignment_id ? `/assignments/${text(n, 'assignment_id')}` : null),
+  },
+  safety_alert: {
+    Icon: Heartbeat,
+    tile: 'bg-coral-100 text-coral-700 dark:bg-coral-700/30 dark:text-coral-100',
+    title: (n) => `${text(n, 'student_name') || 'A student'} may need support`,
+    body: () => 'Please look at it in the safety queue today.',
+    href: () => '/admin/safety',
   },
   badge_awarded: {
     Icon: Medal,

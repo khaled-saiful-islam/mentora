@@ -36,8 +36,10 @@ from app.learning.generator import (
 )
 from app.learning.model import GenerationUnavailable, Meter
 from app.learning.research import Source
+from app.moderation.base import Flag
 from app.policies.capabilities import capabilities_for
 from app.services.learning_set_service import LearningSetService
+from app.services.moderation_service import ModerationService, Where
 
 logger = logging.getLogger(__name__)
 
@@ -138,8 +140,32 @@ class GenerationService:
             }
         if isinstance(update, Refused):
             await self._keep_status(set_id, "refused", update.message)
+            await self._log_refusal(set_id, update)
             return {"type": "refused", "message": update.message}
         return _event(update)
+
+    async def _log_refusal(self, set_id: UUID, refused: Refused) -> None:
+        """A refused topic goes in the moderation log, like a refused message."""
+        try:
+            async with self._session_maker() as session:
+                learning_set = await session.get(LearningSet, set_id)
+                if learning_set is None:
+                    return
+                flag = Flag(
+                    kind="topic_refused",
+                    source="generation",
+                    severity="low" if refused.rule == "topic_check" else "medium",
+                    category=refused.category,
+                    rule=refused.rule,
+                    screen="rules" if refused.rule != "topic_check" else "topic_check",
+                    excerpt=" · ".join(
+                        filter(None, [learning_set.subject, learning_set.topic])
+                    )[:500],
+                )
+                where = Where(user_id=learning_set.owner_id, set_id=set_id)
+                await ModerationService(session).record_quietly([flag], where)
+        except Exception:  # noqa: BLE001 — the refusal stands; only its log line is lost
+            logger.exception("could not log the refusal of set %s", set_id)
 
     async def _keep_status(self, set_id: UUID, status: str, failure: str) -> None:
         try:

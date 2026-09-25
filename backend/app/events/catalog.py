@@ -89,3 +89,13 @@ class BadgeAwarded(Event):
     badge: str
     name: str
     reason: str
+
+
+@dataclass(frozen=True, slots=True)
+class StudentNeedsSupport(Event):
+    """A student said something that suggests they may be at risk."""
+
+    event_id: UUID
+    student_id: UUID
+    student_name: str
+    category: str

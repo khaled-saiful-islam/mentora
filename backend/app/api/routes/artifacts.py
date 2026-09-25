@@ -270,10 +270,16 @@ async def raw(
     the same host.
     """
     artifact, chosen = await _load(session, artifact_id, user.id, version)
-    kind = build_kinds(settings).get(artifact.kind)
+    return document_response(chosen.html, artifact.kind, settings)
+
+
+def document_response(html: str, kind_name: str, settings) -> Response:
+    """A document under its kind's own CSP, wherever it is served from — the
+    owner's tab, and the admin's content browser."""
+    kind = build_kinds(settings).get(kind_name)
     policy = kind.sandbox.csp if kind else "sandbox; default-src 'none'"
     return Response(
-        content=chosen.html,
+        content=html,
         media_type="text/html; charset=utf-8",
         headers={
             "Content-Security-Policy": policy,

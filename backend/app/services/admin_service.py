@@ -17,13 +17,19 @@ import logging
 from dataclasses import dataclass
 from uuid import UUID
 
+from sqlalchemy import delete as sql_delete
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ConflictError, NotFoundError, ValidationError
 from app.core.grades import is_grade
+from app.core.passwords import temporary_password
 from app.core.roles import Role, parse_role
 from app.core.security import hash_password
+from app.db.models.attempt import Attempt
+from app.db.models.classroom import ClassMembership, Classroom
+from app.db.models.conversation import Conversation
+from app.db.models.learning import LearningSet
 from app.db.models.user import User
 from app.services.auth_service import (
     normalise_email,
@@ -35,6 +41,10 @@ from app.services.quota import TokenQuota, Usage
 logger = logging.getLogger(__name__)
 
 
+PAGE = 50
+MAX_PAGE = 200
+
+
 @dataclass(frozen=True, slots=True)
 class ManagedUser:
     """A user plus what they have spent, which is the pair an admin needs."""
@@ -43,21 +53,112 @@ class ManagedUser:
     usage: Usage
 
 
+@dataclass(frozen=True, slots=True)
+class UserPage:
+    items: list[ManagedUser]
+    total: int
+
+
+@dataclass(frozen=True, slots=True)
+class Footprint:
+    classes: int
+    learning_sets: int
+    conversations: int
+    attempts: int
+    # Students in this account's classes, whose work there goes with it.
+    students: int
+
+
 class AdminService:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
     async def list_users(self) -> list[ManagedUser]:
         """Every account, newest first, each with its 24-hour usage."""
-        found = (
-            await self._session.execute(select(User).order_by(User.created_at.desc()))
-        ).scalars().all()
+        return (await self.page(limit=None)).items
 
-        quota = TokenQuota(self._session)
-        return [
-            ManagedUser(user=user, usage=await quota.usage(user.id, user.daily_token_limit))
-            for user in found
-        ]
+    async def page(
+        self,
+        *,
+        q: str | None = None,
+        role: str | None = None,
+        status: str | None = None,
+        offset: int = 0,
+        limit: int | None = PAGE,
+    ) -> UserPage:
+        """A page of accounts, newest first, filtered — with usage for just
+        that page, in two queries."""
+        query = select(User)
+        if q and q.strip():
+            like = f"%{q.strip().lower()}%"
+            query = query.where(
+                func.lower(func.coalesce(User.username, "")).like(like)
+                | func.lower(func.coalesce(User.email, "")).like(like)
+                | func.lower(func.coalesce(User.display_name, "")).like(like)
+            )
+        if role:
+            query = query.where(User.role == role)
+        if status in ("active", "suspended"):
+            query = query.where(User.is_active.is_(status == "active"))
+        total = int(
+            await self._session.scalar(select(func.count()).select_from(query.subquery())) or 0
+        )
+        query = query.order_by(User.created_at.desc()).offset(max(0, offset))
+        if limit is not None:
+            query = query.limit(min(limit, MAX_PAGE))
+        found = list((await self._session.execute(query)).scalars().all())
+        usage = await TokenQuota(self._session).usage_many(
+            {user.id: user.daily_token_limit for user in found}
+        )
+        return UserPage([ManagedUser(user, usage[user.id]) for user in found], total)
+
+    async def footprint(self, user_id: UUID) -> Footprint:
+        """What deleting this account would take with it."""
+        user = await self._require(user_id)
+        classes = select(Classroom.id).where(Classroom.teacher_id == user.id)
+        return Footprint(
+            classes=await self._count(Classroom, Classroom.teacher_id == user.id),
+            learning_sets=await self._count(LearningSet, LearningSet.owner_id == user.id),
+            conversations=await self._count(Conversation, Conversation.user_id == user.id),
+            attempts=await self._count(Attempt, Attempt.student_id == user.id),
+            students=await self._count(
+                ClassMembership,
+                ClassMembership.class_id.in_(classes),
+                ClassMembership.status == "approved",
+            ),
+        )
+
+    async def delete(self, user_id: UUID, *, acting_admin_id: UUID, confirm: str) -> None:
+        """Gone for good, with everything that is theirs. The caller types the
+        account's sign-in name first, so a misclick cannot do this."""
+        user = await self._require(user_id)
+        await self._refuse_self_lockout(user, acting_admin_id, "delete")
+        if confirm.strip().lower() != user.sign_in_name.lower():
+            raise ValidationError(f"Type {user.sign_in_name} to confirm.")
+        await self._session.execute(sql_delete(User).where(User.id == user.id))
+        logger.info("admin %s deleted user %s", acting_admin_id, user.sign_in_name)
+
+    async def reset_password(self, user_id: UUID, *, acting_admin_id: UUID) -> tuple[User, str]:
+        """A new temporary password, returned once and stored only as a hash."""
+        user = await self._require(user_id)
+        if user.id == acting_admin_id:
+            raise ValidationError("Change your own password from your profile.")
+        password = temporary_password()
+        user.password_hash = hash_password(password)
+        await self._session.flush()
+        logger.info("admin %s reset the password of %s", acting_admin_id, user.sign_in_name)
+        return user, password
+
+    async def _require(self, user_id: UUID) -> User:
+        user = await self._session.get(User, user_id)
+        if user is None:
+            raise NotFoundError("No such user.")
+        return user
+
+    async def _count(self, model, *where) -> int:
+        return int(
+            await self._session.scalar(select(func.count()).select_from(model).where(*where)) or 0
+        )
 
     async def create(
         self,
@@ -114,9 +215,7 @@ class AdminService:
         display_name: str | None = None,
         password: str | None = None,
     ) -> User:
-        user = await self._session.get(User, user_id)
-        if user is None:
-            raise NotFoundError("No such user.")
+        user = await self._require(user_id)
 
         if is_active is False:
             await self._refuse_self_lockout(user, acting_admin_id, "disable")
@@ -164,9 +263,7 @@ class AdminService:
         )
 
     async def _find_by(self, column, value: str) -> User | None:
-        return (
-            await self._session.execute(select(User).where(column == value))
-        ).scalars().first()
+        return (await self._session.execute(select(User).where(column == value))).scalars().first()
 
 
 def _account_role(role: str) -> Role:

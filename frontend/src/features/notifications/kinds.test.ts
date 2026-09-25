@@ -25,6 +25,14 @@ describe('notification kinds', () => {
     expect(kindOf(n).title(n)).toBe('Mei and 2 others finished Photosynthesis')
   })
 
+  it('sends an admin to the safety queue without repeating what was said', () => {
+    const n = note('safety_alert', { student_name: 'Adam', category: 'self_harm', event_id: 'e1' })
+    const view = kindOf(n)
+    expect(view.title(n)).toBe('Adam may need support')
+    expect(view.href?.(n)).toBe('/admin/safety')
+    expect(`${view.title(n)} ${view.body?.(n)}`).not.toContain('self_harm')
+  })
+
   it('does not break on a kind this page has never heard of', () => {
     const n = note('from_the_future', {})
     expect(kindOf(n).title(n)).toBe('Something new happened')

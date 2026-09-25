@@ -235,6 +235,14 @@ class Settings(BaseSettings):
     guard_enabled: bool = True
     guard_block_severity: str = "none"  # none | high — "none" sanitises, never blocks
 
+    # ---- Student safety (docs/features/032-guardrails.md) ------------------
+    # Screens a student's messages and the answers they get. Staff are never
+    # screened; the injection guard above still runs for everyone.
+    moderation_enabled: bool = True
+    # A short model call for messages the rules cannot decide ("what is sex").
+    moderation_classifier_enabled: bool = True
+    moderation_classifier_timeout: float = 4.0
+
     # ---- Language -------------------------------------------------------
     supported_languages: str = "en,ms,ta,zh,bn"
     default_language: str = "en"

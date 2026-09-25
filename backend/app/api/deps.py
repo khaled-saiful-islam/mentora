@@ -12,6 +12,7 @@ from typing import Annotated
 from fastapi import Cookie, Depends, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.context.persona import persona_for
 from app.context.registry import build_contributors
 from app.core.config import Settings, get_settings
 from app.core.errors import AuthError, ForbiddenError
@@ -23,6 +24,7 @@ from app.db.session import SessionFactory, session_scope
 from app.guards.registry import build_guards
 from app.learning.factory import build_generator
 from app.learning.registry import build_learning_kinds
+from app.moderation.registry import build_gate
 from app.policies.capabilities import Capabilities, capabilities_for
 from app.providers.base import TokenBudget
 from app.providers.registry import build_provider
@@ -183,18 +185,26 @@ def get_chat_service(settings: SettingsDep, user: CurrentUser) -> ChatService:
     """Built per request, but cheap: the provider holds no connection pool,
     contributors are stateless, and tools are thin wrappers.
 
-    The tools depend on who is asking. A student's turn is built without the
-    studio artifact tools at all, so no prompt can talk the model into making
-    a poster: the tool it would call does not exist on that turn.
+    The tools, the persona and the safety gate depend on who is asking. A
+    student's turn is built without the studio artifact tools at all, so no
+    prompt can talk the model into making a poster: the tool it would call
+    does not exist on that turn. It is also the only turn that is screened.
     """
     studio = capabilities_for(user.role).studio_artifacts
+    provider = build_provider(settings)
+    persona = persona_for(user.role, grade_level=user.grade_level, buddy=user.buddy)
     return ChatService(
         session_maker=session_scope,
-        provider=build_provider(settings),
-        contributor_factory=lambda memories: build_contributors(settings, memories=memories),
+        provider=provider,
+        contributor_factory=lambda memories: build_contributors(
+            settings, memories=memories, persona=persona
+        ),
         cancellation=cancellation_registry,
         tools=build_tools(settings, studio=studio),
         guards=build_guards(settings),
+        gate=build_gate(
+            settings, role=user.role, grade_level=user.grade_level, provider=provider
+        ),
         settings=TurnSettings(
             budget=TokenBudget(
                 memory=settings.memory_token_budget,

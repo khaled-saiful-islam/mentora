@@ -117,6 +117,7 @@ def build_service(
     tool_calling: bool = False,
     clock=None,
     guards: tuple = (),
+    gate=None,
 ) -> ChatService:
     @asynccontextmanager
     async def session_maker():
@@ -142,6 +143,7 @@ def build_service(
         cancellation=registry,
         tools=tools,
         guards=guards,
+        gate=gate,
         **({"clock": clock} if clock else {}),
         settings=TurnSettings(
             budget=TokenBudget(memory=256, tools=512, history=1024),

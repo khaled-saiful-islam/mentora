@@ -49,6 +49,8 @@ from app.db.models.source import MessageSource
 from app.db.repositories.artifacts import SqlArtifactRepository
 from app.db.repositories.conversations import SqlConversationRepository
 from app.guards.base import ContentSource, Guard, GuardVerdict
+from app.moderation.base import Flag, Screening
+from app.moderation.gate import ModerationGate
 from app.providers.base import (
     ChatMessage,
     ChatRequest,
@@ -65,6 +67,7 @@ from app.providers.base import (
     UsageSource,
 )
 from app.providers.base import UsageEvent as ProviderUsageEvent
+from app.services import turn_safety
 from app.services.accounting_service import Accounting, Pricing, price
 from app.services.cancellation import CancellationRegistry
 from app.services.document_service import DocumentService
@@ -188,6 +191,13 @@ class TurnState:
     # prompt. This is the conversation the model is having with the tools, and
     # it has to be replayed on every iteration or the model loses what it asked.
     exchange: list[ChatMessage] = field(default_factory=list)
+    # A student's safety checks (`turn_safety.py`): what the question's screen
+    # said, the reply given instead of the model's when it is held, whether
+    # the answer was withdrawn, and everything to log.
+    screening: Screening | None = None
+    held: str | None = None
+    retracted: bool = False
+    flags: list[Flag] = field(default_factory=list)
 
     @property
     def answer(self) -> str:
@@ -268,6 +278,7 @@ class ChatService:
         settings: TurnSettings,
         tools: dict[str, Tool] | None = None,
         guards: tuple[Guard, ...] = (),
+        gate: ModerationGate | None = None,
         clock: Clock = utc_now,
     ) -> None:
         self._clock = clock
@@ -278,6 +289,7 @@ class ChatService:
         self._settings = settings
         self._tools = tools or {}
         self._guards = guards
+        self._gate = gate
 
     # -- public ----------------------------------------------------------
 
@@ -315,6 +327,8 @@ class ChatService:
                 yield event
             async for event in self._generate(state, start, user_id, cancel, documents):
                 yield event
+            for event in turn_safety.screen_answer(self._gate, state):
+                yield event
         except ProviderError as exc:
             state.finish, state.error = FinishReason.ERROR, exc.message
             logger.warning("provider failed during turn %s: %s", assistant_id, exc.message)
@@ -325,6 +339,7 @@ class ChatService:
         finally:
             self._cancellation.release(assistant_id)
             accounting = await self._close(assistant_id, state)
+            await turn_safety.log_flags(self._session_maker, state, start.user_message_id)
 
         yield AccountingEvent(accounting=accounting)
         async for event in self._follow_up(state, user_id):
@@ -354,7 +369,9 @@ class ChatService:
         regenerate_of: UUID | None,
     ) -> tuple[StartEvent, TurnState]:
         if regenerate_of is not None:
-            return await self._begin_regeneration(user_id, regenerate_of)
+            start, state = await self._begin_regeneration(user_id, regenerate_of)
+            state.screening = await turn_safety.screen_question(self._gate, state.question)
+            return start, state
 
         content = content.strip()
         if not content:
@@ -364,7 +381,14 @@ class ChatService:
                 f"Message is too long ({len(content)} characters, "
                 f"limit {MAX_MESSAGE_LENGTH})."
             )
-        return await self._begin_turn(user_id, conversation_id, content)
+        # Screened before it is stored: a phone number a child typed is taken
+        # out here, so it never reaches the database or the model.
+        screening = await turn_safety.screen_question(self._gate, content)
+        start, state = await self._begin_turn(
+            user_id, conversation_id, screening.text if screening else content
+        )
+        state.screening = screening
+        return start, state
 
     # -- phase 2: prepare ------------------------------------------------
 
@@ -377,7 +401,12 @@ class ChatService:
         choice belongs inside `_generate`, where the answer and the tool calls
         are the same conversation.
         """
+        for event in turn_safety.hold_or_note(state):
+            yield event
+        if state.held is not None:
+            return
         for verdict in self._scan(state.question, ContentSource.USER_INPUT):
+            turn_safety.note_injection(state, verdict, state.question)
             yield guard_payload(verdict)
 
         state.offered = self._tools_to_offer(state, search_mode)
@@ -722,6 +751,10 @@ class ChatService:
         zero, nothing is offered, and this is a single streamed pass — exactly
         what it was before.
         """
+        if state.held is not None:
+            async for event in turn_safety.held_reply(state):
+                yield event
+            return
         memories = await self._memories_for(user_id)
         remaining = self._settings.tool_max_iterations if state.offered else 0
 
@@ -934,6 +967,10 @@ class ChatService:
         something the user did not accept.
         """
         if state.finish is not FinishReason.STOP or not state.answer.strip():
+            return
+        # Not from a held or withdrawn turn: no chips under a support message,
+        # and nothing remembered from what a child said when they were at risk.
+        if state.held is not None or state.retracted:
             return
 
         if self._settings.suggestions_enabled:

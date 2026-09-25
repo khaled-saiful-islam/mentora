@@ -13,3 +13,5 @@ class Kind(StrEnum):
     JOIN_APPROVED = "join_approved"
     ASSIGNMENT_SHARED = "assignment_shared"
     BADGE_AWARDED = "badge_awarded"
+    # For admins: a student may be at risk, and a person should look.
+    SAFETY_ALERT = "safety_alert"

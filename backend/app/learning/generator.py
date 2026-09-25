@@ -25,6 +25,8 @@ from app.learning import prompts
 from app.learning.base import Item, LearningKind, Skill
 from app.learning.model import GenerationUnavailable, JsonModel, Meter
 from app.learning.research import Researcher, Source, listing
+from app.moderation.base import Decision
+from app.moderation.rules import InputRules
 
 BATCH = 5
 
@@ -80,11 +82,17 @@ class ItemsReady:
     items: tuple[Item, ...]
 
 
+REFUSED_TOPIC = "That topic isn't one we can make a set about. Try a school topic!"
+
+
 @dataclass(frozen=True, slots=True)
 class Refused:
     """The topic check said no. Friendly words, for the person who asked."""
 
     message: str
+    # For the moderation log: which check said no, and about what.
+    rule: str = "topic_check"
+    category: str = "unsafe"
 
 
 @dataclass(frozen=True, slots=True)
@@ -150,6 +158,12 @@ class LearningGenerator:
     # --- stages ---------------------------------------------------------------
 
     async def _check(self, request: GenerationRequest, grade: Grade | None) -> _Plan | Refused:
+        # The fast rules first: "how to make a bomb" needs no model to refuse.
+        # Refusals only — a teacher's "suicide prevention" topic is the model's
+        # call, not a pattern's.
+        screened = InputRules().screen(" ".join(filter(None, [request.subject, request.topic])))
+        if screened.decision is Decision.BLOCK:
+            return Refused(REFUSED_TOPIC, rule=screened.rule, category=screened.category.value)
         system, user = prompts.check_topic(request.subject, request.topic, grade)
         verdict = await self._model.ask("check", system, user, temperature=0.0, max_tokens=300)
         # An unreadable verdict is not a refusal: the guardrails in front of

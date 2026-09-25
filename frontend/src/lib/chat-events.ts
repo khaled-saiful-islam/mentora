@@ -26,6 +26,8 @@ export interface StreamHandlers {
   onImages: (images: ImageResult[]) => void
   onSources: (sources: Source[]) => void
   onToken: (text: string) => void
+  /** The answer was unsafe for a student and was taken back: show this instead. */
+  onRetract: (text: string) => void
   onUsage: (usage: UsagePayload) => void
   onArtifactStart: (start: { kind: string; title: string }) => void
   onArtifactStep: (step: { label: string; detail: string }) => void
@@ -103,6 +105,8 @@ export function dispatchFrame(frame: SseMessage, handlers: StreamHandlers): void
       return handlers.onArtifactFailed(
         payload as unknown as { message: string; retryable: boolean },
       )
+    case 'retract':
+      return handlers.onRetract(String(payload.text ?? ''))
     case 'suggestions':
       return handlers.onSuggestions((payload.items ?? []) as string[])
     case 'error':

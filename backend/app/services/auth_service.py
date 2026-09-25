@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -79,6 +79,19 @@ def validate_password(password: str) -> None:
         raise ValidationError(f"Password must be at least {MIN_PASSWORD_LENGTH} characters.")
     if len(password.encode("utf-8")) > MAX_PASSWORD_BYTES:
         raise ValidationError(f"Password must be at most {MAX_PASSWORD_BYTES} bytes.")
+
+
+SEEN_EVERY = timedelta(minutes=10)
+
+
+def mark_seen(user: User, now: datetime | None = None) -> bool:
+    """Note that this person is about, for "active this week" — at most every
+    ten minutes, so an ordinary request does not become a write."""
+    now = now or datetime.now(UTC)
+    if user.last_seen_at is not None and now - user.last_seen_at < SEEN_EVERY:
+        return False
+    user.last_seen_at = now
+    return True
 
 
 class AuthService:
@@ -196,6 +209,7 @@ class AuthService:
         user = await self._users.get_by_id(user_id)
         if user is None or not user.is_active:
             raise AuthError("Your session is no longer valid.")
+        mark_seen(user)
         return user
 
     async def update_profile(

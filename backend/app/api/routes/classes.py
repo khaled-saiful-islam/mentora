@@ -13,6 +13,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Response, status
 
 from app.api.deps import CurrentUser, SessionDep, require_capability
+from app.api.schemas.admin import TemporaryPasswordResponse
 from app.api.schemas.classes import (
     ApprovedCount,
     ClassList,
@@ -158,6 +159,19 @@ async def reject(
 @router.post("/{class_id}/members/approve-all", response_model=ApprovedCount)
 async def approve_all(class_id: UUID, user: CurrentUser, session: SessionDep) -> ApprovedCount:
     return ApprovedCount(approved=await _memberships(session).approve_all(user.id, class_id))
+
+
+@router.post(
+    "/{class_id}/members/{membership_id}/password", response_model=TemporaryPasswordResponse
+)
+async def reset_student_password(
+    class_id: UUID, membership_id: UUID, session: SessionDep, user: CurrentUser
+) -> TemporaryPasswordResponse:
+    """A student forgot their password: a new temporary one to pass on."""
+    student, password = await MembershipService(session, build_bus()).reset_password(
+        user.id, class_id, membership_id
+    )
+    return TemporaryPasswordResponse(sign_in_name=student.sign_in_name, password=password)
 
 
 @router.delete("/{class_id}/members/{membership_id}", status_code=status.HTTP_204_NO_CONTENT)

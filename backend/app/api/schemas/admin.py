@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Literal
+from datetime import date, datetime
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -63,3 +63,111 @@ class UsageResponse(BaseModel):
     tokens_used_24h: int
     daily_token_limit: int | None
     remaining: int | None
+
+
+class AdminUserPage(BaseModel):
+    items: list[AdminUserResponse]
+    total: int
+
+
+class FootprintResponse(BaseModel):
+    classes: int
+    learning_sets: int
+    conversations: int
+    attempts: int
+    students: int
+
+
+class TemporaryPasswordResponse(BaseModel):
+    """Shown once. Only its hash is kept."""
+
+    sign_in_name: str
+    password: str
+
+
+# --- overview --------------------------------------------------------------
+
+
+class DayResponse(BaseModel):
+    day: date
+    attempts: int
+    messages: int
+    signups: int
+
+
+class OverviewResponse(BaseModel):
+    users: dict[str, int]
+    learning: dict[str, float | int | None]
+    tokens_24h: int
+    safety: dict[str, int]
+    trend: list[DayResponse]
+
+
+# --- moderation ------------------------------------------------------------
+
+
+class PersonRef(BaseModel):
+    id: UUID
+    name: str
+    role: str
+    grade_label: str | None = None
+
+
+class ModerationItem(BaseModel):
+    id: UUID
+    kind: str
+    source: str
+    category: str
+    severity: str
+    rule: str
+    screen: str
+    excerpt: str
+    status: str
+    note: str
+    created_at: datetime
+    reviewed_at: datetime | None
+    conversation_id: UUID | None
+    set_id: UUID | None
+    user: PersonRef | None
+
+
+class ModerationPage(BaseModel):
+    items: list[ModerationItem]
+    counts: dict[str, int]
+
+
+class ReviewRequest(BaseModel):
+    status: Literal["open", "reviewed", "dismissed"]
+    note: str = Field(default="", max_length=500)
+
+
+# --- content ---------------------------------------------------------------
+
+
+class ContentArtifact(BaseModel):
+    id: UUID
+    kind: str
+    title: str
+    owner: PersonRef
+    version: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class ContentSet(BaseModel):
+    id: UUID
+    kind: str
+    purpose: str
+    title: str
+    topic: str
+    subject: str | None
+    grade_label: str | None
+    status: str
+    owner: PersonRef
+    item_count: int
+    shares: int
+    created_at: datetime
+
+
+class ContentSetDetail(ContentSet):
+    items: list[dict[str, Any]]

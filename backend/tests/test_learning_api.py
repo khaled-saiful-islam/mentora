@@ -16,6 +16,7 @@ from sqlalchemy import select
 
 from app.api.deps import get_generation_service
 from app.core.config import get_settings
+from app.db.models.moderation import ModerationEvent
 from app.db.models.notification import Notification
 from app.guards.prompt_injection import PromptInjectionGuard
 from app.learning.generator import LearningGenerator
@@ -106,12 +107,29 @@ async def test_the_stream_replays_the_whole_build(api, teacher) -> None:
     assert kinds[-1] == "done"
 
 
-async def test_a_refused_topic_leaves_a_refused_set(api, teacher, scripted) -> None:
+async def test_a_refused_topic_leaves_a_refused_set_and_a_log_line(
+    session, api, teacher, scripted
+) -> None:
     state, _ = scripted
     state["answers"] = happy(check={"ok": False, "reason": "Let's choose a school topic!"})
     detail = await _build(api, teacher, topic="video game cheats")
     assert detail["status"] == "refused"
     assert detail["failure"] == "Let's choose a school topic!"
+    [logged] = (
+        (
+            await session.execute(
+                select(ModerationEvent).where(ModerationEvent.set_id == UUID(detail["id"]))
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert (logged.kind, logged.user_id, logged.screen) == (
+        "topic_refused",
+        teacher.id,
+        "topic_check",
+    )
+    assert "video game cheats" in logged.excerpt
 
 
 async def test_building_spends_from_the_token_quota(session, api, teacher) -> None:

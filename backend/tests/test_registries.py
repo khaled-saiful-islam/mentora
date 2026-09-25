@@ -47,6 +47,7 @@ def test_contributors_match_the_documented_order() -> None:
     contributors = build_contributors(settings_for())
     assert [(c.name, c.order) for c in contributors] == [
         ("system_prompt", 100),
+        ("persona", 110),
         ("clock", 150),
         ("memory", 200),
         ("tool_results", 300),

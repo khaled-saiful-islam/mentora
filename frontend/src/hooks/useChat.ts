@@ -382,6 +382,10 @@ export function useChat(onConversationStarted?: (id: string, title: string) => v
               onToken: (text) => {
                 answer((m) => ({ ...m, content: m.content + text }))
               },
+              onRetract: (text) => {
+                // Everything that came with the withdrawn answer goes with it.
+                answer((m) => ({ ...m, content: text, sources: [], images: [] }))
+              },
               onUsage: (usage) => {
                 patchActive({
                   prompt_tokens: usage.prompt_tokens,

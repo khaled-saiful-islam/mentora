@@ -6,9 +6,12 @@ module — that is the point.
 
 from __future__ import annotations
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.notifications import Kind
+from app.core.roles import Role
+from app.db.models.user import User
 from app.events.catalog import (
     AssignmentShared,
     AttemptCompleted,
@@ -17,6 +20,7 @@ from app.events.catalog import (
     MembershipEnded,
     MembershipRejected,
     MembershipRequested,
+    StudentNeedsSupport,
 )
 from app.services.notification_service import NotificationService
 
@@ -120,3 +124,26 @@ async def badge_awarded(event: BadgeAwarded, session: AsyncSession) -> None:
         kind=Kind.BADGE_AWARDED,
         payload={"badge": event.badge, "badge_name": event.name, "reason": event.reason},
     )
+
+
+async def student_needs_support(event: StudentNeedsSupport, session: AsyncSession) -> None:
+    """Every active admin hears at once. What the student said stays in the
+    moderation queue; the bell carries only that someone should look."""
+    admins = (
+        await session.execute(
+            select(User.id).where(User.role == Role.ADMIN.value, User.is_active.is_(True))
+        )
+    ).scalars()
+    bell = NotificationService(session)
+    for admin_id in admins:
+        await bell.notify(
+            user_id=admin_id,
+            kind=Kind.SAFETY_ALERT,
+            actor_id=event.student_id,
+            payload={
+                "event_id": str(event.event_id),
+                "student_id": str(event.student_id),
+                "student_name": event.student_name,
+                "category": event.category,
+            },
+        )

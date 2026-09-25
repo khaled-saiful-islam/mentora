@@ -15,6 +15,7 @@ from app.events.catalog import (
     MembershipEnded,
     MembershipRejected,
     MembershipRequested,
+    StudentNeedsSupport,
 )
 from app.events.subscribers import notifications, realtime
 
@@ -29,4 +30,5 @@ def build_bus() -> EventBus:
     bus.subscribe(AttemptCompleted, notifications.attempt_completed)
     bus.subscribe(AttemptCompleted, realtime.leaderboard_changed)
     bus.subscribe(BadgeAwarded, notifications.badge_awarded)
+    bus.subscribe(StudentNeedsSupport, notifications.student_needs_support)
     return bus

@@ -8,6 +8,7 @@ them going. Asking again reopens a closed row as pending.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID
@@ -17,6 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ConflictError, ForbiddenError, NotFoundError
 from app.core.grades import grade_label
+from app.core.passwords import temporary_password
+from app.core.security import hash_password
 from app.db.models.classroom import ClassGroup, ClassMembership, Classroom, GroupMember
 from app.db.models.user import User
 from app.db.repositories.classes import ClassRepository, GroupRepository, MembershipRepository
@@ -29,6 +32,8 @@ from app.events.catalog import (
 )
 from app.policies.capabilities import capabilities_for
 from app.services.invite_service import InvitePreview, InviteService
+
+logger = logging.getLogger(__name__)
 
 PAGE_SIZE = 50
 
@@ -194,6 +199,24 @@ class MembershipService:
             self._session,
         )
         return membership
+
+    async def reset_password(
+        self, teacher_id: UUID, class_id: UUID, membership_id: UUID
+    ) -> tuple[User, str]:
+        """A student in this teacher's class forgot their password: a new
+        temporary one, shown once to the teacher to pass on."""
+        await self._owned(teacher_id, class_id)
+        membership = await self._members.in_class(membership_id, class_id)
+        if membership is None or membership.status != "approved":
+            raise NotFoundError("That student is not in this class.")
+        student = await self._session.get(User, membership.student_id)
+        if student is None:
+            raise NotFoundError("That student is not in this class.")
+        password = temporary_password()
+        student.password_hash = hash_password(password)
+        await self._session.flush()
+        logger.info("teacher %s reset the password of %s", teacher_id, student.sign_in_name)
+        return student, password
 
     async def members(
         self,

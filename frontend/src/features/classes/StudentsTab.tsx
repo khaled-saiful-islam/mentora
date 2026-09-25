@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { MagnifyingGlass, Student, UserMinus, UsersFour } from '@phosphor-icons/react'
+import { Key, MagnifyingGlass, Student, UserMinus, UsersFour } from '@phosphor-icons/react'
 import { Alert, Button, Card, Chip, Input, Skeleton } from '@/components/ui'
 import { Avatar } from '@/components/ui/Avatar'
 import { Confirm } from '@/components/ui/Confirm'
+import { Dialog } from '@/components/ui/Dialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Segmented } from '@/components/ui/Segmented'
 import { useToast } from '@/components/ui/Toast'
+import { PasswordReveal } from '@/features/admin/UserDialogs'
 import { errorMessage } from '@/features/auth/errors'
 import { useResource } from '@/hooks/useResource'
 import { rise, stagger } from '@/motion'
@@ -24,6 +26,7 @@ export function StudentsTab({ classId, onChange }: { classId: string; onChange: 
   const [q, setQ] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [removing, setRemoving] = useState<Member | null>(null)
+  const [resetting, setResetting] = useState<Member | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -132,15 +135,22 @@ export function StudentsTab({ classId, onChange }: { classId: string; onChange: 
                   {view === 'past' && <Chip>{member.status === 'left' ? 'left' : 'removed'}</Chip>}
                 </div>
                 {view === 'approved' && (
-                  <Button variant="ghost" size="icon" aria-label={`Remove ${member.name}`} onClick={() => setRemoving(member)}>
-                    <UserMinus weight="bold" className="size-5" />
-                  </Button>
+                  <>
+                    <Button variant="ghost" size="icon" aria-label={`Reset ${member.name}'s password`} title="Reset password" onClick={() => setResetting(member)}>
+                      <Key weight="bold" className="size-5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" aria-label={`Remove ${member.name}`} onClick={() => setRemoving(member)}>
+                      <UserMinus weight="bold" className="size-5" />
+                    </Button>
+                  </>
                 )}
               </motion.li>
             ))}
           </motion.ul>
         </Card>
       )}
+
+      {resetting && <ResetStudent classId={classId} member={resetting} onClose={() => setResetting(null)} />}
 
       {removing && (
         <Confirm
@@ -152,6 +162,42 @@ export function StudentsTab({ classId, onChange }: { classId: string; onChange: 
         />
       )}
     </div>
+  )
+}
+
+/** A student forgot their password: make a new one, shown once to pass on. */
+function ResetStudent({ classId, member, onClose }: { classId: string; member: Member; onClose: () => void }) {
+  const [result, setResult] = useState<{ sign_in_name: string; password: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  async function reset() {
+    setBusy(true)
+    setError(null)
+    try {
+      setResult(await classesApi.resetPassword(classId, member.membership_id))
+    } catch (err) {
+      setError(errorMessage(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      title={`Reset ${member.name}'s password?`}
+      description="Their old password stops working. You'll get a new one to give them."
+      size="sm"
+      footer={result ? <Button onClick={onClose}>Done</Button> : (
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => void reset()} loading={busy}>Make a new password</Button>
+        </>
+      )}
+    >
+      {error && <Alert>{error}</Alert>}
+      {result && <PasswordReveal result={result} />}
+    </Dialog>
   )
 }
 

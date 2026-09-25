@@ -36,6 +36,7 @@ from app.services.events import (
     ErrorEvent,
     GuardEventPayload,
     ImagesEvent,
+    RetractEvent,
     SourcesEvent,
     StartEvent,
     SuggestionsEvent,
@@ -67,6 +68,8 @@ def _to_sse(event: object) -> dict[str, str] | None:
             }
         case DeltaEvent():
             return {"event": "token", "data": json.dumps({"text": event.text})}
+        case RetractEvent():
+            return {"event": "retract", "data": json.dumps({"text": event.text})}
         case GuardEventPayload():
             return {
                 "event": "guard",

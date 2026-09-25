@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.routes import (
     admin,
+    admin_console,
     artifacts,
     assignments,
     auth,
@@ -121,6 +122,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router, prefix="/api")
     app.include_router(admin.router, prefix="/api")
+    app.include_router(admin_console.router, prefix="/api")
     app.include_router(artifacts.router, prefix="/api")
     app.include_router(artifacts.by_conversation, prefix="/api")
     app.include_router(artifacts.public_router, prefix="/api")

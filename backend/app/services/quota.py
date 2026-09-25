@@ -14,6 +14,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -74,6 +75,33 @@ class TokenQuota:
             .where(LearningSet.owner_id == user_id, LearningSetVersion.created_at >= since)
         )
         return Usage(tokens=int(chat or 0) + int(building or 0), limit=limit)
+
+    async def usage_many(self, limits: dict[UUID, int | None]) -> dict[UUID, Usage]:
+        """`usage` for a page of accounts in two queries rather than two each."""
+        if not limits:
+            return {}
+        since = datetime.now(UTC) - WINDOW
+        ids = list(limits)
+        chat = await self._session.execute(
+            select(
+                Conversation.user_id,
+                func.sum(Message.prompt_tokens + Message.completion_tokens),
+            )
+            .join(Conversation, Conversation.id == Message.conversation_id)
+            .where(Conversation.user_id.in_(ids), Message.created_at >= since)
+            .group_by(Conversation.user_id)
+        )
+        spent = LearningSetVersion.prompt_tokens + LearningSetVersion.completion_tokens
+        building = await self._session.execute(
+            select(LearningSet.owner_id, func.sum(spent))
+            .join(LearningSet, LearningSet.id == LearningSetVersion.set_id)
+            .where(LearningSet.owner_id.in_(ids), LearningSetVersion.created_at >= since)
+            .group_by(LearningSet.owner_id)
+        )
+        totals: dict[UUID, int] = dict.fromkeys(ids, 0)
+        for user_id, tokens in [*chat.all(), *building.all()]:
+            totals[user_id] += int(tokens or 0)
+        return {user_id: Usage(tokens=totals[user_id], limit=limits[user_id]) for user_id in ids}
 
     async def check(self, user_id, limit: int | None) -> Usage:
         """Raise if the account is out of allowance, otherwise report it.

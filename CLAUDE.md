@@ -51,6 +51,10 @@ have designed it wrong — pass the values in.
 | Search backends | `tools/serpapi.py` | used by the tools above |
 | File readers | `services/document_extract.py` | `classify()` |
 | Vision backends | `vision/base.py` | `vision/registry.py` |
+| Safety screens | `moderation/base.py` | `moderation/registry.py` |
+| Learning kinds | `learning/base.py` | `learning/registry.py` |
+| Badge rules | `badges/base.py` | `badges/catalog.py` |
+| Domain event reactions | `events/bus.py` | `events/registry.py` |
 
 Adding one is a new file plus one registry line. If your change requires editing
 three existing files, stop and ask whether the seam is in the wrong place.
@@ -69,6 +73,7 @@ This is the central design idea. `context/pipeline.py` sorts contributors by
 
 ```
 100  system prompt
+110  who the assistant is for this person (`context/persona.py`)
 150  the date and time (`context/clock.py`)
 200  memory
 300  tool results
@@ -165,8 +170,11 @@ SSE events from `/api/chat/stream`:
 ```
 start · guard · tool · images · sources · token · usage · suggestions · done · error
 artifact.start · artifact.step · artifact.design · artifact.plan · artifact.part
-artifact.delta · artifact.done · artifact.failed
+artifact.delta · artifact.done · artifact.failed · retract
 ```
+
+`retract` `{text}` replaces an answer the output screen withdrew for a student
+(`docs/features/032-guardrails.md`).
 
 A turn runs in its own task, not in the request (`services/live_turns.py`);
 connections subscribe to its buffer. `GET /api/chat/live/{conversation_id}`
@@ -278,7 +286,7 @@ Be honest about these rather than discovering them:
 - **One API worker.** `CancellationRegistry` is in-process, so `--workers 2`
   silently breaks the stop button.
 - **Pattern layers are English-only** — search intent, image intent, and the
-  injection guard.
+  injection guard. The student safety rules cover English and Malay only.
 - **One round's calls run in sequence**, not in parallel. `_dispatch` is the
   one place to change that.
 - **Fallback is per process.** One rejected `tools` payload disables tool

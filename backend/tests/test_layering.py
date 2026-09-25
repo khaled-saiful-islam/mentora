@@ -24,6 +24,9 @@ LOGIC_PACKAGES = (
     "events",
     "policies",
     "artifacts",
+    "learning",
+    "badges",
+    "moderation",
 )
 FORBIDDEN_ROOTS = {"fastapi", "starlette"}
 

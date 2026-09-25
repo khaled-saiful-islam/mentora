@@ -29,7 +29,7 @@ import { ToastProvider } from '@/components/ui/Toast'
 import type { Capabilities } from '@/lib/user'
 import Chat from '@/pages/Chat'
 import Profile from '@/pages/Profile'
-import Admin from '@/pages/Admin'
+import AdminPage from '@/features/admin/AdminPage'
 import Shared from '@/pages/Shared'
 import SharedArtifact from '@/pages/SharedArtifact'
 import Settings from '@/pages/Settings'
@@ -73,7 +73,8 @@ export default function App() {
           <Route path="/buddy" element={<Shell><BuddyPage /></Shell>} />
           <Route path="/profile" element={<Shell><Profile /></Shell>} />
           <Route path="/settings" element={<Shell><Settings /></Shell>} />
-          <Route path="/admin" element={<Shell capability="manage_users"><Admin /></Shell>} />
+          <Route path="/admin" element={<Shell capability="manage_users"><AdminPage /></Shell>} />
+          <Route path="/admin/:tab" element={<Shell capability="manage_users"><AdminPage /></Shell>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </LearnStudioProvider>

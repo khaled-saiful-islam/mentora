@@ -122,6 +122,11 @@ export const classesApi = {
     apiFetch<{ approved: number }>(`/classes/${id}/members/approve-all`, { method: 'POST' }),
   revoke: (id: string, membershipId: string) =>
     apiFetch<void>(`/classes/${id}/members/${membershipId}`, { method: 'DELETE' }),
+  /** A new temporary password for a student in this class, shown once. */
+  resetPassword: (id: string, membershipId: string) =>
+    apiFetch<{ sign_in_name: string; password: string }>(`/classes/${id}/members/${membershipId}/password`, {
+      method: 'POST',
+    }),
 
   groups: (id: string) => apiFetch<{ items: Group[] }>(`/classes/${id}/groups`),
   createGroup: (id: string, name: string, colour: ThemeKey) =>

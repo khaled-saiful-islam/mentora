@@ -1,4 +1,4 @@
-import { ShieldAlert } from 'lucide-react'
+import { EyeSlash, ShieldWarning } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import type { GuardAlert } from '@/hooks/useChat'
 
@@ -19,47 +19,60 @@ const RULE_LABELS: Record<string, string> = {
 }
 
 /**
- * Shown when a guard fires.
+ * Shown when a check acted on this turn.
  *
- * Says what was found, where it came from, and quotes the evidence — a guard
- * that silently alters what the model sees is indistinguishable from a bug, and
- * a warning nobody can check is one people learn to dismiss.
+ * Says what was found, where it came from, and quotes the evidence — a check
+ * that silently alters what the model sees is indistinguishable from a bug,
+ * and a warning nobody can check is one people learn to dismiss. Personal
+ * details taken out of a student's message get a friendlier note of their
+ * own: it is advice for a child, not a security finding.
  */
 export function GuardBanner({ alerts }: { alerts: GuardAlert[] }) {
   if (alerts.length === 0) return null
-
   return (
     <div className="mb-3 space-y-2">
-      {alerts.map((alert, index) => (
-        <div
-          key={`${alert.source}-${index}`}
-          role="status"
-          className={cn(
-            'rounded-lg border px-3 py-2 text-xs',
-            alert.severity === 'high'
-              ? 'border-destructive/30 bg-destructive/10 text-destructive'
-              : 'border-warning/30 bg-warning/10 text-warning',
-          )}
-        >
-          <p className="flex items-start gap-1.5 font-medium">
-            <ShieldAlert className="mt-px size-3.5 shrink-0" aria-hidden />
-            <span>
-              Prompt-injection guard: {SOURCE_LABELS[alert.source] ?? alert.source}{' '}
-              {alert.rules.map((r) => RULE_LABELS[r] ?? r).join(', ')}.
-            </span>
+      {alerts.map((alert, index) =>
+        alert.rules.includes('personal_info') ? (
+          <p
+            key={`${alert.source}-${index}`}
+            role="status"
+            className="flex items-start gap-2 rounded-2xl bg-sky-100 px-4 py-2.5 text-sm font-semibold text-sky-700 dark:bg-sky-700/30 dark:text-sky-100"
+          >
+            <EyeSlash weight="bold" className="mt-0.5 size-4 shrink-0" aria-hidden />
+            {alert.evidence}
           </p>
+        ) : (
+          <Injection key={`${alert.source}-${index}`} alert={alert} />
+        ),
+      )}
+    </div>
+  )
+}
 
-          {alert.evidence && (
-            <p className="mt-1 pl-5 font-mono opacity-80">“{alert.evidence}”</p>
-          )}
-
-          <p className="mt-1 pl-5 opacity-80">
-            {alert.source === 'user_input'
-              ? 'Your message was sent unchanged — this is only a notice.'
-              : 'That text was marked as data, not instructions, before the model saw it.'}
-          </p>
-        </div>
-      ))}
+function Injection({ alert }: { alert: GuardAlert }) {
+  return (
+    <div
+      role="status"
+      className={cn(
+        'rounded-2xl border px-4 py-2.5 text-xs',
+        alert.severity === 'high'
+          ? 'border-destructive/30 bg-destructive/10 text-destructive'
+          : 'border-warning/30 bg-warning/10 text-warning',
+      )}
+    >
+      <p className="flex items-start gap-1.5 font-bold">
+        <ShieldWarning weight="bold" className="mt-px size-3.5 shrink-0" aria-hidden />
+        <span>
+          Prompt-injection guard: {SOURCE_LABELS[alert.source] ?? alert.source}{' '}
+          {alert.rules.map((r) => RULE_LABELS[r] ?? r).join(', ')}.
+        </span>
+      </p>
+      {alert.evidence && <p className="mt-1 pl-5 font-mono opacity-80">“{alert.evidence}”</p>}
+      <p className="mt-1 pl-5 opacity-80">
+        {alert.source === 'user_input'
+          ? 'Your message was sent unchanged — this is only a notice.'
+          : 'That text was marked as data, not instructions, before the model saw it.'}
+      </p>
     </div>
   )
 }

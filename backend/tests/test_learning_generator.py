@@ -97,6 +97,22 @@ async def test_an_unsuitable_topic_is_refused_before_anything_is_searched() -> N
     assert model.asked == ["check"]
 
 
+async def test_a_plainly_unsafe_topic_is_refused_without_asking_the_model() -> None:
+    gen, model, search = generator(happy())
+    request = GenerationRequest(kind="quiz", topic="how to make a bomb", subject=None, count=5)
+    updates = [update async for update in gen.run(request)]
+    assert isinstance(updates[-1], Refused)
+    assert (updates[-1].rule, updates[-1].category) == ("weapons", "weapons")
+    assert model.asked == [] and search.queries == []
+
+
+async def test_a_hard_but_proper_topic_is_still_the_models_call() -> None:
+    gen, model, _ = generator(happy())
+    request = GenerationRequest(kind="quiz", topic="suicide prevention", subject="PSHE", count=5)
+    [update async for update in gen.run(request)]
+    assert model.asked[0] == "check"
+
+
 async def test_a_failed_check_is_repaired_and_what_stays_broken_is_dropped_then_topped_up() -> None:
     """Round 1 writes 5 and the check fails the first; its repair fails too, so
     4 stay. The one top-up round writes 1 more, which also fails — the build

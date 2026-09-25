@@ -7,6 +7,7 @@ no existing contributor changes, because none of them knows the others exist.
 Reserved order values:
 
     100  system prompt
+    110  who the assistant is for this person (persona)
     150  the date and time         (feature 011)
     200  memory                  (feature 013)
     300  tool results            (feature 011)
@@ -29,6 +30,7 @@ from app.context.contributors import (
 )
 from app.context.dispute import DisputeContributor
 from app.context.documents import DocumentContributor
+from app.context.persona import PersonaContributor
 from app.core.config import Settings, get_settings
 
 
@@ -36,10 +38,12 @@ def build_contributors(
     settings: Settings | None = None,
     *,
     memories: tuple[str, ...] = (),
+    persona: str = "",
 ) -> tuple[ContextContributor, ...]:
     settings = settings or get_settings()
     return (
         SystemPromptContributor(settings.system_prompt),
+        PersonaContributor(persona),
         ClockContributor(),
         MemoryContributor(memories),
         ToolResultsContributor(),

@@ -160,6 +160,14 @@ class ArtifactFailedEvent:
 
 
 @dataclass(frozen=True, slots=True)
+class RetractEvent:
+    """The answer that just streamed was unsafe for a student and has been
+    taken back. `text` replaces it, in the transcript and in the database."""
+
+    text: str
+
+
+@dataclass(frozen=True, slots=True)
 class DoneEvent:
     finish_reason: FinishReason
 
@@ -186,6 +194,7 @@ ChatEvent = (
     | ArtifactPartEvent
     | ArtifactDoneEvent
     | ArtifactFailedEvent
+    | RetractEvent
     | DoneEvent
     | ErrorEvent
 )
