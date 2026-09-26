@@ -43,7 +43,9 @@ watching:
     subscriber writes the bell note. A job that ends without saying how is
     announced as failed, so nobody is left waiting.
 - `services/work_tickets.py` names each kind of work, one function per kind:
-  its title, where it opens and how many steps it has.
+  its title, where it opens and how many steps it has. A set's ticket also
+  carries its purpose, so the ready note says what to do next in its owner's
+  words: *share it with a class*, *send it home*, or *give it a go*.
 - `GET /api/me/work` returns the tray: running work, plus work finished in the
   last 15 minutes.
 - **The frontend** (`features/work`):

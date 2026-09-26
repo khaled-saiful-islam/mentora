@@ -20,12 +20,13 @@ export default function ResultsPage() {
   const results = useResource('my-results', () => playApi.results())
   const data = results.data
   return (
-    <Page className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-8">
+    // A container: beside the sidebar the column is narrower than the window.
+    <Page className="@container mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-8">
       <h1 className="font-display text-4xl font-semibold tracking-tight">My results</h1>
       <p className="mt-1 text-muted-foreground">How you're growing, skill by skill.</p>
       {results.error && <Alert className="mt-6">{results.error}</Alert>}
       {!data ? (
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <div className="mt-8 grid gap-4 @xl:grid-cols-2">
           <Skeleton className="h-48 rounded-[1.75rem]" />
           <Skeleton className="h-48 rounded-[1.75rem]" />
         </div>
@@ -38,7 +39,7 @@ export default function ResultsPage() {
         />
       ) : (
         <>
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
+          <div className="mt-8 grid gap-4 @xl:grid-cols-2">
             <SkillList title="Strong at" Icon={Trophy} tone="mint" skills={data.insights.strengths} empty="Keep going — strengths show after a few tries." />
             <SkillList title="Practise next" Icon={Barbell} tone="coral" skills={data.insights.practise} empty="Nothing tricky right now. Brilliant!" />
           </div>

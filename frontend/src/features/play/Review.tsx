@@ -12,7 +12,8 @@ import { playedById, skillLabel } from './session'
 export function Review({ attempt, whose = 'your answer' }: { attempt: Attempt; whose?: string }) {
   const played = playedById(attempt.answered)
   return (
-    <motion.ol className="space-y-3" variants={stagger(0.05)} initial="hidden" animate="shown">
+    // A container: options go two across by the review's width, not the window's.
+    <motion.ol className="@container space-y-3" variants={stagger(0.05)} initial="hidden" animate="shown">
       {attempt.items.map((item, i) => (
         <motion.li key={item.id} variants={rise}>
           {isQuizItem(item) ? (
@@ -46,7 +47,7 @@ function QuizRow({ n, item, answer, skill, whose }: { n: number; item: QuizItem;
             Question {n} · <span className="capitalize">{skill}</span>
           </p>
           <p className="mt-1 font-display text-lg font-semibold">{item.prompt}</p>
-          <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
+          <ul className="mt-3 grid gap-1.5 @lg:grid-cols-2">
             {item.options.map((option, i) => (
               <li
                 key={i}
@@ -56,7 +57,7 @@ function QuizRow({ n, item, answer, skill, whose }: { n: number; item: QuizItem;
                 )}
               >
                 {option}
-                {i === answer?.choice && <span className="ml-2 text-xs font-bold uppercase opacity-70">{whose}</span>}
+                {i === answer?.choice && <span className="ml-2 inline-block whitespace-nowrap text-xs font-bold uppercase opacity-70">{whose}</span>}
               </li>
             ))}
           </ul>

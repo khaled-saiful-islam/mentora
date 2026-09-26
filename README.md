@@ -185,7 +185,8 @@ Open <http://localhost:8300> and sign in with **admin / admin**.
 `make up` builds the images, waits for Postgres, runs migrations, seeds the
 admin account and starts everything. To try it with a class already full of
 work, run `make demo` — it seeds a demo teacher, three students and shared
-quizzes and flashcards, and prints their sign-ins.
+quizzes and flashcards, plus Aina's mum with work she sent home, and prints
+their sign-ins.
 
 | Container | Port | |
 |---|---|---|

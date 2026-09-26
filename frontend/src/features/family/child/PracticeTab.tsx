@@ -40,7 +40,7 @@ function Group({ title, note, items }: { title: string; note: string; items: Chi
   return (
     <section className="space-y-3">
       <SectionTitle title={`${title} · ${items.length}`} note={note} />
-      <motion.ul className={cn('grid gap-2', items.length > 1 && 'lg:grid-cols-2')} variants={stagger(0.04)} initial="hidden" animate="shown">
+      <motion.ul className={cn('grid gap-2', items.length > 1 && '@2xl:grid-cols-2')} variants={stagger(0.04)} initial="hidden" animate="shown">
         {items.map((item) => (
           <PracticeRow key={item.id} item={item} />
         ))}

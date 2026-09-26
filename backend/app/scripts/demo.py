@@ -2,8 +2,9 @@
 
 Seeds a demo teacher, a class, three students who have already played, and
 three shared sets with real content — so a fresh install shows a lively home
-page, a leaderboard with people on it, and results worth reading. Add your
-own student to the class with `make demo join=yourname`.
+page, a leaderboard with people on it, and results worth reading. Aina's mum
+is there too, with work she sent home (`demo_family.py`). Add your own
+student to the class with `make demo join=yourname`.
 
 Development only: refuses to run when APP_ENV=production. Idempotent — run it
 again and it finds what it made rather than making it twice.
@@ -38,6 +39,7 @@ from app.scripts.demo_content import (
     WATER_CYCLE,
     WATER_SKILLS,
 )
+from app.scripts.demo_family import PARENT_EMAIL, PARENT_PASSWORD, seed_family
 from app.services.assignment_service import AssignmentService, ShareSettings
 from app.services.attempt_service import AttemptService
 from app.services.class_service import ClassService
@@ -114,13 +116,12 @@ async def _student(session: AsyncSession, demo: DemoStudent) -> User:
 
 
 async def _classroom(session: AsyncSession, teacher: User, students: list[User]) -> Classroom:
-    room = (
-        await session.execute(
-            select(Classroom).where(
-                Classroom.teacher_id == teacher.id, Classroom.name == CLASS_NAME
-            )
-        )
-    ).scalar_one_or_none()
+    room = await session.scalar(
+        select(Classroom)
+        .where(Classroom.teacher_id == teacher.id, Classroom.name == CLASS_NAME)
+        .order_by(Classroom.created_at)
+        .limit(1)
+    )
     if room is None:
         room = await ClassService(session).create(
             teacher, name=CLASS_NAME, subject="Science", grade_level="year_4", theme="lagoon"
@@ -143,13 +144,14 @@ async def _set(
     items: list[dict[str, Any]],
     skills: list[dict[str, str]],
 ) -> LearningSet:
-    found = (
-        await session.execute(
-            select(LearningSet).where(
-                LearningSet.owner_id == teacher.id, LearningSet.title == title
-            )
-        )
-    ).scalar_one_or_none()
+    # The oldest of that title is the demo's own: a teacher trying things out
+    # may well have made another "The Water Cycle" since.
+    found = await session.scalar(
+        select(LearningSet)
+        .where(LearningSet.owner_id == teacher.id, LearningSet.title == title)
+        .order_by(LearningSet.created_at)
+        .limit(1)
+    )
     if found:
         return found
     learning_set = LearningSet(
@@ -245,11 +247,13 @@ async def seed_demo(join: list[str]) -> None:
         )
         for student, demo in zip(demo_students, STUDENTS, strict=True):
             await _play(session, student, quiz.id, demo.right)
+        await seed_family(session, demo_students[0])
 
     print(f"\nDemo class: {CLASS_NAME}")
     print(f"  teacher   {TEACHER_EMAIL} / {TEACHER_PASSWORD}")
     for demo in STUDENTS:
         print(f"  student   {demo.username} / {STUDENT_PASSWORD}")
+    print(f"  parent    {PARENT_EMAIL} / {PARENT_PASSWORD}  (Aina's mum)")
     for student in extra:
         print(f"  joined    {student.username} (your own password)")
     for name in missing:

@@ -23,7 +23,7 @@ export function ResultsTab({ childId, first }: { childId: string; first: string 
   }
   return (
     <div>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 @xl:grid-cols-2">
         <SkillList title="Strong at" Icon={Trophy} tone="mint" skills={data.insights.strengths} empty="Strengths show after a few more tries." practiseLink={false} />
         <SkillList title="Worth practising" Icon={Barbell} tone="coral" skills={data.insights.practise} empty="Nothing tricky right now." practiseLink={false} />
       </div>

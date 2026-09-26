@@ -51,6 +51,10 @@ squeezed to a few letters a line. Keep these rules so they stay gone:
     container queries: `@container` on the column, `@md:`/`@xl:` on the grids.
   - Viewport breakpoints lie there: at 1024 wide the editor column is under
     400px.
+  - The app's own sidebar narrows every page the same way. At 768 wide a page
+    column is about 470px, so `sm:grid-cols-2` there puts two cards in 235px
+    each. The student home, *Made for you*, the answer review and a live
+    lesson's quick checks all go two across by container width.
 - **Side by side only when both fit.** Multi-column rows switch on at a width
   where each part keeps its words on sensible lines:
   - The student class card is two columns at `xl`.

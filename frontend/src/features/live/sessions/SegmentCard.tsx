@@ -169,12 +169,13 @@ export function SegmentCard({
       )}
 
       {segment.checkin && (
-        <div className="mt-4 rounded-2xl bg-sun-100 p-3 text-grape-900 dark:bg-sun-600/20 dark:text-sun-100">
+        // A container: its options go two across by the card's width.
+        <div className="@container mt-4 rounded-2xl bg-sun-100 p-3 text-grape-900 dark:bg-sun-600/20 dark:text-sun-100">
           <p className="flex items-start gap-1.5 break-words font-bold">
             <Question weight="fill" className="mt-0.5 size-4 shrink-0" aria-hidden />
             Quick check: {segment.checkin.question}
           </p>
-          <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
+          <ul className="mt-2 grid gap-1.5 @lg:grid-cols-2">
             {segment.checkin.options.map((option, i) => (
               <li
                 key={i}

@@ -18,9 +18,15 @@ act on it:
 - **Mark as read**: the dot turns into a tick, then the note moves to Earlier.
 - **Mark all read** does every note at once.
 
-Kinds today: `join_request`, `join_approved`. The later phases add
-`assignment_shared`, `completion` and `badge_awarded`; their rendering is
-already in the frontend registry.
+The kinds, by who gets them:
+
+| Who | Kinds |
+|---|---|
+| Teachers | `join_request`, `completion` |
+| Students | `join_approved`, `assignment_shared`, `badge_awarded`, `practice_ready`, `family_linked`, `family_shared`, `live_scheduled`, `live_cancelled`, `live_reminder` |
+| Parents (`042-parents.md`) | `family_done`, `child_overdue` |
+| Whoever made it | `work_done`, `work_failed` |
+| Admins | `safety_alert` |
 
 ## How it works
 

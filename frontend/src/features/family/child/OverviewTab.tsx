@@ -34,7 +34,7 @@ export function OverviewTab({ childId, first, overview }: { childId: string; fir
         )}
       </section>
 
-      <div className="grid gap-10 lg:grid-cols-2">
+      <div className="grid gap-10 @2xl:grid-cols-2">
         <section className="space-y-3">
           <SectionTitle title="Latest results" action={<More to={`${base}/results`} label="All results" />} />
           {overview.latest.length === 0 ? (
@@ -62,7 +62,7 @@ export function OverviewTab({ childId, first, overview }: { childId: string; fir
       </div>
 
       {(overview.strengths.length > 0 || overview.practise.length > 0) && (
-        <section className="grid gap-4 md:grid-cols-2">
+        <section className="grid gap-4 @xl:grid-cols-2">
           <SkillList title="Strong at" Icon={Trophy} tone="mint" skills={overview.strengths} empty="Strengths show after a few more tries." practiseLink={false} />
           <SkillList title="Worth practising" Icon={Barbell} tone="coral" skills={overview.practise} empty="Nothing tricky right now." practiseLink={false} />
         </section>

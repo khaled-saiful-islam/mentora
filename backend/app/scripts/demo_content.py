@@ -101,3 +101,44 @@ PLANETS: list[dict[str, Any]] = [
           "The Moon does not change; as it orbits Earth, we see more or less of its lit half.",
           "space"),
 ]  # fmt: skip
+
+
+# --- sent home by the demo parent (§20.4) ------------------------------------------
+
+FRACTION_SKILLS = [
+    {"slug": "fractions", "label": "Fractions"},
+    {"slug": "money", "label": "Money"},
+]
+FLOAT_SKILLS = [{"slug": "floating", "label": "Floating and sinking"}]
+
+FRACTIONS: list[dict[str, Any]] = [
+    _quiz(1, "Mak cuts a roti canai into 4 equal pieces. You eat 1. What fraction did you eat?",
+          ["1/2", "1/4", "1/3", "4/1"], 1,
+          "One piece out of four equal pieces is one quarter, 1/4.", "fractions"),
+    _quiz(2, "Half of 10 durians is how many?",
+          ["2", "5", "8", "10"], 1,
+          "Half means sharing into 2 equal groups: 10 ÷ 2 = 5.", "fractions"),
+    _quiz(3, "Which is bigger: 1/2 of a cake or 1/4 of the same cake?",
+          ["1/4", "They are the same", "1/2", "You cannot tell"], 2,
+          "Cutting into fewer pieces makes each piece bigger, so 1/2 is bigger than 1/4.",
+          "fractions"),
+    _quiz(4, "Satay costs RM1 a stick. You buy 6 and pay with RM10. How much change?",
+          ["RM6", "RM3", "RM4", "RM16"], 2,
+          "Six sticks cost RM6, and RM10 − RM6 = RM4.", "money"),
+    _quiz(5, "A pizza has 8 slices. 2 are eaten. What fraction is left?",
+          ["6/8", "2/8", "8/6", "1/8"], 0,
+          "8 − 2 = 6 slices are left, out of 8: 6/8, which is the same as 3/4.", "fractions"),
+]  # fmt: skip
+
+FLOATING: list[dict[str, Any]] = [
+    _card(1, "Why does a coconut float?", "It has lots of air inside and is light for its size.",
+          "Think about what is inside the shell.", "floating"),
+    _card(2, "Why does a coin sink?", "It is heavy for its size — denser than water.",
+          "Small, but heavy.", "floating"),
+    _card(3, "How can a big ship float?",
+          "Its shape pushes a lot of water aside, and air fills it.",
+          "Shape matters, not only weight.", "floating"),
+    _card(4, "What happens to a ball of plasticine shaped into a boat?",
+          "It can float, because the new shape pushes more water aside.",
+          "Same plasticine, new shape.", "floating"),
+]  # fmt: skip

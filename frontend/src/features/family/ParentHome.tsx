@@ -59,7 +59,7 @@ export default function ParentHome() {
       {!children.data ? (
         <Skeleton className="mt-6 h-64 rounded-[1.75rem]" />
       ) : (
-        <div className={cn('mt-6 grid gap-5', items.length > 0 && 'lg:grid-cols-[minmax(0,1fr)_22rem]')}>
+        <div className={cn('mt-6 grid gap-5', items.length > 0 && 'xl:grid-cols-[minmax(0,1fr)_22rem]')}>
           {items.length > 0 && (
             <motion.ul className="space-y-5" variants={stagger(0.08)} initial="hidden" animate="shown">
               {items.map((child) => (

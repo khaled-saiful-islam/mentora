@@ -1,9 +1,23 @@
 # 042 — Parents
 
-A fourth kind of account, for a child's parent or carer (PLAN.md §20). This
-page grows phase by phase. **Built: P0, the role and the link; P1, seeing
-the child; P2, making and sending work home; P3, past-due alerts; P4, the
-chat.**
+A fourth kind of account, for a child's parent or carer (PLAN.md §20). All
+six phases are built, and this one page covers them:
+
+- P0, the role and the link;
+- P1, seeing the child;
+- P2, making and sending work home;
+- P3, past-due alerts;
+- P4, the chat;
+- P5, polish and a demo parent.
+
+## Try it
+
+`make demo` adds **Aina's mum**: `parent.demo@mentora.local` /
+`demo-parent-1` (`app/scripts/demo_family.py`). She is linked to Aina, with
+a quiz sent home and due in three days, and a flashcard deck that went past
+due two hours ago. The watcher sends its alert within a minute. Running
+`make demo` again moves that deck's due date back to two hours ago, so there
+is always one missed piece to show.
 
 ## What it does
 

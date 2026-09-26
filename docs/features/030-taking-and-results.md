@@ -8,6 +8,10 @@
   yet".
 - **Students take their own practice sets** the same way. These never appear
   in a class, on a leaderboard or in a teacher's results.
+- **Work a parent sends home** is taken like practice (`/from-home/:id`), at
+  the version the parent sent, with its due date for late marking. It counts
+  for the score badges, and the parent hears the result
+  ([`042-parents.md`](042-parents.md)).
 - **Every answer is saved as it is given.** Closing the tab loses nothing.
 - **Finishing returns everything the celebration screen shows** in one reply:
   score, stars (3 at 90%+, 2 at 70%+, 1 at 40%+), per-skill scores, badges

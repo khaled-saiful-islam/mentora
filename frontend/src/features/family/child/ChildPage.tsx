@@ -55,7 +55,8 @@ export default function ChildPage() {
   const base = `/children/${childId}`
   const first = child?.first_name ?? 'your child'
   return (
-    <Page className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-8">
+    // A container: the tabs lay out by the column's width, not the window's.
+    <Page className="@container mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-8">
       {(children.data?.items.length ?? 0) > 1 && (
         <ButtonLink to="/" variant="ghost" size="sm" className="-ml-3 mb-2">
           <CaretLeft weight="bold" className="size-4" aria-hidden /> All my children

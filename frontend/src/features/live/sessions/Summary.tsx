@@ -68,12 +68,14 @@ export function Summary({ id }: { id: string }) {
       </div>
 
       {checkins.length > 0 && (
-        <Card className="p-4">
+        // A container: two checks side by side only when the card itself is
+        // wide enough, not the window — beside the sidebar it is narrower.
+        <Card className="@container p-4">
           <h3 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold">
             <ListChecks weight="bold" className="size-5 text-kind-live" aria-hidden />
             Quick checks
           </h3>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 @2xl:grid-cols-2">
             {checkins.map((c, i) => {
               const most = Math.max(1, ...c.counts)
               return (
@@ -85,8 +87,8 @@ export function Summary({ id }: { id: string }) {
                   {c.options.map((option, n) => (
                     <div key={n} className="mb-1 flex items-center gap-2 text-sm">
                       {n === c.answer ? <CheckCircle weight="fill" className="size-4 shrink-0 text-mint-700" aria-label="Right answer" /> : <span className="size-4 shrink-0" />}
-                      <span className="w-[min(45%,12rem)] break-words">{option}</span>
-                      <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
+                      <span className="min-w-0 flex-1 break-words">{option}</span>
+                      <span className="h-2.5 w-[min(30%,8rem)] shrink-0 overflow-hidden rounded-full bg-muted">
                         <span className={cn('block h-full rounded-full', n === c.answer ? 'bg-mint-400' : 'bg-kind-live-vivid/50')} style={{ width: `${(c.counts[n] / most) * 100}%` }} />
                       </span>
                       <span className="w-5 text-right font-bold">{c.counts[n]}</span>
