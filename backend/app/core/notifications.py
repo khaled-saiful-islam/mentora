@@ -13,5 +13,9 @@ class Kind(StrEnum):
     JOIN_APPROVED = "join_approved"
     ASSIGNMENT_SHARED = "assignment_shared"
     BADGE_AWARDED = "badge_awarded"
+    # Live lessons: on the schedule, moved, cancelled, and reminders to join.
+    LIVE_SCHEDULED = "live_scheduled"
+    LIVE_CANCELLED = "live_cancelled"
+    LIVE_REMINDER = "live_reminder"
     # For admins: a student may be at risk, and a person should look.
     SAFETY_ALERT = "safety_alert"

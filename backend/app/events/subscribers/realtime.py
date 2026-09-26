@@ -23,6 +23,8 @@ from app.events.catalog import (
     AssignmentShared,
     AttemptCompleted,
     AttemptProgressed,
+    LiveSessionCancelled,
+    LiveSessionScheduled,
     MembershipApproved,
     MembershipEnded,
     MembershipRejected,
@@ -102,3 +104,11 @@ async def attempt_finished(event: AttemptCompleted, session: AsyncSession) -> No
     )
     # The student's other tabs: their home shows it done.
     _push(session, [event.student_id], {"topic": "assignments", "assignment_id": assignment_id})
+
+
+async def live_changed(
+    event: LiveSessionScheduled | LiveSessionCancelled, session: AsyncSession
+) -> None:
+    """A schedule someone has open just changed."""
+    message = {"topic": "live", "session_id": str(event.session_id)}
+    _push(session, [*event.student_ids, event.teacher_id], message)

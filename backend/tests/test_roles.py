@@ -62,6 +62,7 @@ EXPECTED: dict[str, dict[Role, bool]] = {
     "use_chat": {Role.ADMIN: True, Role.TEACHER: True, Role.STUDENT: False},
     "studio_artifacts": {Role.ADMIN: True, Role.TEACHER: True, Role.STUDENT: False},
     "run_live_sessions": {Role.ADMIN: True, Role.TEACHER: True, Role.STUDENT: False},
+    "join_live_sessions": {Role.ADMIN: False, Role.TEACHER: False, Role.STUDENT: True},
     "share_learning_sets": {Role.ADMIN: True, Role.TEACHER: True, Role.STUDENT: False},
     "make_practice_sets": {Role.ADMIN: False, Role.TEACHER: False, Role.STUDENT: True},
     "manage_classes": {Role.ADMIN: True, Role.TEACHER: True, Role.STUDENT: False},

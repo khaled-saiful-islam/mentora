@@ -16,6 +16,9 @@ from app.events.catalog import (
     AssignmentShared,
     AttemptCompleted,
     BadgeAwarded,
+    LiveSessionCancelled,
+    LiveSessionReminder,
+    LiveSessionScheduled,
     MembershipApproved,
     MembershipEnded,
     MembershipRejected,
@@ -156,4 +159,55 @@ async def student_needs_support(event: StudentNeedsSupport, session: AsyncSessio
                 "student_name": event.student_name,
                 "category": event.category,
             },
+        )
+
+
+async def live_scheduled(event: LiveSessionScheduled, session: AsyncSession) -> None:
+    bell = NotificationService(session)
+    payload = {
+        "session_id": str(event.session_id),
+        "title": event.title,
+        "class_name": event.class_name,
+        "teacher_name": event.teacher_name,
+        "scheduled_at": event.scheduled_at,
+        "moved": event.moved,
+    }
+    for student_id in event.student_ids:
+        await bell.notify(
+            user_id=student_id,
+            kind=Kind.LIVE_SCHEDULED,
+            actor_id=event.teacher_id,
+            payload=payload,
+            group_key=f"live:{event.session_id}:scheduled",
+        )
+
+
+async def live_cancelled(event: LiveSessionCancelled, session: AsyncSession) -> None:
+    bell = NotificationService(session)
+    for student_id in event.student_ids:
+        await bell.notify(
+            user_id=student_id,
+            kind=Kind.LIVE_CANCELLED,
+            actor_id=event.teacher_id,
+            payload={"session_id": str(event.session_id), "title": event.title},
+            group_key=f"live:{event.session_id}:cancelled",
+        )
+
+
+async def live_reminder(event: LiveSessionReminder, session: AsyncSession) -> None:
+    bell = NotificationService(session)
+    payload = {
+        "session_id": str(event.session_id),
+        "title": event.title,
+        "scheduled_at": event.scheduled_at,
+        "when": event.when,
+    }
+    for student_id in event.student_ids:
+        await bell.notify(
+            user_id=student_id,
+            kind=Kind.LIVE_REMINDER,
+            actor_id=event.teacher_id,
+            payload=payload,
+            # One bell entry per session that updates as the start draws near.
+            group_key=f"live:{event.session_id}:reminder",
         )

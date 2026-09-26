@@ -132,9 +132,7 @@ class LiveTurns:
             turn.append(DoneEvent(finish_reason=FinishReason.ERROR))
         except Exception:
             logger.exception("turn failed outside the stream")
-            turn.append(
-                ErrorEvent(message="Something went wrong generating the response.")
-            )
+            turn.append(ErrorEvent(message="Something went wrong generating the response."))
             turn.append(DoneEvent(finish_reason=FinishReason.ERROR))
         finally:
             turn.close()

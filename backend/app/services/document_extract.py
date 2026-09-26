@@ -29,16 +29,20 @@ TEXT_TYPES = frozenset(
     }
 )
 PDF_TYPES = frozenset({"application/pdf"})
-DOCX_TYPES = frozenset(
-    {"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
-)
+DOCX_TYPES = frozenset({"application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
 
 TEXT_SUFFIXES = (".txt", ".md", ".markdown", ".csv", ".json", ".xml", ".log", ".rst")
 PDF_SUFFIXES = (".pdf",)
 DOCX_SUFFIXES = (".docx",)
+PPTX_SUFFIXES = (".pptx",)
+# The most one slide's XML may unpack to.
+PPTX_PART_LIMIT = 4 * 1024 * 1024
+PPTX_TYPES = frozenset(
+    {"application/vnd.openxmlformats-officedocument.presentationml.presentation"}
+)
 IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".heic", ".heif")
 
-SUPPORTED_DESCRIPTION = "plain text, Markdown, CSV, JSON, PDF or Word (.docx)"
+SUPPORTED_DESCRIPTION = "plain text, Markdown, CSV, JSON, PDF, Word (.docx) or PowerPoint (.pptx)"
 SUPPORTED_WITH_IMAGES = f"{SUPPORTED_DESCRIPTION}, or an image"
 
 
@@ -78,11 +82,13 @@ def extract(data: bytes, *, filename: str, media_type: str) -> ExtractedText:
         return _from_pdf(data)
     if kind == "docx":
         return _from_docx(data)
+    if kind == "pptx":
+        return _from_pptx(data)
     return _from_text(data)
 
 
 def classify(*, filename: str, media_type: str, images: bool = False) -> str:
-    """Return 'text', 'pdf', 'docx' or 'image'.
+    """Return 'text', 'pdf', 'docx', 'pptx' or 'image'.
 
     Extension first: browsers send `application/octet-stream` for .md and
     sometimes for .docx, so the name is the more reliable signal.
@@ -98,6 +104,8 @@ def classify(*, filename: str, media_type: str, images: bool = False) -> str:
         return "pdf"
     if lowered.endswith(DOCX_SUFFIXES):
         return "docx"
+    if lowered.endswith(PPTX_SUFFIXES):
+        return "pptx"
     if lowered.endswith(IMAGE_SUFFIXES) or base.startswith("image/"):
         if not images:
             raise UnsupportedDocument(
@@ -112,12 +120,13 @@ def classify(*, filename: str, media_type: str, images: bool = False) -> str:
         return "pdf"
     if base in DOCX_TYPES:
         return "docx"
+    if base in PPTX_TYPES:
+        return "pptx"
     if base in TEXT_TYPES or base.startswith("text/"):
         return "text"
 
     raise UnsupportedDocument(
-        f"{filename} is not a supported file type. "
-        f"Upload {supported_description(images=images)}."
+        f"{filename} is not a supported file type. Upload {supported_description(images=images)}."
     )
 
 
@@ -188,6 +197,61 @@ def _from_docx(data: bytes) -> ExtractedText:
     if not text.strip():
         raise UnreadableDocument("That Word file appears to be empty.")
     return ExtractedText(text=text, unit="paragraph", count=len(parts))
+
+
+def _from_pptx(data: bytes) -> ExtractedText:
+    """Slides are a zip of XML; the words are in `<a:t>` runs. Read with the
+    standard library, slide by slide in order, with the speaker notes."""
+    import re
+    import zipfile
+    from xml.etree import ElementTree
+
+    namespace = "{http://schemas.openxmlformats.org/drawingml/2006/main}t"
+
+    def order(name: str) -> int:
+        found = re.search(r"(\d+)\.xml$", name)
+        return int(found.group(1)) if found else 0
+
+    def words(archive: zipfile.ZipFile, name: str) -> str:
+        info = archive.getinfo(name)
+        # A slide is a few kilobytes; anything vastly larger is a zip bomb.
+        if info.file_size > PPTX_PART_LIMIT:
+            raise UnreadableDocument("That PowerPoint file has a slide too large to read.")
+        raw = archive.read(name)
+        # Real slides never carry a DTD. Refusing one closes off entity
+        # expansion and external entities without a new dependency.
+        if b"<!DOCTYPE" in raw or b"<!ENTITY" in raw:
+            raise UnreadableDocument("That PowerPoint file could not be read.")
+        root = ElementTree.fromstring(raw)  # noqa: S314 — DTDs refused above
+        return " ".join(t.text.strip() for t in root.iter(namespace) if t.text and t.text.strip())
+
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            names = archive.namelist()
+            slides = sorted(
+                (n for n in names if re.match(r"ppt/slides/slide\d+\.xml$", n)), key=order
+            )
+            notes = {
+                order(n): n for n in names if re.match(r"ppt/notesSlides/notesSlide\d+\.xml$", n)
+            }
+            parts = []
+            for number, name in enumerate(slides, start=1):
+                text = words(archive, name)
+                note = words(archive, notes[order(name)]) if order(name) in notes else ""
+                if text or note:
+                    parts.append(f"Slide {number}: {text}" + (f"\nNotes: {note}" if note else ""))
+    except UnreadableDocument:
+        raise
+    except Exception as exc:  # noqa: BLE001 - a bad zip or XML is one message
+        logger.info("could not read pptx: %s", exc)
+        raise UnreadableDocument(
+            "That PowerPoint file could not be read. Try saving it again as .pptx."
+        ) from exc
+
+    text = _normalise("\n\n".join(parts))
+    if not text.strip():
+        raise UnreadableDocument("No text found in those slides.")
+    return ExtractedText(text=text, unit="slide", count=len(slides))
 
 
 def _normalise(text: str) -> str:

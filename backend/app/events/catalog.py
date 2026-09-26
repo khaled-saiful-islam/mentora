@@ -122,3 +122,39 @@ class StudentNeedsSupport(Event):
     student_id: UUID
     student_name: str
     category: str
+
+
+@dataclass(frozen=True, slots=True)
+class LiveSessionScheduled(Event):
+    """A live lesson is on the group's schedule — new, or moved to a new time."""
+
+    session_id: UUID
+    title: str
+    teacher_id: UUID
+    teacher_name: str
+    class_id: UUID
+    class_name: str
+    student_ids: tuple[UUID, ...]
+    scheduled_at: str
+    moved: bool
+
+
+@dataclass(frozen=True, slots=True)
+class LiveSessionCancelled(Event):
+    session_id: UUID
+    title: str
+    teacher_id: UUID
+    student_ids: tuple[UUID, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class LiveSessionReminder(Event):
+    """Time to get ready for, or to join, a live lesson."""
+
+    session_id: UUID
+    title: str
+    teacher_id: UUID
+    student_ids: tuple[UUID, ...]
+    scheduled_at: str
+    # "day", "soon" (15 minutes) or "now".
+    when: str

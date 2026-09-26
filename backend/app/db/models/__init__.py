@@ -26,6 +26,12 @@ from app.db.models.learning import (
     LearningSet,
     LearningSetVersion,
 )
+from app.db.models.live import (
+    LiveSegment,
+    LiveSession,
+    LiveSessionDocument,
+    LiveSessionTemplate,
+)
 from app.db.models.memory import Memory
 from app.db.models.moderation import ModerationEvent
 from app.db.models.notification import Notification
@@ -53,6 +59,10 @@ __all__ = [
     "GroupMember",
     "LearningSet",
     "LearningSetVersion",
+    "LiveSegment",
+    "LiveSession",
+    "LiveSessionDocument",
+    "LiveSessionTemplate",
     "Memory",
     "ModerationEvent",
     "Message",

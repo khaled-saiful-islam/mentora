@@ -4,6 +4,7 @@
  * practise next. One request (`/me/home`) so it arrives all at once.
  */
 import { motion } from 'motion/react'
+import { UpNext } from '@/features/live/schedule/UpNext'
 import { ArrowRight, Barbell, Confetti, Fire, Medal, Trophy, UsersThree } from '@phosphor-icons/react'
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
@@ -56,6 +57,7 @@ export default function StudentHome() {
       </BuddyStage>
 
       {home.error && <Alert className="mt-6">{home.error}</Alert>}
+      <UpNext className="mt-8" />
       <section className="mt-10">
         <div className="flex items-center justify-between gap-2">
           <h2 className="font-display text-2xl font-semibold">From your teachers</h2>

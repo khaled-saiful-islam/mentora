@@ -31,6 +31,8 @@ class Capabilities:
     take_assignments: bool = False
     # Live AI tutoring sessions: setting one up, recording its voice, running it.
     run_live_sessions: bool = False
+    # Taking part in one: on the schedule, in the room, raising a hand.
+    join_live_sessions: bool = False
     # The guardrail log and its review queue.
     moderate: bool = False
     manage_users: bool = False
@@ -61,7 +63,10 @@ _BY_ROLE: dict[Role, Capabilities] = {
     # Turning it back on is `use_chat=True` here — the guardrails, the buddy
     # persona and the safety queue for student chat are all still in place.
     Role.STUDENT: Capabilities(
-        make_practice_sets=True, join_classes=True, take_assignments=True
+        make_practice_sets=True,
+        join_classes=True,
+        take_assignments=True,
+        join_live_sessions=True,
     ),
 }
 

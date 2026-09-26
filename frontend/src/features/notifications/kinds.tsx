@@ -12,6 +12,9 @@
  */
 import {
   Bell,
+  Broadcast,
+  CalendarStar,
+  CalendarX,
   Confetti,
   Heartbeat,
   Medal,
@@ -21,6 +24,7 @@ import {
   type Icon,
 } from '@phosphor-icons/react'
 import type { Mood } from '@/features/buddies'
+import { whenLabel } from '@/features/live/sessions/when'
 import type { Notification } from './api'
 
 /** The show a pop-up puts on as it lands. */
@@ -45,6 +49,12 @@ export interface KindView {
 }
 
 const text = (n: Notification, key: string): string => String(n.payload[key] ?? '')
+
+/** When a live lesson is, the way the schedule says it. */
+function when(n: Notification): string {
+  const at = n.payload.scheduled_at
+  return typeof at === 'string' ? whenLabel(at) : 'soon'
+}
 
 function others(n: Notification, verb: string): string {
   const actors = (n.payload.actors as string[] | undefined) ?? []
@@ -115,6 +125,53 @@ export const KINDS: Record<string, KindView> = {
     action: "Let's go!",
     flourish: 'plane',
     mood: 'wave',
+  },
+  live_scheduled: {
+    Icon: CalendarStar,
+    tile: 'bg-kind-live-vivid/15 text-kind-live',
+    title: (n) =>
+      n.payload.moved ? `${text(n, 'title')} has moved to ${when(n)}` : `New live lesson: ${text(n, 'title')}, ${when(n)}`,
+    headlines: (n) =>
+      n.payload.moved
+        ? [`${text(n, 'title')} has a new time: ${when(n)}`]
+        : [
+            `Astra is teaching ${text(n, 'title')} live — ${when(n)}`,
+            `A live lesson is on your schedule: ${text(n, 'title')}`,
+            `Save the date! ${text(n, 'title')}, ${when(n)}`,
+          ],
+    body: (n) => `From ${text(n, 'teacher_name')} · ${text(n, 'class_name')}`,
+    href: (n) => (n.payload.session_id ? `/room/${text(n, 'session_id')}` : '/schedule'),
+    action: 'See it',
+    flourish: 'ring',
+    mood: 'wave',
+  },
+  live_reminder: {
+    Icon: Broadcast,
+    tile: 'bg-kind-live-vivid text-white',
+    title: (n) =>
+      n.payload.when === 'now'
+        ? `${text(n, 'title')} is starting now — join!`
+        : n.payload.when === 'soon'
+          ? `${text(n, 'title')} starts in 15 minutes`
+          : `Tomorrow: ${text(n, 'title')}, ${when(n)}`,
+    headlines: (n) =>
+      n.payload.when === 'now'
+        ? [`Astra is starting ${text(n, 'title')} — come in!`, `It's time! ${text(n, 'title')} is live`]
+        : n.payload.when === 'soon'
+          ? [`15 minutes to ${text(n, 'title')} — get ready!`]
+          : [`Tomorrow: ${text(n, 'title')} with Astra, ${when(n)}`],
+    href: (n) => `/room/${text(n, 'session_id')}`,
+    action: 'Join',
+    flourish: 'ring',
+    mood: 'cheer',
+  },
+  live_cancelled: {
+    Icon: CalendarX,
+    tile: 'bg-muted text-muted-foreground',
+    title: (n) => `${text(n, 'title')} has been cancelled`,
+    href: () => '/schedule',
+    flourish: 'ring',
+    mood: 'oops',
   },
   completion: {
     Icon: Trophy,

@@ -23,10 +23,11 @@ from app.db.models.user import User
 from app.db.repositories.users import SqlUserRepository
 from app.db.session import SessionFactory, session_scope
 from app.guards.registry import build_guards
-from app.learning.factory import build_generator, build_model
+from app.learning.factory import build_generator, build_model, build_researcher
 from app.learning.model import Meter
 from app.learning.registry import build_learning_kinds
 from app.live.audio import AudioCache, Narrator
+from app.live.planner import LessonPlanner
 from app.live.voice_lab import VoiceLab
 from app.moderation.gate import ModerationGate
 from app.moderation.registry import build_gate
@@ -40,6 +41,7 @@ from app.services.auth_service import AuthService
 from app.services.cancellation import registry as cancellation_registry
 from app.services.chat_service import ChatService, TurnSettings
 from app.services.generation_service import GenerationService
+from app.services.live_plan_service import LivePlanService
 from app.services.quota import TokenQuota
 from app.services.rate_limit import Limit, RateLimiter
 from app.tools.registry import build_tools
@@ -354,6 +356,20 @@ def get_voice_lab(settings: SettingsDep) -> VoiceLab:
 
 
 VoiceLabDep = Annotated[VoiceLab, Depends(get_voice_lab)]
+
+
+def get_live_plan_service(settings: SettingsDep) -> LivePlanService:
+    return LivePlanService(
+        settings=settings,
+        session_maker=session_scope,
+        planner_factory=lambda meter: LessonPlanner(
+            build_model(settings, meter), build_researcher(settings)
+        ),
+        narrator=_narrator(),
+    )
+
+
+LivePlanServiceDep = Annotated[LivePlanService, Depends(get_live_plan_service)]
 
 
 async def limit_auth(request: Request, session: SessionDep, settings: SettingsDep) -> None:

@@ -28,6 +28,8 @@ export interface Capabilities {
   manage_classes: boolean
   /** Live AI tutoring: setting a session up, hearing its voice, running it. */
   run_live_sessions: boolean
+  /** On a group's schedule, in the room, raising a hand. */
+  join_live_sessions: boolean
   join_classes: boolean
   take_assignments: boolean
   moderate: boolean

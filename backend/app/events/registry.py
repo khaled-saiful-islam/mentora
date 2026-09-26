@@ -13,6 +13,9 @@ from app.events.catalog import (
     AttemptCompleted,
     AttemptProgressed,
     BadgeAwarded,
+    LiveSessionCancelled,
+    LiveSessionReminder,
+    LiveSessionScheduled,
     MembershipApproved,
     MembershipEnded,
     MembershipRejected,
@@ -32,6 +35,11 @@ def build_bus() -> EventBus:
     bus.subscribe(AttemptCompleted, notifications.attempt_completed)
     bus.subscribe(AttemptCompleted, realtime.leaderboard_changed)
     bus.subscribe(BadgeAwarded, notifications.badge_awarded)
+    bus.subscribe(LiveSessionScheduled, notifications.live_scheduled)
+    bus.subscribe(LiveSessionCancelled, notifications.live_cancelled)
+    bus.subscribe(LiveSessionReminder, notifications.live_reminder)
+    bus.subscribe(LiveSessionScheduled, realtime.live_changed)
+    bus.subscribe(LiveSessionCancelled, realtime.live_changed)
     # Live pages: something you have open just changed.
     bus.subscribe(MembershipRequested, realtime.join_requested)
     bus.subscribe(MembershipApproved, realtime.membership_decided)

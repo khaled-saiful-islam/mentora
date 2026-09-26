@@ -17,6 +17,11 @@ import EditorPage from '@/features/learning/EditorPage'
 import GuidePreviewPage from '@/features/guide/GuidePreviewPage'
 import LibraryPage from '@/features/learning/LibraryPage'
 import VoiceLabPage from '@/features/live/VoiceLabPage'
+import LiveLessonsPage from '@/features/live/sessions/LiveLessonsPage'
+import SessionPage from '@/features/live/sessions/SessionPage'
+import SetupPage from '@/features/live/sessions/SetupPage'
+import SchedulePage from '@/features/live/schedule/SchedulePage'
+import RoomPage from '@/features/live/room/RoomPage'
 import { LearnStudioProvider } from '@/features/learning/LearnStudio'
 import { AppShell } from '@/features/shell/AppShell'
 import BuddyPage from '@/features/buddies/BuddyPage'
@@ -77,7 +82,13 @@ export default function App() {
           <Route path="/library/:setId" element={<Shell capability={MAKES_SETS}><EditorPage /></Shell>} />
           {/* Outside the app frame, so it prints as a handout and nothing else. */}
           <Route path="/library/:setId/preview" element={<Protected><Allowed capability="share_learning_sets"><GuidePreviewPage /></Allowed></Protected>} />
+          <Route path="/live" element={<Shell capability="run_live_sessions"><LiveLessonsPage /></Shell>} />
           <Route path="/live/voice-lab" element={<Shell capability="run_live_sessions"><VoiceLabPage /></Shell>} />
+          <Route path="/live/new" element={<Shell capability="run_live_sessions"><SetupPage /></Shell>} />
+          <Route path="/live/:id" element={<Shell capability="run_live_sessions"><SessionPage /></Shell>} />
+          <Route path="/live/:id/setup" element={<Shell capability="run_live_sessions"><SetupPage /></Shell>} />
+          <Route path="/schedule" element={<Shell capability="join_live_sessions"><SchedulePage /></Shell>} />
+          <Route path="/room/:id" element={<Shell capability="join_live_sessions"><RoomPage /></Shell>} />
           <Route path="/buddy" element={<Shell><BuddyPage /></Shell>} />
           <Route path="/profile" element={<Shell><Profile /></Shell>} />
           <Route path="/settings" element={<Shell><Settings /></Shell>} />
