@@ -179,3 +179,38 @@ def test_slides_carrying_a_dtd_are_refused_not_expanded() -> None:
         archive.writestr("ppt/slides/slide1.xml", bomb)
     with pytest.raises(UnreadableDocument):
         extract(buffer.getvalue(), filename="x.pptx", media_type="application/octet-stream")
+
+
+async def test_each_part_that_asks_for_a_picture_gets_a_safe_one() -> None:
+    from app.tools.base import ToolResult
+
+    class PictureSearch(FakeSearch):
+        async def search_images(self, query, *, limit=6):
+            return [
+                ToolResult(
+                    tool="image_search",
+                    title="A leaf",
+                    url="https://example.org/leaf",
+                    snippet="Example",
+                    rank=1,
+                    thumbnail_url="https://example.org/t.png",
+                    image_url="https://example.org/leaf.png",
+                )
+            ]
+
+    def part(system, user):
+        from tests.live_fakes import part_answer
+
+        made = part_answer(system, user)
+        for segment in made["segments"]:
+            segment["image_query"] = "leaf close up"
+        return made
+
+    notes = Document("notes.txt", "Photosynthesis is how plants make food from light. " * 80)
+    planner, _ = _planner(
+        answers(**{"live.part": part, "live.repair": part}), search=PictureSearch(GOOD_RESULTS)
+    )
+    events = await _run(planner, PlanInput(settings=settings(), documents=(notes,)))
+    first = next(e for e in events if isinstance(e, PartWritten)).segments[0]
+    assert first.image["image"] == "https://example.org/leaf.png"
+    assert first.as_dict()["image"]["page"] == "https://example.org/leaf"

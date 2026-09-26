@@ -35,6 +35,8 @@ from app.core.errors import ConflictError, NotFoundError, ValidationError
 from app.db.models.live import LiveHand, LiveParticipant, LiveSession, LiveTranscriptLine
 from app.db.models.user import User
 from app.db.session import session_scope
+from app.events.registry import build_bus
+from app.moderation.base import Flag
 from app.policies.capabilities import capabilities_for
 from app.providers.speech import SpeechError
 from app.services.live_conductor import Hand
@@ -42,6 +44,7 @@ from app.services.live_plan_service import first_name
 from app.services.live_room import Member
 from app.services.live_session_service import LiveSessionService
 from app.services.live_summary_service import LiveSummaryService
+from app.services.moderation_service import ModerationService, Where
 
 router = APIRouter(prefix="/live-rooms", tags=["live"])
 control = APIRouter(
@@ -63,6 +66,10 @@ class QuestionBody(BaseModel):
 class CheckinBody(BaseModel):
     segment_id: UUID
     choice: int = Field(ge=0, le=3)
+
+
+class ReportBody(BaseModel):
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=500)]
 
 
 class ControlBody(BaseModel):
@@ -271,6 +278,29 @@ async def checkin(
     if role != "student" or conductor is None:
         raise ValidationError("There is no quick check open.")
     return {"ok": conductor.answer_check(user.id, str(body.segment_id), body.choice)}
+
+
+@router.post("/{session_id}/report", status_code=status.HTTP_202_ACCEPTED)
+async def report(
+    session_id: UUID, body: ReportBody, user: CurrentUser, session: SessionDep
+) -> dict[str, bool]:
+    """Something wrong in the lesson. It goes to the safety queue for admins,
+    and the lesson is flagged for its teacher."""
+    live, role = await _access(session, user, session_id)
+    if role != "student":
+        raise ValidationError("Reports come from students in the lesson.")
+    flag = Flag(
+        kind="report",
+        source="live_session",
+        severity="medium",
+        rule="student_report",
+        screen="student",
+        excerpt=f"{live.title}: {body.text}"[:500],
+    )
+    await ModerationService(session, build_bus()).record(flag, Where(user_id=user.id))
+    live.flagged_at = datetime.now(UTC)
+    await session.commit()
+    return {"ok": True}
 
 
 # --- the teacher's hand on the lesson --------------------------------------------

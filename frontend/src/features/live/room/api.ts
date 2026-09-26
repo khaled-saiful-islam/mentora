@@ -1,5 +1,6 @@
 import { apiFetch } from '@/lib/api'
 import { readSse } from '@/lib/sse'
+import type { GuidePicture } from '@/features/learning/api'
 import type { SessionSummary } from '../sessions/api'
 
 export type RoomPhase = 'lobby' | 'teaching' | 'called' | 'answering' | 'checkin' | 'paused' | 'ended'
@@ -24,6 +25,7 @@ export interface ClipEvent {
   step?: number
   steps?: number
   show?: string | null
+  image?: GuidePicture | null
 }
 
 export type RoomEvent =
@@ -49,6 +51,7 @@ export interface RoomState {
   segment?: number
   segments?: number
   show?: string | null
+  image?: GuidePicture | null
   hands?: Extract<RoomEvent, { type: 'hands' }>
   called?: Extract<RoomEvent, { type: 'called' }>
   checkin?: Extract<RoomEvent, { type: 'checkin' }>
@@ -79,6 +82,7 @@ export const roomApi = {
     form.append('clip', wav, 'question.wav')
     return apiFetch<{ text: string }>(`/live-rooms/${id}/question/voice`, { method: 'POST', body: form })
   },
+  report: (id: string, text: string) => apiFetch<{ ok: boolean }>(`/live-rooms/${id}/report`, { method: 'POST', ...json({ text }) }),
   ask: (id: string, text: string) => apiFetch<{ ok: boolean }>(`/live-rooms/${id}/question`, { method: 'POST', ...json({ text }) }),
   checkin: (id: string, segment_id: string, choice: number) =>
     apiFetch<{ ok: boolean }>(`/live-rooms/${id}/checkin`, { method: 'POST', ...json({ segment_id, choice }) }),

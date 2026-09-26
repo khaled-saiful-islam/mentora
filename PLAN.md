@@ -1,7 +1,7 @@
 # Mentora — Implementation Plan
 
 > **Status: APPROVED 2026-09-24 — Phases 1–5 done (roles, design, classes, learning sets, taking/results/buddies); Phase 6 (guardrails & admin) next.**
-> **§19 Live AI group tutoring — approved 2026-09-26. Phase 0 (voice lab) done; waiting on your voice pick.**
+> **§19 Live AI group tutoring — approved 2026-09-26. Phases 0–5 built (docs/features/036–038); waiting on your testing.**
 > Mentora is a fork of Pelita (`~/projects/pelita` @ `5a23f41`). This plan reuses
 > Pelita's stack, layering and Protocol-plus-registry design, and extends it into a
 > teacher–student learning platform.

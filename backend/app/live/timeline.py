@@ -32,6 +32,8 @@ class Step:
     checkin: dict[str, Any] | None = None
     # The last sentence of its part: where "questions at pauses" are taken.
     part_end: bool = False
+    # The part's picture, on screen while it is taught.
+    image: dict[str, Any] | None = None
 
 
 def steps_of(segments: list[dict[str, Any]]) -> list[Step]:
@@ -55,6 +57,7 @@ def steps_of(segments: list[dict[str, Any]]) -> list[Step]:
                         beat_id=str(beat.get("id", "")),
                         show=beat.get("show"),
                         part_end=last_in_beat and b == len(beats) - 1,
+                        image=segment.get("image"),
                     )
                 )
         if segment.get("checkin"):

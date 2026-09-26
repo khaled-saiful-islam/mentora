@@ -7,10 +7,12 @@
  * words lighting up as they are said, hands going up, quick checks, and at
  * the end a celebration and the quiz.
  */
-import { ArrowLeft, CalendarPlus, Clock, FastForward, Pause, Play, Stop } from '@phosphor-icons/react'
+import { ArrowLeft, CalendarPlus, Clock, FastForward, Flag, Pause, Play, Stop } from '@phosphor-icons/react'
 import { motion } from 'motion/react'
 import { Link, useParams } from 'react-router-dom'
+import { useState } from 'react'
 import { Alert, Button, Skeleton } from '@/components/ui'
+import { Dialog } from '@/components/ui/Dialog'
 import type { Mood } from '@/features/buddies/types'
 import { starField } from '@/features/auth/scene/sky'
 import { Page, spring } from '@/motion'
@@ -124,6 +126,7 @@ export default function RoomPage({ teacherView = false }: { teacherView?: boolea
             beat={ended ? (session?.segments_total ?? session?.parts ?? 0) : room.segment}
             quiet={ended}
             show={room.show}
+            image={ended ? null : room.image}
             line={room.line}
             now={room.serverNow}
             speaking={room.speaking}
@@ -164,11 +167,61 @@ export default function RoomPage({ teacherView = false }: { teacherView?: boolea
             </div>
           </LiveStage>
           {!student && <TeacherPanel id={id} roster={room.roster} hands={room.hands} said={room.said} />}
+          {student && <ReportButton id={id} />}
           {student && ended && <Notes id={id} />}
           {student && !ended && <Transcript said={room.said} />}
         </div>
       )}
     </Page>
+  )
+}
+
+function ReportButton({ id }: { id: string }) {
+  const [open, setOpen] = useState(false)
+  const [text, setText] = useState('')
+  const [sent, setSent] = useState(false)
+  return (
+    <>
+      <div className="flex justify-end">
+        <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+          <Flag weight="bold" className="size-4" aria-hidden />
+          {sent ? 'Reported — thank you' : 'Report a problem'}
+        </Button>
+      </div>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Tell us what's wrong"
+        description="Something upsetting, or something that didn't seem right? Your teacher and the Mentora team will see it."
+        footer={
+          <Button
+            disabled={text.trim().length < 3}
+            onClick={() =>
+              void roomApi.report(id, text.trim()).then(() => {
+                setSent(true)
+                setOpen(false)
+                setText('')
+              })
+            }
+          >
+            Send
+          </Button>
+        }
+      >
+        <label htmlFor="room-report" className="sr-only">
+          What happened?
+        </label>
+        <textarea
+          id="room-report"
+          rows={4}
+          maxLength={500}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="What happened?"
+          className="w-full rounded-2xl border-2 border-border bg-surface px-3 py-2"
+        />
+      </Dialog>
+    </>
   )
 }
 

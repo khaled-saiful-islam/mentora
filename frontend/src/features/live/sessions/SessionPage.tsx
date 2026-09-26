@@ -119,6 +119,11 @@ export default function SessionPage() {
 
       {error && <Alert className="mb-4">{error}</Alert>}
       {live.status === 'failed' && live.failure && <Alert className="mb-4">{live.failure}</Alert>}
+      {live.flagged && (
+        <Alert tone="warning" className="mb-4">
+          A student reported something in this lesson. It is in the safety queue for the admins to look at.
+        </Alert>
+      )}
       {live.status === 'planned' && live.failure && <Alert tone="warning" className="mb-4">{live.failure}</Alert>}
 
       <div className="space-y-6">
@@ -172,6 +177,10 @@ export default function SessionPage() {
                     onStop={player.stop}
                     onSave={async (patch) => {
                       setSegment(await sessionsApi.editSegment(live.id, segment.id, patch))
+                      void detail.reload()
+                    }}
+                    onRemoveImage={async () => {
+                      setSegment(await sessionsApi.editSegment(live.id, segment.id, { remove_image: true }))
                       void detail.reload()
                     }}
                     onRewrite={async (instruction) => {

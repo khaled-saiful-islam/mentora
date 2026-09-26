@@ -268,6 +268,8 @@ async def edit_segment(
         row.beats = [b.as_dict() for b in made]
     if body.key_points is not None:
         row.key_points = [" ".join(k.split()) for k in body.key_points if k.strip()]
+    if body.remove_image:
+        row.image = None
     if body.remove_checkin:
         row.checkin = None
     elif body.checkin is not None:

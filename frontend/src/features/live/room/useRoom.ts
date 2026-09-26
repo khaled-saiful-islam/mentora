@@ -9,10 +9,13 @@
  */
 import { useMotionValue } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { GuidePicture } from '@/features/learning/api'
 import type { Spoken } from '../Captions'
 import { offsetFrom, type Sample } from './clock'
 import { roomApi, roomEvents, type ClipEvent, type Joined, type RoomEvent, type RoomPhase, type RosterEntry, type RoomState } from './api'
 import { RoomPlayer } from './RoomPlayer'
+
+const RESULT_SHOWN_MS = 12_000
 
 export type MyHand = 'none' | 'up' | 'called' | 'asked'
 
@@ -34,6 +37,7 @@ export function useRoom(id: string) {
   const [line, setLine] = useState<Spoken | null>(null)
   const [speaking, setSpeaking] = useState(false)
   const [show, setShow] = useState<string | null>(null)
+  const [image, setImage] = useState<GuidePicture | null>(null)
   const [progress, setProgress] = useState<{ step: number; steps: number }>({ step: 0, steps: 0 })
   const [segment, setSegment] = useState(-1)
   const [hands, setHands] = useState<{ student_id: string; name: string }[]>([])
@@ -61,16 +65,18 @@ export function useRoom(id: string) {
   }
 
   const onClip = useCallback(
-    (clip: ClipEvent) => {
+    (clip: ClipEvent, fresh = true) => {
       void player.current?.play(clip.key, clip.start, clip.duration)
       const wait = (clip.start - serverNow()) * 1000
       if (wait < -clip.duration * 1000) return
       later(wait, () => {
         setSpeaking(true)
         setLine({ key: `${clip.seq}`, text: clip.text, start: clip.start, duration: clip.duration, speaker: 'tutor' })
-        setSaid((all) => [...all.slice(-200), { id: `${clip.seq}`, speaker: 'tutor', text: clip.text }])
+        // A clip replayed from a snapshot is already in the transcript we joined with.
+        if (fresh) setSaid((all) => [...all.slice(-200), { id: `${clip.seq}`, speaker: 'tutor', text: clip.text }])
         if (clip.lane === 'lesson') {
           if (clip.show !== undefined) setShow(clip.show ?? null)
+          if (clip.image !== undefined) setImage(clip.image ?? null)
           if (clip.steps) setProgress({ step: (clip.step ?? 0) + 1, steps: clip.steps })
           if (clip.segment !== undefined) setSegment(clip.segment)
         }
@@ -129,6 +135,8 @@ export function useRoom(id: string) {
         case 'checkin_result':
           setResult(event)
           setCheckin(null)
+          // Long enough to see how the group did and hear why; then the lesson has the stage.
+          later(RESULT_SHOWN_MS, () => setResult((r) => (r?.seq === event.seq ? null : r)))
           break
         case 'ended':
           setPhase('ended')
@@ -154,11 +162,12 @@ export function useRoom(id: string) {
   function restore(state: RoomState) {
     if (state.phase) setPhase(state.phase)
     if (state.show !== undefined) setShow(state.show ?? null)
+    if (state.image !== undefined) setImage(state.image ?? null)
     if (state.hands) setHands(state.hands.queue)
     if (state.called?.student_id) setCalled({ student_id: state.called.student_id, name: state.called.name ?? '' })
     if (state.checkin) setCheckin(state.checkin)
     if (state.quiz) setQuiz({ assignment_id: state.quiz.assignment_id, title: state.quiz.title })
-    if (state.clip) onClip(state.clip)
+    if (state.clip) onClip(state.clip, false)
   }
 
   // Join, sync the clock, then follow the room — reconnecting from the last event seen.
@@ -271,7 +280,7 @@ export function useRoom(id: string) {
   )
 
   return {
-    joined, error, phase, roster, line, speaking, show, progress, segment, hands, called, mine, left,
+    joined, error, phase, roster, line, speaking, show, image, progress, segment, hands, called, mine, left,
     checkin, answered, choice, result, quiz, said, soundOn, removed, level, serverNow,
     enableSound, raiseHand, lowerHand, ask, askAloud, choose,
   }

@@ -3,10 +3,11 @@
  * the screen shows, the quick check at the end — and a way to hear it, change
  * it by hand, or ask for it to be written differently.
  */
-import { ArrowsClockwise, Check, PencilSimple, Play, Question, Sparkle, Stop } from '@phosphor-icons/react'
+import { ArrowsClockwise, Check, PencilSimple, Play, Question, Sparkle, Stop, Trash } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import { Button, Input } from '@/components/ui'
+import { PictureFrame } from '@/features/guide/PictureFrame'
 import { cn } from '@/lib/utils'
 import { spring } from '@/motion'
 import type { Beat } from '../api'
@@ -23,6 +24,7 @@ export function SegmentCard({
   onStop,
   onSave,
   onRewrite,
+  onRemoveImage,
 }: {
   segment: Segment
   editable: boolean
@@ -32,6 +34,7 @@ export function SegmentCard({
   onStop: () => void
   onSave: (patch: { title: string; beats: { say: string; show: string | null; pause: Beat['pause'] }[] }) => Promise<void>
   onRewrite: (instruction: string) => Promise<void>
+  onRemoveImage?: () => void
 }) {
   const [editing, setEditing] = useState(false)
   const [asking, setAsking] = useState(false)
@@ -87,6 +90,23 @@ export function SegmentCard({
           )}
         </div>
       </header>
+
+      {segment.image && (
+        <div className="mt-4 grid gap-3 sm:grid-cols-[14rem_minmax(0,1fr)] sm:items-center">
+          <div className="overflow-hidden rounded-2xl border-2 border-border">
+            <PictureFrame picture={segment.image} alt={segment.title} className="aspect-[16/9]" drift={false} />
+          </div>
+          <div className="min-w-0 text-sm text-muted-foreground">
+            <p className="break-words">On screen while this part is taught{segment.image.source ? ` · from ${segment.image.source}` : ''}.</p>
+            {editable && onRemoveImage && (
+              <Button size="sm" variant="ghost" className="mt-1 -ml-3" onClick={onRemoveImage}>
+                <Trash weight="bold" className="size-4" aria-hidden />
+                Remove the picture
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       <AnimatePresence>
         {asking && (

@@ -1,5 +1,6 @@
 import { apiFetch } from '@/lib/api'
 import { readSse } from '@/lib/sse'
+import type { GuidePicture } from '@/features/learning/api'
 import type { Beat } from '../api'
 
 export type SessionStatus =
@@ -49,6 +50,7 @@ export interface Segment {
   beats: Beat[]
   key_points: string[]
   checkin: Checkin | null
+  image: GuidePicture | null
   target_seconds: number
   status: string
 }
@@ -77,6 +79,7 @@ export interface SessionSummary {
   grade_level: string | null
   duration_minutes: number | null
   scheduled_at: string | null
+  flagged: boolean
   started_at: string | null
   ended_at: string | null
   teacher_name: string | null
@@ -135,6 +138,7 @@ export const sessionsApi = {
       key_points?: string[]
       checkin?: Checkin
       remove_checkin?: boolean
+      remove_image?: boolean
     },
   ) => apiFetch<Segment>(`/live-sessions/${id}/segments/${segmentId}`, { method: 'PATCH', ...json(patch) }),
   rewriteSegment: (id: string, segmentId: string, instruction: string) =>

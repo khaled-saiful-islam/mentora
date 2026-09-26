@@ -124,6 +124,8 @@ class LiveSegment(Base):
     key_points: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
     # A quick question for the room at the end of the part, or none.
     checkin: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    # A picture on screen while the part is taught: {image, thumbnail, page, source, title}.
+    image: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     target_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=90)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="draft")
     created_at: Mapped[datetime] = created_at()

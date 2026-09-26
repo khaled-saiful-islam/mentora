@@ -12,7 +12,8 @@ SEGMENT_SHAPE = (
     '{"title": "a short title", "key_points": ["under 12 words", "…"], '
     '"beats": [{"say": "…", "show": "…" or null, "pause": "short|breath|think"}], '
     '"checkin": {"question": "…", "options": ["…", "…", "…", "…"], "answer": 0, '
-    '"explanation": "one sentence"} or null}'
+    '"explanation": "one sentence"} or null, '
+    '"image_query": "a picture search for this segment, 3 to 6 words, or null"}'
 )
 
 

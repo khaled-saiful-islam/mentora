@@ -114,6 +114,7 @@ class Room:
             if event.get("lane") == "lesson":
                 self.state["segment"] = event.get("segment")
                 self.state["show"] = event.get("show")
+                self.state["image"] = event.get("image")
         elif kind in ("hands", "called", "checkin", "checkin_result", "quiz", "ended", "paused"):
             self.state[kind] = event
         if kind == "checkin_result":

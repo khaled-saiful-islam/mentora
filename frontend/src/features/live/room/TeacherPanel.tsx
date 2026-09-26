@@ -93,14 +93,17 @@ export function TeacherPanel({
 }
 
 function LiveTranscript({ said }: { said: Said[] }) {
-  const end = useRef<HTMLLIElement>(null)
+  // Follow the newest line inside the box only — never move the page under
+  // the teacher's feet.
+  const box = useRef<HTMLOListElement>(null)
   useEffect(() => {
-    end.current?.scrollIntoView({ block: 'nearest' })
+    const el = box.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [said.length])
   return (
     <Card className="p-4">
       <h2 className="mb-2 font-display text-lg font-semibold">Transcript, live</h2>
-      <ol className="max-h-[26rem] space-y-1.5 overflow-y-auto pr-1">
+      <ol ref={box} className="max-h-[26rem] space-y-1.5 overflow-y-auto pr-1">
         {said.map((s) => (
           <li
             key={s.id}
@@ -110,7 +113,6 @@ function LiveTranscript({ said }: { said: Said[] }) {
             {s.text}
           </li>
         ))}
-        <li ref={end} aria-hidden />
       </ol>
     </Card>
   )

@@ -243,6 +243,7 @@ async def test_nothing_a_student_sends_reaches_another_student() -> None:
         "/live-rooms/{session_id}/question",
         "/live-rooms/{session_id}/question/voice",
         "/live-rooms/{session_id}/checkin",
+        "/live-rooms/{session_id}/report",
     }
 
 
@@ -284,12 +285,13 @@ async def test_at_its_time_the_lesson_starts_once_someone_is_there(
     live.scheduled_at = datetime.now(UTC) - timedelta(seconds=5)
     await session.commit()
     await _clock(session, runtime).tick(datetime.now(UTC))
-    assert runtime.started == []  # nobody in the room yet
+    # Nobody in the room yet. (Only this lesson counts: the database is shared.)
+    assert live.id not in runtime.started
 
     room = await runtime.room(live.id)
     room.members[kid.id] = Member(kid.id, "Aina", None, "student", connections=1)
     await _clock(session, runtime).tick(datetime.now(UTC))
-    assert runtime.started == [live.id]
+    assert live.id in runtime.started
 
 
 async def test_a_lesson_running_when_the_server_restarted_carries_on(
@@ -299,7 +301,7 @@ async def test_a_lesson_running_when_the_server_restarted_carries_on(
     live.status = "live"
     await session.commit()
     await _clock(session, runtime).tick(datetime.now(UTC))
-    assert runtime.started == [live.id]
+    assert live.id in runtime.started
 
 
 # --- after the lesson, and the teacher's hand in it ---------------------------------
@@ -428,3 +430,26 @@ async def test_a_recording_that_is_too_long_is_refused(
             files={"clip": ("q.wav", b"x" * 1_300_000, "audio/wav")},
         )
     assert big.status_code == 422
+
+
+async def test_a_report_reaches_the_safety_queue_and_flags_the_lesson(
+    room_api, session, scheduled, teacher
+) -> None:
+    from app.db.models.moderation import ModerationEvent
+
+    live, kid, outsider = scheduled
+    async with room_api(kid) as c:
+        sent = await c.post(
+            f"/api/live-rooms/{live.id}/report", json={"text": "The picture was scary."}
+        )
+    async with room_api(outsider) as c:
+        stranger = await c.post(f"/api/live-rooms/{live.id}/report", json={"text": "Hmm."})
+    assert sent.status_code == 202 and stranger.status_code == 404
+    await session.refresh(live)
+    assert live.flagged_at is not None
+    [event] = (
+        (await session.execute(select(ModerationEvent).where(ModerationEvent.user_id == kid.id)))
+        .scalars()
+        .all()
+    )
+    assert event.kind == "report" and "scary" in event.excerpt

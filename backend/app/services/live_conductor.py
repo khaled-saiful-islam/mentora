@@ -249,6 +249,7 @@ class Conductor:
                 "segment_id": step.segment_id,
                 "beat_id": step.beat_id,
                 "show": step.show,
+                "image": step.image,
             },
             interruptible=True,
         )
@@ -473,7 +474,9 @@ class Conductor:
                 .scalars()
                 .all()
             )
-            segments = [{"id": r.id, "beats": r.beats, "checkin": r.checkin} for r in rows]
+            segments = [
+                {"id": r.id, "beats": r.beats, "checkin": r.checkin, "image": r.image} for r in rows
+            ]
             start = int((live.position or {}).get("index", 0))
             self._room.state["segments"] = len(segments)
         return steps_of(segments), start

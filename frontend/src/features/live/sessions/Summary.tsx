@@ -18,7 +18,7 @@ export function Summary({ id }: { id: string }) {
   return (
     <section className="space-y-4">
       <h2 className="font-display text-2xl font-semibold">How it went</h2>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <Stat Icon={UsersThree} value={`${came} of ${attendance.length}`} label="came" />
         <Stat Icon={ChatCircleText} value={String(questions.length)} label={questions.length === 1 ? 'question asked' : 'questions asked'} />
         <Stat
@@ -115,7 +115,7 @@ function Stat({ Icon, value, label }: { Icon: typeof UsersThree; value: string; 
         <Icon weight="bold" className="size-6" aria-hidden />
       </span>
       <div className="min-w-0">
-        <p className="font-display text-2xl font-bold leading-none">{value}</p>
+        <p className="break-words font-display text-2xl font-bold leading-tight">{value}</p>
         <p className="break-words text-sm text-muted-foreground">{label}</p>
       </div>
     </Card>

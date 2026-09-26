@@ -67,6 +67,7 @@ class SegmentEdit(BaseModel):
     )
     checkin: CheckinEdit | None = None
     remove_checkin: bool = False
+    remove_image: bool = False
 
 
 class RewriteSegment(BaseModel):
@@ -111,6 +112,7 @@ def session_summary(view: SessionView) -> dict[str, Any]:
         "scheduled_at": live.scheduled_at.isoformat() if live.scheduled_at else None,
         "started_at": live.started_at.isoformat() if live.started_at else None,
         "ended_at": live.ended_at.isoformat() if live.ended_at else None,
+        "flagged": live.flagged_at is not None,
         "teacher_name": view.teacher_name,
         "created_at": live.created_at.isoformat(),
     }
@@ -126,6 +128,7 @@ def segment_out(segment: LiveSegment) -> dict[str, Any]:
         "beats": segment.beats,
         "key_points": segment.key_points,
         "checkin": segment.checkin,
+        "image": segment.image,
         "target_seconds": segment.target_seconds,
         "status": segment.status,
     }

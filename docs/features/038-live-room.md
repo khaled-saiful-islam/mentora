@@ -26,6 +26,14 @@
   - Then the group's answers are shown as bars, and Astra says the right answer and why.
 - **The end:** a celebration. Then *Take the quiz* appears, for a quiz made from the lesson, the teacher's files and the questions the group asked, and shared with the group. Afterwards the room shows **My notes**: the key points of each part and the whole lesson as it was said.
 
+**Pictures** (Phase 5): each part may carry a picture, shown on the stage while it is taught.
+- The planner asks for an `image_query` per segment and finds the picture with SafeSearch, https only. It uses the same path as study guides (`Researcher.pictures`, `picture_from`).
+- The teacher sees it in the review and can remove it.
+
+**Report a problem** (Phase 5): a student can report something in the lesson.
+- The report goes to the admins' safety queue (`moderation_events`, kind `report`).
+- It flags the lesson (`flagged_at`), and the teacher sees a notice on the lesson's page.
+
 **For the teacher** (`/live/:id/room`, and *Open the room* on the lesson page):
 
 - **Begin the lesson now:** a lesson also starts by itself at its time, once someone is in the room.
@@ -85,6 +93,7 @@
 | POST | `/live-rooms/:id/question` | Only while called on |
 | POST | `/live-rooms/:id/question/voice` | A spoken question (WAV, 30 s at most), only while called on |
 | POST | `/live-rooms/:id/checkin` | Answer a quick check |
+| POST | `/live-rooms/:id/report` | Report a problem |
 | GET | `/live-rooms/:id/notes` | Once ended |
 
 **The teacher:**
@@ -105,6 +114,9 @@ A test asserts the student routes are exactly `join`, `hand`, `question` and `ch
 - The audio cache is the `mentora-live-audio` Docker volume, so a rebuild keeps every recorded lesson.
 
 ## Known limits
+
+- **Similar questions are not merged.** Each raised hand is taken in turn. Merging ("a couple of you asked…") was optional in the spec and is left for later.
+- **Pictures come from web image search** (SafeSearch, https, blocked hosts dropped), so the teacher should glance at each one in the review. Each can be removed with one tap.
 
 - **One worker.** The rooms and conductors live in the API process. A restart resumes a running lesson from its last sentence, but the room forgets live-only state (the hand queue, an open check) until it happens again.
 - **Answers are recorded as they stream.** The first spoken word comes about 1–2 s after the thanks line, hidden by that line when the model is warm.
