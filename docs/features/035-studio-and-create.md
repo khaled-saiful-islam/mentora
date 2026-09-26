@@ -14,8 +14,9 @@
 - **Create something** — one panel, two tabs: **Learning** (quizzes,
   flashcards, study guides) and **Studio** (posters, slides, websites, apps,
   games). Only one group shows at a time, so eight cards never crowd the page.
-  A light moves from card to card, playing the lit card's little scene and
-  turning to its next example; pointing at a card takes the light.
+  Every card plays its little scene all the time. A light moves from card to
+  card, turning the lit one to its next example; pointing at a card takes the
+  light.
   Choosing a learning kind opens its maker with the example as the topic;
   choosing a studio kind writes its request into the box with the subject
   selected, ready to change or send.

@@ -10,9 +10,10 @@ const SPOTLIGHT_MS = 3200
 
 /**
  * What can be made, on the studio's front page — one group at a time, so
- * eight cards never crowd the screen. A light moves from card to card: the lit
- * one plays its little scene and turns to its next example. Pointing at a
- * card takes the light; choosing it starts that thing with that example.
+ * eight cards never crowd the screen. Every card plays its little scene; a
+ * light moves from card to card, turning the lit one to its next example.
+ * Pointing at a card takes the light; choosing it starts that thing with that
+ * example.
  */
 export function CreatePanel({
   items,

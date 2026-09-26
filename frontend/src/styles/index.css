@@ -433,19 +433,6 @@
     animation: make-swap 460ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  /* A scene holds its first frame until its tile is lit. */
-  .scene,
-  .scene * {
-    animation-play-state: paused !important;
-  }
-
-  .make-tile[data-live='true'] .scene,
-  .make-tile[data-live='true'] .scene *,
-  .make-tile:hover .scene,
-  .make-tile:hover .scene * {
-    animation-play-state: running !important;
-  }
-
   .scene {
     position: relative;
     display: grid;
