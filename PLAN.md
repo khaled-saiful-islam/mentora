@@ -2,6 +2,7 @@
 
 > **Status: APPROVED 2026-09-24 — Phases 1–5 done (roles, design, classes, learning sets, taking/results/buddies); Phase 6 (guardrails & admin) next.**
 > **§19 Live AI group tutoring — approved 2026-09-26. Phases 0–5 built (docs/features/036–038); waiting on your testing.**
+> **§20 Parents — proposed 2026-09-26, waiting on your approval.**
 > Mentora is a fork of Pelita (`~/projects/pelita` @ `5a23f41`). This plan reuses
 > Pelita's stack, layering and Protocol-plus-registry design, and extends it into a
 > teacher–student learning platform.
@@ -917,3 +918,164 @@ Each phase: TDD → lint + tests → `make up` → a browser check (desktop + ph
 - segments of 150–300 words
 - audio kept 7 days
 - the tutor gets a friendly name you can change, set per template
+
+---
+
+## 20. Parents (proposed 2026-09-26 — waiting on your approval)
+
+A new kind of account for a child's parent or carer. The parent is linked to
+their child, and through the child to the child's classes and teachers. They
+see everything the child does, make learning material to share with them,
+use the chat, and hear straight away when the child misses work.
+
+### 20.0 Your decisions (asked 2026-09-26)
+
+1. **Signing up.** A parent signs up on their own, or through an invitation
+   their child sends. Either way it is the **child's invitation that links
+   them**: a parent who signed up alone connects by opening the child's link
+   or typing the child's 6-letter code.
+2. **Teachers.** A parent is connected to the child's teachers automatically,
+   for as long as the child is in the class. **They see each other, nothing
+   more:**
+   - The parent sees the child's classes, teachers and schedule.
+   - The teacher sees which students have a parent connected, and who.
+   - No messages, no notices.
+3. **"Missed" means past-due work.** Work passes its due date unfinished,
+   whether a teacher's quiz, deck or guide or one the parent shared. The
+   parent gets an instant notification: in the bell, live, and once per piece.
+4. **Chat only.** Parents get the AI chat as adults supporting a child. There
+   is no studio (posters, slides, sites, games, apps).
+5. **Only the parent can break the link.** The child starts it, but cannot
+   quietly cut their parent off.
+
+### 20.1 Roles and access (enforced on the backend, like every role)
+
+- `Role.PARENT` joins `admin | teacher | student`. It needs a migration to
+  widen `ck_users_role`.
+- New capabilities in `policies/capabilities.py`:
+  - `see_children`: a parent's view of their own children.
+  - `make_family_sets`: make material and share it with a linked child.
+- Parents also get `use_chat=True`, and **no** `studio_artifacts`,
+  `manage_classes`, `share_learning_sets` or `join_classes`.
+- **Ownership is the lookup.** Every child read goes through
+  `FamilyService.child(parent_id, student_id)`. A child who is not linked is
+  *not found*, never *forbidden*, the same rule the classes use.
+
+### 20.2 Linking a parent to a child
+
+| Step | What happens |
+|---|---|
+| Child invites | Settings → **My family** → *Invite a parent*. It gives a link (`/family/<token>`) and a 6-letter code, like a class invite. It can be turned off and made anew, and expires after 14 days. |
+| New parent | The link opens parent sign-up with the child named ("Aina has invited you"). The account and the link are made together. |
+| Existing parent | Signed in, the link asks *"Connect to Aina?"* and links on yes. On their home, *Connect a child* takes the code. |
+| Limits | A child can have up to 4 parents; a parent up to 8 children. The child is told ("Your mum is connected") in the bell. |
+| Unlinking | Only the parent: *Disconnect* on the child's page, with a confirmation. |
+
+Tables: `family_links` (parent, student, created; unique pair) and
+`family_invites` (student, token, code, enabled, expires).
+
+### 20.3 What the parent sees — everything the child does
+
+- **Parent home**, one card per child:
+  - Their buddy and first name, streak and badges.
+  - What is waiting, with anything past due in coral.
+  - The latest results with scores, and what is coming up live.
+- **Child page** (`/children/:id`), in tabs:
+  - **Overview**: this week's work, done and to do; the latest attempts with
+    scores; skills they are strong at and those to practise.
+  - **Work**: everything shared with them (teacher and family) with its
+    status, due date and best score, and the attempt reviews they can open.
+  - **Results**: strengths and weaknesses by skill, and the history.
+  - **Practice**: the child's own practice sets, and the "Made for you"
+    practice.
+  - **Schedule**: live lessons coming up and done, with the notes.
+  - **Classes and teachers**: each class, its teacher and the class's
+    coverage map, read-only.
+- It reuses what exists: `StudentHomeService`, `ResultsService.insights`,
+  `LiveSessionService.for_student`, `ClassPulseService.for_student` and the
+  coverage map, all called **for the child**, behind the family lookup.
+- **Teachers**: the class's Students tab shows a small family icon on each
+  student with a parent connected, and the parent's name on hover.
+
+### 20.4 Parents make and share material
+
+- A parent makes a quiz, flashcards or a study guide with the same Create
+  sheet and grounded generator. The set is `purpose = "family"`, a new value
+  in the purpose check.
+- **Share with my child**, optionally with a due date:
+  - A `family_shares` row (parent, child, set, version, due).
+  - The child's home gets a **From home** section, with *"Mum sent you a
+    quiz"* in the bell.
+  - The child takes it like practice (`AttemptService` accepts a set shared
+    with them by a linked parent). It counts for badges and skills like any
+    other work.
+- **Results come back.** The parent sees the attempt and its score on the
+  child's page, and gets *"Aina finished your quiz — 80%"* in the bell.
+- Parents get the background tray and bell note when a set is ready, as
+  teachers do (§ background work).
+
+### 20.5 Past-due alerts (instant)
+
+- A **due watcher** runs on the existing scheduler loop every minute:
+  - It finds shared work (class assignments and family shares) whose
+    `due_at` has passed with no completed attempt by the student.
+  - For each linked parent it sends one notification per work per child:
+    *"Aina hasn't finished The Water Cycle — it was due today at 5 pm"*,
+    linked to the child's Work tab.
+  - A unique key (`overdue:<work>:<child>`) means it is never sent twice.
+- A closed assignment, a child who left the class, or work finished late
+  before the watcher runs sends nothing.
+- The kind is `child_overdue`. It is realtime, like every bell note.
+
+### 20.6 Chat for parents
+
+- `use_chat=True`, with a **parent persona**: a new `context/persona.py`
+  case, "an adult supporting their child's learning at home".
+  - It has plain language and practical tips.
+  - It is aware of Malaysian school years.
+  - It never names the child's classmates or scores unless the parent asks
+    about their own child.
+- The adult guardrails apply, not the student ones. The injection guard and
+  the output screen run as for teachers.
+- There is no studio: the Create menu in chat shows only quiz, flashcards and
+  study guide.
+
+### 20.7 Look and feel
+
+- **Parent theme**: the same design system, with a warm family accent (its own
+  kind colour) and the child's buddy on every child card.
+- **Sign-up**: a third door on the sign-up chooser, *"I'm a parent"*, with the
+  buddies watching as on the other two.
+- The same bar as everything else:
+  - Animation throughout.
+  - No cut or squeezed text, checked by the two sweeps at 4 widths.
+  - No lone cards (the §12 layout rules).
+
+### 20.8 Phases
+
+| # | Phase | Done when |
+|---|---|---|
+| P0 | **Role and linking** | Parent sign-up (alone or by invite), the child's invite (link and code), connect by code, disconnect (parent only), limits. The teacher sees the family icon, and the parent sees the child's classes and teachers. |
+| P1 | **Seeing the child** | Parent home and the child page, all six tabs, with live updates as the child works. |
+| P2 | **Make and share** | Family sets, share with due date, *From home* for the child, results and notifications both ways. |
+| P3 | **Past-due alerts** | The due watcher, deduped instant notes, tested with a clock. |
+| P4 | **Chat** | The parent persona, adult guardrails, chat without studio. |
+| P5 | **Polish** | Design pass, docs (042–044), both layout sweeps at 4 widths, a demo parent in `make demo`. |
+
+Each phase ends with tests, a deploy, a browser check and a local commit (no
+push until you say).
+
+### 20.9 Defaults I chose (overturn any)
+
+- **Relationship label**: the parent picks *Mum, Dad, Guardian* or types one.
+  It is used in the child's notes ("Mum sent you a quiz").
+- **What the parent sees**: everything the child does in Mentora, including
+  their own practice. The child is told a parent is connected, in their bell
+  and under My family, so nothing is hidden from them.
+- **No parent–parent visibility.** Two parents of one child do not see each
+  other's shared material unless they share it with the child. Both see
+  everything the child does.
+- **A child with no class** can still link a parent. They get the family
+  features and nothing from school.
+- **Demo data**: `make demo` adds `parent.demo` (Aina's mum) with a shared
+  quiz and one past-due item, so every screen has something to show.
