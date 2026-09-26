@@ -90,3 +90,42 @@ function initials(name: string): string {
   const parts = name.trim().split(/\s+/)
   return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase() || '?'
 }
+
+const RING = 2 * Math.PI * 22
+// Written out whole, so the stylesheet has them.
+const RING_TONE = { strong: 'stroke-mint-400', middle: 'stroke-sky-400', low: 'stroke-coral-400' }
+
+/** A score as a ring that fills — or a quiet dash before there is one. */
+export function ScoreRing({ value, label }: { value: number | null; label: string }) {
+  const tone = value === null ? '' : value >= 75 ? RING_TONE.strong : value >= 50 ? RING_TONE.middle : RING_TONE.low
+  return (
+    <span className="flex shrink-0 flex-col items-center gap-1" aria-label={value === null ? `No ${label} yet` : `${label} ${Math.round(value)}%`}>
+      <span className="relative grid size-16 place-items-center">
+        <svg viewBox="0 0 52 52" className="absolute inset-0 -rotate-90" aria-hidden>
+          <circle cx="26" cy="26" r="22" fill="none" strokeWidth="6" className="stroke-muted" />
+          {value !== null && (
+            <motion.circle
+              cx="26"
+              cy="26"
+              r="22"
+              fill="none"
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeDasharray={RING}
+              initial={{ strokeDashoffset: RING }}
+              animate={{ strokeDashoffset: RING * (1 - value / 100) }}
+              transition={{ type: 'spring', stiffness: 60, damping: 16, delay: 0.15 }}
+              className={tone}
+            />
+          )}
+        </svg>
+        <span className="font-display text-base font-semibold tabular-nums" aria-hidden>
+          {value === null ? '—' : `${Math.round(value)}%`}
+        </span>
+      </span>
+      <span className="text-[0.7rem] font-bold text-muted-foreground" aria-hidden>
+        {label}
+      </span>
+    </span>
+  )
+}

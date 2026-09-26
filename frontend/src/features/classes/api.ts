@@ -87,6 +87,17 @@ export interface NextLive {
   status: 'scheduled' | 'lobby' | 'live'
 }
 
+/** One of a class's latest shares, and how far along the class is. */
+export interface RecentShare {
+  id: string
+  title: string
+  kind: string
+  completed: number
+  audience: number
+  due_at: string | null
+  closed: boolean
+}
+
 /** A class card at a glance, for its teacher. */
 export interface TeacherPulse {
   shared: number
@@ -94,6 +105,7 @@ export interface TeacherPulse {
   finished_week: number
   next_live: NextLive | null
   faces: string[]
+  recent: RecentShare[]
 }
 
 /** A class card at a glance, for a student in it. */

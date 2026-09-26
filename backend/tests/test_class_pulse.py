@@ -60,6 +60,8 @@ async def test_a_teacher_card_counts_what_is_shared_and_how_it_went(
     assert pulse.finished_week == 1
     assert set(pulse.faces) == {"Aina", "Hafiz"}
     assert pulse.next_live is None
+    [latest] = pulse.recent
+    assert (latest.id, latest.completed, latest.audience) == (assignment.id, 1, 2)
 
 
 async def test_the_next_live_lesson_is_the_soonest_one_coming(session, teacher, account) -> None:

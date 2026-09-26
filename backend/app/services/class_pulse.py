@@ -22,6 +22,8 @@ from app.db.models.classroom import ClassMembership
 from app.db.models.learning import Assignment
 from app.db.models.live import LiveSession
 from app.db.models.user import User
+from app.events.bus import EventBus
+from app.services.assignment_service import AssignmentService
 from app.services.live_session_service import LiveSessionService
 from app.services.student_home_service import StudentHomeService
 
@@ -29,6 +31,8 @@ from app.services.student_home_service import StudentHomeService
 UPCOMING = ("scheduled", "lobby", "live")
 # How many students' faces a card shows.
 FACES = 5
+# The latest shares a card shows, with how far along the class is.
+RECENT = 2
 WEEK = timedelta(days=7)
 
 
@@ -38,6 +42,18 @@ class NextLive:
     title: str
     scheduled_at: datetime | None
     status: str
+
+
+@dataclass(frozen=True, slots=True)
+class RecentShare:
+    id: UUID
+    title: str
+    kind: str
+    # Students who finished it, of everyone it is for.
+    completed: int
+    audience: int
+    due_at: datetime | None
+    closed: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +67,8 @@ class TeacherPulse:
     next_live: NextLive | None
     # The first few students' names, for the faces on the card.
     faces: tuple[str, ...]
+    # The latest shares, newest first.
+    recent: tuple[RecentShare, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,7 +78,9 @@ class StudentPulse:
     next_live: NextLive | None
 
 
-EMPTY_TEACHER = TeacherPulse(shared=0, average=None, finished_week=0, next_live=None, faces=())
+EMPTY_TEACHER = TeacherPulse(
+    shared=0, average=None, finished_week=0, next_live=None, faces=(), recent=()
+)
 EMPTY_STUDENT = StudentPulse(to_do=0, done=0, next_live=None)
 
 
@@ -77,6 +97,7 @@ class ClassPulseService:
         average, week = await self._results(ids)
         upcoming = await self._upcoming(ids)
         faces = await self._faces(ids)
+        recent = await self._recent(ids)
         return {
             cid: TeacherPulse(
                 shared=shared.get(cid, 0),
@@ -84,6 +105,7 @@ class ClassPulseService:
                 finished_week=week.get(cid, 0),
                 next_live=upcoming.get(cid),
                 faces=faces.get(cid, ()),
+                recent=recent.get(cid, ()),
             )
             for cid in ids
         }
@@ -148,6 +170,52 @@ class ClassPulseService:
         found: dict[UUID, NextLive] = {}
         for live in rows.all():
             found.setdefault(live.class_id, _next(live))
+        return found
+
+    async def _recent(self, ids: list[UUID]) -> dict[UUID, tuple[RecentShare, ...]]:
+        """Each class's latest shares, with how many of their students finished."""
+        rows = await self._session.scalars(
+            select(Assignment)
+            .where(Assignment.class_id.in_(ids))
+            .order_by(Assignment.created_at.desc())
+        )
+        latest: dict[UUID, list[Assignment]] = {}
+        for assignment in rows.all():
+            picked = latest.setdefault(assignment.class_id, [])
+            if len(picked) < RECENT:
+                picked.append(assignment)
+        chosen = [a for picked in latest.values() for a in picked]
+        if not chosen:
+            return {}
+        finished = dict(
+            (
+                await self._session.execute(
+                    select(Attempt.assignment_id, func.count(func.distinct(Attempt.student_id)))
+                    .where(
+                        Attempt.assignment_id.in_([a.id for a in chosen]),
+                        Attempt.status == "completed",
+                    )
+                    .group_by(Attempt.assignment_id)
+                )
+            ).all()
+        )
+        audiences = AssignmentService(self._session, EventBus())
+        found: dict[UUID, tuple[RecentShare, ...]] = {}
+        for class_id, picked in latest.items():
+            found[class_id] = tuple(
+                [
+                    RecentShare(
+                        id=a.id,
+                        title=a.title,
+                        kind=a.kind,
+                        completed=int(finished.get(a.id, 0)),
+                        audience=len(await audiences.audience(a)),
+                        due_at=a.due_at,
+                        closed=a.closed_at is not None,
+                    )
+                    for a in picked
+                ]
+            )
         return found
 
     async def _faces(self, ids: list[UUID]) -> dict[UUID, tuple[str, ...]]:

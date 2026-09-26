@@ -43,44 +43,41 @@ export default function StudentClassesPage() {
       <p className="mt-1 text-muted-foreground">Where your teachers share quizzes, flashcards and live lessons with you.</p>
 
       {classes.error && <Alert className="mt-6">{classes.error}</Alert>}
-      <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <section aria-label="Your classes" className="min-w-0">
-          {classes.loading && !classes.data ? (
-            <div className="space-y-4">
-              {[0, 1].map((i) => (
-                <Skeleton key={i} className="h-44 rounded-[1.75rem]" />
-              ))}
-            </div>
-          ) : current.length === 0 ? (
-            <EmptyState
-              art={<EmptyArt Icon={Backpack} tone="from-sun-100 to-mint-100" />}
-              title="No classes yet"
-              body="Ask your teacher for a class code or an invite link, then pop it into Join a class."
-            />
-          ) : (
-            <motion.ul className="space-y-4" variants={stagger(0.07)} initial="hidden" animate="shown">
-              {current.map((room) => (
-                <ClassTile key={room.class_id} room={room} onLeave={() => setLeaving(room)} />
-              ))}
-            </motion.ul>
-          )}
-        </section>
+      {/* One grid, so the join box shares the first class's row and the two
+          always stand the same height, side by side. */}
+      <div className="mt-8 grid gap-x-6 gap-y-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        {classes.loading && !classes.data ? (
+          <Skeleton className="h-52 rounded-[1.75rem] lg:col-start-1" />
+        ) : current.length === 0 ? (
+          <EmptyState
+            className="lg:col-start-1 lg:row-start-1"
+            art={<EmptyArt Icon={Backpack} tone="from-sun-100 to-mint-100" />}
+            title="No classes yet"
+            body="Ask your teacher for a class code or an invite link, then pop it into Join a class."
+          />
+        ) : (
+          <motion.ul aria-label="Your classes" className="contents" variants={stagger(0.07)} initial="hidden" animate="shown">
+            {current.map((room) => (
+              <ClassTile key={room.class_id} room={room} onLeave={() => setLeaving(room)} />
+            ))}
+          </motion.ul>
+        )}
 
-        <aside className={cn('space-y-4 lg:sticky lg:top-20', current.length === 0 && 'order-first lg:order-none')}>
+        <div className={cn('lg:col-start-2 lg:row-start-1', current.length === 0 && 'order-first lg:order-none')}>
           <JoinCard onJoined={() => void classes.reload()} />
-          {past.length > 0 && (
-            <Card className="p-5">
-              <h2 className="font-display text-lg font-semibold text-muted-foreground">Earlier</h2>
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {past.map((room) => (
-                  <li key={room.class_id}>
-                    <Chip>{room.class_name} · {PAST[room.status] ?? room.status}</Chip>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          )}
-        </aside>
+        </div>
+        {past.length > 0 && (
+          <Card className="self-start p-5 lg:col-start-2 lg:row-start-2">
+            <h2 className="font-display text-lg font-semibold text-muted-foreground">Earlier</h2>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {past.map((room) => (
+                <li key={room.class_id}>
+                  <Chip>{room.class_name} · {PAST[room.status] ?? room.status}</Chip>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
       </div>
 
       {leaving && (
@@ -105,9 +102,9 @@ function ClassTile({ room, onLeave }: { room: StudentClass; onLeave: () => void 
   const waiting = room.status === 'pending'
   const pulse = room.pulse
   return (
-    <motion.li variants={rise} layout>
+    <motion.li variants={rise} layout className="lg:col-start-1">
       {/* Side by side only where the column is wide enough for both. */}
-      <Card className="flex flex-col overflow-hidden xl:flex-row">
+      <Card className="flex h-full flex-col overflow-hidden xl:flex-row">
         <Link
           to={`/classes/${room.class_id}`}
           className={cn(
@@ -196,8 +193,8 @@ function JoinCard({ onJoined }: { onJoined: () => void }) {
   }
 
   return (
-    <Card className="overflow-hidden">
-      <form onSubmit={join} className="relative p-5 text-center">
+    <Card className="h-full overflow-hidden">
+      <form onSubmit={join} className="relative flex h-full flex-col justify-center p-5 text-center">
         <span className="blob -left-10 -top-16 size-48 bg-sun-300" aria-hidden />
         <span className="blob -bottom-20 right-0 size-48 bg-grape-300" aria-hidden />
         <div className="relative">
@@ -219,7 +216,7 @@ function JoinCard({ onJoined }: { onJoined: () => void }) {
               </motion.p>
             )}
           </AnimatePresence>
-          <Button type="submit" size="lg" variant="sun" className="mt-4 w-full" disabled={code.length < 6} loading={busy}>
+          <Button type="submit" variant="sun" className="mt-4 w-full" disabled={code.length < 6} loading={busy}>
             Join
           </Button>
         </div>

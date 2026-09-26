@@ -12,7 +12,6 @@ import { Page, rise, stagger } from '@/motion'
 import { cn } from '@/lib/utils'
 import { classesApi, type ClassDraft, type ClassRoom, type NextLive } from './api'
 import { NextLiveLine } from './ClassBits'
-import { AddTile } from '@/components/ui/AddTile'
 import { ClassCard } from './ClassCard'
 import { ClassFormDialog } from './ClassFormDialog'
 import { EmptyArt } from './EmptyArt'
@@ -61,7 +60,7 @@ export default function TeacherClassesPage() {
 
       <div className="mt-8">
         {classes.loading && !classes.data ? (
-          <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
+          <div className="grid gap-5 lg:grid-cols-2">
             {[0, 1, 2].map((i) => (
               <Skeleton key={i} className="h-72 rounded-[1.75rem]" />
             ))}
@@ -89,23 +88,15 @@ export default function TeacherClassesPage() {
             {view === 'active' && <Glance classes={items} />}
             <motion.ul
               key={view}
-              className={cn('mt-6 grid gap-5 lg:grid-cols-2', items.length + 1 >= 3 && '2xl:grid-cols-3')}
+              className="mt-6 grid gap-5 lg:grid-cols-2"
               variants={stagger(0.06)}
               initial="hidden"
               animate="shown"
             >
-              {items.map((room) => (
-                <ClassCard key={room.id} room={room} />
+              {items.map((room, index) => (
+                // An odd one out takes the whole last row, laid out wide.
+                <ClassCard key={room.id} room={room} wide={items.length % 2 === 1 && index === items.length - 1} />
               ))}
-              {view === 'active' && (
-                <AddTile
-                  title="Start another class"
-                  hint="You'll get a link and a code to share."
-                  onClick={() => setCreating(true)}
-                  count={items.length}
-                  columns={items.length + 1 >= 3 ? { lg: 2, '2xl': 3 } : { lg: 2 }}
-                />
-              )}
             </motion.ul>
           </>
         )}

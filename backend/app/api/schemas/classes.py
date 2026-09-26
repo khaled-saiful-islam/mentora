@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from app.core.grades import grade_label
 from app.db.models.classroom import ClassInvite
-from app.services.class_pulse import NextLive, StudentPulse, TeacherPulse
+from app.services.class_pulse import NextLive, RecentShare, StudentPulse, TeacherPulse
 from app.services.class_service import ClassSummary
 from app.services.group_service import GroupView
 from app.services.invite_service import InvitePreview
@@ -45,12 +45,35 @@ class NextLiveOut(BaseModel):
         return cls(id=live.id, title=live.title, scheduled_at=live.scheduled_at, status=live.status)
 
 
+class RecentShareOut(BaseModel):
+    id: UUID
+    title: str
+    kind: str
+    completed: int
+    audience: int
+    due_at: datetime | None
+    closed: bool
+
+    @classmethod
+    def of(cls, share: RecentShare) -> RecentShareOut:
+        return cls(
+            id=share.id,
+            title=share.title,
+            kind=share.kind,
+            completed=share.completed,
+            audience=share.audience,
+            due_at=share.due_at,
+            closed=share.closed,
+        )
+
+
 class TeacherPulseOut(BaseModel):
     shared: int
     average: float | None
     finished_week: int
     next_live: NextLiveOut | None
     faces: list[str]
+    recent: list[RecentShareOut] = []
 
     @classmethod
     def of(cls, pulse: TeacherPulse) -> TeacherPulseOut:
@@ -60,6 +83,7 @@ class TeacherPulseOut(BaseModel):
             finished_week=pulse.finished_week,
             next_live=NextLiveOut.of(pulse.next_live),
             faces=list(pulse.faces),
+            recent=[RecentShareOut.of(r) for r in pulse.recent],
         )
 
 
