@@ -10,7 +10,7 @@
    - **How:** approach (storytelling, step by step, question-led, lots of examples, exam-focused), level, length (10–45 min), an optional instruction, how questions are taken (any time or at pauses, and how many per student), and Astra's voice (the warm or the bright female voice).
    - **After:** the quiz afterwards (on/off, number of questions, level, due date), and *save as a template*. Templates appear on the first step next time.
 2. **The lesson's page** (`/live/:id`):
-   - Add materials: PDF, Word, **PowerPoint** or text, at most 5. They are read into text.
+   - Add materials: PDF, Word, **PowerPoint** or text, at most 5. They are read into text. *From my materials* attaches a file already kept in the Library without uploading it again ([`043-my-materials.md`](043-my-materials.md)).
    - *Write the lesson*: parts appear as they are written.
    - Check every part: *Listen* plays it in the recorded voice, exactly as the group will hear it. *Edit* changes it by hand; *Rewrite* asks for a change in words.
    - *Approve & record the voice*: every sentence, plus Astra's lines to each student by name, is recorded once, with a progress bar.

@@ -2,13 +2,16 @@
 
 ## What it does
 
-Every account has one of three roles:
+Every account has one of four roles:
 
 | Role | Signs up with | Signs in with |
 |---|---|---|
 | **Teacher** | name, email, password | email |
 | **Student** | name, grade, username, password — no email | username |
+| **Parent** | name, email, password, and what the child calls them — optionally through the child's invitation | email |
 | **Admin** | seeded, or created by an admin | email or username |
+
+Parents are covered in [`042-parents.md`](042-parents.md).
 
 What each role may do is decided in one place,
 `app/policies/capabilities.py`, and enforced on the backend:

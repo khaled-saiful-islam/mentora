@@ -6,8 +6,10 @@ Read this before writing code here.
 ## What this is
 
 Mentora is a teacher–student learning platform built on a streaming chat
-codebase. Teachers run classes and share quizzes and flashcards; students take
-them, see their results and learn with a guardrailed study buddy. `PLAN.md` is
+codebase. Teachers run classes, share quizzes, flashcards and study guides, and
+schedule live lessons that Astra, the tutor, teaches out loud. Students take
+them, see their results and learn with a guardrailed study buddy. Parents link
+to their child through the child's invitation and follow along. `PLAN.md` is
 the roadmap and the record of what was decided.
 
 The codebase keeps a strict discipline, because features keep landing on it:
@@ -111,7 +113,7 @@ see that?".
 
 ## Testing
 
-Target 80%. Currently 85% backend, across 1177 backend and 117 frontend tests.
+Target 80%. About 1,900 backend and 370 frontend tests.
 
 - Service tests use **fakes, not mocks** (`tests/fakes.py`, `FakeProvider` in
   `test_chat_service.py`). Asserting on call arguments tests the wiring; these

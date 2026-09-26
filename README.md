@@ -2,11 +2,13 @@
 
 **Where teachers and students learn together.**
 
-Teachers run classes, make quizzes and flashcards grounded in real sources,
-share them with a class or a group, and watch the results arrive live.
+Teachers run classes, make quizzes, flashcards and study guides grounded in
+real sources or their own files, share them with a class or a group, and watch
+the results arrive live. They can also schedule a **live lesson** that Astra,
+the tutor, teaches out loud to a group.
 Students join with a link, play each set one question at a time with a study
 buddy cheering them on, and see their strengths and the skills to practise
-next.
+next. **Parents** connect through their child's invitation and follow along.
 
 ![A student's home: their buddy, their streak, and the work their teachers shared](docs/screenshots/student-home.png)
 
@@ -54,6 +56,30 @@ or add a new one with AI**, preview it as students will see it, and **print it
 as a handout** with an answer key. See
 [`docs/features/034-study-guides.md`](docs/features/034-study-guides.md).
 
+## Live lessons
+
+A teacher plans a lesson in four steps (who, what, how, after) and Mentora
+writes it part by part. The teacher listens to every part in Astra's voice,
+edits or rewrites what they want, and approves it. Then it goes on the
+group's schedule.
+
+- **Everyone hears the same sentence at the same time**, with the words
+  lighting up, the key idea on screen and a star per part.
+- **The lobby** opens ten minutes before. Each classmate floats in as their
+  own buddy. Students never message each other.
+- **Ask Astra, out loud or typed.** Questions queue in turn. Astra reads each
+  one out, thanks the student by name and answers for the room.
+- **The teacher's room** shows who is here, the question queue and the
+  transcript as it is said. The teacher can pause, skip a part or end the
+  lesson.
+- **Afterwards**, the teacher gets a summary: attendance, every question and
+  Astra's answer, the quick checks and the quiz average. Students get their
+  notes. If the teacher chose one, a quiz made from the lesson is shared with
+  the group.
+
+See [`docs/features/037-live-lessons.md`](docs/features/037-live-lessons.md)
+and [`docs/features/038-live-room.md`](docs/features/038-live-room.md).
+
 ## For teachers
 
 | | |
@@ -65,17 +91,52 @@ as a handout** with an answer key. See
 | ![The studio: a chat beside a poster it designed, with zoom and edit controls](docs/screenshots/studio.png) | ![The notification panel with news from the class](docs/screenshots/notifications.png) |
 | **The studio** makes posters, slide decks, websites, apps and games for the classroom, with a zoomable preview. | **Live notifications** — join requests answerable in place, and news with a sense of fun. |
 
+- **My materials.** Upload the worksheets, chapters and notes you teach from
+  once (PDF, Word, PowerPoint or text). Make quizzes, flashcards, study guides
+  and live lessons from them. Every item cites your file. The web fills gaps
+  only if you ask it to.
+- **The coverage map.** It shows how much of the year's syllabus each class
+  has covered, month by month and topic by topic, with the class's score on
+  each. It can draft the syllabus, suggest a plan for the rest of the year,
+  and send a progress report home as a private link.
+- **Made for you.** When a student finds a shared quiz hard, Mentora makes
+  them a short practice set on exactly the skills they missed.
+- **Work in the background.** Making a set or recording a lesson carries on
+  while you do something else. A tray beside the bell shows its progress,
+  and the bell rings when it is ready.
+
+## For parents
+
+A parent signs up on their own, or from the link their child sends from
+**Settings → My family**. A parent who signed up alone connects by typing the
+child's 6-letter code.
+
+- **Linked to the child's teachers automatically.** The parent sees the
+  child's classes, teachers and schedule. The teacher sees which students
+  have a parent connected. They cannot message each other.
+- **Only the parent can disconnect.** The child is told when a parent
+  connects, and sees who is connected.
+- **Being built (PLAN.md §20):**
+  - A page per child with everything they do.
+  - Quizzes and flashcards parents make and share with their child.
+  - An instant alert when work goes past due.
+  - The chat, without the studio.
+
+See [`docs/features/042-parents.md`](docs/features/042-parents.md).
+
 ## Features
 
-- **Three roles.** Admin, teacher and student, each with its own signup,
-  home and permissions — decided in one policy file and enforced by the API,
-  not by hiding buttons.
+- **Four roles.** Admin, teacher, student and parent, each with its own
+  signup, home and permissions — decided in one policy file and enforced by
+  the API, not by hiding buttons.
 - **Classes and groups.** Invite links and codes, join requests, groups, and
   work shared with a whole class or one group.
-- **Grounded generation.** Quizzes, flashcards and study guides are written from sources the
-  app searched and read, with every answer checked against them and the
-  sources shown. Malaysian Year and Form grades, in English, Malay, Tamil,
-  Chinese or Bengali.
+- **Grounded generation.** Quizzes, flashcards and study guides are written
+  from the teacher's own files, sources the app searched and read, or both.
+  Every answer is checked against them and the sources are shown. Malaysian
+  Year and Form grades, in English, Malay, Tamil, Chinese or Bengali.
+- **Live lessons with Astra.** Written, voiced and taught to a group on a
+  schedule, with spoken questions answered by name. English only for now.
 - **Study guides.** A topic taught part by part at three reading levels, with
   pictures, words to know in Malay, read-aloud, a concept map, a check after
   every part, and a printable handout.
@@ -83,6 +144,8 @@ as a handout** with an answer key. See
   on any topic, within a daily limit.
 - **Results and skills.** Per-student, per-question and per-skill results,
   a score spread, and a student's own strengths and next steps.
+- **Coverage and reports home.** A syllabus map per class and private
+  progress links for families.
 - **Real time everywhere.** Notifications, progress while a quiz is being
   taken, leaderboards, class lists and join requests update without a reload.
 - **Study buddies, badges and streaks** to keep students coming back.
@@ -136,6 +199,8 @@ setting. The ones you are most likely to change:
 | `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | Any OpenAI-compatible model endpoint |
 | `LEARNING_MODEL` | The model that writes quizzes and flashcards (empty uses `LLM_MODEL`) |
 | `SERPAPI_KEY` | Web search, for grounded sets and the studio |
+| `SPEECH_MODEL`, `SPEECH_VOICE`, `TRANSCRIBE_MODEL` | Astra's voice, and hearing students' spoken questions, in live lessons |
+| `MATERIALS_PER_OWNER`, `MATERIAL_MAX_BYTES` | How many files a teacher can keep in My materials, and how big each can be |
 | `STUDENT_PRACTICE_PER_DAY` | How many practice sets a student may make each day |
 | `MODERATION_ENABLED` | The student guardrails |
 | `PUBLIC_BASE_URL` | Where invite and share links point — set it for any real deployment |
@@ -177,8 +242,8 @@ the roadmap.
 make test
 ```
 
-About 1,600 backend tests (87% coverage) against a real Postgres, rolled back
-per test, and about 300 frontend tests.
+About 1,900 backend tests against a real Postgres, rolled back per test,
+and about 370 frontend tests.
 
 ## Credits
 
