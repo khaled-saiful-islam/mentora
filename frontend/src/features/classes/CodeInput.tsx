@@ -10,7 +10,18 @@ const ALLOWED = /[ABCDEFGHJKMNPQRSTUVWXYZ23456789]/
  * Six boxes for a class code, one letter each. Typing moves on, Backspace
  * moves back, and pasting a whole code fills every box.
  */
-export function CodeInput({ value, onChange, invalid }: { value: string; onChange: (code: string) => void; invalid?: boolean }) {
+export function CodeInput({
+  value,
+  onChange,
+  invalid,
+  compact = false,
+}: {
+  value: string
+  onChange: (code: string) => void
+  invalid?: boolean
+  /** Smaller boxes, for a narrow column. */
+  compact?: boolean
+}) {
   const boxes = useRef<(HTMLInputElement | null)[]>([])
   const letters = Array.from({ length: LENGTH }, (_, i) => value[i] ?? '')
 
@@ -37,7 +48,7 @@ export function CodeInput({ value, onChange, invalid }: { value: string; onChang
   }
 
   return (
-    <div className="flex justify-center gap-2" role="group" aria-label="Class code">
+    <div className={cn('flex justify-center', compact ? 'gap-1.5' : 'gap-2')} role="group" aria-label="Class code">
       {letters.map((letter, index) => (
         <motion.input
           key={index}
@@ -58,7 +69,8 @@ export function CodeInput({ value, onChange, invalid }: { value: string; onChang
           animate={letter ? { scale: [1, 1.12, 1] } : { scale: 1 }}
           transition={spring.bouncy}
           className={cn(
-            'size-12 rounded-xl border-2 bg-surface text-center font-display text-2xl font-semibold uppercase sm:size-14',
+            'rounded-xl border-2 bg-surface text-center font-display font-semibold uppercase',
+            compact ? 'size-11 text-xl' : 'size-12 text-2xl sm:size-14',
             'focus-visible:border-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20',
             invalid ? 'border-wrong' : letter ? 'border-grape-300' : 'border-input',
           )}

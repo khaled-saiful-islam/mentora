@@ -20,6 +20,8 @@ export interface ClassRoom {
   pending: number
   groups: number
   created_at: string
+  /** Only on the class list. */
+  pulse?: TeacherPulse | null
 }
 
 export interface ClassDraft {
@@ -77,6 +79,30 @@ export interface JoinResult {
   invite: InvitePreview
 }
 
+/** The next live lesson in a class: coming up, or on now. */
+export interface NextLive {
+  id: string
+  title: string
+  scheduled_at: string | null
+  status: 'scheduled' | 'lobby' | 'live'
+}
+
+/** A class card at a glance, for its teacher. */
+export interface TeacherPulse {
+  shared: number
+  average: number | null
+  finished_week: number
+  next_live: NextLive | null
+  faces: string[]
+}
+
+/** A class card at a glance, for a student in it. */
+export interface StudentPulse {
+  to_do: number
+  done: number
+  next_live: NextLive | null
+}
+
 export interface StudentClass {
   class_id: string
   class_name: string
@@ -85,6 +111,7 @@ export interface StudentClass {
   teacher_name: string
   status: MembershipStatus
   groups: string[]
+  pulse?: StudentPulse | null
 }
 
 const json = (body: unknown) => ({ body: JSON.stringify(body) })

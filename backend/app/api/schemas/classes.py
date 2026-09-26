@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from app.core.grades import grade_label
 from app.db.models.classroom import ClassInvite
+from app.services.class_pulse import NextLive, StudentPulse, TeacherPulse
 from app.services.class_service import ClassSummary
 from app.services.group_service import GroupView
 from app.services.invite_service import InvitePreview
@@ -31,6 +32,47 @@ class UpdateClassRequest(BaseModel):
     theme: str | None = Field(default=None, max_length=16)
 
 
+class NextLiveOut(BaseModel):
+    id: UUID
+    title: str
+    scheduled_at: datetime | None
+    status: str
+
+    @classmethod
+    def of(cls, live: NextLive | None) -> NextLiveOut | None:
+        if live is None:
+            return None
+        return cls(id=live.id, title=live.title, scheduled_at=live.scheduled_at, status=live.status)
+
+
+class TeacherPulseOut(BaseModel):
+    shared: int
+    average: float | None
+    finished_week: int
+    next_live: NextLiveOut | None
+    faces: list[str]
+
+    @classmethod
+    def of(cls, pulse: TeacherPulse) -> TeacherPulseOut:
+        return cls(
+            shared=pulse.shared,
+            average=pulse.average,
+            finished_week=pulse.finished_week,
+            next_live=NextLiveOut.of(pulse.next_live),
+            faces=list(pulse.faces),
+        )
+
+
+class StudentPulseOut(BaseModel):
+    to_do: int
+    done: int
+    next_live: NextLiveOut | None
+
+    @classmethod
+    def of(cls, pulse: StudentPulse) -> StudentPulseOut:
+        return cls(to_do=pulse.to_do, done=pulse.done, next_live=NextLiveOut.of(pulse.next_live))
+
+
 class ClassResponse(BaseModel):
     id: UUID
     name: str
@@ -44,9 +86,11 @@ class ClassResponse(BaseModel):
     pending: int
     groups: int
     created_at: datetime
+    # How it is going: only on the list, where the cards show it.
+    pulse: TeacherPulseOut | None = None
 
     @classmethod
-    def of(cls, summary: ClassSummary) -> ClassResponse:
+    def of(cls, summary: ClassSummary, pulse: TeacherPulse | None = None) -> ClassResponse:
         room = summary.classroom
         return cls(
             id=room.id,
@@ -61,6 +105,7 @@ class ClassResponse(BaseModel):
             pending=summary.pending,
             groups=summary.groups,
             created_at=room.created_at,
+            pulse=TeacherPulseOut.of(pulse) if pulse is not None else None,
         )
 
 
@@ -180,10 +225,12 @@ class StudentClassResponse(BaseModel):
     teacher_name: str
     status: str
     groups: list[str]
+    pulse: StudentPulseOut | None = None
 
     @classmethod
-    def of(cls, view: StudentClassView) -> StudentClassResponse:
-        return cls(**{field: getattr(view, field) for field in cls.model_fields})
+    def of(cls, view: StudentClassView, pulse: StudentPulse | None = None) -> StudentClassResponse:
+        fields = {field: getattr(view, field) for field in cls.model_fields if field != "pulse"}
+        return cls(**fields, pulse=StudentPulseOut.of(pulse) if pulse is not None else None)
 
 
 class StudentClassList(BaseModel):

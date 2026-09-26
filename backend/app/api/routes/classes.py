@@ -31,6 +31,7 @@ from app.api.schemas.classes import (
     UpdateGroupRequest,
 )
 from app.events.registry import build_bus
+from app.services.class_pulse import ClassPulseService
 from app.services.class_service import ClassService
 from app.services.group_service import GroupService, GroupView
 from app.services.invite_service import InviteService
@@ -51,7 +52,8 @@ Status = Literal["pending", "approved", "rejected", "revoked", "left"]
 @router.get("", response_model=ClassList)
 async def index(user: CurrentUser, session: SessionDep, archived: bool = False) -> ClassList:
     found = await ClassService(session).list_for(user.id, archived=archived)
-    return ClassList(items=[ClassResponse.of(summary) for summary in found])
+    pulses = await ClassPulseService(session).for_teacher([s.classroom.id for s in found])
+    return ClassList(items=[ClassResponse.of(s, pulses.get(s.classroom.id)) for s in found])
 
 
 @router.post("", response_model=ClassResponse, status_code=status.HTTP_201_CREATED)

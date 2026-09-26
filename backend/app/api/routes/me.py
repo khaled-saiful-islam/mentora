@@ -18,6 +18,7 @@ from app.db.models.user import User
 from app.events.registry import build_bus
 from app.learning.registry import build_learning_kinds
 from app.policies.capabilities import capabilities_for
+from app.services.class_pulse import ClassPulseService
 from app.services.membership_service import MembershipService
 from app.services.work import work
 
@@ -69,7 +70,10 @@ async def my_classes(
 ) -> StudentClassList:
     """The classes a student is in, waiting for, or has left."""
     found = await MembershipService(session, build_bus()).classes_of(student.id)
-    return StudentClassList(items=[StudentClassResponse.of(view) for view in found])
+    pulses = await ClassPulseService(session).for_student(student)
+    return StudentClassList(
+        items=[StudentClassResponse.of(view, pulses.get(view.class_id)) for view in found]
+    )
 
 
 @router.post("/classes/{class_id}/leave", status_code=status.HTTP_204_NO_CONTENT)

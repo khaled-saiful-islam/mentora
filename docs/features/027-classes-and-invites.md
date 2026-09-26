@@ -22,6 +22,15 @@
 - The teacher can **remove** a student; the student can **leave**. Either way
   they leave every group in that class, and their history stays.
 - Classes are **archived**, not deleted, and can be restored.
+- **Class cards show how things are going.**
+  - A teacher's card shows who is in the class (their faces), how many things
+    are shared and still open, the class's first-try score, what was finished
+    this week, and the next live lesson.
+  - Above the cards, one strip counts students, who is waiting to join and
+    what is shared, and shows the next live lesson (or offers to plan one).
+  - A student's card shows what is left to do, what is finished and their next
+    live lesson in that class. The join box sits beside the classes, not on
+    top of them.
 
 ## How it works
 
@@ -44,6 +53,10 @@
   action.
 - Router gates: `/api/classes/*` needs `manage_classes`; joining and
   `/api/me/classes` need `join_classes`.
+- **The card numbers** come from `services/class_pulse.py`, on
+  `GET /api/classes` (the `pulse` field) and `GET /api/me/classes`. It costs a
+  handful of grouped queries for any number of classes. Single-class
+  endpoints leave `pulse` out.
 
 ## Endpoints
 
