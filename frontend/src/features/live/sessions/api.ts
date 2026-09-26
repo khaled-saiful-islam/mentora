@@ -125,6 +125,9 @@ export const sessionsApi = {
     form.append('file', file)
     return apiFetch<SessionDocument>(`/live-sessions/${id}/documents`, { method: 'POST', body: form })
   },
+  /** A file from the teacher's materials, attached without uploading it again. */
+  attachMaterial: (id: string, materialId: string) =>
+    apiFetch<SessionDocument>(`/live-sessions/${id}/documents/from-material`, { method: 'POST', ...json({ material_id: materialId }) }),
   removeDocument: (id: string, documentId: string) =>
     apiFetch<void>(`/live-sessions/${id}/documents/${documentId}`, { method: 'DELETE' }),
   plan: (id: string) => apiFetch<{ status: SessionStatus }>(`/live-sessions/${id}/plan`, { method: 'POST' }),

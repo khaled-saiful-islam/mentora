@@ -18,6 +18,9 @@ class GenerateRequest(BaseModel):
     grade_level: str | None = Field(default=None, max_length=32)
     count: int | None = Field(default=None, ge=1, le=50)
     language: str = Field(default="en", max_length=8)
+    # Make it from these of your own materials (§21) — and search the web too?
+    material_ids: list[UUID] = Field(default_factory=list, max_length=10)
+    web: bool = True
 
 
 class SetSummary(BaseModel):

@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   CalendarPlus,
   FileText,
+  FolderOpen,
   MagicWand,
   Microphone,
   PencilSimple,
@@ -22,6 +23,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Alert, Button, ButtonLink, Card, Input, Skeleton } from '@/components/ui'
 import { useResource } from '@/hooks/useResource'
 import { cn } from '@/lib/utils'
+import type { Material } from '@/features/materials/api'
+import { MaterialPicker } from '@/features/materials/MaterialPicker'
 import { useShowing } from '@/features/work/onScreen'
 import { Page, rise, spring } from '@/motion'
 import { followWork, sessionsApi, STATUS_WORDS, type SessionDetail, type Segment, type WorkEvent } from './api'
@@ -239,6 +242,21 @@ function Prepare({
 }) {
   const file = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [picking, setPicking] = useState(false)
+  const attach = async (materials: Material[]) => {
+    setPicking(false)
+    if (!materials.length) return
+    setUploading(true)
+    setError(null)
+    try {
+      for (const m of materials) await sessionsApi.attachMaterial(live.id, m.id)
+      onChange()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'That file could not be attached.')
+    } finally {
+      setUploading(false)
+    }
+  }
   const upload = async (files: FileList | null) => {
     if (!files?.length) return
     setUploading(true)
@@ -273,10 +291,24 @@ function Prepare({
           ))}
         </ul>
         <input ref={file} type="file" multiple accept=".pdf,.docx,.pptx,.txt,.md" className="sr-only" id="live-files" onChange={(e) => void upload(e.target.files)} />
-        <Button variant="outline" size="sm" onClick={() => file.current?.click()} disabled={uploading || live.documents.length >= 5}>
-          <UploadSimple weight="bold" className="size-4" aria-hidden />
-          {uploading ? 'Reading…' : 'Add files'}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={() => file.current?.click()} disabled={uploading || live.documents.length >= 5}>
+            <UploadSimple weight="bold" className="size-4" aria-hidden />
+            {uploading ? 'Reading…' : 'Add files'}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setPicking(true)} disabled={uploading || live.documents.length >= 5}>
+            <FolderOpen weight="bold" className="size-4" aria-hidden />
+            From my materials
+          </Button>
+        </div>
+        <MaterialPicker
+          open={picking}
+          chosen={NO_MATERIALS}
+          max={Math.max(1, 5 - live.documents.length)}
+          title="Teach from my materials"
+          onClose={() => setPicking(false)}
+          onChoose={(picked) => void attach(picked)}
+        />
       </Card>
       <Card className="flex flex-col justify-between gap-4 bg-kind-live-vivid/10 p-5">
         <div>
@@ -431,3 +463,5 @@ function Schedule({
     </Card>
   )
 }
+
+const NO_MATERIALS: Material[] = []

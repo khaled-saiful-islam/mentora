@@ -54,6 +54,14 @@ class LearningSet(Base):
     failure: Mapped[str | None] = mapped_column(Text)
     requested_count: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
     current_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # Made from the owner's own materials (§21): their ids, and whether the web
+    # was searched as well. Empty: the web alone, as before.
+    material_ids: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    web_sources: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()

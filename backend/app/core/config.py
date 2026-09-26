@@ -284,6 +284,15 @@ class Settings(BaseSettings):
     def resolved_vision_api_key(self) -> str:
         return self.vision_api_key or self.llm_api_key
 
+    # ---- My materials (§21) ------------------------------------------------
+    # A teacher's own files, read once into text and kept to make material
+    # from. A file is refused over the size; a library over the count.
+    material_max_bytes: int = 10 * 1024 * 1024
+    materials_per_owner: int = 100
+    # How much of the chosen files a generation reads, in tokens, shared
+    # between them.
+    material_token_budget: int = 6000
+
     # ---- Memory ---------------------------------------------------------
     memory_auto_extract: bool = True
     memory_max_per_user: int = 100

@@ -31,6 +31,7 @@ from app.api.routes import (
     live,
     live_rooms,
     live_sessions,
+    materials,
     me,
     memories,
     notifications,
@@ -170,6 +171,7 @@ def create_app() -> FastAPI:
     app.include_router(live_sessions.mine, prefix="/api")
     app.include_router(live_rooms.router, prefix="/api")
     app.include_router(live_rooms.control, prefix="/api")
+    app.include_router(materials.router, prefix="/api")
     app.include_router(me.router, prefix="/api")
     app.include_router(memories.router, prefix="/api")
     app.include_router(notifications.router, prefix="/api")

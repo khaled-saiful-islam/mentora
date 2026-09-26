@@ -13,12 +13,14 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Response, UploadFile, status
+from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
 from app.api.deps import (
     CurrentUser,
     LivePlanServiceDep,
     SessionDep,
+    SettingsDep,
     StreamUser,
     limit_generate,
     limit_upload,
@@ -55,6 +57,7 @@ from app.services.document_service import human_size
 from app.services.jobs import jobs
 from app.services.live_session_service import EDITABLE, LiveSessionService
 from app.services.live_template_service import LiveTemplateService
+from app.services.material_service import MaterialService
 from app.services.work import work as board
 from app.services.work_tickets import for_lesson_plan, for_lesson_recording
 
@@ -190,6 +193,32 @@ async def upload(
         raise ValidationError(str(exc)) from exc
     document = await service.add_document(
         live, filename=name, media_type=media_type, size=len(data), text=extracted.text
+    )
+    return document_out(document)
+
+
+class FromMaterial(BaseModel):
+    material_id: UUID
+
+
+@router.post("/{session_id}/documents/from-material", status_code=status.HTTP_201_CREATED)
+async def attach_material(
+    session_id: UUID,
+    body: FromMaterial,
+    user: CurrentUser,
+    session: SessionDep,
+    settings: SettingsDep,
+) -> dict[str, Any]:
+    """A file from the teacher's materials, attached without uploading it again."""
+    service = _service(session)
+    live = await service.owned(user.id, session_id)
+    material = await MaterialService(session, settings).owned(user.id, body.material_id)
+    document = await service.add_document(
+        live,
+        filename=material.filename,
+        media_type=material.media_type,
+        size=material.size_bytes,
+        text=material.text,
     )
     return document_out(document)
 

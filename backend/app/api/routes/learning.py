@@ -35,6 +35,7 @@ from app.api.schemas.learning import (
 from app.core.errors import NotFoundError, ValidationError
 from app.db.models.learning import LearningSet
 from app.db.session import session_scope
+from app.learning.generator import GenerationRequest
 from app.learning.model import GenerationUnavailable
 from app.services.generation_service import GenerationDraft, GenerationService
 from app.services.jobs import jobs
@@ -58,10 +59,17 @@ router = APIRouter(
 async def generate(
     body: GenerateRequest, user: CurrentUser, session: SessionDep, service: GenerationServiceDep
 ) -> SetSummary:
-    learning_set = await service.begin(session, user, GenerationDraft(**body.model_dump()))
+    fields = body.model_dump()
+    # The same file chosen twice is read once.
+    chosen = tuple(dict.fromkeys(fields["material_ids"]))
+    draft = GenerationDraft(**{**fields, "material_ids": chosen})
+    learning_set = await service.begin(session, user, draft)
+    # The chosen files are read before anything commits: one that cannot be
+    # read fails the request, never leaves a set stuck "being made".
+    request = await service.request_with_materials(session, learning_set)
     # Committed before the job starts, so the job's own session finds the row.
     await session.commit()
-    _build(learning_set, user.id, service)
+    _build(learning_set, user.id, service, request)
     return SetSummary.of(SetView(learning_set, None, 0))
 
 
@@ -72,18 +80,24 @@ async def retry(
     learning_set = await LearningSetService(session).owned(user.id, set_id)
     if learning_set.status not in ("failed", "refused") or learning_set.current_version:
         raise ValidationError("Only a set that could not be made can be tried again.")
+    request = await service.request_with_materials(session, learning_set)
     learning_set.status, learning_set.failure = "generating", None
     await session.commit()
-    _build(learning_set, user.id, service)
+    _build(learning_set, user.id, service, request)
     return SetSummary.of(SetView(learning_set, None, 0))
 
 
-def _build(learning_set: LearningSet, owner_id: UUID, service: GenerationService) -> None:
+def _build(
+    learning_set: LearningSet,
+    owner_id: UUID,
+    service: GenerationService,
+    request: GenerationRequest,
+) -> None:
     """Start making the set in the background, on its owner's work board."""
     jobs.start(
         learning_set.id,
         owner_id,
-        service.events(learning_set.id, service.request_for(learning_set)),
+        service.events(learning_set.id, request),
         watcher=work.watch(learning_set.id, owner_id, for_set(learning_set)),
     )
 

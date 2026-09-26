@@ -42,6 +42,8 @@ export interface Capabilities {
   see_children: boolean
   /** A parent making material to share with a linked child. */
   make_family_sets: boolean
+  /** A library of one's own files to make material from. */
+  keep_materials: boolean
 }
 
 export interface User {

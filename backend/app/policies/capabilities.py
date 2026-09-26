@@ -46,6 +46,8 @@ class Capabilities:
     see_children: bool = False
     # A parent making material and sharing it with a linked child.
     make_family_sets: bool = False
+    # A library of one's own files to make material from (§21).
+    keep_materials: bool = False
 
     def as_dict(self) -> dict[str, bool]:
         return {field.name: getattr(self, field.name) for field in fields(self)}
@@ -59,6 +61,7 @@ _TEACHING = {
     "run_live_sessions": True,
     "share_conversations": True,
     "see_usage": True,
+    "keep_materials": True,
 }
 
 _BY_ROLE: dict[Role, Capabilities] = {

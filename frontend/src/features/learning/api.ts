@@ -124,6 +124,10 @@ export interface GenerateDraft {
   grade_level?: string | null
   count?: number
   language?: string
+  /** Make it from these of your own materials (§21)… */
+  material_ids?: string[]
+  /** …and search trusted sources on the web as well. */
+  web?: boolean
 }
 
 export interface LearningKindInfo {

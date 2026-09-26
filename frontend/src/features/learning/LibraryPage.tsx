@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Archive, Books, MagnifyingGlass, Plus } from '@phosphor-icons/react'
+import { Archive, Books, FolderOpen, MagnifyingGlass, Plus, Stack } from '@phosphor-icons/react'
 import { Alert, Button, Input, Skeleton } from '@/components/ui'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Segmented } from '@/components/ui/Segmented'
+import { Tabs } from '@/components/ui/Tabs'
+import { MaterialsView } from '@/features/materials/MaterialsView'
+import { can } from '@/lib/user'
 import { useToast } from '@/components/ui/Toast'
 import { EmptyArt } from '@/features/classes/EmptyArt'
 import { errorMessage } from '@/features/auth/errors'
@@ -26,6 +30,9 @@ export default function LibraryPage() {
   const [query, setQuery] = useState('')
   const [q, setQ] = useState('')
   const student = user?.role === 'student'
+  const [params] = useSearchParams()
+  const keeps = can(user, 'keep_materials')
+  const view = keeps && params.get('view') === 'materials' ? 'materials' : 'sets'
 
   useEffect(() => {
     const timer = window.setTimeout(() => setQ(query.trim()), 250)
@@ -58,7 +65,11 @@ export default function LibraryPage() {
         <div className="flex-1">
           <h1 className="font-display text-4xl font-semibold tracking-tight">{student ? 'My practice' : 'Library'}</h1>
           <p className="mt-1 text-muted-foreground">
-            {student ? 'Quizzes and flashcards you made for yourself.' : 'Every quiz and deck of flashcards you have made.'}
+            {student
+              ? 'Quizzes and flashcards you made for yourself.'
+              : view === 'materials'
+                ? 'Your own files, kept to make quizzes, flashcards, guides and live lessons from.'
+                : 'Every quiz, deck and study guide you have made.'}
           </p>
         </div>
         <Button size="lg" onClick={() => studio.create()}>
@@ -66,6 +77,24 @@ export default function LibraryPage() {
           Make one
         </Button>
       </div>
+
+      {keeps && (
+        <Tabs
+          className="mt-6"
+          active={view}
+          items={[
+            { key: 'sets', label: 'What I made', to: '/library', icon: <Stack weight="bold" className="size-4" /> },
+            { key: 'materials', label: 'My materials', to: '/library?view=materials', icon: <FolderOpen weight="bold" className="size-4" /> },
+          ]}
+        />
+      )}
+
+      {view === 'materials' ? (
+        <div className="mt-6">
+          <MaterialsView />
+        </div>
+      ) : (
+        <>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <div className="relative min-w-60 flex-1">
@@ -126,6 +155,8 @@ export default function LibraryPage() {
           </motion.ul>
         )}
       </div>
+        </>
+      )}
     </Page>
   )
 }

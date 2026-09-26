@@ -136,6 +136,13 @@ EXPECTED: dict[str, dict[Role, bool]] = {
         Role.PARENT: True,
     },
     # Arrives with §20 P2.
+    # §21: a library of one's own files. Parents join in §20 P2.
+    "keep_materials": {
+        Role.ADMIN: True,
+        Role.TEACHER: True,
+        Role.STUDENT: False,
+        Role.PARENT: False,
+    },
     "make_family_sets": {
         Role.ADMIN: False,
         Role.TEACHER: False,

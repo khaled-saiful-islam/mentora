@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import AsyncIterator, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 from uuid import UUID
 
@@ -40,6 +40,7 @@ from app.learning.research import Source
 from app.moderation.base import Flag
 from app.policies.capabilities import capabilities_for
 from app.services.learning_set_service import LearningSetService
+from app.services.material_service import MaterialService
 from app.services.moderation_service import ModerationService, Where
 
 logger = logging.getLogger(__name__)
@@ -56,6 +57,10 @@ class GenerationDraft:
     grade_level: str | None = None
     count: int | None = None
     language: str = "en"
+    # The owner's own materials to make it from (§21), and whether to search
+    # the web as well.
+    material_ids: tuple[UUID, ...] = ()
+    web: bool = True
 
 
 class GenerationService:
@@ -94,7 +99,12 @@ class GenerationService:
             language=request.language,
             status="generating",
             requested_count=request.count,
+            material_ids=[str(m) for m in draft.material_ids],
+            web_sources=draft.web if draft.material_ids else True,
         )
+        if draft.material_ids:
+            # Refuses a file that is not the owner's before anything is made.
+            await MaterialService(session, self._settings).several(owner.id, draft.material_ids)
         session.add(learning_set)
         await session.flush()
         return learning_set
@@ -107,6 +117,26 @@ class GenerationService:
             grade_level=learning_set.grade_level,
             count=learning_set.requested_count,
             language=learning_set.language,
+        )
+
+    async def request_with_materials(
+        self, session: AsyncSession, learning_set: LearningSet
+    ) -> GenerationRequest:
+        """The request, grounded in the owner's chosen materials when there
+        are any — read now, while the request's session is open."""
+        request = self.request_for(learning_set)
+        if not learning_set.material_ids:
+            return request
+        sources = await MaterialService(session, self._settings).sources_for(
+            learning_set.owner_id,
+            [UUID(m) for m in learning_set.material_ids],
+            topic=learning_set.topic,
+        )
+        return replace(
+            request,
+            sources=sources,
+            web_too=learning_set.web_sources,
+            sources_note="Reading your materials",
         )
 
     async def events(

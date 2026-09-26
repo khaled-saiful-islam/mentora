@@ -63,6 +63,10 @@ class GenerationRequest:
     # Given skills as (slug, label), used instead of mapping them — so a
     # quiz's results land under the parts the teacher named.
     skills: tuple[tuple[str, str], ...] = ()
+    # With given sources: search the web as well, to fill gaps (§21).
+    web_too: bool = False
+    # What the stage says while the given sources are read.
+    sources_note: str = "Reading the sources"
 
 
 @dataclass(frozen=True, slots=True)
@@ -171,10 +175,14 @@ class LearningGenerator:
             return
         yield Stage("check", "done", "Checking the topic", plan.topic)
 
-        yield Stage("research", "running", "Searching trusted sources")
-        sources = list(request.sources) or await self._research(request, plan)
+        given = list(request.sources)
+        label = _research_label(request)
+        yield Stage("research", "running", label)
+        # Given sources come first; the web fills gaps only when asked to.
+        found = await self._research(request, plan) if not given or request.web_too else []
+        sources = given + found
         yield SourcesFound(tuple(sources))
-        yield Stage("research", "done", "Searching trusted sources", _found(sources))
+        yield Stage("research", "done", label, _found(sources))
 
         yield Stage("skills", "running", "Mapping the skills")
         skills = (
@@ -577,3 +585,11 @@ def _words(value: Any, limit: int) -> str | None:
 def _slug(value: Any) -> str:
     text = re.sub(r"[^a-z0-9]+", "-", str(value).lower()).strip("-")
     return text[:48] or "general"
+
+
+def _research_label(request: GenerationRequest) -> str:
+    if not request.sources:
+        return "Searching trusted sources"
+    if request.web_too:
+        return f"{request.sources_note} and trusted sources"
+    return request.sources_note

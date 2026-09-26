@@ -5,14 +5,16 @@
  * when it is ready (`features/work`).
  */
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import type { Material } from '@/features/materials/api'
 import type { LearningKindName, SetSummary } from './api'
 import { CreateSheet } from './CreateSheet'
 import { GenerationPanel } from './GenerationPanel'
 import { useGeneration } from './useGeneration'
 
 interface StudioState {
-  /** Open the maker, on a kind — and a topic to start from, if there is one. */
-  create: (kind?: LearningKindName, topic?: string) => void
+  /** Open the maker, on a kind — with a topic, and your own files, to start
+   *  from if there are any. */
+  create: (kind?: LearningKindName, topic?: string, materials?: Material[]) => void
   watch: (set: Pick<SetSummary, 'id' | 'kind' | 'title' | 'topic' | 'grade_label' | 'purpose'>) => void
   watching: string | null
 }
@@ -24,12 +26,14 @@ type Watched = Pick<SetSummary, 'id' | 'kind' | 'title' | 'topic' | 'grade_label
 export function LearnStudioProvider({ children }: { children: React.ReactNode }) {
   const [sheetKind, setSheetKind] = useState<LearningKindName | null>(null)
   const [sheetTopic, setSheetTopic] = useState('')
+  const [sheetMaterials, setSheetMaterials] = useState<Material[]>([])
   const [watched, setWatched] = useState<Watched | null>(null)
   const [panelOpen, setPanelOpen] = useState(false)
   const generation = useGeneration(watched?.id ?? null)
 
-  const create = useCallback((kind?: LearningKindName, topic?: string) => {
+  const create = useCallback((kind?: LearningKindName, topic?: string, materials?: Material[]) => {
     setSheetTopic(topic ?? '')
+    setSheetMaterials(materials ?? [])
     setSheetKind(kind ?? 'quiz')
   }, [])
   const watch = useCallback((set: Watched) => {
@@ -44,6 +48,7 @@ export function LearnStudioProvider({ children }: { children: React.ReactNode })
       <CreateSheet
         kind={sheetKind}
         initialTopic={sheetTopic}
+        initialMaterials={sheetMaterials}
         onKind={setSheetKind}
         onClose={() => setSheetKind(null)}
         onStarted={(set) => {

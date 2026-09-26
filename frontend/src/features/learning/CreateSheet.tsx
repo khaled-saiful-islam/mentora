@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { VoiceInput } from '@/features/voice/VoiceInput'
 import { AnimatePresence, motion } from 'motion/react'
-import { Check, Globe, Minus, Plus, Sparkle, WarningCircle } from '@phosphor-icons/react'
+import { Check, FolderOpen, Globe, Minus, Plus, Sparkle, WarningCircle, X } from '@phosphor-icons/react'
 import { Alert, Button, Field, Input } from '@/components/ui'
 import { Dialog } from '@/components/ui/Dialog'
 import { useGrades } from '@/features/auth/useGrades'
@@ -14,6 +14,10 @@ import { cn } from '@/lib/utils'
 import { learningApi, type LearningKindName, type SetSummary } from './api'
 import { LOOKS } from './kinds'
 import { LEARN_SCENES } from './scenes'
+import type { Material } from '@/features/materials/api'
+import { MaterialIcon } from '@/features/materials/MaterialBits'
+import { MaterialPicker } from '@/features/materials/MaterialPicker'
+import { can } from '@/lib/user'
 
 const EXAMPLES = [
   'Photosynthesis',
@@ -47,6 +51,7 @@ const LANGUAGES = [
 export function CreateSheet({
   kind,
   initialTopic = '',
+  initialMaterials = NO_MATERIALS,
   onKind,
   onClose,
   onStarted,
@@ -54,6 +59,8 @@ export function CreateSheet({
   kind: LearningKindName | null
   /** What the topic starts as when the sheet opens — an example picked. */
   initialTopic?: string
+  /** Files it starts made from — "Make from this" on a material. */
+  initialMaterials?: Material[]
   onKind: (kind: LearningKindName) => void
   onClose: () => void
   onStarted: (set: SetSummary) => void
@@ -66,6 +73,9 @@ export function CreateSheet({
   const [grade, setGrade] = useState('')
   const [count, setCount] = useState(10)
   const [language, setLanguage] = useState('en')
+  const [materials, setMaterials] = useState<Material[]>([])
+  const [web, setWeb] = useState(true)
+  const [picking, setPicking] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const example = useRotating(EXAMPLES, kind !== null)
@@ -73,7 +83,8 @@ export function CreateSheet({
   // On opening only: switching kind inside the sheet keeps what was typed.
   useEffect(() => {
     if (open && initialTopic) setTopic(initialTopic)
-  }, [open, initialTopic])
+    if (open) setMaterials(initialMaterials)
+  }, [open, initialTopic, initialMaterials])
   const info = makeable.learning.find((k) => k.name === kind)
   const practice = info?.purpose === 'practice'
 
@@ -90,7 +101,16 @@ export function CreateSheet({
     setBusy(true)
     setError(null)
     try {
-      const set = await learningApi.generate({ kind, topic, subject: subject || null, grade_level: grade || null, count, language })
+      const set = await learningApi.generate({
+        kind,
+        topic,
+        subject: subject || null,
+        grade_level: grade || null,
+        count,
+        language,
+        material_ids: materials.map((m) => m.id),
+        web,
+      })
       setTopic('')
       onStarted(set)
     } catch (err) {
@@ -147,6 +167,10 @@ export function CreateSheet({
           />
         </Field>
 
+        {can(user, 'keep_materials') && (
+          <FromMaterials materials={materials} web={web} onWeb={setWeb} onPick={() => setPicking(true)} onRemove={(id) => setMaterials((all) => all.filter((m) => m.id !== id))} />
+        )}
+
         <fieldset className="grid gap-x-4 gap-y-4 rounded-3xl bg-muted/50 p-4 sm:grid-cols-2">
           <legend className="sr-only">Details</legend>
           <Field label="Subject" htmlFor="learn-subject">
@@ -188,15 +212,87 @@ export function CreateSheet({
             {!busy && <Sparkle weight="fill" className="size-5" />}
             Make my {info?.label.toLowerCase() ?? 'set'}
           </Button>
-          <p className={cn('flex items-start justify-center gap-1.5 text-center text-sm', makeable.grounded ? 'text-muted-foreground' : 'text-sun-600 dark:text-sun-300')}>
-            {makeable.grounded ? <Globe weight="duotone" className="mt-0.5 size-4 shrink-0" aria-hidden /> : <WarningCircle weight="duotone" className="mt-0.5 size-4 shrink-0" aria-hidden />}
-            {makeable.grounded
-              ? 'Checked against trusted sources — each answer shows where it came from.'
-              : "Web search isn't set up, so this is written from general knowledge — check it carefully."}
+          <p className={cn('flex items-start justify-center gap-1.5 text-center text-sm', makeable.grounded || materials.length ? 'text-muted-foreground' : 'text-sun-600 dark:text-sun-300')}>
+            {makeable.grounded || materials.length ? <Globe weight="duotone" className="mt-0.5 size-4 shrink-0" aria-hidden /> : <WarningCircle weight="duotone" className="mt-0.5 size-4 shrink-0" aria-hidden />}
+            {materials.length
+              ? web
+                ? 'Made from your files first, with trusted sources filling any gaps.'
+                : 'Made from your files only — each answer shows which file it came from.'
+              : makeable.grounded
+                ? 'Checked against trusted sources — each answer shows where it came from.'
+                : "Web search isn't set up, so this is written from general knowledge — check it carefully."}
           </p>
         </div>
       </form>
+      <MaterialPicker
+        open={picking}
+        chosen={materials}
+        onClose={() => setPicking(false)}
+        onChoose={(picked) => {
+          setMaterials(picked)
+          setPicking(false)
+        }}
+      />
     </Dialog>
+  )
+}
+
+const NO_MATERIALS: Material[] = []
+
+/** Make it from your own files — chosen here, with the web on or off. */
+function FromMaterials({
+  materials,
+  web,
+  onWeb,
+  onPick,
+  onRemove,
+}: {
+  materials: Material[]
+  web: boolean
+  onWeb: (web: boolean) => void
+  onPick: () => void
+  onRemove: (id: string) => void
+}) {
+  if (materials.length === 0) {
+    return (
+      <button
+        type="button"
+        onClick={onPick}
+        className="flex w-full items-center gap-3 rounded-3xl border-2 border-dashed border-border p-3 text-left transition-colors hover:border-primary"
+      >
+        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+          <FolderOpen weight="duotone" className="size-6" aria-hidden />
+        </span>
+        <span className="min-w-0">
+          <span className="block font-bold">Use my materials</span>
+          <span className="block text-sm text-muted-foreground">Make it from your worksheets, chapters or notes.</span>
+        </span>
+      </button>
+    )
+  }
+  return (
+    <section className="space-y-3 rounded-3xl border-2 border-primary/30 bg-primary/5 p-3" aria-label="Made from your materials">
+      <ul className="flex flex-wrap gap-2">
+        {materials.map((m) => (
+          <li key={m.id} className="flex max-w-full items-center gap-2 rounded-full bg-surface py-1 pr-1 pl-1 shadow-sm">
+            <MaterialIcon kind={m.kind} className="size-7 rounded-full [&_svg]:size-4" />
+            <span className="min-w-0 break-words text-sm font-bold">{m.title}</span>
+            <button type="button" onClick={() => onRemove(m.id)} aria-label={`Don't use ${m.title}`} className="grid size-6 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-hover">
+              <X weight="bold" className="size-3.5" />
+            </button>
+          </li>
+        ))}
+        <li>
+          <button type="button" onClick={onPick} className="rounded-full px-3 py-1.5 text-sm font-bold text-primary hover:bg-primary/10">
+            + Change
+          </button>
+        </li>
+      </ul>
+      <label className="flex items-center gap-2 text-sm font-semibold">
+        <input type="checkbox" checked={web} onChange={(e) => onWeb(e.target.checked)} className="size-4 accent-[hsl(var(--primary))]" />
+        Also search trusted sources to fill gaps
+      </label>
+    </section>
   )
 }
 

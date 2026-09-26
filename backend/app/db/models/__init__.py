@@ -39,6 +39,7 @@ from app.db.models.live import (
     LiveSessionTemplate,
     LiveTranscriptLine,
 )
+from app.db.models.material import Material
 from app.db.models.memory import Memory
 from app.db.models.moderation import ModerationEvent
 from app.db.models.notification import Notification
@@ -48,6 +49,7 @@ from app.db.models.source import MessageSource
 from app.db.models.user import User
 
 __all__ = [
+    "Material",
     "FamilyInvite",
     "FamilyLink",
     "ClassSyllabus",
