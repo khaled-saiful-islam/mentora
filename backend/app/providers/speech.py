@@ -102,3 +102,64 @@ def build_speech(settings: Settings) -> SpeechProvider:
         model=settings.speech_model,
         timeout=settings.speech_timeout_seconds,
     )
+
+
+# --- listening ------------------------------------------------------------------
+
+
+class Transcriber(Protocol):
+    async def transcribe(self, audio: bytes, *, filename: str, mime: str) -> str: ...
+
+
+class OpenAICompatibleTranscriber:
+    """Speech to text over the OpenAI `/audio/transcriptions` shape. The
+    clip is sent and forgotten: nothing here keeps a student's voice."""
+
+    def __init__(
+        self,
+        *,
+        base_url: str,
+        api_key: str,
+        model: str,
+        timeout: float,
+        language: str = "en",
+        transport: httpx.AsyncBaseTransport | None = None,
+    ) -> None:
+        self._url = f"{base_url.rstrip('/')}/audio/transcriptions"
+        self._api_key = api_key
+        self._model = model
+        self._timeout = timeout
+        self._language = language
+        self._transport = transport
+
+    async def transcribe(self, audio: bytes, *, filename: str, mime: str) -> str:
+        headers = {"Authorization": f"Bearer {self._api_key}"} if self._api_key else {}
+        files = {"file": (filename, audio, mime)}
+        data = {"model": self._model, "language": self._language}
+        try:
+            async with httpx.AsyncClient(
+                timeout=self._timeout, transport=self._transport
+            ) as client:
+                response = await client.post(self._url, data=data, files=files, headers=headers)
+        except httpx.HTTPError as exc:
+            logger.warning("transcription request failed: %s", exc)
+            raise SpeechError("Listening isn't working just now.") from exc
+        if response.status_code != 200:
+            logger.warning(
+                "transcription returned %s: %s", response.status_code, response.text[:200]
+            )
+            raise SpeechError("That couldn't be heard. Try again, or type it.")
+        try:
+            text = str(response.json().get("text") or "")
+        except ValueError as exc:
+            raise SpeechError("That couldn't be heard. Try again, or type it.") from exc
+        return " ".join(text.split())
+
+
+def build_transcriber(settings: Settings) -> Transcriber:
+    return OpenAICompatibleTranscriber(
+        base_url=settings.resolved_speech_base_url,
+        api_key=settings.resolved_speech_api_key,
+        model=settings.transcribe_model,
+        timeout=settings.speech_timeout_seconds,
+    )

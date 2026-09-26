@@ -249,6 +249,18 @@ export function useRoom(id: string) {
     [id],
   )
 
+  const askAloud = useCallback(
+    async (wav: Blob) => {
+      try {
+        await roomApi.askAloud(id, wav)
+        setMine('asked')
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Astra didn't catch that. Try again, or type it.")
+      }
+    },
+    [id],
+  )
+
   const choose = useCallback(
     async (option: number) => {
       if (!checkin || choice !== null) return
@@ -261,7 +273,7 @@ export function useRoom(id: string) {
   return {
     joined, error, phase, roster, line, speaking, show, progress, segment, hands, called, mine, left,
     checkin, answered, choice, result, quiz, said, soundOn, removed, level, serverNow,
-    enableSound, raiseHand, lowerHand, ask, choose,
+    enableSound, raiseHand, lowerHand, ask, askAloud, choose,
   }
 }
 

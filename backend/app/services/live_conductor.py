@@ -159,6 +159,9 @@ class Conductor:
         self._question.set_result(text)
         return True
 
+    def is_called(self, student_id: UUID) -> bool:
+        return self._called is not None and self._called.student_id == student_id
+
     def answer_check(self, student_id: UUID, segment_id: str, choice: int) -> bool:
         if not self._checkin or self._checkin["segment_id"] != segment_id:
             return False

@@ -242,3 +242,42 @@ async def test_warming_the_model_streams_the_answer_prompt_for_one_token() -> No
 async def test_a_model_that_cannot_be_warmed_is_not_an_error() -> None:
     lab = VoiceLab(FakeModel({}, Meter()), FakeProvider([], fail="down"), ModerationGate())
     await lab.warm(topic="rain", grade=None, taught=[])  # logged, not raised
+
+
+async def test_speech_to_text_sends_the_clip_in_the_openai_shape_and_tidies_the_words() -> None:
+    from app.providers.speech import OpenAICompatibleTranscriber
+
+    seen: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["url"] = str(request.url)
+        seen["body"] = request.content
+        return httpx.Response(200, json={"text": "  why do leaves   fall  "})
+
+    ears = OpenAICompatibleTranscriber(
+        base_url="https://voice.test/v1",
+        api_key="k",
+        model="asr",
+        timeout=5,
+        transport=httpx.MockTransport(handler),
+    )
+    text = await ears.transcribe(b"RIFFdata", filename="q.wav", mime="audio/wav")
+    assert text == "why do leaves fall"
+    assert seen["url"] == "https://voice.test/v1/audio/transcriptions"
+    assert (
+        b'name="model"' in seen["body"] and b"asr" in seen["body"] and b"RIFFdata" in seen["body"]
+    )
+
+
+async def test_speech_to_text_that_fails_says_so_plainly() -> None:
+    from app.providers.speech import OpenAICompatibleTranscriber
+
+    ears = OpenAICompatibleTranscriber(
+        base_url="https://voice.test/v1",
+        api_key="k",
+        model="asr",
+        timeout=5,
+        transport=httpx.MockTransport(lambda _: httpx.Response(500)),
+    )
+    with pytest.raises(SpeechError, match="couldn't be heard"):
+        await ears.transcribe(b"x", filename="q.wav", mime="audio/wav")

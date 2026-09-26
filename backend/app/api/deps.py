@@ -37,7 +37,7 @@ from app.policies.capabilities import Capabilities, capabilities_for
 from app.providers.base import TokenBudget
 from app.providers.openai_compatible import OpenAICompatibleProvider
 from app.providers.registry import build_provider
-from app.providers.speech import build_speech
+from app.providers.speech import Transcriber, build_speech, build_transcriber
 from app.services.accounting_service import Pricing
 from app.services.auth_service import AuthService
 from app.services.cancellation import registry as cancellation_registry
@@ -346,6 +346,13 @@ def get_narrator() -> Narrator:
 
 
 NarratorDep = Annotated[Narrator, Depends(get_narrator)]
+
+
+def get_transcriber(settings: SettingsDep) -> Transcriber:
+    return build_transcriber(settings)
+
+
+TranscriberDep = Annotated[Transcriber, Depends(get_transcriber)]
 
 
 def get_voice_lab(settings: SettingsDep) -> VoiceLab:

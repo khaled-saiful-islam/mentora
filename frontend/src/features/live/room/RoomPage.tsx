@@ -155,6 +155,7 @@ export default function RoomPage({ teacherView = false }: { teacherView?: boolea
                   onRaise={() => void room.raiseHand()}
                   onLower={() => void room.lowerHand()}
                   onAsk={(text) => void room.ask(text)}
+                  onAskAloud={room.askAloud}
                 />
               ) : (
                 <TeacherControls id={id} paused={room.phase === 'paused'} hands={room.hands.map((h) => h.name)} />

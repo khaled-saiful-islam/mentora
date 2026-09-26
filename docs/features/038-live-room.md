@@ -18,6 +18,7 @@
   - A waving hand and the student's place in line appear.
   - Astra finishes the sentence, then calls on them by name ("Go on, Aina. I'm listening."), and the question box opens.
   - Astra thanks them by name, answers for the whole room, and brings everyone back ("So, let's go back to our little tree…").
+  - **Hold to talk** (Phase 4): the microphone opens only while the called student holds the button (or Space) and closes when they let go. The browser turns the recording into a 16 kHz mono WAV (`room/wav.ts`), and `POST /live-rooms/:id/question/voice` hears it with `TRANSCRIBE_MODEL` (ILMU `ilmu-asr-v4.2`, about 0.3 s). The clip is refused unless this student is the one called on right now. It is never stored; only the words go into the transcript. Typing works the same way.
   - Each student has a set number of questions. With *questions at pauses*, hands are taken at the end of each part.
   - A question that must not be answered in the room is never read aloud. Astra redirects kindly, the question is logged for the safety queue, and a student who may be at risk is brought to a person's attention.
 - **Quick checks:**
@@ -82,6 +83,7 @@
 | GET | `/live-rooms/:id/clips/:key` | One recorded clip |
 | POST, DELETE | `/live-rooms/:id/hand` | Raise or lower a hand |
 | POST | `/live-rooms/:id/question` | Only while called on |
+| POST | `/live-rooms/:id/question/voice` | A spoken question (WAV, 30 s at most), only while called on |
 | POST | `/live-rooms/:id/checkin` | Answer a quick check |
 | GET | `/live-rooms/:id/notes` | Once ended |
 
@@ -106,6 +108,6 @@ A test asserts the student routes are exactly `join`, `hand`, `question` and `ch
 
 - **One worker.** The rooms and conductors live in the API process. A restart resumes a running lesson from its last sentence, but the room forgets live-only state (the hand queue, an open check) until it happens again.
 - **Answers are recorded as they stream.** The first spoken word comes about 1–2 s after the thanks line, hidden by that line when the model is warm.
-- **Questions are typed.** Push-to-talk is Phase 4.
+- **Tamil cannot be heard yet.** ILMU's speech-to-text handles English and Malay, and a spoken Tamil question would come back garbled. Lessons are English-only for now, and a student can always type.
 - **Minutes present are approximate.** They are counted per connection, and never less than the span from first to last seen.
 - **Audio needs a tap** (browser autoplay rules). The page offers *Tap to hear Astra* and shows captions meanwhile.

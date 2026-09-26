@@ -74,6 +74,11 @@ export const roomApi = {
   time: () => apiFetch<{ now: number }>('/live-rooms/time'),
   hand: (id: string) => apiFetch<{ id: string; left: number }>(`/live-rooms/${id}/hand`, { method: 'POST' }),
   lower: (id: string) => apiFetch<void>(`/live-rooms/${id}/hand`, { method: 'DELETE' }),
+  askAloud: (id: string, wav: Blob) => {
+    const form = new FormData()
+    form.append('clip', wav, 'question.wav')
+    return apiFetch<{ text: string }>(`/live-rooms/${id}/question/voice`, { method: 'POST', body: form })
+  },
   ask: (id: string, text: string) => apiFetch<{ ok: boolean }>(`/live-rooms/${id}/question`, { method: 'POST', ...json({ text }) }),
   checkin: (id: string, segment_id: string, choice: number) =>
     apiFetch<{ ok: boolean }>(`/live-rooms/${id}/checkin`, { method: 'POST', ...json({ segment_id, choice }) }),

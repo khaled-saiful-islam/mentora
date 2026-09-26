@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from sqlalchemy import select
 
-from app.api.deps import get_live_runtime, get_narrator
+from app.api.deps import get_live_runtime, get_narrator, get_transcriber
 from app.db.models.classroom import ClassGroup, ClassMembership, Classroom, GroupMember
 from app.db.models.live import LiveHand, LiveParticipant, LiveSession
 from app.db.models.notification import Notification
@@ -34,6 +34,9 @@ class FakeConductor:
     def lower_hand(self, student_id) -> bool:
         return True
 
+    def is_called(self, student_id) -> bool:
+        return self.called == student_id
+
     def ask(self, student_id, text) -> bool:
         if self.called != student_id:
             return False
@@ -51,6 +54,20 @@ class FakeConductor:
         if name in ("pause", "resume", "skip", "end"):
             return lambda: self.actions.append(name)
         raise AttributeError(name)
+
+
+class FakeEars:
+    def __init__(self) -> None:
+        self.heard: list[bytes] = []
+        self.fail = False
+
+    async def transcribe(self, audio, *, filename, mime):
+        from app.providers.speech import SpeechError
+
+        if self.fail:
+            raise SpeechError("That couldn't be heard. Try again, or type it.")
+        self.heard.append(audio)
+        return "  why are   leaves green  "
 
 
 class FakeRuntime:
@@ -78,14 +95,17 @@ def runtime() -> FakeRuntime:
 @pytest.fixture
 def room_api(client, runtime, tmp_path: Path):
     narrator = Narrator(FakeSpeech(), AudioCache(tmp_path))
+    ears = FakeEars()
 
     def make(user):
         c = client(user)
         c._transport.app.dependency_overrides[get_live_runtime] = lambda: runtime  # noqa: SLF001
         c._transport.app.dependency_overrides[get_narrator] = lambda: narrator  # noqa: SLF001
+        c._transport.app.dependency_overrides[get_transcriber] = lambda: ears  # noqa: SLF001
         return c
 
     make.narrator = narrator
+    make.ears = ears
     return make
 
 
@@ -221,6 +241,7 @@ async def test_nothing_a_student_sends_reaches_another_student() -> None:
         "/live-rooms/{session_id}/join",
         "/live-rooms/{session_id}/hand",
         "/live-rooms/{session_id}/question",
+        "/live-rooms/{session_id}/question/voice",
         "/live-rooms/{session_id}/checkin",
     }
 
@@ -371,3 +392,39 @@ async def test_the_summary_says_who_came_what_they_asked_and_how_checks_went(
     }
     async with room_api(kid) as c:
         assert (await c.get(f"/api/live-sessions/{live.id}/summary")).status_code == 403
+
+
+async def test_a_spoken_question_is_heard_only_from_the_called_student(
+    room_api, runtime, session, scheduled
+) -> None:
+    live, kid, _ = scheduled
+    live.status = "live"
+    await session.commit()
+    conductor = await runtime.start(live.id)
+    clip = {"clip": ("question.wav", b"RIFF....WAVE", "audio/wav")}
+    async with room_api(kid) as c:
+        early = await c.post(f"/api/live-rooms/{live.id}/question/voice", files=clip)
+        conductor.called = kid.id
+        heard = await c.post(f"/api/live-rooms/{live.id}/question/voice", files=clip)
+        room_api.ears.fail = True
+        missed = await c.post(f"/api/live-rooms/{live.id}/question/voice", files=clip)
+    assert early.status_code == 409 and room_api.ears.heard == [b"RIFF....WAVE"]
+    assert heard.status_code == 202 and heard.json() == {"text": "why are leaves green"}
+    assert conductor.asked == ["why are leaves green"]
+    assert missed.status_code == 422
+
+
+async def test_a_recording_that_is_too_long_is_refused(
+    room_api, runtime, session, scheduled
+) -> None:
+    live, kid, _ = scheduled
+    live.status = "live"
+    await session.commit()
+    conductor = await runtime.start(live.id)
+    conductor.called = kid.id
+    async with room_api(kid) as c:
+        big = await c.post(
+            f"/api/live-rooms/{live.id}/question/voice",
+            files={"clip": ("q.wav", b"x" * 1_300_000, "audio/wav")},
+        )
+    assert big.status_code == 422

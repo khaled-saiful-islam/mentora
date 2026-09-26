@@ -2,7 +2,7 @@
  * The pieces of the live room: classmates (seen, never messaged), the hand,
  * the quick check, and the end of the lesson.
  */
-import { CheckCircle, HandWaving, PaperPlaneRight, Sparkle, SpeakerHigh, Trophy } from '@phosphor-icons/react'
+import { CheckCircle, HandWaving, Microphone, PaperPlaneRight, Sparkle, SpeakerHigh, Trophy } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -11,6 +11,7 @@ import { Buddy } from '@/features/buddies'
 import { cn } from '@/lib/utils'
 import { celebrate, spring, useCalmMotion } from '@/motion'
 import type { RosterEntry, RoomEvent } from './api'
+import { usePushToTalk } from './usePushToTalk'
 import type { MyHand } from './useRoom'
 
 /** Who is in the room, each as their buddy. Look, don't talk. */
@@ -66,6 +67,7 @@ export function HandControl({
   onRaise,
   onLower,
   onAsk,
+  onAskAloud,
 }: {
   mine: MyHand
   left: number
@@ -75,9 +77,11 @@ export function HandControl({
   onRaise: () => void
   onLower: () => void
   onAsk: (text: string) => void
+  onAskAloud: (wav: Blob) => Promise<void>
 }) {
   const calm = useCalmMotion()
   const [text, setText] = useState('')
+  const talk = usePushToTalk(onAskAloud)
 
   if (mine === 'called') {
     return (
@@ -91,8 +95,48 @@ export function HandControl({
         }}
         className="space-y-2 rounded-3xl bg-sun-400/15 p-4 ring-2 ring-sun-400"
       >
-        <label htmlFor="room-question" className="block font-display text-lg font-bold text-sun-300">
-          Astra is listening — ask your question
+        <p className="font-display text-lg font-bold text-sun-300">Astra is listening — ask your question</p>
+        <div className="flex flex-wrap items-center gap-4">
+          <motion.button
+            type="button"
+            aria-label="Hold to talk"
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId)
+              void talk.start()
+            }}
+            onPointerUp={() => void talk.stop()}
+            onPointerCancel={() => void talk.stop()}
+            onKeyDown={(e) => {
+              if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) {
+                e.preventDefault()
+                void talk.start()
+              }
+            }}
+            onKeyUp={(e) => {
+              if (e.key === ' ' || e.key === 'Enter') void talk.stop()
+            }}
+            disabled={talk.state === 'sending'}
+            animate={{ scale: talk.state === 'listening' && !calm ? 1 + talk.level * 0.25 : 1 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+            className={cn(
+              'relative grid size-20 shrink-0 touch-none select-none place-items-center rounded-full font-bold shadow-lg',
+              talk.state === 'listening' ? 'bg-coral-400 text-white ring-8 ring-coral-400/30' : 'bg-sun-400 text-grape-900',
+            )}
+          >
+            <Microphone weight="fill" className="size-9" aria-hidden />
+          </motion.button>
+          <p className="min-w-[min(100%,12rem)] flex-1 text-sm font-semibold text-white/85">
+            {talk.state === 'listening'
+              ? 'Listening… let go when you finish.'
+              : talk.state === 'sending'
+                ? 'Sending your question to Astra…'
+                : talk.state === 'denied'
+                  ? 'Your microphone is off. Type your question below instead.'
+                  : 'Hold the button and say your question — or type it below.'}
+          </p>
+        </div>
+        <label htmlFor="room-question" className="sr-only">
+          Type your question
         </label>
         <div className="flex flex-wrap gap-2">
           <Input
