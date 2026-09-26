@@ -33,6 +33,7 @@ from app.api.schemas.classes import (
 from app.events.registry import build_bus
 from app.services.class_pulse import ClassPulseService
 from app.services.class_service import ClassService
+from app.services.family_service import FamilyService
 from app.services.group_service import GroupService, GroupView
 from app.services.invite_service import InviteService
 from app.services.membership_service import MembershipService
@@ -134,8 +135,9 @@ async def members(
     page = await _memberships(session).members(
         user.id, class_id, status=status_, q=q, limit=limit, offset=offset
     )
+    parents = await FamilyService(session).parents_of([v.student_id for v in page.items])
     return MemberList(
-        items=[MemberResponse.of(view) for view in page.items],
+        items=[MemberResponse.of(view, parents.get(view.student_id)) for view in page.items],
         total=page.total,
         limit=limit,
         offset=offset,

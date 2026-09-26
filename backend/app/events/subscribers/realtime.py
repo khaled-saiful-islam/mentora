@@ -23,6 +23,7 @@ from app.events.catalog import (
     AssignmentShared,
     AttemptCompleted,
     AttemptProgressed,
+    FamilyLinked,
     LiveSessionCancelled,
     LiveSessionScheduled,
     MembershipApproved,
@@ -112,3 +113,7 @@ async def live_changed(
     """A schedule someone has open just changed."""
     message = {"topic": "live", "session_id": str(event.session_id)}
     _push(session, [*event.student_ids, event.teacher_id], message)
+
+
+async def family_changed(event: FamilyLinked, session: AsyncSession) -> None:
+    _push(session, [event.student_id, event.parent_id], {"topic": "family"})

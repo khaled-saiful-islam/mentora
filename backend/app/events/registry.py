@@ -13,6 +13,7 @@ from app.events.catalog import (
     AttemptCompleted,
     AttemptProgressed,
     BadgeAwarded,
+    FamilyLinked,
     LiveSessionCancelled,
     LiveSessionReminder,
     LiveSessionScheduled,
@@ -56,4 +57,7 @@ def build_bus() -> EventBus:
     # A shared set found hard: practice made for the student, after commit.
     bus.subscribe(AttemptCompleted, practice.weak_spots)
     bus.subscribe(PracticeMade, notifications.practice_ready)
+    # A parent connected: the child is told, and both family pages refresh.
+    bus.subscribe(FamilyLinked, notifications.family_linked)
+    bus.subscribe(FamilyLinked, realtime.family_changed)
     return bus

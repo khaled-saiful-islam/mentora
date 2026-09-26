@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { Key, MagnifyingGlass, Student, UserMinus, UsersFour } from '@phosphor-icons/react'
+import { HeartStraight, Key, MagnifyingGlass, Student, UserMinus, UsersFour } from '@phosphor-icons/react'
 import { Alert, Button, Card, Chip, Input, Skeleton } from '@/components/ui'
 import { Avatar } from '@/components/ui/Avatar'
 import { Confirm } from '@/components/ui/Confirm'
@@ -122,7 +122,19 @@ export function StudentsTab({ classId, onChange }: { classId: string; onChange: 
                 )}
                 <Avatar name={member.name} seed={member.student_id} />
                 <div className="min-w-0 flex-1">
-                  <p className="break-words font-bold">{member.name}</p>
+                  <p className="flex flex-wrap items-center gap-1.5 break-words font-bold">
+                    {member.name}
+                    {member.parents.length > 0 && (
+                      <span
+                        title={`Family following along: ${member.parents.join(', ')}`}
+                        className="inline-flex items-center gap-1 rounded-full bg-kind-family-vivid/12 px-2 py-0.5 text-xs font-bold text-kind-family"
+                      >
+                        <HeartStraight weight="fill" className="size-3.5" aria-hidden />
+                        <span className="sr-only">Family connected: </span>
+                        {member.parents.length === 1 ? member.parents[0] : `${member.parents.length} family`}
+                      </span>
+                    )}
+                  </p>
                   <p className="break-words text-sm text-muted-foreground">
                     {[member.username && `@${member.username}`, member.grade_label].filter(Boolean).join(' · ')}
                   </p>

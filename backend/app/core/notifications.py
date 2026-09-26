@@ -15,6 +15,8 @@ class Kind(StrEnum):
     BADGE_AWARDED = "badge_awarded"
     # Practice Mentora made from what a student found hard.
     PRACTICE_READY = "practice_ready"
+    # A parent connected through the student's invitation.
+    FAMILY_LINKED = "family_linked"
     # Live lessons: on the schedule, moved, cancelled, and reminders to join.
     LIVE_SCHEDULED = "live_scheduled"
     LIVE_CANCELLED = "live_cancelled"

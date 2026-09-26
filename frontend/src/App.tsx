@@ -30,6 +30,9 @@ import { Welcome } from '@/features/buddies/Welcome'
 import StudentClassPage from '@/features/classes/StudentClassPage'
 import StudentHome from '@/features/home/StudentHome'
 import TeacherHome from '@/features/home/TeacherHome'
+import ParentHome from '@/features/family/ParentHome'
+import ParentSignUp from '@/features/family/ParentSignUp'
+import FamilyInvitePage from '@/features/family/FamilyInvitePage'
 import PlayPage from '@/features/play/PlayPage'
 import ResultsPage from '@/features/results/ResultsPage'
 import BadgesPage from '@/features/badges/BadgesPage'
@@ -61,6 +64,7 @@ export default function App() {
           <Route path="/signup" element={<PublicOnly><SignUpChooser /></PublicOnly>} />
           <Route path="/signup/teacher" element={<PublicOnly><TeacherSignUp /></PublicOnly>} />
           <Route path="/signup/student" element={<PublicOnly><StudentSignUp /></PublicOnly>} />
+          <Route path="/signup/parent" element={<PublicOnly><ParentSignUp /></PublicOnly>} />
           {/* Deliberately outside Protected: needing an account to read a
               shared link would defeat the entire feature. */}
           <Route path="/s/:token" element={<Shared />} />
@@ -79,6 +83,8 @@ export default function App() {
           <Route path="/assignments/:assignmentId" element={<Shell capability="share_learning_sets"><AssignmentResultsPage /></Shell>} />
           {/* Signed in or out: the page decides what an invite means for you. */}
           <Route path="/join/:key" element={<JoinPage />} />
+          {/* A child's invitation to a parent — signed in or out, like /join. */}
+          <Route path="/family/:key" element={<FamilyInvitePage />} />
           <Route path="/classes" element={<Shell><ClassesPage /></Shell>} />
           <Route path="/classes/:classId" element={<Shell capability={SEES_CLASSES}><ClassRoute /></Shell>} />
           <Route path="/classes/:classId/:tab" element={<Shell capability="manage_classes"><ClassPage /></Shell>} />
@@ -124,6 +130,13 @@ function Home() {
     return (
       <AppShell>
         <StudentHome />
+      </AppShell>
+    )
+  }
+  if (user?.role === 'parent') {
+    return (
+      <AppShell>
+        <ParentHome />
       </AppShell>
     )
   }

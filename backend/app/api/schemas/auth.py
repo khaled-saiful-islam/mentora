@@ -27,6 +27,16 @@ class StudentSignUpRequest(BaseModel):
     invite_token: str | None = Field(default=None, max_length=128)
 
 
+class ParentSignUpRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    email: str = Field(max_length=320)
+    password: str = Field(min_length=8, max_length=72)
+    # From a child's invitation: signing up through one also connects.
+    invite: str | None = Field(default=None, max_length=128)
+    # What the child calls them: "Mum", "Dad", "Guardian"…
+    label: str | None = Field(default=None, max_length=24)
+
+
 class SignInRequest(BaseModel):
     # Username or email; the service works out which.
     identifier: str = Field(min_length=1, max_length=320)
@@ -110,3 +120,15 @@ class UserResponse(BaseModel):
 
 class StudentSignUpResponse(UserResponse):
     join: JoinAtSignUp | None = None
+
+
+class ConnectAtSignUp(BaseModel):
+    """What happened to the invitation a parent signed up through."""
+
+    # "connected" | "invalid"
+    status: str
+    child_name: str | None = None
+
+
+class ParentSignUpResponse(UserResponse):
+    connect: ConnectAtSignUp | None = None

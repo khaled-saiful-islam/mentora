@@ -190,3 +190,14 @@ class PracticeMade(Event):
     from_title: str
     # The student's buddy, who announces it.
     buddy: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class FamilyLinked(Event):
+    """A parent connected to a child through the child's invitation."""
+
+    student_id: UUID
+    parent_id: UUID
+    parent_name: str
+    # What the child calls them.
+    label: str

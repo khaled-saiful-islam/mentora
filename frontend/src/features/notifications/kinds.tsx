@@ -18,6 +18,7 @@ import {
   CalendarX,
   Confetti,
   Heartbeat,
+  HeartStraight,
   MagicWand,
   Medal,
   PaperPlaneTilt,
@@ -204,6 +205,20 @@ export const KINDS: Record<string, KindView> = {
     action: 'See my badge',
     flourish: 'medal',
     mood: 'celebrate',
+  },
+  family_linked: {
+    Icon: HeartStraight,
+    tile: 'bg-kind-family-vivid/15 text-kind-family',
+    title: (n) => `${text(n, 'label')} is following along`,
+    headlines: (n) => [
+      `${text(n, 'label')} is following along now!`,
+      `${text(n, 'parent_name')} (${text(n, 'label')}) can see how you're doing`,
+    ],
+    body: () => 'They see your work and results, and can send you practice.',
+    href: () => '/settings',
+    action: 'My family',
+    flourish: 'confetti',
+    mood: 'wave',
   },
   practice_ready: {
     Icon: Barbell,

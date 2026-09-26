@@ -1,4 +1,4 @@
-"""The three kinds of account.
+"""The four kinds of account.
 
 A role is stored on the user as its string value, so this enum is the only
 place the set of roles is spelled out. What each role may *do* is not here —
@@ -14,6 +14,8 @@ class Role(StrEnum):
     ADMIN = "admin"
     TEACHER = "teacher"
     STUDENT = "student"
+    # A child's parent or carer, linked to them by the child's invitation.
+    PARENT = "parent"
 
 
 # Teachers and admins share the teaching tools; admins add platform oversight.

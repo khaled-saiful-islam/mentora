@@ -6,7 +6,7 @@
  * enforces them. Never the other way round.
  */
 
-export type Role = 'admin' | 'teacher' | 'student'
+export type Role = 'admin' | 'teacher' | 'student' | 'parent'
 
 export type TextScale = 90 | 100 | 115 | 130 | 150
 export type FontStyle = 'playful' | 'classic' | 'easy'
@@ -36,6 +36,12 @@ export interface Capabilities {
   manage_users: boolean
   share_conversations: boolean
   see_usage: boolean
+  /** A student inviting a parent to follow along. */
+  invite_family: boolean
+  /** A parent seeing their own linked children. */
+  see_children: boolean
+  /** A parent making material to share with a linked child. */
+  make_family_sets: boolean
 }
 
 export interface User {

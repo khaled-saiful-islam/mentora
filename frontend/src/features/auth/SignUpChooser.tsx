@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { ArrowRight, Trophy } from '@phosphor-icons/react'
+import { ArrowRight, Bell, HeartStraight, Trophy } from '@phosphor-icons/react'
 import { Buddy, type BuddyHandle, type BuddyKey } from '@/features/buddies'
 import { rise, stagger, useCalmMotion } from '@/motion'
 import { cn } from '@/lib/utils'
@@ -32,6 +32,9 @@ export default function SignUpChooser() {
         </motion.li>
         <motion.li variants={rise}>
           <TeacherChoice to="/signup/teacher" />
+        </motion.li>
+        <motion.li variants={rise}>
+          <ParentChoice to="/signup/parent" />
         </motion.li>
       </motion.ul>
 
@@ -130,6 +133,38 @@ function TeacherChoice({ to }: { to: string }) {
       >
         <Trophy weight="fill" className="size-3.5 text-sun-400" />
         Aina scored 100%!
+      </motion.span>
+    </Link>
+  )
+}
+
+/** A heart that beats, and the news a parent gets, landing. */
+function ParentChoice({ to }: { to: string }) {
+  const calm = useCalmMotion()
+  return (
+    <Link to={to} className={cn(CARD, 'bg-gradient-to-br from-kind-family-vivid via-kind-family-vivid to-kind-family text-white')}>
+      <span className="relative z-10 flex max-w-[58%] flex-col">
+        <span className="font-display text-2xl font-bold leading-tight">I'm a parent</span>
+        <span className="mt-1 text-sm font-semibold text-white/85">Follow your child's learning, and make practice for them at home.</span>
+        <Go label="Follow along" className="self-start bg-white/15 text-white ring-1 ring-white/30" />
+      </span>
+      <motion.span
+        aria-hidden
+        className="absolute right-8 bottom-5 text-white/90"
+        animate={calm ? undefined : { scale: [1, 1.18, 1, 1.12, 1] }}
+        transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 0.6 }}
+      >
+        <HeartStraight weight="fill" className="size-20" />
+      </motion.span>
+      <motion.span
+        aria-hidden
+        className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-kind-family shadow-lg"
+        initial={{ opacity: 0, y: -10, scale: 0.8 }}
+        animate={calm ? { opacity: 1, y: 0, scale: 1 } : { opacity: [0, 1, 1, 0], y: [-10, 0, 0, -6], scale: [0.8, 1, 1, 0.95] }}
+        transition={calm ? { duration: 0 } : { duration: 4, repeat: Infinity, repeatDelay: 0.8, times: [0, 0.12, 0.85, 1], ease: 'easeOut', delay: 1 }}
+      >
+        <Bell weight="fill" className="size-3.5 text-sun-400" />
+        Aina finished her quiz!
       </motion.span>
     </Link>
   )

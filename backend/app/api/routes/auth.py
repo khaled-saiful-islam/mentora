@@ -13,7 +13,10 @@ from app.api.deps import AuthServiceDep, CurrentUser, SessionDep, SettingsDep, l
 from app.api.schemas.admin import UsageResponse
 from app.api.schemas.auth import (
     ChangePasswordRequest,
+    ConnectAtSignUp,
     JoinAtSignUp,
+    ParentSignUpRequest,
+    ParentSignUpResponse,
     PreferencesRequest,
     SignInRequest,
     StudentSignUpRequest,
@@ -27,6 +30,7 @@ from app.core.config import Settings
 from app.core.errors import NotFoundError
 from app.core.security import create_access_token
 from app.events.registry import build_bus
+from app.services.family_service import FamilyService, first_name
 from app.services.membership_service import MembershipService
 from app.services.quota import TokenQuota
 
@@ -93,6 +97,42 @@ async def sign_up_student(
     join = await _join_at_signup(session, result.user, payload.invite_token)
     _set_session_cookie(response, result.access_token, settings)
     return StudentSignUpResponse(**UserResponse.of(result.user).model_dump(), join=join)
+
+
+@router.post(
+    "/signup/parent",
+    response_model=ParentSignUpResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(limit_auth)],
+)
+async def sign_up_parent(
+    payload: ParentSignUpRequest,
+    auth: AuthServiceDep,
+    session: SessionDep,
+    settings: SettingsDep,
+    response: Response,
+) -> ParentSignUpResponse:
+    """Signing up through a child's invitation also connects to them, in the
+    same transaction. A dead invitation does not block the account — the
+    parent is told, and can ask their child for a new one."""
+    result = await auth.sign_up_parent(
+        name=payload.name, email=payload.email, password=payload.password
+    )
+    connect = await _connect_at_signup(session, result.user, payload.invite, payload.label)
+    _set_session_cookie(response, result.access_token, settings)
+    return ParentSignUpResponse(**UserResponse.of(result.user).model_dump(), connect=connect)
+
+
+async def _connect_at_signup(
+    session, parent, invite: str | None, label: str | None
+) -> ConnectAtSignUp | None:
+    if not invite:
+        return None
+    try:
+        linked = await FamilyService(session, build_bus()).connect(parent, invite, label)
+    except NotFoundError:
+        return ConnectAtSignUp(status="invalid")
+    return ConnectAtSignUp(status="connected", child_name=first_name(linked.student))
 
 
 async def _join_at_signup(session, student, token: str | None) -> JoinAtSignUp | None:

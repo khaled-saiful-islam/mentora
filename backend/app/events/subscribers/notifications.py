@@ -16,6 +16,7 @@ from app.events.catalog import (
     AssignmentShared,
     AttemptCompleted,
     BadgeAwarded,
+    FamilyLinked,
     LiveSessionCancelled,
     LiveSessionReminder,
     LiveSessionScheduled,
@@ -242,4 +243,14 @@ async def practice_ready(event: PracticeMade, session: AsyncSession) -> None:
             "from_title": event.from_title,
             "buddy": event.buddy,
         },
+    )
+
+
+async def family_linked(event: FamilyLinked, session: AsyncSession) -> None:
+    """The child is always told who is following along — nothing hidden."""
+    await NotificationService(session).notify(
+        user_id=event.student_id,
+        kind=Kind.FAMILY_LINKED,
+        actor_id=event.parent_id,
+        payload={"parent_name": event.parent_name, "label": event.label},
     )

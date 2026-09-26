@@ -49,6 +49,8 @@ export interface Member {
   buddy: string | null
   status: MembershipStatus
   requested_at: string
+  /** Parents connected to this student, as "Name (Mum)". */
+  parents: string[]
 }
 
 export interface MemberPage {

@@ -35,6 +35,22 @@ export interface StudentSignUp {
   invite_token?: string
 }
 
+export interface ParentSignUp {
+  name: string
+  email: string
+  password: string
+  /** From a child's invitation: signing up through one also connects. */
+  invite?: string
+  /** What the child calls them: Mum, Dad, Guardian… */
+  label?: string
+}
+
+/** What happened to the invitation a parent signed up through. */
+export interface ConnectAtSignUp {
+  status: 'connected' | 'invalid'
+  child_name: string | null
+}
+
 /**
  * Run once the server has said yes and before the app moves on — the
  * signed-out pages leave the moment there is a user, so a welcome that should
@@ -57,6 +73,7 @@ interface AuthState {
   signIn: (identifier: string, password: string, before?: BeforeEntering) => Promise<void>
   signUpTeacher: (details: TeacherSignUp, before?: BeforeEntering) => Promise<void>
   signUpStudent: (details: StudentSignUp, before?: BeforeEntering) => Promise<JoinAtSignUp | null>
+  signUpParent: (details: ParentSignUp, before?: BeforeEntering) => Promise<ConnectAtSignUp | null>
   signOut: () => Promise<void>
   updateUser: (user: User) => void
 }
@@ -109,6 +126,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return join
   }, [])
 
+  const signUpParent = useCallback(async (details: ParentSignUp, before?: BeforeEntering) => {
+    const created = await apiFetch<User & { connect?: ConnectAtSignUp | null }>('/auth/signup/parent', {
+      method: 'POST',
+      body: JSON.stringify(details),
+    })
+    const { connect = null, ...account } = created
+    await settle(before)
+    setUser(account)
+    return connect
+  }, [])
+
   const signOut = useCallback(async () => {
     try {
       await apiFetch<void>('/auth/signout', { method: 'POST' })
@@ -119,8 +147,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const value = useMemo(
-    () => ({ user, loading, signIn, signUpTeacher, signUpStudent, signOut, updateUser: setUser }),
-    [user, loading, signIn, signUpTeacher, signUpStudent, signOut],
+    () => ({ user, loading, signIn, signUpTeacher, signUpStudent, signUpParent, signOut, updateUser: setUser }),
+    [user, loading, signIn, signUpTeacher, signUpStudent, signUpParent, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

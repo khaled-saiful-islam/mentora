@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from '@phosphor-icons/react'
+import { FamilyCard } from '@/features/family/FamilyCard'
 import { AppearanceCard } from '@/features/settings/AppearanceCard'
 import { MemoryCard } from '@/features/settings/MemoryCard'
 import { useAuth } from '@/lib/auth'
@@ -19,6 +20,8 @@ export default function Settings() {
       </Link>
 
       <h1 className="font-display text-3xl font-bold tracking-tight">Settings</h1>
+
+      {can(user, 'invite_family') && <FamilyCard />}
 
       <AppearanceCard />
 

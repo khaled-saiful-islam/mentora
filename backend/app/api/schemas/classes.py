@@ -171,10 +171,13 @@ class MemberResponse(BaseModel):
     buddy: str | None
     status: str
     requested_at: datetime
+    # Parents connected to this student, as "Name (Mum)" (§20).
+    parents: list[str] = []
 
     @classmethod
-    def of(cls, view: MemberView) -> MemberResponse:
-        return cls(**{field: getattr(view, field) for field in cls.model_fields})
+    def of(cls, view: MemberView, parents: list[str] | None = None) -> MemberResponse:
+        fields = {f: getattr(view, f) for f in cls.model_fields if f != "parents"}
+        return cls(**fields, parents=parents or [])
 
 
 class MemberList(BaseModel):

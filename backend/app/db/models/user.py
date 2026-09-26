@@ -16,7 +16,9 @@ from app.db.base import Base, created_at, updated_at, uuid_pk
 class User(Base):
     __tablename__ = "users"
     __table_args__ = (
-        CheckConstraint("role IN ('admin', 'teacher', 'student')", name="ck_users_role"),
+        CheckConstraint(
+            "role IN ('admin', 'teacher', 'student', 'parent')", name="ck_users_role"
+        ),
         # Students sign in with a username and have no email; teachers sign in
         # with an email and need no username. Nobody may have neither.
         CheckConstraint(

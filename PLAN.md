@@ -2,7 +2,7 @@
 
 > **Status: APPROVED 2026-09-24 — Phases 1–5 done (roles, design, classes, learning sets, taking/results/buddies); Phase 6 (guardrails & admin) next.**
 > **§19 Live AI group tutoring — approved 2026-09-26. Phases 0–5 built (docs/features/036–038); waiting on your testing.**
-> **§20 Parents — proposed 2026-09-26, waiting on your approval.**
+> **§20 Parents — approved 2026-09-26. Building P0 → P5.**
 > Mentora is a fork of Pelita (`~/projects/pelita` @ `5a23f41`). This plan reuses
 > Pelita's stack, layering and Protocol-plus-registry design, and extends it into a
 > teacher–student learning platform.
@@ -921,7 +921,7 @@ Each phase: TDD → lint + tests → `make up` → a browser check (desktop + ph
 
 ---
 
-## 20. Parents (proposed 2026-09-26 — waiting on your approval)
+## 20. Parents (approved 2026-09-26)
 
 A new kind of account for a child's parent or carer. The parent is linked to
 their child, and through the child to the child's classes and teachers. They
@@ -1079,3 +1079,31 @@ push until you say).
   features and nothing from school.
 - **Demo data**: `make demo` adds `parent.demo` (Aina's mum) with a shared
   quiz and one past-due item, so every screen has something to show.
+
+---
+
+## 21. My materials — a teacher's own files, reused (requested 2026-09-26)
+
+A teacher's worksheets, textbook chapters and notes, uploaded once and kept.
+Any quiz, flashcard deck, study guide or live lesson can then be made from
+them.
+
+- **The library.** Library → **Materials**. Upload PDF, Word, PowerPoint or
+  text files, up to 10 MB each and 100 files per teacher.
+  - Each file is read once into text (`document_extract`, as live lessons and
+    chat already do) and kept with its title, type, size and pages.
+  - A file can be renamed or removed. Searching looks at titles and text.
+- **Making from them.** The Create sheet gets **Use my materials**: pick one
+  or more files, or upload a new one on the spot.
+  - The generator is grounded in the teacher's files first: the chosen files
+    become the sources, the way a live lesson's quiz uses its transcript.
+  - *Also search trusted sources* (on by default) fills gaps from the web.
+    Turned off, only the files are used.
+  - Items cite the file and page they came from.
+- **Live lessons** can attach files from the library instead of uploading
+  them again.
+- **Defaults I chose (overturn any):**
+  - Materials are private to the teacher who uploaded them.
+  - Parents get the same library when they make material (§20 P2).
+  - Scanned PDFs with no text layer are read by the vision model when one is
+    set. Otherwise the file is refused with a clear message.

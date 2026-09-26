@@ -40,6 +40,12 @@ class Capabilities:
     share_conversations: bool = False
     # Token and cost figures, which mean nothing to a child.
     see_usage: bool = False
+    # A student inviting a parent to follow along (§20).
+    invite_family: bool = False
+    # A parent seeing their own linked children — everything they do.
+    see_children: bool = False
+    # A parent making material and sharing it with a linked child.
+    make_family_sets: bool = False
 
     def as_dict(self) -> dict[str, bool]:
         return {field.name: getattr(self, field.name) for field in fields(self)}
@@ -67,7 +73,11 @@ _BY_ROLE: dict[Role, Capabilities] = {
         join_classes=True,
         take_assignments=True,
         join_live_sessions=True,
+        invite_family=True,
     ),
+    # A parent sees their own children, linked by the child's invitation.
+    # Making and sharing material and the chat arrive in later phases (§20.8).
+    Role.PARENT: Capabilities(see_children=True),
 }
 
 _NOTHING = Capabilities()

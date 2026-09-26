@@ -154,7 +154,7 @@ function CodeTiles({ code }: { code: string }) {
   )
 }
 
-function CopyButton({ text }: { text: string }) {
+export function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
   async function copy() {
     try {
@@ -177,7 +177,7 @@ function CopyButton({ text }: { text: string }) {
   )
 }
 
-function QrPicture({ text, disabled }: { text: string; disabled: boolean }) {
+export function QrPicture({ text, disabled }: { text: string; disabled: boolean }) {
   const [svg, setSvg] = useState<string | null>(null)
   useEffect(() => {
     let live = true

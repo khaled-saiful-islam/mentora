@@ -109,6 +109,18 @@ class AuthService:
         logger.info("teacher signed up: %s", email)
         return self._signed_in(user)
 
+    async def sign_up_parent(self, *, name: str, email: str, password: str) -> AuthResult:
+        """Parents sign in with their email, like teachers. Linking to a child
+        is the child's invitation's job (`family_service`), not sign-up's."""
+        name = normalise_name(name)
+        email = normalise_email(email)
+        validate_password(password)
+        if await self._users.get_by_email(email):
+            raise ConflictError("That email is already registered.")
+        user = await self._create(role=Role.PARENT, name=name, email=email, password=password)
+        logger.info("parent signed up: %s", email)
+        return self._signed_in(user)
+
     async def sign_up_student(
         self, *, name: str, grade_level: str, username: str, password: str
     ) -> AuthResult:
