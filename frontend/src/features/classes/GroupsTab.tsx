@@ -12,6 +12,7 @@ import { useResource } from '@/hooks/useResource'
 import { rise, spring, stagger } from '@/motion'
 import { lookOf, THEME_KEYS, THEMES, type ThemeKey } from '@/lib/palette'
 import { cn } from '@/lib/utils'
+import { AddTile } from '@/components/ui/AddTile'
 import { classesApi, type Group, type Member } from './api'
 import { EmptyArt } from './EmptyArt'
 import { useLive } from '@/lib/bus'
@@ -57,7 +58,7 @@ export function GroupsTab({ classId, onChange }: { classId: string; onChange: ()
           action={<Button onClick={() => setEditing('new')}><Plus weight="bold" className="size-5" />Make a group</Button>}
         />
       ) : (
-        <motion.ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" variants={stagger(0.06)} initial="hidden" animate="shown">
+        <motion.ul className={cn('grid gap-4 sm:grid-cols-2', items.length + 1 >= 3 && 'lg:grid-cols-3')} variants={stagger(0.06)} initial="hidden" animate="shown">
           <AnimatePresence>
             {items.map((group) => {
               const look = lookOf(group.colour)
@@ -96,6 +97,7 @@ export function GroupsTab({ classId, onChange }: { classId: string; onChange: ()
               )
             })}
           </AnimatePresence>
+          <AddTile title="Another group" hint="Share things with just them." onClick={() => setEditing('new')} count={items.length} columns={items.length + 1 >= 3 ? { sm: 2, lg: 3 } : { sm: 2 }} />
         </motion.ul>
       )}
 

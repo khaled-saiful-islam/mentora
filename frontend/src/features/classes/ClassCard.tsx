@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { ArrowRight, BookOpenText, Plus, UserCirclePlus } from '@phosphor-icons/react'
+import { ArrowRight, BookOpenText, UserCirclePlus } from '@phosphor-icons/react'
 import { rise } from '@/motion'
 import { lookOf } from '@/lib/palette'
 import { cn } from '@/lib/utils'
@@ -66,29 +66,6 @@ export function ClassCard({ room }: { room: ClassRoom }) {
           <ArrowRight weight="bold" className="size-4 transition-transform group-hover:translate-x-1" aria-hidden />
         </p>
       </div>
-    </motion.li>
-  )
-}
-
-/** The last tile in the grid: room for one more class. */
-export function NewClassTile({ onNew }: { onNew: () => void }) {
-  return (
-    <motion.li variants={rise} layout>
-      <button
-        type="button"
-        onClick={onNew}
-        className="group flex h-full min-h-56 w-full flex-col items-center justify-center gap-3 rounded-[1.75rem] border-2 border-dashed border-border p-6 text-center text-muted-foreground transition-colors hover:border-primary hover:text-primary"
-      >
-        <motion.span
-          className="grid size-14 place-items-center rounded-2xl bg-muted transition-colors group-hover:bg-primary group-hover:text-primary-foreground"
-          whileHover={{ rotate: 90 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-        >
-          <Plus weight="bold" className="size-7" />
-        </motion.span>
-        <span className="font-display text-lg font-semibold text-foreground">Start another class</span>
-        <span className="text-sm">You'll get a link and a code to share.</span>
-      </button>
     </motion.li>
   )
 }

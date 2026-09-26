@@ -8,6 +8,8 @@ import { Alert, ButtonLink, Skeleton } from '@/components/ui'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useResource } from '@/hooks/useResource'
 import { useLive } from '@/lib/bus'
+import { cn } from '@/lib/utils'
+import { AddTile } from '@/components/ui/AddTile'
 import { Page, rise, stagger } from '@/motion'
 import { sessionsApi, type SessionSummary } from './api'
 import { AstraBadge, SessionCard } from './SessionCard'
@@ -69,8 +71,8 @@ export default function LiveLessonsPage() {
         />
       ) : (
         <div className="space-y-10">
-          <Section title="Coming up" items={coming} />
-          <Section title="Getting ready" items={preparing} />
+          <Section title="Coming up" items={coming} add={coming.length > 0} />
+          <Section title="Getting ready" items={preparing} add={coming.length === 0} />
           <Section title="Finished" items={past} />
         </div>
       )}
@@ -78,17 +80,32 @@ export default function LiveLessonsPage() {
   )
 }
 
-function Section({ title, items }: { title: string; items: SessionSummary[] }) {
+function Section({ title, items, add = false }: { title: string; items: SessionSummary[]; add?: boolean }) {
   if (items.length === 0) return null
   return (
     <section>
       <h2 className="mb-4 font-display text-2xl font-semibold">{title}</h2>
-      <motion.ul variants={stagger()} initial="hidden" animate="shown" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <motion.ul
+        variants={stagger()}
+        initial="hidden"
+        animate="shown"
+        // Two lessons share the row between them rather than leave a third empty.
+        className={cn('grid gap-4 sm:grid-cols-2', items.length + (add ? 1 : 0) >= 3 && 'lg:grid-cols-3')}
+      >
         {items.map((s) => (
           <motion.li key={s.id} variants={rise}>
             <SessionCard session={s} to={`/live/${s.id}`} />
           </motion.li>
         ))}
+        {add && (
+          <AddTile
+            title="Another live lesson"
+            hint="Astra teaches it to a group, live."
+            to="/live/new"
+            count={items.length}
+            columns={items.length + 1 >= 3 ? { sm: 2, lg: 3 } : { sm: 2 }}
+          />
+        )}
       </motion.ul>
     </section>
   )

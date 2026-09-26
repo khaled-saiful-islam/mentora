@@ -7,13 +7,16 @@
  * something, share it — ticking itself off as they go.
  */
 import { motion } from 'motion/react'
-import { ArrowRight, BookOpenText, Cards, ChalkboardTeacher, CheckCircle, Circle, Exam, Plus, Sparkle, UserPlus, UsersThree, type Icon } from '@phosphor-icons/react'
+import { ArrowRight, BookOpenText, Broadcast, Cards, ChalkboardTeacher, CheckCircle, Circle, Exam, Plus, Sparkle, UserPlus, UsersThree, type Icon } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { Alert, ButtonLink, Chip, Skeleton } from '@/components/ui'
+import { AddTile } from '@/components/ui/AddTile'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { greeting } from '@/features/buddies'
 import type { LearningKindName } from '@/features/learning/api'
 import { lookOfKind } from '@/features/learning/kinds'
+import { sessionsApi } from '@/features/live/sessions/api'
+import { whenLabel } from '@/features/live/sessions/when'
 import { useLearnStudio } from '@/features/learning/LearnStudio'
 import { useResource } from '@/hooks/useResource'
 import { apiFetch } from '@/lib/api'
@@ -234,34 +237,95 @@ function Ring({ done, of, tone }: { done: number; of: number; tone: string }) {
   )
 }
 
+/** The classes, and beside them the live lessons coming up — so the
+ *  bottom of the page is the week ahead, not a lone card in a wide row. */
 function Classes({ data }: { data: Teaching }) {
   return (
-    <section className="mt-10">
-      <div className="flex items-center justify-between">
-        <h2 className="font-display text-2xl font-semibold">Your classes</h2>
-        <Link to="/classes" className="inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline">
-          All classes <ArrowRight weight="bold" className="size-4" />
+    <section className="mt-10 grid items-start gap-6 lg:grid-cols-3">
+      <div className="lg:col-span-2">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-2xl font-semibold">Your classes</h2>
+          <Link to="/classes" className="inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline">
+            All classes <ArrowRight weight="bold" className="size-4" />
+          </Link>
+        </div>
+        <motion.ul className="mt-4 grid gap-4 sm:grid-cols-2" variants={stagger(0.05)} initial="hidden" animate="shown">
+          {data.classes.map((room) => {
+            const look = lookOf(room.theme)
+            return (
+              <motion.li key={room.id} variants={rise} whileHover={{ y: -4 }}>
+                <Link to={`/classes/${room.id}`} className={cn('relative block h-full overflow-hidden rounded-3xl p-5 shadow-sm', look.hero, look.onHero)}>
+                  <p className="text-sm font-bold opacity-85">{[room.subject, room.grade_label].filter(Boolean).join(' · ') || 'Class'}</p>
+                  <p className="break-words font-display text-2xl font-semibold">{room.name}</p>
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold opacity-90">
+                    <UsersThree weight="fill" className="size-4" />
+                    {room.students} {room.students === 1 ? 'student' : 'students'}
+                    {room.pending > 0 && ` · ${room.pending} waiting`}
+                  </p>
+                  <ChalkboardTeacher weight="duotone" aria-hidden className="absolute -right-3 -bottom-4 size-24 opacity-20" />
+                </Link>
+              </motion.li>
+            )
+          })}
+          <AddTile title="Another class" hint="A link and a code, ready to share." to="/classes?new=1" count={data.classes.length} columns={{ sm: 2 }} />
+        </motion.ul>
+      </div>
+      <ComingUp />
+    </section>
+  )
+}
+
+const COMING = ['scheduled', 'lobby', 'live']
+
+/** The next few live lessons, soonest first — or an offer to plan one. */
+function ComingUp() {
+  const lessons = useResource('teacher-coming-up', () => sessionsApi.list())
+  useLive(['live'], () => void lessons.reload())
+  const next = (lessons.data?.items ?? [])
+    .filter((s) => COMING.includes(s.status))
+    .sort((a, b) => (a.scheduled_at ?? '').localeCompare(b.scheduled_at ?? ''))
+    .slice(0, 3)
+  return (
+    <section className="rounded-3xl border-2 border-border bg-surface p-5">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 font-display text-xl font-semibold">
+          <Broadcast weight="duotone" className="size-5 text-kind-live" aria-hidden /> Coming up live
+        </h2>
+        <Link to="/live" className="text-sm font-bold text-primary hover:underline">
+          All
         </Link>
       </div>
-      <motion.ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" variants={stagger(0.05)} initial="hidden" animate="shown">
-        {data.classes.map((room) => {
-          const look = lookOf(room.theme)
-          return (
-            <motion.li key={room.id} variants={rise} whileHover={{ y: -4 }}>
-              <Link to={`/classes/${room.id}`} className={cn('relative block overflow-hidden rounded-3xl p-5 shadow-sm', look.hero, look.onHero)}>
-                <p className="text-sm font-bold opacity-85">{[room.subject, room.grade_label].filter(Boolean).join(' · ') || 'Class'}</p>
-                <p className="font-display text-2xl font-semibold">{room.name}</p>
-                <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold opacity-90">
-                  <UsersThree weight="fill" className="size-4" />
-                  {room.students} {room.students === 1 ? 'student' : 'students'}
-                  {room.pending > 0 && ` · ${room.pending} waiting`}
-                </p>
-                <ChalkboardTeacher weight="duotone" aria-hidden className="absolute -right-3 -bottom-4 size-24 opacity-20" />
-              </Link>
-            </motion.li>
-          )
-        })}
-      </motion.ul>
+      {!lessons.data ? (
+        <Skeleton className="mt-4 h-24 rounded-2xl" />
+      ) : next.length === 0 ? (
+        <div className="mt-3">
+          <p className="text-sm text-muted-foreground">No live lessons on the calendar. Astra can teach one to a group while you watch.</p>
+          <ButtonLink to="/live/new" size="sm" className="mt-3">
+            <Broadcast weight="fill" className="size-4" /> Plan a live lesson
+          </ButtonLink>
+        </div>
+      ) : (
+        <motion.ul className="mt-3 space-y-2" variants={stagger(0.05)} initial="hidden" animate="shown">
+          {next.map((lesson) => {
+            const now = lesson.status !== 'scheduled'
+            return (
+              <motion.li key={lesson.id} variants={rise}>
+                <Link to={now ? `/live/${lesson.id}/room` : `/live/${lesson.id}`} className="flex items-center gap-3 rounded-2xl bg-kind-live-vivid/10 p-3 transition-colors hover:bg-kind-live-vivid/15">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-kind-live-vivid text-white">
+                    <Broadcast weight="fill" className="size-5" aria-hidden />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block break-words font-bold leading-snug">{lesson.title}</span>
+                    <span className="block text-sm text-muted-foreground">
+                      {now ? 'On now' : lesson.scheduled_at ? whenLabel(lesson.scheduled_at) : 'Soon'} · {lesson.group_name}
+                    </span>
+                  </span>
+                </Link>
+              </motion.li>
+            )
+          })}
+        </motion.ul>
+      )}
     </section>
   )
 }

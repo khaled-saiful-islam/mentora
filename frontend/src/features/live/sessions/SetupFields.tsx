@@ -44,7 +44,7 @@ export function WhoStep({
     <div className="space-y-6">
       <div>
         <h3 className="mb-3 font-bold">Which class?</h3>
-        <div role="radiogroup" aria-label="Class" className="grid gap-2 sm:grid-cols-2">
+        <div role="radiogroup" aria-label="Class" className={cn('grid gap-2', classes.length > 1 && 'sm:grid-cols-2')}>
           {classes.map((room) => (
             <Choice key={room.id} on={room.id === classId} onClick={() => onClass(room.id)}>
               <span className="block break-words font-bold">{room.name}</span>

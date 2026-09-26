@@ -113,7 +113,8 @@ export function InviteTab({ room }: { room: ClassRoom }) {
 /** Six big letters that flip in one after another when the code changes. */
 function CodeTiles({ code }: { code: string }) {
   return (
-    <div className="mt-3 flex flex-wrap gap-2" aria-label={`Class code ${code.split('').join(' ')}`}>
+    // Sized so all six stay on one line in every column this card sits in.
+    <div className="mt-3 flex flex-wrap gap-1.5 sm:gap-2 lg:gap-1.5 xl:gap-2" aria-label={`Class code ${code.split('').join(' ')}`}>
       {code.split('').map((letter, index) => (
         <AnimatePresence mode="popLayout" key={index}>
           <motion.span
@@ -121,7 +122,7 @@ function CodeTiles({ code }: { code: string }) {
             initial={{ rotateX: -90, opacity: 0 }}
             animate={{ rotateX: 0, opacity: 1, transition: { ...spring.bouncy, delay: index * 0.06 } }}
             exit={{ rotateX: 90, opacity: 0, transition: { duration: 0.12 } }}
-            className="grid size-12 place-items-center rounded-2xl bg-gradient-to-b from-grape-500 to-grape-700 font-display text-3xl font-semibold text-white shadow-press sm:size-16 sm:text-4xl"
+            className="grid size-10 place-items-center rounded-2xl bg-gradient-to-b from-grape-500 to-grape-700 font-display text-2xl font-semibold text-white shadow-press sm:size-16 sm:text-4xl lg:size-11 lg:text-2xl xl:size-16 xl:text-4xl"
             aria-hidden
           >
             {letter}

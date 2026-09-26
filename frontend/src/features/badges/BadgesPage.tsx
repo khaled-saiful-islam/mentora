@@ -50,6 +50,7 @@ export default function BadgesPage() {
                     </motion.li>
                   )
                 })}
+                {toEarn[0] && <UpNext badge={toEarn[0]} earned={shelf.length} />}
               </motion.ul>
             )}
           </section>
@@ -70,5 +71,35 @@ export default function BadgesPage() {
         </>
       )}
     </Page>
+  )
+}
+
+// Written out whole, so the stylesheet has them. Index: columns left over.
+const SPAN_BASE = ['hidden', 'col-span-1 flex']
+const SPAN_SM = ['sm:hidden', 'sm:col-span-1 sm:flex', 'sm:col-span-2 sm:flex']
+const SPAN_LG = ['lg:hidden', 'lg:col-span-1 lg:flex', 'lg:col-span-2 lg:flex', 'lg:col-span-3 lg:flex']
+
+/** The rest of the shelf's last row: the next badge to go for, and how. */
+function UpNext({ badge, earned }: { badge: { badge: string; name: string; hint: string }; earned: number }) {
+  const left = (cols: number) => (cols - (earned % cols)) % cols
+  return (
+    <motion.li
+      variants={pop}
+      className={cn(
+        'items-center gap-4 rounded-3xl border-2 border-dashed border-sun-400/60 bg-surface/60 p-4',
+        SPAN_BASE[left(2)],
+        SPAN_SM[left(3)],
+        SPAN_LG[left(4)],
+      )}
+    >
+      <motion.span animate={{ rotate: [0, -6, 6, 0] }} transition={{ duration: 3, repeat: Infinity }} className="shrink-0">
+        <BadgeMedal badge={badge.badge} size={64} locked />
+      </motion.span>
+      <span className="min-w-0">
+        <span className="block text-xs font-bold tracking-wide text-sun-600 uppercase dark:text-sun-300">Up next</span>
+        <span className="block font-display text-lg font-semibold">{badge.name}</span>
+        <span className="block text-sm text-muted-foreground">{badge.hint}</span>
+      </span>
+    </motion.li>
   )
 }

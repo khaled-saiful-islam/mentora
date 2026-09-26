@@ -18,5 +18,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test-setup.ts'],
+    // The slowest page tests take ~1.5 s alone; under a busy machine (a
+    // build running alongside) the 5 s default failed them for no reason.
+    testTimeout: 15_000,
   },
 })

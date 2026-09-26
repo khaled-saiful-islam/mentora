@@ -12,7 +12,8 @@ import { Page, rise, stagger } from '@/motion'
 import { cn } from '@/lib/utils'
 import { classesApi, type ClassDraft, type ClassRoom, type NextLive } from './api'
 import { NextLiveLine } from './ClassBits'
-import { ClassCard, NewClassTile } from './ClassCard'
+import { AddTile } from '@/components/ui/AddTile'
+import { ClassCard } from './ClassCard'
 import { ClassFormDialog } from './ClassFormDialog'
 import { EmptyArt } from './EmptyArt'
 import { useLive } from '@/lib/bus'
@@ -88,7 +89,7 @@ export default function TeacherClassesPage() {
             {view === 'active' && <Glance classes={items} />}
             <motion.ul
               key={view}
-              className="mt-6 grid gap-5 md:grid-cols-2 2xl:grid-cols-3"
+              className={cn('mt-6 grid gap-5 md:grid-cols-2', items.length + 1 >= 3 && '2xl:grid-cols-3')}
               variants={stagger(0.06)}
               initial="hidden"
               animate="shown"
@@ -96,7 +97,15 @@ export default function TeacherClassesPage() {
               {items.map((room) => (
                 <ClassCard key={room.id} room={room} />
               ))}
-              {view === 'active' && <NewClassTile onNew={() => setCreating(true)} />}
+              {view === 'active' && (
+                <AddTile
+                  title="Start another class"
+                  hint="You'll get a link and a code to share."
+                  onClick={() => setCreating(true)}
+                  count={items.length}
+                  columns={items.length + 1 >= 3 ? { md: 2, '2xl': 3 } : { md: 2 }}
+                />
+              )}
             </motion.ul>
           </>
         )}

@@ -12,6 +12,8 @@ import { useAuth } from '@/lib/auth'
 import { Page, stagger } from '@/motion'
 import { learningApi } from './api'
 import { useLearnStudio } from './LearnStudio'
+import { AddTile } from '@/components/ui/AddTile'
+import { cn } from '@/lib/utils'
 import { SetCard } from './SetCard'
 
 type Filter = 'all' | 'quiz' | 'flashcard' | 'study_guide' | 'archived'
@@ -49,6 +51,7 @@ export default function LibraryPage() {
   }
 
   const items = sets.data?.items ?? []
+  const adding = !q && filter !== 'archived'
   return (
     <Page className="mx-auto w-full max-w-6xl px-4 py-8 md:px-8">
       <div className="flex flex-wrap items-end gap-4">
@@ -99,10 +102,27 @@ export default function LibraryPage() {
             action={!q && filter !== 'archived' && <Button size="lg" onClick={() => studio.create()}><Plus weight="bold" className="size-5" />Make your first</Button>}
           />
         ) : (
-          <motion.ul key={`${filter}:${q}`} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" variants={stagger(0.05)} initial="hidden" animate="shown">
+          <motion.ul
+            key={`${filter}:${q}`}
+            // Three across only once there are three to show; one set and the
+            // add tile share the row rather than leave a third of it empty.
+            className={cn('grid gap-5 sm:grid-cols-2', items.length + (adding ? 1 : 0) >= 3 && 'lg:grid-cols-3')}
+            variants={stagger(0.05)}
+            initial="hidden"
+            animate="shown"
+          >
             {items.map((set) => (
               <SetCard key={set.id} set={set} onWatch={() => studio.watch(set)} onRetry={() => void retry(set.id)} />
             ))}
+            {adding && (
+              <AddTile
+                title={student ? 'Another practice set' : 'Make another'}
+                hint={student ? 'Any topic you like — ready in a minute.' : 'A quiz, flashcards or a study guide.'}
+                onClick={() => studio.create()}
+                count={items.length}
+                columns={items.length + 1 >= 3 ? { sm: 2, lg: 3 } : { sm: 2 }}
+              />
+            )}
           </motion.ul>
         )}
       </div>
