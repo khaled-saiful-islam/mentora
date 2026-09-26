@@ -80,3 +80,19 @@ class FamilyShare(Base):
         UniqueConstraint("set_id", "student_id", name="uq_family_share_set_student"),
         Index("ix_family_shares_student", "student_id", "created_at"),
     )
+
+
+class OverdueNotice(Base):
+    """A past-due alert that went out (§20.5): one per piece of work, due date
+    and child. The row, not the bell note, is what stops a repeat — a note is
+    read, and swept after 90 days; this is not."""
+
+    __tablename__ = "overdue_notices"
+
+    # "class:<assignment id>:<due>" or "home:<share id>:<due>" — a moved due
+    # date is a new deadline, and can be missed again.
+    work_key: Mapped[str] = mapped_column(String(96), primary_key=True)
+    student_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    created_at: Mapped[datetime] = created_at()

@@ -11,6 +11,7 @@
  * days read alike. The safety alert is the exception, and stays plain.
  */
 import {
+  Alarm,
   Barbell,
   Bell,
   Broadcast,
@@ -61,6 +62,18 @@ const text = (n: Notification, key: string): string => String(n.payload[key] ?? 
 function when(n: Notification): string {
   const at = n.payload.scheduled_at
   return typeof at === 'string' ? whenLabel(at) : 'soon'
+}
+
+/** "today at 5:00 pm", "yesterday at …", "tomorrow at …", "on Fri 14 Mar
+ *  at …" — a due time that reads well inside a sentence. */
+export function atWhen(iso: string, now: Date = new Date()): string {
+  const at = new Date(iso)
+  const time = at.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+  const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  const days = Math.round((day(at) - day(now)) / 86_400_000)
+  const date = at.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+  const when = days === 0 ? 'today' : days === -1 ? 'yesterday' : days === 1 ? 'tomorrow' : `on ${date}`
+  return `${when} at ${time}`
 }
 
 /** "a quiz", "some flashcards", "a study guide" — for what was sent home. */
@@ -235,11 +248,27 @@ export const KINDS: Record<string, KindView> = {
       `Something from home: ${text(n, 'title')}, from ${text(n, 'label')}`,
       `${text(n, 'label')} thinks you'll love ${text(n, 'title')}`,
     ],
-    body: (n) => (n.payload.due_at ? `Due ${whenLabel(text(n, 'due_at'), new Date())}` : 'Whenever you like.'),
+    body: (n) => (n.payload.due_at ? `Due ${atWhen(text(n, 'due_at'))}.` : 'Whenever you like.'),
     href: (n) => (n.payload.share_id ? `/from-home/${text(n, 'share_id')}` : '/'),
     action: 'Start',
     flourish: 'plane',
     mood: 'cheer',
+  },
+  child_overdue: {
+    Icon: Alarm,
+    tile: 'bg-coral-100 text-coral-700 dark:bg-coral-700/30 dark:text-coral-100',
+    title: (n) => `${text(n, 'student_name')} hasn't finished ${text(n, 'title')}`,
+    headlines: (n) => [
+      `${text(n, 'student_name')} hasn't finished ${text(n, 'title')} — it was due ${atWhen(text(n, 'due_at'))}`,
+    ],
+    body: (n) =>
+      text(n, 'source') === 'home'
+        ? `Sent from home by ${text(n, 'source_name')}. They can still do it.`
+        : `From ${text(n, 'source_name')}. They can still do it.`,
+    href: (n) => (n.payload.student_id ? `/children/${text(n, 'student_id')}/work` : '/'),
+    action: 'See their work',
+    flourish: 'knock',
+    mood: 'oops',
   },
   family_done: {
     Icon: Trophy,
@@ -283,7 +312,7 @@ export const KINDS: Record<string, KindView> = {
     tile: 'bg-grape-100 text-grape-700 dark:bg-grape-800/40 dark:text-grape-100',
     title: (n) => lookOfWork(text(n, 'kind')).ready(text(n, 'title'))[0],
     headlines: (n) => lookOfWork(text(n, 'kind')).ready(text(n, 'title')),
-    body: (n) => lookOfWork(text(n, 'kind')).next,
+    body: (n) => lookOfWork(text(n, 'kind'), text(n, 'purpose') || null).next,
     href: (n) => text(n, 'link') || null,
     action: (n) => lookOfWork(text(n, 'kind')).open,
     flourish: 'confetti',

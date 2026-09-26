@@ -16,6 +16,7 @@ from app.events.catalog import (
     AssignmentShared,
     AttemptCompleted,
     BadgeAwarded,
+    ChildOverdue,
     FamilyLinked,
     FamilyWorkShared,
     LiveSessionCancelled,
@@ -224,6 +225,7 @@ async def work_finished(event: WorkFinished, session: AsyncSession) -> None:
         payload={
             "work_id": str(event.work_id),
             "kind": event.kind,
+            "purpose": event.purpose,
             "title": event.title,
             "link": event.link,
             "message": event.message,
@@ -290,3 +292,22 @@ async def family_done(event: AttemptCompleted, session: AsyncSession) -> None:
             "percent": round(event.percent),
         },
     )
+
+
+async def child_overdue(event: ChildOverdue, session: AsyncSession) -> None:
+    """Each of the child's parents hears at once: "Aina hasn't finished …"."""
+    for parent_id in event.parent_ids:
+        await NotificationService(session).notify(
+            user_id=parent_id,
+            kind=Kind.CHILD_OVERDUE,
+            actor_id=event.student_id,
+            payload={
+                "student_id": str(event.student_id),
+                "student_name": event.student_name,
+                "title": event.title,
+                "kind": event.kind,
+                "due_at": event.due_at,
+                "source": event.source,
+                "source_name": event.source_name,
+            },
+        )

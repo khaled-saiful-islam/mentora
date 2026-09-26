@@ -13,6 +13,7 @@ from app.events.catalog import (
     AttemptCompleted,
     AttemptProgressed,
     BadgeAwarded,
+    ChildOverdue,
     FamilyLinked,
     FamilyWorkShared,
     LiveSessionCancelled,
@@ -71,4 +72,6 @@ def build_bus() -> EventBus:
     bus.subscribe(FamilyWorkShared, notifications.family_shared)
     bus.subscribe(FamilyWorkShared, realtime.home_work_shared)
     bus.subscribe(AttemptCompleted, notifications.family_done)
+    # Work gone past due unfinished (§20.5): the child's parents, at once.
+    bus.subscribe(ChildOverdue, notifications.child_overdue)
     return bus

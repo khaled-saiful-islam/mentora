@@ -124,9 +124,10 @@ child's 6-letter code.
   study guides from a topic or their own files. They send them to their
   child, with a due date if they like. The child finds them under *From
   home*, and the parent hears the score when it's done.
-- **Being built (PLAN.md §20):**
-  - An instant alert when work goes past due.
-  - The chat, without the studio.
+- **An instant alert when work goes past due**, whether a teacher or a
+  parent set it. It arrives once, says where the work came from, and opens
+  the child's work.
+- **Being built (PLAN.md §20):** the chat, without the studio.
 
 See [`docs/features/042-parents.md`](docs/features/042-parents.md).
 

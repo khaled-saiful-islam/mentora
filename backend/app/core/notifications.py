@@ -20,6 +20,8 @@ class Kind(StrEnum):
     # A parent sent their child something to do, and the child finished it.
     FAMILY_SHARED = "family_shared"
     FAMILY_DONE = "family_done"
+    # For parents: their child's work went past due unfinished.
+    CHILD_OVERDUE = "child_overdue"
     # Live lessons: on the schedule, moved, cancelled, and reminders to join.
     LIVE_SCHEDULED = "live_scheduled"
     LIVE_CANCELLED = "live_cancelled"

@@ -172,7 +172,7 @@ function Row({ item, onNavigate }: { item: WorkItem; onNavigate: () => void }) {
   const { clear } = useWork()
   const { items: notes, markRead } = useNotifications()
   const navigate = useNavigate()
-  const look = lookOfWork(item.kind)
+  const look = lookOfWork(item.kind, item.purpose)
   const running = item.state === 'running'
 
   function open() {

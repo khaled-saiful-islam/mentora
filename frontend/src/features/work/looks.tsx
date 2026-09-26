@@ -52,7 +52,14 @@ const BAR: Record<string, string> = {
   study_guide: 'bg-kind-study-guide-vivid',
 }
 
-function learningLook(kind: string): WorkLook {
+/** What to do with a finished set, for whoever it is for. */
+function nextFor(kind: string, purpose: string | null | undefined): string {
+  if (purpose === 'family') return kind === 'study_guide' ? 'Read it through, then send it home.' : 'Look it over, then send it home.'
+  if (purpose === 'practice') return 'Ready when you are — give it a go.'
+  return kind === 'study_guide' ? 'Read it through before you share it.' : 'Look it over, then share it with a class.'
+}
+
+function learningLook(kind: string, purpose?: string | null): WorkLook {
   const look = lookOfKind(kind)
   const noun = NOUN[kind] ?? look.label.toLowerCase()
   const are = kind === 'flashcard' ? 'are' : 'is'
@@ -62,11 +69,11 @@ function learningLook(kind: string): WorkLook {
     soft: look.soft,
     bar: BAR[kind] ?? 'bg-primary',
     ready: (t) => [`Your ${noun} on ${t} ${are} ready`, `Fresh out of the oven: ${t} ${noun}`, `Done! Your ${t} ${noun} ${are} waiting`],
-    next: kind === 'study_guide' ? 'Read it through before you share it.' : 'Look it over, then share it with a class.',
+    next: nextFor(kind, purpose),
     open: 'Open it',
   }
 }
 
-export function lookOfWork(kind: string): WorkLook {
-  return LOOKS[kind] ?? learningLook(kind)
+export function lookOfWork(kind: string, purpose?: string | null): WorkLook {
+  return LOOKS[kind] ?? learningLook(kind, purpose)
 }

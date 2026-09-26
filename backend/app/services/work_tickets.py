@@ -22,6 +22,7 @@ def for_set(learning_set: LearningSet) -> Ticket:
         title=learning_set.topic or learning_set.title,
         link=f"/library/{learning_set.id}",
         steps=steps,
+        purpose=learning_set.purpose,
     )
 
 

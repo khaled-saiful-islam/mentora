@@ -132,3 +132,11 @@ async def test_disconnecting_takes_back_what_was_sent(session, client, account) 
         assert (await c.get("/api/me/home")).json()["from_home"] == []
         refused = await c.post(f"/api/me/from-home/{share_id}/attempts")
     assert refused.status_code == 404
+
+
+async def test_the_ready_note_knows_it_is_for_home(session, account) -> None:
+    from app.services.work_tickets import for_set
+
+    parent = await account("parent")
+    learning_set = await ready_set(session, parent, purpose="family")
+    assert for_set(learning_set).purpose == "family"

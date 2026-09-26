@@ -2,7 +2,7 @@
 
 A fourth kind of account, for a child's parent or carer (PLAN.md §20). This
 page grows phase by phase. **Built: P0, the role and the link; P1, seeing
-the child; P2, making and sending work home.**
+the child; P2, making and sending work home; P3, past-due alerts.**
 
 ## What it does
 
@@ -107,7 +107,8 @@ How it works:
   answers. The child's page shows it in Work and on the overview, marked
   *From you*, or *From Dad* when the other parent sent it.
 - The background tray and the *ready* bell note work for parents as for
-  teachers.
+  teachers, and say what to do next in their words: *"Look it over, then
+  send it home."* The work ticket carries the set's purpose for this.
 
 How it works:
 
@@ -127,6 +128,36 @@ How it works:
   `assignments` push to the child and `child` to their parents.
   `AttemptCompleted.shared_by` → the parent's `family_done` note.
 - Parents gain `make_family_sets` and `keep_materials`.
+
+## Past-due alerts (P3)
+
+- When a child's work passes its due date unfinished, **every parent linked
+  to them hears within a minute**: *"Aina hasn't finished The Water Cycle —
+  it was due today at 5:00 pm"*, saying where it came from (*From 4 Cerdik*,
+  or *Sent from home by Dad*). *See their work* opens the child's Work tab,
+  where it sits under *Past due*.
+- It covers both teachers' work and work sent home.
+- **Once per piece of work, due date and child.** Reading the note does not
+  bring it back. A moved due date is a new deadline, and can be missed again.
+- **Nothing is sent** for work finished before the watcher looks (late or
+  not), a closed assignment, an archived class, a child who has left the
+  class or the group, a child with no parent, or a parent who has
+  disconnected.
+
+How it works:
+
+- `services/due_watcher.py`, a loop in the app's lifespan like the
+  live-lesson clock. Every `DUE_WATCHER_SECONDS` it reads the work due in the
+  last `OVERDUE_LOOK_BACK_HOURS`, for the children it is shared with now.
+- Each alert is claimed in `overdue_notices` (`work_key`, `student_id`) with
+  `INSERT … ON CONFLICT DO NOTHING`, in the same transaction as the notes. A
+  restart, a second tick or a second worker cannot repeat it, and a failed
+  tick is retried next time. The key is `class:<assignment>:<due>` or
+  `home:<share>:<due>` (migration `f1c9d3e2a846`).
+- `ChildOverdue` → a `child_overdue` note for each parent, with the bell's
+  own live push.
+- Tests drive `check(session, now)` with a clock set years ahead, so nothing
+  in a shared database falls in the window.
 
 ## Endpoints
 
@@ -161,7 +192,15 @@ GET    /api/me/home                      + from_home, for the child
   code.** It shows nothing else, and the look-up is rate limited per address.
 - **A parent's account is one email.** Two parents share nothing but the
   child; each connects with the child's invitation.
-- **Chat and past-due alerts arrive in P3–P4.**
+- **The parent chat arrives in P4.**
+- **Only the last `OVERDUE_LOOK_BACK_HOURS` (48) are watched.** Work that went
+  past due longer ago — while the server was down, or before this shipped —
+  is never announced.
+- **The alert is to the minute, not the second.** It waits for the next
+  tick, 60 seconds by default.
+- **One API worker, like the live clock.** A second worker would run a second
+  watcher. The ledger still stops duplicate alerts, but the work is done
+  twice.
 - **Two parents do not see each other's sets** in their libraries. Each sees
   everything sent to the child, labelled with who sent it.
 - **Work from home has no retake limit and no end-of-quiz mode.** Feedback

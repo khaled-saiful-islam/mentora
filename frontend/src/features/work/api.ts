@@ -7,6 +7,8 @@ export interface WorkItem {
   id: string
   /** A learning kind ("quiz", "flashcard", "study_guide"), or "live_plan" / "live_recording". */
   kind: string
+  /** For a set: who it is for — "assign", "practice" or "family". */
+  purpose?: string | null
   title: string
   link: string
   state: WorkState

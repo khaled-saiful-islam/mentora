@@ -287,6 +287,12 @@ class Settings(BaseSettings):
     # ---- Parents (§20) -------------------------------------------------------
     # How many quizzes, decks and guides a parent may make each day.
     parent_sets_per_day: int = 10
+    # The past-due watcher: how often it looks, and how far back. Work that
+    # went past due longer ago than that (a server down for days, or the day
+    # this ships) is never announced — a flood of stale alerts helps no one.
+    due_watcher_enabled: bool = True
+    due_watcher_seconds: float = 60.0
+    overdue_look_back_hours: int = 48
 
     # ---- My materials (§21) ------------------------------------------------
     # A teacher's own files, read once into text and kept to make material

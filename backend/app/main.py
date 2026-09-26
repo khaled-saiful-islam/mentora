@@ -62,11 +62,13 @@ async def lifespan(app: FastAPI):
     )
     _check_deployment_safety()
     live_clock = _start_live_clock()
+    due_watcher = _start_due_watcher()
 
     yield
 
-    if live_clock is not None:
-        live_clock.cancel()
+    for task in (live_clock, due_watcher):
+        if task is not None:
+            task.cancel()
     from app.api.deps import live_runtime
 
     await live_runtime().close_all()
@@ -100,6 +102,20 @@ def _start_live_clock():
 
     clock = LiveScheduler(runtime=live_runtime(), session_maker=session_scope, bus=build_bus)
     return asyncio.create_task(clock.run(), name="live-clock")
+
+
+def _start_due_watcher():
+    """Parents hear at once when their child's work goes past due (§20.5)."""
+    if not settings.due_watcher_enabled:
+        return None
+    import asyncio
+
+    from app.db.session import session_scope
+    from app.events.registry import build_bus
+    from app.services.due_watcher import DueWatcher
+
+    watcher = DueWatcher(settings=settings, bus=build_bus, session_maker=session_scope)
+    return asyncio.create_task(watcher.run(), name="due-watcher")
 
 
 def _check_deployment_safety() -> None:

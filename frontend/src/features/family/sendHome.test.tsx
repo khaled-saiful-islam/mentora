@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
-import { actionOf, headlineOf, kindOf } from '@/features/notifications/kinds'
+import { actionOf, atWhen, headlineOf, kindOf } from '@/features/notifications/kinds'
 import type { Notification } from '@/features/notifications/api'
 import type { HomeWork, Todo } from '@/features/play/api'
 import { FromHomeCard } from '@/features/play/TodoCard'
@@ -70,5 +70,38 @@ describe('work sent home', () => {
     expect(waiting.map((w) => w.assignment_id)).toEqual(['late', 'a1', 'dad'])
     expect(waiting.map((w) => w.class_name).slice(0, 1)).toEqual(['From you'])
     expect(waiting[2].class_name).toBe('From Dad')
+  })
+
+  it('tells the parents when work goes past due, and where to look', () => {
+    const late = note('child_overdue', {
+      student_id: 'k1',
+      student_name: 'Aina',
+      title: 'The Water Cycle',
+      kind: 'quiz',
+      due_at: '2026-09-27T09:00:00Z',
+      source: 'class',
+      source_name: '4 Cerdik',
+    })
+    expect(kindOf(late).title(late)).toBe("Aina hasn't finished The Water Cycle")
+    expect(headlineOf(late)).toMatch(/^Aina hasn't finished The Water Cycle — it was due /)
+    expect(kindOf(late).body?.(late)).toBe('From 4 Cerdik. They can still do it.')
+    expect(kindOf(late).href?.(late)).toBe('/children/k1/work')
+    const home = { ...late, payload: { ...late.payload, source: 'home', source_name: 'Dad' } }
+    expect(kindOf(home).body?.(home)).toBe('Sent from home by Dad. They can still do it.')
+  })
+
+  it('says a due time the way a sentence needs it', () => {
+    const now = new Date(2026, 8, 27, 12, 0)
+    expect(atWhen(new Date(2026, 8, 27, 17, 0).toISOString(), now)).toMatch(/^today at /)
+    expect(atWhen(new Date(2026, 8, 26, 17, 0).toISOString(), now)).toMatch(/^yesterday at /)
+    expect(atWhen(new Date(2026, 8, 28, 9, 0).toISOString(), now)).toMatch(/^tomorrow at /)
+    expect(atWhen(new Date(2026, 9, 3, 9, 0).toISOString(), now)).toMatch(/^on .+ at /)
+  })
+
+  it('says what to do with a finished set, for whoever it is for', () => {
+    const ready = (purpose: string) => note('work_done', { work_id: 'w1', kind: 'quiz', title: 'Fractions', link: '/library/s1', purpose })
+    expect(kindOf(ready('family')).body?.(ready('family'))).toBe('Look it over, then send it home.')
+    expect(kindOf(ready('assign')).body?.(ready('assign'))).toBe('Look it over, then share it with a class.')
+    expect(kindOf(ready('practice')).body?.(ready('practice'))).toBe('Ready when you are — give it a go.')
   })
 })

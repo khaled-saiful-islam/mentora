@@ -45,6 +45,9 @@ class Ticket:
     link: str
     # How many steps it goes through, when known up front.
     steps: int | None = None
+    # For a set: who it is for ("assign", "practice", "family"), so "ready"
+    # says what to do next in that person's words.
+    purpose: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,6 +69,7 @@ class WorkItem:
         return {
             "id": str(self.id),
             "kind": self.ticket.kind,
+            "purpose": self.ticket.purpose,
             "title": self.ticket.title,
             "link": self.ticket.link,
             "state": self.state,
@@ -220,6 +224,7 @@ async def _announce(item: WorkItem) -> None:
                 kind=item.ticket.kind,
                 title=item.ticket.title,
                 link=item.ticket.link,
+                purpose=item.ticket.purpose,
                 ok=item.state == "done",
                 message=item.message,
             ),

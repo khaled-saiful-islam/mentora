@@ -175,6 +175,8 @@ class WorkFinished(Event):
     link: str
     ok: bool
     message: str | None = None
+    # A set's purpose, when the work is a set.
+    purpose: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -217,3 +219,19 @@ class FamilyWorkShared(Event):
     title: str
     kind: str
     due_at: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ChildOverdue(Event):
+    """A child's work went past due unfinished (§20.5) — their parents hear."""
+
+    student_id: UUID
+    student_name: str
+    parent_ids: tuple[UUID, ...]
+    title: str
+    kind: str
+    due_at: str
+    # "class": from a teacher, with the class's name; "home": from a parent,
+    # with what the child calls them.
+    source: str
+    source_name: str
