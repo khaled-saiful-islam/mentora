@@ -91,6 +91,8 @@ class NotificationService:
         note.payload = {**note.payload, **payload, "actors": unique}
         note.count += 1
         note.updated_at = datetime.now(UTC)
+        # More of the same is news again: back on the badge.
+        note.seen_at = None
         await self._session.flush()
         return note
 
@@ -110,6 +112,28 @@ class NotificationService:
         more = len(found) > limit
         items = found[:limit]
         return NotificationPage(items=items, next_cursor=_cursor(items[-1]) if more else None)
+
+    async def unseen_count(self, user_id: UUID) -> int:
+        return int(
+            await self._session.scalar(
+                select(func.count())
+                .select_from(Notification)
+                .where(Notification.user_id == user_id, Notification.seen_at.is_(None))
+            )
+            or 0
+        )
+
+    async def mark_seen(self, user_id: UUID) -> int:
+        """The bell was opened: everything in it has been seen."""
+        result = await self._session.execute(
+            update(Notification)
+            .where(Notification.user_id == user_id, Notification.seen_at.is_(None))
+            .values(seen_at=datetime.now(UTC))
+        )
+        await self._session.flush()
+        if result.rowcount:
+            push_after_commit(self._session, user_id, _CHANGED)
+        return int(result.rowcount or 0)
 
     async def unread_count(self, user_id: UUID) -> int:
         return int(
@@ -133,6 +157,7 @@ class NotificationService:
             raise NotFoundError("No such notification.")
         if note.read_at is None:
             note.read_at = datetime.now(UTC)
+            note.seen_at = note.seen_at or note.read_at
             await self._session.flush()
             push_after_commit(self._session, user_id, _CHANGED)
         return note
@@ -142,6 +167,11 @@ class NotificationService:
             update(Notification)
             .where(Notification.user_id == user_id, Notification.read_at.is_(None))
             .values(read_at=datetime.now(UTC))
+        )
+        await self._session.execute(
+            update(Notification)
+            .where(Notification.user_id == user_id, Notification.seen_at.is_(None))
+            .values(seen_at=datetime.now(UTC))
         )
         push_after_commit(self._session, user_id, _CHANGED)
         return int(result.rowcount or 0)

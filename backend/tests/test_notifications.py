@@ -112,3 +112,17 @@ async def test_a_change_queues_a_push_for_its_owner(session, teacher) -> None:
         user_id=teacher.id, kind=Kind.JOIN_REQUEST, payload={}
     )
     assert (teacher.id, {"topic": "notifications"}) in session.info[_PENDING]
+
+
+async def test_opening_the_bell_clears_the_badge_but_keeps_notes_new(session, student) -> None:
+    from app.core.notifications import Kind
+    from app.services.notification_service import NotificationService
+
+    bell = NotificationService(session)
+    await bell.notify(user_id=student.id, kind=Kind.BADGE_AWARDED, payload={"name": "Starter"})
+    await bell.notify(user_id=student.id, kind=Kind.BADGE_AWARDED, payload={"name": "Streak"})
+    assert await bell.unseen_count(student.id) == 2
+    assert await bell.mark_seen(student.id) == 2
+    assert await bell.unseen_count(student.id) == 0
+    # Still new until read.
+    assert await bell.unread_count(student.id) == 2

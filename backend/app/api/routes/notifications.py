@@ -40,12 +40,24 @@ async def page(
         items=[NotificationResponse.of(note) for note in found.items],
         next_cursor=found.next_cursor,
         unread=await bell.unread_count(user.id),
+        unseen=await bell.unseen_count(user.id),
     )
 
 
 @router.get("/unread-count", response_model=UnreadResponse)
 async def unread(user: CurrentUser, session: SessionDep) -> UnreadResponse:
-    return UnreadResponse(unread=await NotificationService(session).unread_count(user.id))
+    bell = NotificationService(session)
+    return UnreadResponse(
+        unread=await bell.unread_count(user.id), unseen=await bell.unseen_count(user.id)
+    )
+
+
+@router.post("/seen", response_model=UnreadResponse)
+async def seen(user: CurrentUser, session: SessionDep) -> UnreadResponse:
+    """The bell was opened. The badge clears; the notes stay new until read."""
+    bell = NotificationService(session)
+    await bell.mark_seen(user.id)
+    return UnreadResponse(unread=await bell.unread_count(user.id), unseen=0)
 
 
 @router.post("/{notification_id}/read", response_model=NotificationResponse)

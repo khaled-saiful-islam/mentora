@@ -33,6 +33,9 @@ class Notification(Base):
     group_key: Mapped[str | None] = mapped_column(String(160))
     count: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Seen in the open bell: the badge counts what has not been seen yet, so
+    # opening the bell clears it, while each note stays new until it is read.
+    seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
 

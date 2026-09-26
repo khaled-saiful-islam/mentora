@@ -1,6 +1,10 @@
 /**
- * The bell's state: the first page of news, the unread count, and a live line
- * to the server that says when either changed.
+ * The bell's state: the first page of news, two counts, and a live line to
+ * the server that says when either changed.
+ *
+ * `unseen` is what the badge shows — news since the bell was last opened —
+ * so opening it clears the red dot. `unread` is per note: a note stays new
+ * until it is opened or marked read.
  *
  * The stream carries no content — only "something changed" — so the table
  * stays the one source of truth and a missed push costs nothing: the next
@@ -18,6 +22,7 @@ const MAX_BACKOFF_MS = 30_000
 interface NotificationsState {
   items: Notification[]
   unread: number
+  unseen: number
   hasMore: boolean
   /** Bumps whenever new unread news arrives, for a wiggle or a toast. */
   arrivals: number
@@ -28,6 +33,8 @@ interface NotificationsState {
   loadMore: () => Promise<void>
   markRead: (id: string) => Promise<void>
   markAllRead: () => Promise<void>
+  /** The bell was opened: the badge clears, the notes stay new. */
+  markSeen: () => Promise<void>
 }
 
 const NotificationsContext = createContext<NotificationsState | null>(null)
@@ -36,6 +43,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const { user } = useAuth()
   const [items, setItems] = useState<Notification[]>([])
   const [unread, setUnread] = useState(0)
+  const [unseen, setUnseen] = useState(0)
   const [cursor, setCursor] = useState<string | null>(null)
   const [arrivals, setArrivals] = useState(0)
   const [latestArrival, setLatestArrival] = useState<Notification | null>(null)
@@ -47,6 +55,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       const page = await notificationsApi.page()
       setItems(page.items)
       setUnread(page.unread)
+      setUnseen(page.unseen)
       setCursor(page.next_cursor)
       const fresh = page.items.filter((n) => !n.read && seen.current && !seen.current.has(`${n.id}:${n.count}`))
       seen.current = new Set(page.items.map((n) => `${n.id}:${n.count}`))
@@ -63,6 +72,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     if (!user) {
       setItems([])
       setUnread(0)
+      setUnseen(0)
       seen.current = null
       return
     }
@@ -90,12 +100,37 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const markAllRead = useCallback(async () => {
     setItems((current) => current.map((n) => ({ ...n, read: true })))
     setUnread(0)
+    setUnseen(0)
     await notificationsApi.readAll().catch(() => refresh())
   }, [refresh])
 
+  const markSeen = useCallback(async () => {
+    setUnseen(0)
+    try {
+      const counts = await notificationsApi.seen()
+      setUnread(counts.unread)
+    } catch {
+      // The badge comes back on the next refresh; nothing else depends on it.
+      void refresh()
+    }
+  }, [refresh])
+
   const value = useMemo(
-    () => ({ items, unread, hasMore: cursor !== null, arrivals, latestArrival, live, refresh, loadMore, markRead, markAllRead }),
-    [items, unread, cursor, arrivals, latestArrival, live, refresh, loadMore, markRead, markAllRead],
+    () => ({
+      items,
+      unread,
+      unseen,
+      hasMore: cursor !== null,
+      arrivals,
+      latestArrival,
+      live,
+      refresh,
+      loadMore,
+      markRead,
+      markAllRead,
+      markSeen,
+    }),
+    [items, unread, unseen, cursor, arrivals, latestArrival, live, refresh, loadMore, markRead, markAllRead, markSeen],
   )
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>
 }

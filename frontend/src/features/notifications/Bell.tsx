@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 're
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, useAnimationControls } from 'motion/react'
-import { Bell as BellIcon, Check, Checks } from '@phosphor-icons/react'
+import { ArrowRight, Bell as BellIcon, Check, Checks } from '@phosphor-icons/react'
 import { Button } from '@/components/ui'
 import { Buddy } from '@/features/buddies'
 import { useAuth } from '@/lib/auth'
@@ -20,11 +20,14 @@ const RING = { rotate: [0, -24, 20, -14, 10, -5, 0], transition: { duration: 0.9
 
 /**
  * The bell: it rings when news lands — sound waves and a "+1" floating up —
- * gives a little nudge now and then while something is unread, and opens a
+ * gives a little nudge now and then while something is waiting, and opens a
  * panel of what happened, with join requests answerable in place.
+ *
+ * The red badge counts news you have not looked at yet, so opening the bell
+ * clears it. Each note stays "new" until you open it or mark it read.
  */
 export function Bell({ className, align = 'left' }: { className?: string; align?: 'left' | 'right' }) {
-  const { unread, arrivals } = useNotifications()
+  const { unseen, arrivals, markSeen } = useNotifications()
   const [open, setOpen] = useState(false)
   const [ringing, setRinging] = useState(0)
   const swing = useAnimationControls()
@@ -42,12 +45,18 @@ export function Bell({ className, align = 'left' }: { className?: string; align?
     // Only on a new arrival, not on every re-render.
   }, [arrivals])
 
-  // While something waits unread, a small "psst" every so often.
+  // While something waits unlooked-at, a small "psst" every so often.
   useEffect(() => {
-    if (!unread || calm || open) return
+    if (!unseen || calm || open) return
     const timer = window.setInterval(() => void swing.start({ rotate: [0, -10, 8, 0], transition: { duration: 0.5 } }), NUDGE_MS)
     return () => window.clearInterval(timer)
-  }, [unread, calm, open, swing])
+  }, [unseen, calm, open, swing])
+
+  // Looking is seeing: the badge clears while the panel is open, including
+  // for news that lands while it is.
+  useEffect(() => {
+    if (open && unseen > 0) void markSeen()
+  }, [open, unseen, markSeen])
 
   return (
     <div className={cn('relative', className)}>
@@ -55,24 +64,24 @@ export function Bell({ className, align = 'left' }: { className?: string; align?
         ref={trigger}
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
+        aria-label={unseen ? `Notifications, ${unseen} new` : 'Notifications'}
         aria-expanded={open}
         className="relative grid size-10 place-items-center rounded-full text-foreground transition-colors hover:bg-hover"
       >
         <motion.span animate={swing} whileHover={{ rotate: [0, -12, 10, 0], transition: { duration: 0.4 } }} style={{ originY: 0.1 }} className="grid place-items-center">
-          <BellIcon weight={unread ? 'fill' : 'duotone'} className={cn('size-6', unread && 'text-primary')} />
+          <BellIcon weight={unseen ? 'fill' : 'duotone'} className={cn('size-6', unseen > 0 && 'text-primary')} />
         </motion.span>
         <AnimatePresence>{ringing > 0 && !calm && <Waves key={ringing} />}</AnimatePresence>
         <AnimatePresence>
-          {unread > 0 && (
+          {unseen > 0 && (
             <motion.span
-              key={unread}
+              key={unseen}
               initial={{ scale: 0.3, opacity: 0 }}
               animate={{ scale: [0.3, 1.35, 1], opacity: 1, transition: { duration: 0.45 } }}
               exit={{ scale: 0.3, opacity: 0 }}
               className="absolute -right-0.5 -top-0.5 grid min-w-5 place-items-center rounded-full bg-coral-400 px-1 text-[0.7rem] font-bold leading-5 text-white ring-2 ring-background"
             >
-              {unread > 99 ? '99+' : unread}
+              {unseen > 99 ? '99+' : unseen}
             </motion.span>
           )}
         </AnimatePresence>
@@ -279,12 +288,17 @@ function Quiet() {
   )
 }
 
+/** How long the dot takes to turn into a tick before the note moves down. */
+const TICK_MS = 320
+
 function Row({ note, onNavigate, ticking, delay }: { note: Notification; onNavigate: () => void; ticking: boolean; delay: number }) {
   const { markRead } = useNotifications()
   const navigate = useNavigate()
+  const [reading, setReading] = useState(false)
   const view = kindOf(note)
   const href = view.href?.(note) ?? null
   const body = view.body?.(note)
+  const joinRequest = note.type === 'join_request'
 
   function open() {
     if (!note.read) void markRead(note.id)
@@ -294,8 +308,14 @@ function Row({ note, onNavigate, ticking, delay }: { note: Notification; onNavig
     }
   }
 
+  // The dot becomes a tick first, so you see it land before the note moves.
+  function read() {
+    setReading(true)
+    window.setTimeout(() => void markRead(note.id), TICK_MS)
+  }
+
   return (
-    <motion.li variants={rise} className={cn('relative flex gap-3 px-5 py-4', !note.read && 'bg-grape-50/70 dark:bg-grape-900/20')}>
+    <motion.li variants={rise} className={cn('relative flex gap-3 px-4 py-4 sm:px-5', !note.read && 'bg-grape-50/70 dark:bg-grape-900/20')}>
       {!note.read && (
         <motion.span
           aria-hidden
@@ -313,20 +333,35 @@ function Row({ note, onNavigate, ticking, delay }: { note: Notification; onNavig
           {body && <p className="text-sm text-muted-foreground">{body}</p>}
         </button>
         <p className="mt-0.5 text-xs text-muted-foreground">{timeAgo(note.updated_at)}</p>
-        {note.type === 'join_request' && (
-          <div className="mt-2.5">
-            <JoinRequestActions note={note} />
+        {(joinRequest || href || !note.read) && (
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            {joinRequest ? (
+              <JoinRequestActions note={note} />
+            ) : (
+              href && (
+                <Button size="sm" variant={note.read ? 'outline' : 'primary'} onClick={open} className="h-8 px-3">
+                  {view.action ?? 'Open'}
+                  <ArrowRight weight="bold" className="size-3.5" aria-hidden />
+                </Button>
+              )
+            )}
+            {!note.read && (
+              <Button size="sm" variant="ghost" onClick={read} disabled={reading} className="h-8 px-2 text-muted-foreground hover:text-foreground">
+                <Check weight="bold" className="size-3.5" aria-hidden />
+                Mark as read
+              </Button>
+            )}
           </div>
         )}
       </div>
       {!note.read && (
         <AnimatePresence mode="wait" initial={false}>
-          {ticking ? (
+          {ticking || reading ? (
             <motion.span
               key="tick"
               initial={{ scale: 0, rotate: -90 }}
               animate={{ scale: 1, rotate: 0 }}
-              transition={{ ...spring.bouncy, delay }}
+              transition={{ ...spring.bouncy, delay: reading ? 0 : delay }}
               className="mt-1 grid size-5 shrink-0 place-items-center rounded-full bg-correct text-white"
             >
               <Check weight="bold" className="size-3" />

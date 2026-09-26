@@ -35,7 +35,9 @@ class NotificationPageResponse(BaseModel):
     items: list[NotificationResponse]
     next_cursor: str | None
     unread: int
+    unseen: int = 0
 
 
 class UnreadResponse(BaseModel):
     unread: int
+    unseen: int = 0
