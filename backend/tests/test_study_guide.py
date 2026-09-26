@@ -190,6 +190,15 @@ async def test_a_section_with_a_picture_or_no_results_is_left_alone() -> None:
     assert len(finder.asked) == 1
 
 
+async def test_a_section_with_nothing_to_see_asks_for_no_picture() -> None:
+    abstract = normalised(image_query="")
+    assert abstract is not None and abstract["image_query"] == ""
+    finder = Pictures([picture(1)])
+    [done] = await KIND.illustrate([abstract], topic="rules of grammar", pictures=finder)
+    assert done["image"] is None
+    assert finder.asked == []
+
+
 # --- the opening and ending -------------------------------------------------
 
 

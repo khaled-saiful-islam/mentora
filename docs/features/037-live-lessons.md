@@ -54,6 +54,15 @@
 - `/me/live-sessions`
 - `/me/live-sessions/:id`
 
+## Pictures
+
+A segment can ask for a picture (`image_query`) when seeing something helps.
+The prompt says to ask only then, and never for a person by name. The
+planner searches (SafeSearch, https only), and `JudgedPictures`
+(`app/learning/picture_check.py`) looks at each candidate. Only a clear,
+child-safe picture of that part's idea is shown; when none fits, the part
+has no picture. See `PICTURE_CHECK_MODEL` in `.env.example`.
+
 ## Known limits
 
 - **Students see a lesson only once it is scheduled**, and scheduling needs an approved (recorded) lesson. A draft is the teacher's alone.

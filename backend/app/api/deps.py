@@ -24,7 +24,12 @@ from app.db.repositories.users import SqlUserRepository
 from app.db.session import SessionFactory, session_scope
 from app.events.registry import build_bus
 from app.guards.registry import build_guards
-from app.learning.factory import build_generator, build_model, build_researcher
+from app.learning.factory import (
+    build_generator,
+    build_model,
+    build_picture_check,
+    build_researcher,
+)
 from app.learning.model import Meter
 from app.learning.registry import build_learning_kinds
 from app.live.answering import Answerer
@@ -375,7 +380,9 @@ def get_live_plan_service(settings: SettingsDep) -> LivePlanService:
         settings=settings,
         session_maker=session_scope,
         planner_factory=lambda meter: LessonPlanner(
-            build_model(settings, meter), build_researcher(settings)
+            build_model(settings, meter),
+            build_researcher(settings),
+            picture_check=build_picture_check(settings),
         ),
         narrator=_narrator(),
     )

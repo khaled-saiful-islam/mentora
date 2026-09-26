@@ -78,7 +78,8 @@ class StudyGuideKind:
             "hook": clean_text(raw.get("hook"), LIMITS["hook"]) or "",
             "fact": clean_text(raw.get("fact"), LIMITS["fact"]) or "",
             "example": clean_text(raw.get("example"), LIMITS["example"]) or "",
-            "image_query": clean_text(raw.get("image_query"), LIMITS["image_query"]) or heading,
+            # Empty on purpose when there is nothing to see: no picture then.
+            "image_query": clean_text(raw.get("image_query"), LIMITS["image_query"]) or "",
             "image": image,
             "alternatives": _alternatives(raw.get("alternatives"), image),
             "prompt": prompt,
@@ -116,9 +117,10 @@ class StudyGuideKind:
 
     async def illustrate(self, items: list[Item], *, topic: str, pictures: Pictures) -> list[Item]:
         async def one(item: Item) -> Item:
-            if item.get("image"):
+            want = item.get("image_query", item["heading"])
+            if item.get("image") or not want:
                 return item
-            query = f"{item.get('image_query') or item['heading']} {topic}"[:140]
+            query = f"{want} {topic}"[:140]
             found = await pictures.pictures(query, limit=PICTURES_PER_SECTION)
             if not found:
                 return item

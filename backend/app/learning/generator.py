@@ -27,6 +27,7 @@ from app.learning import prompts
 from app.learning.base import Item, LearningKind, Skill
 from app.learning.enrich import Enriching, Finishing
 from app.learning.model import GenerationUnavailable, JsonModel, Meter
+from app.learning.picture_check import JudgedPictures, PictureCheck, WordsPictureCheck
 from app.learning.research import Researcher, Source, listing
 from app.moderation.base import Decision
 from app.moderation.rules import InputRules
@@ -144,12 +145,19 @@ class _Plan:
 
 class LearningGenerator:
     def __init__(
-        self, model: JsonModel, researcher: Researcher, kind: LearningKind, meter: Meter
+        self,
+        model: JsonModel,
+        researcher: Researcher,
+        kind: LearningKind,
+        meter: Meter,
+        *,
+        picture_check: PictureCheck | None = None,
     ) -> None:
         self._model = model
         self._researcher = researcher
         self._kind = kind
         self._meter = meter
+        self._picture_check = picture_check or WordsPictureCheck()
 
     async def run(self, request: GenerationRequest) -> AsyncIterator[Update]:
         started = time.monotonic()
@@ -225,7 +233,9 @@ class LearningGenerator:
             sources=tuple(sources),
         )
         pictured, extras = await asyncio.gather(
-            kind.illustrate(items, topic=plan.topic, pictures=self._researcher),
+            kind.illustrate(
+                items, topic=plan.topic, pictures=self._pictures(plan.topic, plan.grade)
+            ),
             kind.wrap(self._model, finishing),
             return_exceptions=True,
         )
@@ -463,10 +473,20 @@ class LearningGenerator:
             else None
         )
         if item is not None and isinstance(self._kind, Enriching):
-            [item] = await self._kind.illustrate([item], topic=topic, pictures=self._researcher)
+            pictures = self._pictures(topic, grade_for(grade_level))
+            [item] = await self._kind.illustrate([item], topic=topic, pictures=pictures)
         return item
 
     # --- helpers -------------------------------------------------------------
+
+    def _pictures(self, topic: str, grade: Grade | None) -> JudgedPictures:
+        """Pictures that were looked at before anyone sees them."""
+        return JudgedPictures(
+            self._researcher,
+            self._picture_check,
+            topic=topic,
+            grade=grade.label if grade else None,
+        )
 
     def _clean(
         self, raw: Any, skills: tuple[Skill, ...], sources: list[Source], written: list[Item]

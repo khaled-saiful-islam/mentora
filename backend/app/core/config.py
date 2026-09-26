@@ -259,6 +259,23 @@ class Settings(BaseSettings):
     def vision_enabled(self) -> bool:
         return bool(self.vision_model.strip())
 
+    # ---- Picture checks --------------------------------------------------
+    # Every picture a study guide or live lesson finds is looked at before a
+    # child sees it; only a clear fit for the part is kept. With a model that
+    # can see set here, it looks at the picture itself. Empty, it falls back
+    # to matching the picture's title against what was asked for. The URL
+    # and key fall back to the vision ones, then the chat provider's.
+    picture_check_model: str = ""
+    picture_check_timeout_seconds: float = 30.0
+
+    @property
+    def resolved_picture_check_base_url(self) -> str:
+        return (self.vision_base_url or self.llm_base_url).rstrip("/")
+
+    @property
+    def resolved_picture_check_api_key(self) -> str:
+        return self.vision_api_key or self.llm_api_key
+
     @property
     def resolved_vision_base_url(self) -> str:
         return (self.vision_base_url or self.llm_base_url).rstrip("/")

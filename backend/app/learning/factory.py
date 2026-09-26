@@ -8,6 +8,7 @@ from app.guards.registry import build_guards
 from app.learning.base import LearningKind
 from app.learning.generator import LearningGenerator
 from app.learning.model import JsonModel, LearningModel, Meter
+from app.learning.picture_check import PictureCheck, VisionPictureCheck, WordsPictureCheck
 from app.learning.research import Researcher
 from app.providers.openai_compatible import OpenAICompatibleProvider
 from app.tools.page_reader import PageReader
@@ -44,5 +45,23 @@ def build_researcher(settings: Settings) -> Researcher:
     )
 
 
+def build_picture_check(settings: Settings) -> PictureCheck:
+    """Looking at the picture when a model can see; its title otherwise."""
+    if settings.picture_check_model.strip():
+        return VisionPictureCheck(
+            base_url=settings.resolved_picture_check_base_url,
+            api_key=settings.resolved_picture_check_api_key,
+            model=settings.picture_check_model.strip(),
+            timeout=settings.picture_check_timeout_seconds,
+        )
+    return WordsPictureCheck()
+
+
 def build_generator(settings: Settings, kind: LearningKind, meter: Meter) -> LearningGenerator:
-    return LearningGenerator(build_model(settings, meter), build_researcher(settings), kind, meter)
+    return LearningGenerator(
+        build_model(settings, meter),
+        build_researcher(settings),
+        kind,
+        meter,
+        picture_check=build_picture_check(settings),
+    )

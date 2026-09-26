@@ -13,6 +13,10 @@ Each part has:
   student picks is remembered on their device.
 - **A picture** from a SafeSearch image search, credited to its page. The
   teacher can swap it for one of the others the search found, or take it out.
+  - Each candidate is **looked at before it is kept**, and only a clear,
+    child-safe picture of that section's idea stays.
+  - A section with nothing to see (a rule, a definition) asks for no picture.
+  - A section with no good picture gets none, not a wrong one.
 - **Words to know**, dotted in the text. Tapping one shows its meaning and the
   word in Bahasa Melayu (or in English, for a guide written in Malay).
 - **Remember** (key points), **Remember it like this** (a memory trick),
@@ -72,9 +76,14 @@ check → research → skills → write ⟲ verify ⟲ repair → finish → bui
   is long, so two are written per call.
 - **finish** runs only for a kind that is `Enriching`
   (`app/learning/enrich.py`) — found by shape, never by name. It runs two
-  things side by side: `illustrate` (a picture search per section, through
-  `Researcher.pictures`: SafeSearch on, blocked hosts dropped, https only,
-  spares kept as `alternatives`) and `wrap` (one model call for the big
+  things side by side:
+  - `illustrate`: a picture search per section, through
+    `Researcher.pictures` (SafeSearch on, blocked hosts dropped, https only).
+    It is wrapped in `JudgedPictures` (`app/learning/picture_check.py`), which
+    scores each candidate and keeps only a clear fit, best first. The spares
+    are kept as `alternatives`, and every spare passed the check too. An
+    empty `image_query` means no search at all.
+  - `wrap`: one model call for the big
   question, introduction, summary and challenge). Either may fail; the guide
   is still made, and the log says which half is missing.
 - Pictures arrive in the live panel as a `pictures` event after the sections.
@@ -114,6 +123,13 @@ guide is still written, ungrounded and without pictures, and says so.
   `LEVEL_LOOKS`; the prompt must ask for it.
 
 ## Known limits
+
+- **How pictures are checked depends on `PICTURE_CHECK_MODEL`.**
+  - With a model that can see, it looks at the search's small copy of each
+    picture: about a second per candidate, six at a time.
+  - Without one, it only compares the picture's title with what the section
+    asked for. That drops more good pictures, but never keeps one whose title
+    has nothing to do with the section.
 
 - **Pictures are hot-linked**, not copied. A site that later removes or
   blocks an image breaks it; the frame falls back to the search's own small

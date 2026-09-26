@@ -23,6 +23,7 @@ from typing import Any
 from app.core.grades import Grade, grade_for
 from app.learning import prompts as learning_prompts
 from app.learning.model import JsonModel
+from app.learning.picture_check import JudgedPictures, PictureCheck, WordsPictureCheck
 from app.learning.research import Researcher, Source
 from app.learning.study_guide import picture_from
 from app.live import plan_prompts as prompts
@@ -114,9 +115,16 @@ PlanEvent = Stage | PartWritten
 
 
 class LessonPlanner:
-    def __init__(self, model: JsonModel, researcher: Researcher | None) -> None:
+    def __init__(
+        self,
+        model: JsonModel,
+        researcher: Researcher | None,
+        *,
+        picture_check: PictureCheck | None = None,
+    ) -> None:
         self._model = model
         self._researcher = researcher
+        self._picture_check = picture_check or WordsPictureCheck()
 
     async def breakdown(
         self, *, subject: str, topic: str, grade_level: str, difficulty: str, notes: str = ""
@@ -263,21 +271,28 @@ class LessonPlanner:
                 max_tokens=PART_TOKENS * count,
             )
             segments = _segments(repaired, index, subtopic, seconds) or segments
-        return tuple(await self._illustrate(segments, settings.topic))
+        return tuple(await self._illustrate(segments, settings.topic, grade))
 
-    async def _illustrate(self, segments: list[PlannedSegment], topic: str) -> list[PlannedSegment]:
+    async def _illustrate(
+        self, segments: list[PlannedSegment], topic: str, grade: Grade | None
+    ) -> list[PlannedSegment]:
         """A picture for each segment that asked for one — found with SafeSearch,
-        https only, like a study guide's. None found, none shown."""
+        https only, like a study guide's, and looked at before it is kept
+        (`learning/picture_check.py`). None fits, none shown."""
         if self._researcher is None or not self._researcher.available:
             return segments
+        pictures = JudgedPictures(
+            self._researcher,
+            self._picture_check,
+            topic=topic,
+            grade=grade.label if grade else None,
+        )
 
         async def one(segment: PlannedSegment) -> PlannedSegment:
             if not segment.image_query:
                 return segment
             try:
-                found = await self._researcher.pictures(
-                    f"{segment.image_query} {topic}"[:140], limit=3
-                )
+                found = await pictures.pictures(f"{segment.image_query} {topic}"[:140], limit=1)
             except Exception:  # noqa: BLE001 — a lesson without a picture is still a lesson
                 return segment
             chosen = next(
