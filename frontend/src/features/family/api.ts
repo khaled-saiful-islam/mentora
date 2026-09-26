@@ -1,5 +1,9 @@
 import { apiFetch } from '@/lib/api'
 import type { StudentClass } from '@/features/classes/api'
+import type { PublicReport } from '@/features/coverage/api'
+import type { SetSummary } from '@/features/learning/api'
+import type { SessionSummary } from '@/features/live/sessions/api'
+import type { Attempt, HistoryRow, MadeForYou, Results, SkillInsight, Todo } from '@/features/play/api'
 
 /** A child's invitation: a link to send and a code to type. */
 export interface FamilyInvite {
@@ -36,7 +40,42 @@ export interface InvitePreview {
   buddy: string | null
 }
 
+/** A child's week at a glance, as their parent sees it. */
+export interface ChildOverview {
+  todo: Todo[]
+  done: Todo[]
+  badges: number
+  streak: number
+  practise: SkillInsight[]
+  strengths: SkillInsight[]
+  latest: HistoryRow[]
+  upcoming: SessionSummary[]
+  made_for_you: MadeForYou[]
+}
+
+/** A piece of work, with the finished try to open for its answers. */
+export interface ChildWork extends Todo {
+  review_attempt_id: string | null
+}
+
+export interface ChildPractice extends SetSummary {
+  best: number | null
+  tries: number
+  made_for_you: boolean
+}
+
+export interface ChildSchedule {
+  upcoming: SessionSummary[]
+  past: (SessionSummary & { attended: boolean })[]
+}
+
+export interface LessonNotes {
+  title: string
+  parts: { title: string; subtopic: string; key_points: string[] }[]
+}
+
 const json = (body: unknown) => ({ body: JSON.stringify(body) })
+const child = (id: string) => `/me/children/${id}`
 
 export const familyApi = {
   // The child's side.
@@ -50,6 +89,15 @@ export const familyApi = {
   children: () => apiFetch<{ items: Child[] }>('/me/children'),
   classes: (childId: string) => apiFetch<{ items: StudentClass[] }>(`/me/children/${childId}/classes`),
   disconnect: (childId: string) => apiFetch<void>(`/me/children/${childId}`, { method: 'DELETE' }),
+  // One child, everything they do — read-only.
+  overview: (childId: string) => apiFetch<ChildOverview>(`${child(childId)}/overview`),
+  work: (childId: string) => apiFetch<{ items: ChildWork[] }>(`${child(childId)}/work`),
+  results: (childId: string) => apiFetch<Results>(`${child(childId)}/results`),
+  practice: (childId: string) => apiFetch<{ items: ChildPractice[] }>(`${child(childId)}/practice`),
+  schedule: (childId: string) => apiFetch<ChildSchedule>(`${child(childId)}/schedule`),
+  notes: (childId: string, sessionId: string) => apiFetch<LessonNotes>(`${child(childId)}/schedule/${sessionId}/notes`),
+  attempt: (childId: string, attemptId: string) => apiFetch<Attempt>(`${child(childId)}/attempts/${attemptId}`),
+  coverage: (childId: string, classId: string) => apiFetch<PublicReport>(`${child(childId)}/classes/${classId}/coverage`),
 }
 
 /** What a child calls the parent. The last choice lets them type their own. */

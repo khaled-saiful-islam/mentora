@@ -1,11 +1,13 @@
 /**
- * A parent's home: each child they follow — their buddy, their classes and
- * teachers — and a way to connect another with the child's code.
+ * A parent's home: each child they follow — their week at a glance, their
+ * classes and teachers, and the way into everything they do — and a way to
+ * connect another with the child's code.
  */
-import { ChalkboardTeacher, HeartStraight, LinkBreak, UsersThree } from '@phosphor-icons/react'
+import { ArrowRight, ChalkboardTeacher, Fire, HeartStraight, LinkBreak, ListChecks, Medal, UsersThree, Warning } from '@phosphor-icons/react'
 import { motion } from 'motion/react'
 import { useState } from 'react'
-import { Alert, Button, Card, Skeleton } from '@/components/ui'
+import { Link } from 'react-router-dom'
+import { Alert, Button, ButtonLink, Card, Skeleton } from '@/components/ui'
 import { Confirm } from '@/components/ui/Confirm'
 import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/features/auth/errors'
@@ -19,6 +21,9 @@ import { firstName } from '@/lib/user'
 import { cn } from '@/lib/utils'
 import { Page, rise, stagger } from '@/motion'
 import { familyApi, type Child } from './api'
+import { isLate, LessonRow, WorkRow } from './child/bits'
+import { ResultRow } from './child/OverviewTab'
+import { useChildResource } from './child/useChild'
 import { LabelPicker } from './LabelPicker'
 
 export default function ParentHome() {
@@ -68,6 +73,7 @@ export default function ParentHome() {
 
 function ChildCard({ child, onGone }: { child: Child; onGone: () => void }) {
   const classes = useResource(`child-classes:${child.id}`, () => familyApi.classes(child.id))
+  const overview = useChildResource(child.id, 'overview', () => familyApi.overview(child.id))
   const [leaving, setLeaving] = useState(false)
   const { toast } = useToast()
 
@@ -83,6 +89,10 @@ function ChildCard({ child, onGone }: { child: Child; onGone: () => void }) {
   }
 
   const rooms = classes.data?.items ?? []
+  const week = overview.data
+  const waiting = week ? [...week.todo].sort((a, b) => Number(isLate(b)) - Number(isLate(a))) : []
+  const late = waiting.filter((t) => isLate(t)).length
+  const page = `/children/${child.id}`
   return (
     <motion.li variants={rise}>
       <Card className="overflow-hidden">
@@ -93,39 +103,68 @@ function ChildCard({ child, onGone }: { child: Child; onGone: () => void }) {
             <h2 className="break-words font-display text-3xl font-semibold">{child.name}</h2>
             {child.grade_label && <p className="text-sm font-bold text-muted-foreground">{child.grade_label}</p>}
           </div>
-          <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setLeaving(true)}>
-            <LinkBreak weight="bold" className="size-4" /> Disconnect
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <ButtonLink to={page} className="bg-kind-family-vivid text-white">
+              See everything <ArrowRight weight="bold" className="size-4" aria-hidden />
+            </ButtonLink>
+            <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setLeaving(true)}>
+              <LinkBreak weight="bold" className="size-4" /> Disconnect
+            </Button>
+          </div>
         </div>
-        <div className="p-5">
-          <h3 className="flex items-center gap-2 text-sm font-bold text-foreground/85">
-            <UsersThree weight="duotone" className="size-5 text-kind-family" aria-hidden /> Classes and teachers
-          </h3>
-          {!classes.data ? (
-            <Skeleton className="mt-3 h-16 rounded-2xl" />
-          ) : rooms.length === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">{child.first_name} isn't in a class yet. When they join one, it shows up here with their teacher.</p>
-          ) : (
-            <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-              {rooms.map((room) => {
-                const look = lookOf(room.theme)
-                return (
-                  <li key={room.class_id} className="flex items-center gap-3 rounded-2xl bg-muted/50 p-3">
-                    <span className={cn('grid size-11 shrink-0 place-items-center rounded-xl', look.hero, look.onHero)}>
-                      <ChalkboardTeacher weight="duotone" className="size-6" aria-hidden />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block break-words font-bold leading-snug">{room.class_name}</span>
-                      <span className="block text-sm text-muted-foreground">
-                        {[room.subject, `with ${room.teacher_name}`].filter(Boolean).join(' · ')}
-                      </span>
-                    </span>
-                  </li>
-                )
-              })}
+        {!week ? (
+          <Skeleton className="m-5 h-40 rounded-2xl" />
+        ) : (
+          <div className="space-y-5 p-5 @container">
+            <ul className="flex flex-wrap gap-2">
+              <Pill Icon={Fire} text={week.streak > 0 ? `${week.streak}-day streak` : 'No streak yet'} />
+              <Pill Icon={Medal} text={`${week.badges} ${week.badges === 1 ? 'badge' : 'badges'}`} />
+              <Pill Icon={ListChecks} text={waiting.length === 0 ? 'All caught up' : `${waiting.length} waiting`} />
+              {late > 0 && <Pill Icon={Warning} text={`${late} past due`} alert />}
             </ul>
-          )}
-        </div>
+            <div className="grid gap-5 @3xl:grid-cols-2">
+              <Glance title="Waiting" empty={`Nothing waiting — ${child.first_name} is all caught up.`} more={waiting.length > 3 ? { to: `${page}/work`, label: `All ${waiting.length}` } : null}>
+                {waiting.slice(0, 3).map((todo) => (
+                  <WorkRow key={todo.assignment_id} todo={todo} />
+                ))}
+              </Glance>
+              <Glance title="Latest results" empty={`Scores show here when ${child.first_name} finishes something.`} more={week.latest.length > 0 ? { to: `${page}/results`, label: 'All results' } : null}>
+                {week.latest.slice(0, 3).map((row) => (
+                  <ResultRow key={row.attempt_id} row={row} to={`${page}/attempts/${row.attempt_id}`} />
+                ))}
+              </Glance>
+            </div>
+            {week.upcoming[0] && (
+              <ul>
+                <LessonRow lesson={week.upcoming[0]} />
+              </ul>
+            )}
+            <div>
+              <h3 className="flex items-center gap-2 text-sm font-bold text-foreground/85">
+                <UsersThree weight="duotone" className="size-5 text-kind-family" aria-hidden /> Classes and teachers
+              </h3>
+              {!classes.data ? (
+                <Skeleton className="mt-3 h-10 rounded-2xl" />
+              ) : rooms.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">{child.first_name} isn't in a class yet. When they join one, it shows up here with their teacher.</p>
+              ) : (
+                <ul className="mt-2 flex flex-wrap gap-2">
+                  {rooms.map((room) => {
+                    const look = lookOf(room.theme)
+                    return (
+                      <li key={room.class_id} className={cn('inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold', look.soft)}>
+                        <ChalkboardTeacher weight="duotone" className="size-4" aria-hidden />
+                        <span className="break-words">
+                          {room.class_name} · {room.teacher_name}
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
       </Card>
       {leaving && (
         <Confirm
@@ -137,6 +176,37 @@ function ChildCard({ child, onGone }: { child: Child; onGone: () => void }) {
         />
       )}
     </motion.li>
+  )
+}
+
+function Pill({ Icon, text, alert = false }: { Icon: typeof Fire; text: string; alert?: boolean }) {
+  return (
+    <li className={cn('inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-bold', alert ? 'bg-coral-100 text-coral-700 dark:bg-coral-700/30 dark:text-coral-100' : 'bg-muted text-foreground/85')}>
+      <Icon weight="fill" className={cn('size-4', !alert && 'text-kind-family')} aria-hidden />
+      {text}
+    </li>
+  )
+}
+
+function Glance({ title, empty, more, children }: { title: string; empty: string; more: { to: string; label: string } | null; children: React.ReactNode[] }) {
+  return (
+    <section className="min-w-0 space-y-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="font-display text-lg font-semibold">{title}</h3>
+        {more && (
+          <Link to={more.to} className="inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline">
+            {more.label} <ArrowRight weight="bold" className="size-4" aria-hidden />
+          </Link>
+        )}
+      </div>
+      {children.length === 0 ? (
+        <p className="rounded-2xl border-2 border-dashed border-border p-3 text-sm text-muted-foreground">{empty}</p>
+      ) : (
+        <motion.ul className="space-y-2" variants={stagger(0.05)} initial="hidden" animate="shown">
+          {children}
+        </motion.ul>
+      )}
+    </section>
   )
 }
 

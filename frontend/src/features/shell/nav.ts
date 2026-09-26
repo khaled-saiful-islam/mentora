@@ -36,7 +36,7 @@ export const NAV: NavItem[] = [
     label: 'Home',
     Icon: House,
     show: () => true,
-    matches: (path) => path === '/' || path.startsWith('/play/') || path.startsWith('/attempts/'),
+    matches: (path) => path === '/' || ['/play/', '/attempts/', '/children/'].some((p) => path.startsWith(p)),
   },
   {
     key: 'studio',

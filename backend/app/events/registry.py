@@ -60,4 +60,10 @@ def build_bus() -> EventBus:
     # A parent connected: the child is told, and both family pages refresh.
     bus.subscribe(FamilyLinked, notifications.family_linked)
     bus.subscribe(FamilyLinked, realtime.family_changed)
+    # A parent with their child's page open sees it change as the child works.
+    for did in (AttemptCompleted, BadgeAwarded, PracticeMade, MembershipApproved, MembershipEnded):
+        bus.subscribe(did, realtime.child_did)
+    for got in (AssignmentShared, LiveSessionScheduled, LiveSessionCancelled):
+        bus.subscribe(got, realtime.children_got)
+    bus.subscribe(AssignmentChanged, realtime.children_saw_change)
     return bus

@@ -7,7 +7,10 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.badges.catalog import CATALOG
+from app.db.models.attempt import Attempt
+from app.db.models.learning import LearningSet
 from app.services.attempt_service import AnswerResult, AttemptView, Played
+from app.services.auto_practice import MadeForYou
 from app.services.badge_service import Earned
 from app.services.leaderboard_service import Board, Entry
 from app.services.play_service import Finished
@@ -217,6 +220,41 @@ class TodoResponse(BaseModel):
             feedback_mode=a.feedback_mode,
             shared_at=a.created_at,
         )
+
+
+class ChildWorkItem(TodoResponse):
+    """A piece of work as a parent sees it: the card, and the finished
+    attempt to open for its answers."""
+
+    review_attempt_id: UUID | None = None
+
+
+def history_row(attempt: Attempt, learning_set: LearningSet) -> dict[str, Any]:
+    """One finished attempt in a results list."""
+    return {
+        "attempt_id": attempt.id,
+        "title": learning_set.title,
+        "kind": attempt.kind,
+        "purpose": learning_set.purpose,
+        "subject": learning_set.subject,
+        "percent": float(attempt.percent),
+        "score": attempt.score,
+        "max_score": attempt.max_score,
+        "completed_at": attempt.completed_at,
+        "assignment_id": attempt.assignment_id,
+    }
+
+
+def made_for_you_row(made: MadeForYou) -> dict[str, Any]:
+    return {
+        "set_id": str(made.set_id),
+        "kind": made.kind,
+        "title": made.title,
+        "skills": list(made.skills),
+        "from_title": made.from_title,
+        "done": made.done,
+        "created_at": made.created_at.isoformat(),
+    }
 
 
 class EarnedBadge(BaseModel):

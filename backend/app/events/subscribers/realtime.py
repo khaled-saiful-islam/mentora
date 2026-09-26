@@ -8,6 +8,8 @@ missed push costs nothing but a moment's staleness.
     assignments   what is shared in a class, and its status
     progress      a teacher watching results: a student started, answered, finished
     leaderboard   a quiz's board
+    family        who is connected to whom
+    child         a parent watching a child: something the child sees changed
 """
 
 from __future__ import annotations
@@ -23,6 +25,7 @@ from app.events.catalog import (
     AssignmentShared,
     AttemptCompleted,
     AttemptProgressed,
+    BadgeAwarded,
     FamilyLinked,
     LiveSessionCancelled,
     LiveSessionScheduled,
@@ -30,7 +33,9 @@ from app.events.catalog import (
     MembershipEnded,
     MembershipRejected,
     MembershipRequested,
+    PracticeMade,
 )
+from app.services.family_service import FamilyService
 from app.services.realtime import push_after_commit
 
 
@@ -117,3 +122,31 @@ async def live_changed(
 
 async def family_changed(event: FamilyLinked, session: AsyncSession) -> None:
     _push(session, [event.student_id, event.parent_id], {"topic": "family"})
+
+
+# --- a parent watching -----------------------------------------------------------
+
+
+async def _tell_parents(session: AsyncSession, student_ids: Iterable[UUID]) -> None:
+    for parent_id, student_id in await FamilyService(session).watchers(student_ids):
+        push_after_commit(session, parent_id, {"topic": "child", "student_id": str(student_id)})
+
+
+async def child_did(
+    event: AttemptCompleted | BadgeAwarded | PracticeMade | MembershipApproved | MembershipEnded,
+    session: AsyncSession,
+) -> None:
+    """The child finished something, earned something, or joined or left a class."""
+    await _tell_parents(session, [event.student_id])
+
+
+async def children_got(
+    event: AssignmentShared | LiveSessionScheduled | LiveSessionCancelled, session: AsyncSession
+) -> None:
+    """New work, or a lesson on (or off) the schedule, for these children."""
+    await _tell_parents(session, event.student_ids)
+
+
+async def children_saw_change(event: AssignmentChanged, session: AsyncSession) -> None:
+    """Work they have was closed, reopened or given a new due date."""
+    await _tell_parents(session, event.audience)

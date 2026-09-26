@@ -15,6 +15,7 @@ the one lookup every parent read goes through.
 from __future__ import annotations
 
 import secrets
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from uuid import UUID
@@ -179,6 +180,19 @@ class FamilyService:
         for student_id, name, email, label in rows.all():
             found.setdefault(student_id, []).append(f"{name or email} ({label})")
         return found
+
+    async def watchers(self, student_ids: Iterable[UUID]) -> list[tuple[UUID, UUID]]:
+        """(parent, child) for every parent linked to any of these students —
+        who to tell when something a child sees changes."""
+        wanted = list(set(student_ids))
+        if not wanted:
+            return []
+        rows = await self._session.execute(
+            select(FamilyLink.parent_id, FamilyLink.student_id).where(
+                FamilyLink.student_id.in_(wanted)
+            )
+        )
+        return [(parent, child) for parent, child in rows.all()]
 
     # --- internals -----------------------------------------------------------
 

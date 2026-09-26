@@ -7,14 +7,16 @@ import { rise, stagger } from '@/motion'
 import { isQuizItem, type Attempt, type CardItem, type Played, type QuizItem } from './api'
 import { playedById, skillLabel } from './session'
 
-export function Review({ attempt }: { attempt: Attempt }) {
+/** `whose` names the answer given: "your answer" for the student, their
+ *  name for a parent looking back with them. */
+export function Review({ attempt, whose = 'your answer' }: { attempt: Attempt; whose?: string }) {
   const played = playedById(attempt.answered)
   return (
     <motion.ol className="space-y-3" variants={stagger(0.05)} initial="hidden" animate="shown">
       {attempt.items.map((item, i) => (
         <motion.li key={item.id} variants={rise}>
           {isQuizItem(item) ? (
-            <QuizRow n={i + 1} item={item} answer={played[item.id]} skill={skillLabel(attempt, item.skill)} />
+            <QuizRow n={i + 1} item={item} answer={played[item.id]} skill={skillLabel(attempt, item.skill)} whose={whose} />
           ) : (
             <CardRow item={item} answer={played[item.id]} skill={skillLabel(attempt, item.skill)} />
           )}
@@ -33,7 +35,7 @@ function Mark({ right }: { right: boolean | null }) {
   )
 }
 
-function QuizRow({ n, item, answer, skill }: { n: number; item: QuizItem; answer: Played | undefined; skill: string }) {
+function QuizRow({ n, item, answer, skill, whose }: { n: number; item: QuizItem; answer: Played | undefined; skill: string; whose: string }) {
   const right = answer?.reveal?.answer
   return (
     <article className="rounded-3xl border-2 border-border bg-surface p-4 md:p-5">
@@ -54,7 +56,7 @@ function QuizRow({ n, item, answer, skill }: { n: number; item: QuizItem; answer
                 )}
               >
                 {option}
-                {i === answer?.choice && <span className="ml-2 text-xs font-bold uppercase opacity-70">your answer</span>}
+                {i === answer?.choice && <span className="ml-2 text-xs font-bold uppercase opacity-70">{whose}</span>}
               </li>
             ))}
           </ul>

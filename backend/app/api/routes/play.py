@@ -17,6 +17,8 @@ from app.api.schemas.play import (
     FinishResponse,
     TodoResponse,
     catalog,
+    history_row,
+    made_for_you_row,
 )
 from app.badges.catalog import CATALOG
 from app.core.errors import ValidationError
@@ -55,16 +57,7 @@ async def home(user: CurrentUser, session: SessionDep) -> dict[str, object]:
         "practise": insights["practise"][:2],
         "strengths": insights["strengths"][:2],
         "made_for_you": [
-            {
-                "set_id": str(m.set_id),
-                "kind": m.kind,
-                "title": m.title,
-                "skills": list(m.skills),
-                "from_title": m.from_title,
-                "done": m.done,
-                "created_at": m.created_at.isoformat(),
-            }
-            for m in await AutoPracticeService(session).made_for(user.id)
+            made_for_you_row(m) for m in await AutoPracticeService(session).made_for(user.id)
         ],
     }
 
@@ -111,21 +104,7 @@ async def results(user: CurrentUser, session: SessionDep) -> dict[str, object]:
     service = ResultsService(session, build_bus())
     history = await service.history(user.id)
     return {
-        "attempts": [
-            {
-                "attempt_id": a.id,
-                "title": s.title,
-                "kind": a.kind,
-                "purpose": s.purpose,
-                "subject": s.subject,
-                "percent": float(a.percent),
-                "score": a.score,
-                "max_score": a.max_score,
-                "completed_at": a.completed_at,
-                "assignment_id": a.assignment_id,
-            }
-            for a, s in history
-        ],
+        "attempts": [history_row(a, s) for a, s in history],
         "insights": await service.insights(user.id),
     }
 

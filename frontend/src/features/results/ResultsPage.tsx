@@ -50,7 +50,22 @@ export default function ResultsPage() {
   )
 }
 
-function SkillList({ title, Icon, tone, skills, empty }: { title: string; Icon: typeof Trophy; tone: 'mint' | 'coral'; skills: SkillInsight[]; empty: string }) {
+export function SkillList({
+  title,
+  Icon,
+  tone,
+  skills,
+  empty,
+  practiseLink = true,
+}: {
+  title: string
+  Icon: typeof Trophy
+  tone: 'mint' | 'coral'
+  skills: SkillInsight[]
+  empty: string
+  /** The student's own page offers to make a practice set. */
+  practiseLink?: boolean
+}) {
   return (
     <section className={cn('rounded-[1.75rem] p-5', tone === 'mint' ? 'bg-correct-soft' : 'bg-wrong-soft')}>
       <h2 className="flex items-center gap-2 font-display text-xl font-semibold">
@@ -70,7 +85,7 @@ function SkillList({ title, Icon, tone, skills, empty }: { title: string; Icon: 
           ))}
         </ul>
       )}
-      {tone === 'coral' && skills.length > 0 && (
+      {practiseLink && tone === 'coral' && skills.length > 0 && (
         <Link to="/library" className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline">
           Make a practice set <ArrowRight weight="bold" className="size-4" />
         </Link>
@@ -81,7 +96,7 @@ function SkillList({ title, Icon, tone, skills, empty }: { title: string; Icon: 
 
 const LEVEL = { strong: 'bg-correct', growing: 'bg-star', practise: 'bg-wrong' } as const
 
-function SkillBars({ skills }: { skills: SkillInsight[] }) {
+export function SkillBars({ skills }: { skills: SkillInsight[] }) {
   return (
     <section className="mt-8">
       <h2 className="font-display text-2xl font-semibold">Every skill</h2>
@@ -111,17 +126,25 @@ function SkillBars({ skills }: { skills: SkillInsight[] }) {
   )
 }
 
-function History({ rows }: { rows: HistoryRow[] }) {
+export function History({
+  rows,
+  title = "Everything you've finished",
+  hrefFor = (row) => `/attempts/${row.attempt_id}`,
+}: {
+  rows: HistoryRow[]
+  title?: string
+  hrefFor?: (row: HistoryRow) => string
+}) {
   return (
     <section className="mt-10">
-      <h2 className="font-display text-2xl font-semibold">Everything you've finished</h2>
+      <h2 className="font-display text-2xl font-semibold">{title}</h2>
       <motion.ul className="mt-4 space-y-2" variants={stagger(0.04)} initial="hidden" animate="shown">
         {rows.map((row) => {
           const look = lookOfKind(row.kind)
           const stars = starsFor(row.percent)
           return (
             <motion.li key={row.attempt_id} variants={rise}>
-              <Link to={`/attempts/${row.attempt_id}`} className="flex items-center gap-3 rounded-2xl border-2 border-border bg-surface p-3 transition-colors hover:border-hover-border">
+              <Link to={hrefFor(row)} className="flex items-center gap-3 rounded-2xl border-2 border-border bg-surface p-3 transition-colors hover:border-hover-border">
                 <span className={cn('grid size-11 shrink-0 place-items-center rounded-xl', look.hero)}>
                   <look.Icon weight="fill" className="size-6" />
                 </span>

@@ -20,6 +20,7 @@ from app.api.routes import (
     assignments,
     auth,
     chat,
+    children,
     classes,
     conversations,
     coverage,
@@ -155,6 +156,7 @@ def create_app() -> FastAPI:
     app.include_router(assignments.router, prefix="/api")
     app.include_router(auth.router, prefix="/api")
     app.include_router(chat.router, prefix="/api")
+    app.include_router(children.router, prefix="/api")
     app.include_router(classes.router, prefix="/api")
     app.include_router(conversations.router, prefix="/api")
     app.include_router(coverage.router, prefix="/api")

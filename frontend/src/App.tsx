@@ -31,6 +31,8 @@ import StudentClassPage from '@/features/classes/StudentClassPage'
 import StudentHome from '@/features/home/StudentHome'
 import TeacherHome from '@/features/home/TeacherHome'
 import ParentHome from '@/features/family/ParentHome'
+import ChildPage from '@/features/family/child/ChildPage'
+import ChildAttemptPage from '@/features/family/child/AttemptReviewPage'
 import ParentSignUp from '@/features/family/ParentSignUp'
 import FamilyInvitePage from '@/features/family/FamilyInvitePage'
 import PlayPage from '@/features/play/PlayPage'
@@ -85,6 +87,9 @@ export default function App() {
           <Route path="/join/:key" element={<JoinPage />} />
           {/* A child's invitation to a parent — signed in or out, like /join. */}
           <Route path="/family/:key" element={<FamilyInvitePage />} />
+          <Route path="/children/:childId" element={<Shell capability="see_children"><ChildPage /></Shell>} />
+          <Route path="/children/:childId/:tab" element={<Shell capability="see_children"><ChildPage /></Shell>} />
+          <Route path="/children/:childId/attempts/:attemptId" element={<Shell capability="see_children"><ChildAttemptPage /></Shell>} />
           <Route path="/classes" element={<Shell><ClassesPage /></Shell>} />
           <Route path="/classes/:classId" element={<Shell capability={SEES_CLASSES}><ClassRoute /></Shell>} />
           <Route path="/classes/:classId/:tab" element={<Shell capability="manage_classes"><ClassPage /></Shell>} />

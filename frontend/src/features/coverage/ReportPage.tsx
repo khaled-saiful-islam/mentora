@@ -62,13 +62,15 @@ export default function ReportPage() {
   )
 }
 
-function Report({ report }: { report: PublicReport }) {
+/** The report itself. `inApp` is a parent's own view inside Mentora, where
+ *  the note about keeping a link private does not apply. */
+export function Report({ report, inApp = false }: { report: PublicReport; inApp?: boolean }) {
   const s = report.summary
   const child = report.student_name
   const made = new Date(report.made_at).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
   return (
     <motion.div variants={stagger(0.06)} initial="hidden" animate="shown">
-      <motion.section variants={rise} className="mt-8 rounded-[2rem] bg-gradient-to-br from-grape-600 to-grape-800 p-6 text-white shadow-lg print:shadow-none md:p-8">
+      <motion.section variants={rise} className={cn(inApp ? 'mt-0' : 'mt-8', 'rounded-[2rem] bg-gradient-to-br from-grape-600 to-grape-800 p-6 text-white shadow-lg print:shadow-none md:p-8')}>
         <p className="text-sm font-bold opacity-85">{[report.subject, report.grade_label].filter(Boolean).join(' · ')}</p>
         <h1 className="mt-1 break-words font-display text-3xl font-semibold md:text-4xl">{child ? `${child}'s progress` : `What ${report.class_name} has covered`}</h1>
         <p className="mt-1 opacity-90">
@@ -93,10 +95,12 @@ function Report({ report }: { report: PublicReport }) {
         ))}
       </div>
 
-      <motion.p variants={rise} className="mt-8 flex items-center gap-2 text-sm text-muted-foreground print:mt-4">
-        <Sparkle weight="fill" className="size-4 text-star" aria-hidden />
-        Made with Mentora. This page is private to you — please don't share the link.
-      </motion.p>
+      {!inApp && (
+        <motion.p variants={rise} className="mt-8 flex items-center gap-2 text-sm text-muted-foreground print:mt-4">
+          <Sparkle weight="fill" className="size-4 text-star" aria-hidden />
+          Made with Mentora. This page is private to you — please don't share the link.
+        </motion.p>
+      )}
     </motion.div>
   )
 }

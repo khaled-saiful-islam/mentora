@@ -116,8 +116,11 @@ child's 6-letter code.
   have a parent connected. They cannot message each other.
 - **Only the parent can disconnect.** The child is told when a parent
   connects, and sees who is connected.
+- **Everything the child does**, updated live as they work. Each child's
+  page has six tabs: an overview of the week, all their work (past due
+  first), results by skill, their practice, their live-lesson schedule, and
+  each class with what it covers. Any finished quiz opens answer by answer.
 - **Being built (PLAN.md §20):**
-  - A page per child with everything they do.
   - Quizzes and flashcards parents make and share with their child.
   - An instant alert when work goes past due.
   - The chat, without the studio.

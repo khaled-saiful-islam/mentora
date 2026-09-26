@@ -182,9 +182,22 @@ class CoverageService:
         classroom = await self._session.get(Classroom, report.class_id) if report else None
         if report is None or classroom is None:
             raise NotFoundError("This report link isn't working. Ask the teacher for a new one.")
-        teacher = await self._session.get(User, classroom.teacher_id)
         student = await self._session.get(User, report.student_id) if report.student_id else None
-        shaped = await self.coverage(classroom, student_id=report.student_id, sort=False)
+        return await self._report(classroom, student)
+
+    async def for_student(self, class_id: UUID, student: User) -> dict[str, Any]:
+        """The same report, for a student's parent inside the app — only for a
+        class the student is in."""
+        classroom = await self._session.get(Classroom, class_id)
+        if classroom is None or not await self._member(class_id, student.id):
+            raise NotFoundError("No such class.")
+        return await self._report(classroom, student)
+
+    async def _report(self, classroom: Classroom, student: User | None) -> dict[str, Any]:
+        teacher = await self._session.get(User, classroom.teacher_id)
+        shaped = await self.coverage(
+            classroom, student_id=student.id if student else None, sort=False
+        )
         return {
             "class_name": classroom.name,
             "subject": classroom.subject,
