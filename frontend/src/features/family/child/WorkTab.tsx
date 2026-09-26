@@ -4,10 +4,11 @@ import { motion } from 'motion/react'
 import { Alert, Skeleton } from '@/components/ui'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { EmptyArt } from '@/features/classes/EmptyArt'
-import { familyApi, type ChildWork } from '../api'
-import { isLate, SectionTitle, WorkRow } from './bits'
-import { useChildResource } from './useChild'
+import { useAuth } from '@/lib/auth'
 import { stagger } from '@/motion'
+import { familyApi, type ChildWork } from '../api'
+import { fromHome, isLate, SectionTitle, WorkRow } from './bits'
+import { useChildResource } from './useChild'
 
 const GROUPS: { key: string; title: string; note?: string; pick: (w: ChildWork) => boolean }[] = [
   { key: 'late', title: 'Past due', note: 'Its due date has passed and it isn’t finished.', pick: (w) => isLate(w) },
@@ -17,16 +18,17 @@ const GROUPS: { key: string; title: string; note?: string; pick: (w: ChildWork) 
 ]
 
 export function WorkTab({ childId, first }: { childId: string; first: string }) {
+  const { user } = useAuth()
   const work = useChildResource(childId, 'work', () => familyApi.work(childId))
   if (work.error) return <Alert>{work.error}</Alert>
   if (!work.data) return <Skeleton className="h-64 rounded-[1.75rem]" />
-  const items = work.data.items
+  const items = [...work.data.items, ...fromHome(work.data.from_home, user?.id)]
   if (items.length === 0) {
     return (
       <EmptyState
         art={<EmptyArt Icon={ListChecks} tone="from-kind-family-vivid/30 to-mint-100" />}
-        title="No work shared yet"
-        body={`When ${first}'s teachers share a quiz, a deck or a study guide, it shows up here with its due date.`}
+        title="No work yet"
+        body={`When ${first}'s teachers share a quiz, a deck or a study guide — or you send one home — it shows up here with its due date.`}
       />
     )
   }

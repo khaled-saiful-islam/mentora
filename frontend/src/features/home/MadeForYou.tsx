@@ -17,7 +17,7 @@ export function MadeForYou({ items, buddy, className }: { items: Made[]; buddy: 
   if (items.length === 0) return null
   const name = profileOf(buddy).name
   return (
-    <section className={cn('rounded-[1.75rem] border border-border bg-surface p-5 shadow-sm md:p-6', className)} aria-labelledby="made-for-you">
+    <section className={cn('@container rounded-[1.75rem] border border-border bg-surface p-5 shadow-sm md:p-6', className)} aria-labelledby="made-for-you">
       <div className="flex items-center gap-3">
         <BuddyAvatar buddy={buddy} mood="cheer" size={48} />
         <div className="min-w-0">
@@ -30,7 +30,7 @@ export function MadeForYou({ items, buddy, className }: { items: Made[]; buddy: 
           <p className="text-sm text-muted-foreground">{name} made these from the bits you found tricky. A few minutes each!</p>
         </div>
       </div>
-      <motion.ul className={cn('mt-4 grid gap-3', items.length > 1 && 'sm:grid-cols-2')} variants={stagger(0.06)} initial="hidden" animate="shown">
+      <motion.ul className={cn('mt-4 grid gap-3', items.length > 1 && '@xl:grid-cols-2')} variants={stagger(0.06)} initial="hidden" animate="shown">
         {items.map((item) => (
           <Card key={item.set_id} item={item} />
         ))}

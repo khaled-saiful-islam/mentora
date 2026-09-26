@@ -22,7 +22,7 @@ import { PLAYERS } from './players'
 import { Review } from './Review'
 import { starsFor } from './session'
 
-export type PlaySource = 'assignment' | 'practice' | 'attempt'
+export type PlaySource = 'assignment' | 'practice' | 'home' | 'attempt'
 
 type Step =
   | { name: 'loading' }
@@ -32,11 +32,12 @@ type Step =
   | { name: 'finished'; finish: Finish }
   | { name: 'review'; attempt: Attempt }
 
-const EXIT: Record<PlaySource, string> = { assignment: '/', practice: '/library', attempt: '/results' }
+const EXIT: Record<PlaySource, string> = { assignment: '/', practice: '/library', home: '/', attempt: '/results' }
 
 function begin(source: PlaySource, id: string): Promise<Attempt> {
   if (source === 'assignment') return playApi.start(id)
   if (source === 'practice') return playApi.practise(id)
+  if (source === 'home') return playApi.fromHome(id)
   return playApi.attempt(id)
 }
 
@@ -87,6 +88,7 @@ export default function PlayPage({ source }: { source: PlaySource }) {
   const exitTo = EXIT[source]
   const again = (attempt: Attempt) => {
     if (!attempt.can_retake) return null
+    if (source === 'home') return () => void load('home', id)
     return () => void load(attempt.assignment_id ? 'assignment' : 'practice', attempt.assignment_id ?? attempt.set_id)
   }
 

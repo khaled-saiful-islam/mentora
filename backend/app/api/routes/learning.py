@@ -46,7 +46,11 @@ from app.services.work_tickets import for_set
 router = APIRouter(
     prefix="/learning-sets",
     tags=["learning"],
-    dependencies=[Depends(require_any_capability("share_learning_sets", "make_practice_sets"))],
+    dependencies=[
+        Depends(
+            require_any_capability("share_learning_sets", "make_practice_sets", "make_family_sets")
+        )
+    ],
 )
 
 

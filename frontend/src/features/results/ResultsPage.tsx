@@ -96,6 +96,9 @@ export function SkillList({
 
 const LEVEL = { strong: 'bg-correct', growing: 'bg-star', practise: 'bg-wrong' } as const
 
+/** Where a finished try came from. */
+const WHERE: Record<HistoryRow['purpose'], string> = { assign: 'Class', practice: 'Practice', family: 'From home' }
+
 export function SkillBars({ skills }: { skills: SkillInsight[] }) {
   return (
     <section className="mt-8">
@@ -151,7 +154,7 @@ export function History({
                 <span className="min-w-0 flex-1">
                   <span className="block break-words font-bold leading-snug">{row.title}</span>
                   <span className="text-sm text-muted-foreground">
-                    {row.purpose === 'practice' ? 'Practice' : 'Class'} · {timeAgo(row.completed_at)}
+                    {WHERE[row.purpose]} · {timeAgo(row.completed_at)}
                   </span>
                 </span>
                 <span className="flex" aria-label={`${stars} stars`}>

@@ -6,7 +6,8 @@ const NOTHING: Makeable = { studio: [], learning: [], grounded: false }
 
 /**
  * What this person may make: studio artifacts (posters and the rest) for
- * staff, and quizzes and flashcards for everyone who can make sets.
+ * staff, and quizzes and flashcards for everyone who can make sets —
+ * teachers, students for practice, and parents to send home.
  *
  * Asked of the API rather than worked out here, because the answer is the
  * same capability the API enforces.
@@ -14,9 +15,8 @@ const NOTHING: Makeable = { studio: [], learning: [], grounded: false }
 export function useMakeable(): Makeable {
   const { user } = useAuth()
   const [makeable, setMakeable] = useState<Makeable>(NOTHING)
-  const allowed = Boolean(
-    user?.capabilities.studio_artifacts || user?.capabilities.share_learning_sets || user?.capabilities.make_practice_sets,
-  )
+  const caps = user?.capabilities
+  const allowed = Boolean(caps?.studio_artifacts || caps?.share_learning_sets || caps?.make_practice_sets || caps?.make_family_sets)
 
   useEffect(() => {
     if (!allowed) {

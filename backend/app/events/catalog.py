@@ -81,6 +81,8 @@ class AttemptCompleted(Event):
     class_name: str | None = None
     audience: tuple[UUID, ...] = ()
     leaderboard: bool = False
+    # The parent who shared it, for work sent from home (§20.4).
+    shared_by: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -201,3 +203,17 @@ class FamilyLinked(Event):
     parent_name: str
     # What the child calls them.
     label: str
+
+
+@dataclass(frozen=True, slots=True)
+class FamilyWorkShared(Event):
+    """A parent shared something they made with their child (§20.4)."""
+
+    share_id: UUID
+    parent_id: UUID
+    student_id: UUID
+    # What the child calls them, for "Mum sent you a quiz".
+    label: str
+    title: str
+    kind: str
+    due_at: str | None

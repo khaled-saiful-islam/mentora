@@ -78,9 +78,10 @@ _BY_ROLE: dict[Role, Capabilities] = {
         join_live_sessions=True,
         invite_family=True,
     ),
-    # A parent sees their own children, linked by the child's invitation.
-    # Making and sharing material and the chat arrive in later phases (§20.8).
-    Role.PARENT: Capabilities(see_children=True),
+    # A parent sees their own children, linked by the child's invitation, and
+    # makes material from their own files or the web to share with them. The
+    # chat arrives in a later phase (§20.8).
+    Role.PARENT: Capabilities(see_children=True, make_family_sets=True, keep_materials=True),
 }
 
 _NOTHING = Capabilities()

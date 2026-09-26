@@ -26,6 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import NotFoundError, ValidationError
 from app.db.models.attempt import Attempt, AttemptAnswer
+from app.db.models.family import FamilyShare
 from app.db.models.learning import Assignment, LearningSet, LearningSetVersion
 from app.db.models.user import User
 from app.events.bus import EventBus
@@ -81,6 +82,14 @@ class Loaded:
     kind: LearningKind
     assignment: Assignment | None
     by_id: dict[str, Item] = field(default_factory=dict)
+    # Work sent home by a parent (§20.4): where its due date lives.
+    share: FamilyShare | None = None
+
+    @property
+    def due_at(self) -> datetime | None:
+        if self.assignment is not None:
+            return self.assignment.due_at
+        return self.share.due_at if self.share is not None else None
 
 
 class AttemptService:
@@ -148,6 +157,19 @@ class AttemptService:
         if running is not None:
             return await self.view(student.id, running.id)
         version = await self._version(set_id, learning_set.current_version)
+        return await self._create(student, learning_set, version, None, len(attempts) + 1)
+
+    async def start_from_home(self, student: User, share: FamilyShare) -> AttemptView:
+        """Something a parent sent home. Taken like practice: resume the one
+        going, or start another — there is no limit on tries."""
+        learning_set = await self._session.get(LearningSet, share.set_id)
+        if learning_set is None or learning_set.status != "ready":
+            raise NotFoundError("That isn't ready.")
+        attempts = await self._attempts(student.id, set_id=share.set_id)
+        running = next((a for a in attempts if a.status == "in_progress"), None)
+        if running is not None:
+            return await self.view(student.id, running.id)
+        version = await self._version(share.set_id, share.version)
         return await self._create(student, learning_set, version, None, len(attempts) + 1)
 
     async def _create(
@@ -344,7 +366,7 @@ class AttemptService:
         attempt.status = "completed"
         attempt.completed_at = now
         attempt.duration_ms = int((now - attempt.started_at).total_seconds() * 1000)
-        due = loaded.assignment.due_at if loaded.assignment else None
+        due = loaded.due_at
         attempt.is_late = due is not None and now > due
         await self._session.flush()
         return loaded
@@ -366,6 +388,13 @@ class AttemptService:
             if attempt.assignment_id
             else None
         )
+        share = None
+        if learning_set.purpose == "family":
+            share = await self._session.scalar(
+                select(FamilyShare).where(
+                    FamilyShare.set_id == attempt.set_id, FamilyShare.student_id == student_id
+                )
+            )
         return Loaded(
             attempt=attempt,
             learning_set=learning_set,
@@ -373,6 +402,7 @@ class AttemptService:
             kind=self._kinds[attempt.kind],
             assignment=assignment,
             by_id={item["id"]: item for item in version.items},
+            share=share,
         )
 
     async def _version(self, set_id: UUID, number: int) -> LearningSetVersion:

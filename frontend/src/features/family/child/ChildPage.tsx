@@ -16,7 +16,8 @@ import { useLive } from '@/lib/bus'
 import { cn } from '@/lib/utils'
 import { Page, pop, stagger } from '@/motion'
 import { familyApi, type Child, type ChildOverview } from '../api'
-import { isLate } from './bits'
+import { isLate, waitingOf } from './bits'
+import { useAuth } from '@/lib/auth'
 import { ClassesTab } from './ClassesTab'
 import { OverviewTab } from './OverviewTab'
 import { PracticeTab } from './PracticeTab'
@@ -49,7 +50,8 @@ export default function ChildPage() {
     )
   }
 
-  const late = overview.data?.todo.filter((t) => isLate(t)).length ?? 0
+  const { user } = useAuth()
+  const late = overview.data ? waitingOf(overview.data, user?.id).filter((t) => isLate(t)).length : 0
   const base = `/children/${childId}`
   const first = child?.first_name ?? 'your child'
   return (
@@ -86,7 +88,8 @@ export default function ChildPage() {
 }
 
 function Header({ child, overview, late }: { child: Child; overview: ChildOverview | null; late: number }) {
-  const waiting = overview?.todo.length ?? 0
+  const { user } = useAuth()
+  const waiting = overview ? waitingOf(overview, user?.id).length : 0
   const streak = overview?.streak ?? 0
   return (
     <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-kind-family-vivid via-kind-family-vivid to-kind-family p-5 text-white shadow-lg md:p-6">

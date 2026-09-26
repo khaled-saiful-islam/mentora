@@ -3,7 +3,7 @@
  * Shapes mirror `app/api/schemas/play.py`.
  */
 import { apiFetch } from '@/lib/api'
-import type { GuideExtras, GuideSection } from '@/features/learning/api'
+import type { GuideExtras, GuideSection, SetPurpose } from '@/features/learning/api'
 
 export type PlayKind = 'quiz' | 'flashcard' | 'study_guide'
 export type FeedbackMode = 'instant' | 'end'
@@ -52,7 +52,7 @@ export interface Attempt {
   number: number
   title: string
   kind: PlayKind
-  purpose: 'assign' | 'practice'
+  purpose: SetPurpose
   feedback_mode: FeedbackMode
   assignment_id: string | null
   set_id: string
@@ -149,7 +149,27 @@ export interface MadeForYou {
   created_at: string
 }
 
+/** Something a parent sent home (§20.4). */
+export interface HomeWork {
+  share_id: string
+  set_id: string
+  title: string
+  kind: PlayKind
+  item_count: number
+  parent_id: string
+  /** What the child calls whoever sent it: "Mum". */
+  label: string
+  parent_name: string
+  status: Exclude<TodoStatus, 'closed'>
+  best: number | null
+  attempts: number
+  due_at: string | null
+  shared_at: string
+  review_attempt_id: string | null
+}
+
 export interface Home {
+  from_home?: HomeWork[]
   todo: Todo[]
   done: Todo[]
   badges: number
@@ -163,7 +183,7 @@ export interface HistoryRow {
   attempt_id: string
   title: string
   kind: PlayKind
-  purpose: 'assign' | 'practice'
+  purpose: SetPurpose
   subject: string | null
   percent: number
   score: number
@@ -195,6 +215,7 @@ export const playApi = {
   assignments: () => apiFetch<Todo[]>('/me/assignments'),
   start: (assignmentId: string) => apiFetch<Attempt>(`/me/assignments/${assignmentId}/attempts`, { method: 'POST' }),
   practise: (setId: string) => apiFetch<Attempt>(`/me/practice/${setId}/attempts`, { method: 'POST' }),
+  fromHome: (shareId: string) => apiFetch<Attempt>(`/me/from-home/${shareId}/attempts`, { method: 'POST' }),
   attempt: (attemptId: string) => apiFetch<Attempt>(`/me/attempts/${attemptId}`),
   answer: (attemptId: string, body: { item_id: string; choice?: number; knew?: boolean; time_ms: number }) =>
     apiFetch<AnswerResult>(`/me/attempts/${attemptId}/answers`, { method: 'POST', body: JSON.stringify(body) }),

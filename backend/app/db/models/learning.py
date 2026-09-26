@@ -42,6 +42,7 @@ class LearningSet(Base):
     id: Mapped[uuid.UUID] = uuid_pk()
     owner_id: Mapped[uuid.UUID] = _fk("users.id")
     # "assign": made to be shared with a class. "practice": a student's own.
+    # "family": a parent's, shared with their child (§20.4).
     purpose: Mapped[str] = mapped_column(String(16), nullable=False, default="assign")
     kind: Mapped[str] = mapped_column(String(32), nullable=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -67,7 +68,9 @@ class LearningSet(Base):
     updated_at: Mapped[datetime] = updated_at()
 
     __table_args__ = (
-        CheckConstraint("purpose IN ('assign', 'practice')", name="ck_learning_sets_purpose"),
+        CheckConstraint(
+            "purpose IN ('assign', 'practice', 'family')", name="ck_learning_sets_purpose"
+        ),
         CheckConstraint(
             "status IN ('generating', 'ready', 'failed', 'refused')",
             name="ck_learning_sets_status",

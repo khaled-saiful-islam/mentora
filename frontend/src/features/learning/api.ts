@@ -88,10 +88,14 @@ export interface Source {
   published?: string
 }
 
+/** Who a set is for: a class ("assign"), the student who made it
+ *  ("practice"), or a parent's child at home ("family", §20.4). */
+export type SetPurpose = 'assign' | 'practice' | 'family'
+
 export interface SetSummary {
   id: string
   kind: LearningKindName
-  purpose: 'assign' | 'practice'
+  purpose: SetPurpose
   title: string
   subject: string | null
   topic: string
@@ -137,7 +141,7 @@ export interface LearningKindInfo {
   item_noun_plural: string
   default_count: number
   max_count: number
-  purpose: 'assign' | 'practice'
+  purpose: SetPurpose
 }
 
 export interface Assignment {

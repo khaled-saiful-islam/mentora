@@ -41,7 +41,10 @@ def scripted(session):
         return GenerationService(
             kinds=build_learning_kinds(),
             settings=get_settings().model_copy(
-                update={"student_practice_per_day": state["per_day"]}
+                update={
+                    "student_practice_per_day": state["per_day"],
+                    "parent_sets_per_day": state["per_day"],
+                }
             ),
             session_maker=same_session,
             generator_factory=lambda kind, meter: LearningGenerator(

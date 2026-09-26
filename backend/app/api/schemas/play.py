@@ -12,6 +12,7 @@ from app.db.models.learning import LearningSet
 from app.services.attempt_service import AnswerResult, AttemptView, Played
 from app.services.auto_practice import MadeForYou
 from app.services.badge_service import Earned
+from app.services.family_share_service import HomeWork
 from app.services.leaderboard_service import Board, Entry
 from app.services.play_service import Finished
 from app.services.student_home_service import TodoCard
@@ -219,6 +220,44 @@ class TodoResponse(BaseModel):
             due_at=a.due_at,
             feedback_mode=a.feedback_mode,
             shared_at=a.created_at,
+        )
+
+
+class HomeWorkResponse(BaseModel):
+    """Something a parent sent home, as the child and their parents see it."""
+
+    share_id: UUID
+    set_id: UUID
+    title: str
+    kind: str
+    item_count: int
+    parent_id: UUID
+    label: str
+    parent_name: str
+    status: str
+    best: float | None
+    attempts: int
+    due_at: datetime | None
+    shared_at: datetime
+    review_attempt_id: UUID | None
+
+    @classmethod
+    def of(cls, work: HomeWork) -> HomeWorkResponse:
+        return cls(
+            share_id=work.share.id,
+            set_id=work.share.set_id,
+            title=work.title,
+            kind=work.kind,
+            item_count=work.item_count,
+            parent_id=work.share.parent_id,
+            label=work.label,
+            parent_name=work.parent_name,
+            status=work.status,
+            best=work.best,
+            attempts=work.attempts,
+            due_at=work.share.due_at,
+            shared_at=work.share.created_at,
+            review_attempt_id=work.review_attempt_id,
         )
 
 

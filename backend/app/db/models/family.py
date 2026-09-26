@@ -11,11 +11,11 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, created_at, uuid_pk
+from app.db.base import Base, created_at, updated_at, uuid_pk
 
 
 def _user() -> Mapped[uuid.UUID]:
@@ -57,3 +57,26 @@ class FamilyInvite(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_at: Mapped[datetime] = created_at()
+
+
+class FamilyShare(Base):
+    """A parent's set, shared with their child (§20.4). One per set and
+    child: sharing again moves it to the set's latest version and due date."""
+
+    __tablename__ = "family_shares"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    parent_id: Mapped[uuid.UUID] = _user()
+    student_id: Mapped[uuid.UUID] = _user()
+    set_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("learning_sets.id", ondelete="CASCADE"), nullable=False
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = created_at()
+    updated_at: Mapped[datetime] = updated_at()
+
+    __table_args__ = (
+        UniqueConstraint("set_id", "student_id", name="uq_family_share_set_student"),
+        Index("ix_family_shares_student", "student_id", "created_at"),
+    )

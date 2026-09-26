@@ -120,8 +120,11 @@ child's 6-letter code.
   page has six tabs: an overview of the week, all their work (past due
   first), results by skill, their practice, their live-lesson schedule, and
   each class with what it covers. Any finished quiz opens answer by answer.
+- **Make something and send it home.** Parents make quizzes, flashcards and
+  study guides from a topic or their own files. They send them to their
+  child, with a due date if they like. The child finds them under *From
+  home*, and the parent hears the score when it's done.
 - **Being built (PLAN.md §20):**
-  - Quizzes and flashcards parents make and share with their child.
   - An instant alert when work goes past due.
   - The chat, without the studio.
 
@@ -203,7 +206,8 @@ setting. The ones you are most likely to change:
 | `LEARNING_MODEL` | The model that writes quizzes and flashcards (empty uses `LLM_MODEL`) |
 | `SERPAPI_KEY` | Web search, for grounded sets and the studio |
 | `SPEECH_MODEL`, `SPEECH_VOICE`, `TRANSCRIBE_MODEL` | Astra's voice, and hearing students' spoken questions, in live lessons |
-| `MATERIALS_PER_OWNER`, `MATERIAL_MAX_BYTES` | How many files a teacher can keep in My materials, and how big each can be |
+| `MATERIALS_PER_OWNER`, `MATERIAL_MAX_BYTES` | How many files a teacher or parent can keep in My materials, and how big each can be |
+| `PARENT_SETS_PER_DAY` | How many quizzes, decks and guides a parent may make each day |
 | `STUDENT_PRACTICE_PER_DAY` | How many practice sets a student may make each day |
 | `MODERATION_ENABLED` | The student guardrails |
 | `PUBLIC_BASE_URL` | Where invite and share links point — set it for any real deployment |

@@ -298,6 +298,8 @@ class GenerationService:
         caps = capabilities_for(owner.role)
         if caps.share_learning_sets:
             return "assign"
+        if caps.make_family_sets:
+            return await self._family(session, owner)
         if not caps.make_practice_sets:
             raise ForbiddenError("Your account cannot make quizzes or flashcards.")
         if made_for:
@@ -310,6 +312,15 @@ class GenerationService:
                 retry_after=3600,
             )
         return "practice"
+
+    async def _family(self, session: AsyncSession, owner: User) -> str:
+        made = await LearningSetService(session, self._kinds).made_today(owner.id, "family")
+        if made >= self._settings.parent_sets_per_day:
+            raise RateLimitError(
+                f"You've made {made} today — that's the daily limit. Try again tomorrow.",
+                retry_after=3600,
+            )
+        return "family"
 
     def _request(self, kind: LearningKind, draft: GenerationDraft) -> GenerationRequest:
         topic = " ".join(draft.topic.split())

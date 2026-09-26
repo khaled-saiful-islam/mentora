@@ -19,6 +19,8 @@ import { useLearnStudio } from './LearnStudio'
 import { AddTile } from '@/components/ui/AddTile'
 import { cn } from '@/lib/utils'
 import { SetCard } from './SetCard'
+import { SendHomeDialog } from '@/features/family/SendHomeDialog'
+import type { SetSummary } from './api'
 
 type Filter = 'all' | 'quiz' | 'flashcard' | 'study_guide' | 'archived'
 
@@ -30,6 +32,8 @@ export default function LibraryPage() {
   const [query, setQuery] = useState('')
   const [q, setQ] = useState('')
   const student = user?.role === 'student'
+  const parent = user?.role === 'parent'
+  const [sending, setSending] = useState<SetSummary | null>(null)
   const [params] = useSearchParams()
   const keeps = can(user, 'keep_materials')
   const view = keeps && params.get('view') === 'materials' ? 'materials' : 'sets'
@@ -68,8 +72,12 @@ export default function LibraryPage() {
             {student
               ? 'Quizzes and flashcards you made for yourself.'
               : view === 'materials'
-                ? 'Your own files, kept to make quizzes, flashcards, guides and live lessons from.'
-                : 'Every quiz, deck and study guide you have made.'}
+                ? parent
+                  ? 'Your own files — worksheets, notes, pages from a book — to make quizzes and flashcards from.'
+                  : 'Your own files, kept to make quizzes, flashcards, guides and live lessons from.'
+                : parent
+                  ? 'Quizzes, flashcards and study guides you made to send home to your child.'
+                  : 'Every quiz, deck and study guide you have made.'}
           </p>
         </div>
         <Button size="lg" onClick={() => studio.create()}>
@@ -141,7 +149,7 @@ export default function LibraryPage() {
             animate="shown"
           >
             {items.map((set) => (
-              <SetCard key={set.id} set={set} onWatch={() => studio.watch(set)} onRetry={() => void retry(set.id)} />
+              <SetCard key={set.id} set={set} onWatch={() => studio.watch(set)} onRetry={() => void retry(set.id)} onSend={parent ? () => setSending(set) : undefined} />
             ))}
             {adding && (
               <AddTile
@@ -157,6 +165,7 @@ export default function LibraryPage() {
       </div>
         </>
       )}
+      {sending && <SendHomeDialog open set={sending} onClose={() => setSending(null)} />}
     </Page>
   )
 }

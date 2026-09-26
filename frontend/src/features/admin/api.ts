@@ -1,5 +1,6 @@
 /** The admin console's API. Shapes mirror `api/schemas/admin.py`. */
 import { apiFetch } from '@/lib/api'
+import type { SetPurpose } from '@/features/learning/api'
 import type { Role } from '@/lib/user'
 import type { LearningKindName } from '@/features/learning/api'
 
@@ -92,7 +93,7 @@ export interface ContentArtifact {
 export interface ContentSet {
   id: string
   kind: LearningKindName
-  purpose: 'assign' | 'practice'
+  purpose: SetPurpose
   title: string
   topic: string
   subject: string | null

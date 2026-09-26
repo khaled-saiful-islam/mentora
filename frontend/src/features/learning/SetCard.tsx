@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { ArrowClockwise, Broadcast, CircleNotch, Globe, PencilSimple, Play, SmileySad, WarningCircle } from '@phosphor-icons/react'
-import { buttonClass, Chip } from '@/components/ui'
+import { ArrowClockwise, Broadcast, CircleNotch, Globe, HeartStraight, PencilSimple, Play, SmileySad, WarningCircle } from '@phosphor-icons/react'
+import { Button, buttonClass, Chip } from '@/components/ui'
 import { rise } from '@/motion'
 import { timeAgo } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import type { SetSummary } from './api'
 import { lookOfKind, nounOf } from './kinds'
 
-/** A set at a glance: kind, title, how many, where it has been shared. */
-export function SetCard({ set, onWatch, onRetry }: { set: SetSummary; onWatch: () => void; onRetry: () => void }) {
+/** A set at a glance: kind, title, how many, where it has been shared.
+ *  `onSend` is a parent's way to send it home (§20.4). */
+export function SetCard({ set, onWatch, onRetry, onSend }: { set: SetSummary; onWatch: () => void; onRetry: () => void; onSend?: () => void }) {
   const look = lookOfKind(set.kind)
   const making = set.status === 'generating'
   const broken = set.status === 'failed' || set.status === 'refused'
@@ -49,6 +50,18 @@ export function SetCard({ set, onWatch, onRetry }: { set: SetSummary; onWatch: (
             <button type="button" onClick={onRetry} className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline">
               <ArrowClockwise weight="bold" className="size-4" /> Try again
             </button>
+          </div>
+        </div>
+      ) : set.purpose === 'family' && onSend ? (
+        <div className={frame}>
+          <Link to={`/library/${set.id}`} className="block">{body}</Link>
+          <div className="flex gap-2 border-t border-border px-4 py-3">
+            <Button size="sm" onClick={onSend} className="flex-1 bg-kind-family-vivid text-white">
+              <HeartStraight weight="fill" className="size-4" aria-hidden /> Send home
+            </Button>
+            <Link to={`/library/${set.id}`} className={buttonClass('ghost', 'sm')}>
+              <PencilSimple weight="bold" className="size-4" /> Edit
+            </Link>
           </div>
         </div>
       ) : set.purpose === 'practice' ? (

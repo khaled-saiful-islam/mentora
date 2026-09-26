@@ -63,6 +63,12 @@ function when(n: Notification): string {
   return typeof at === 'string' ? whenLabel(at) : 'soon'
 }
 
+/** "a quiz", "some flashcards", "a study guide" — for what was sent home. */
+function thingFor(n: Notification): string {
+  const kind = text(n, 'kind')
+  return kind === 'flashcard' ? 'some flashcards' : kind === 'study_guide' ? 'a study guide' : 'a quiz'
+}
+
 function others(n: Notification, verb: string): string {
   const actors = (n.payload.actors as string[] | undefined) ?? []
   if (n.count <= 1) return `${actors[0] ?? 'A student'} ${verb}`
@@ -219,6 +225,38 @@ export const KINDS: Record<string, KindView> = {
     action: 'My family',
     flourish: 'confetti',
     mood: 'wave',
+  },
+  family_shared: {
+    Icon: HeartStraight,
+    tile: 'bg-kind-family-vivid/15 text-kind-family',
+    title: (n) => `${text(n, 'label')} sent you ${thingFor(n)}: ${text(n, 'title')}`,
+    headlines: (n) => [
+      `${text(n, 'label')} made you ${thingFor(n)} — ${text(n, 'title')}!`,
+      `Something from home: ${text(n, 'title')}, from ${text(n, 'label')}`,
+      `${text(n, 'label')} thinks you'll love ${text(n, 'title')}`,
+    ],
+    body: (n) => (n.payload.due_at ? `Due ${whenLabel(text(n, 'due_at'), new Date())}` : 'Whenever you like.'),
+    href: (n) => (n.payload.share_id ? `/from-home/${text(n, 'share_id')}` : '/'),
+    action: 'Start',
+    flourish: 'plane',
+    mood: 'cheer',
+  },
+  family_done: {
+    Icon: Trophy,
+    tile: 'bg-kind-family-vivid/15 text-kind-family',
+    title: (n) => `${text(n, 'student_name')} finished ${text(n, 'title')} — ${text(n, 'percent')}%`,
+    headlines: (n) => {
+      const who = text(n, 'student_name')
+      const percent = Number(n.payload.percent)
+      return percent >= 90
+        ? [`${who} aced ${text(n, 'title')} — ${percent}%!`, `${percent}%! ${who} nailed what you sent`]
+        : [`${who} finished ${text(n, 'title')} — ${percent}%`, `${who} did what you sent: ${percent}%`]
+    },
+    body: () => 'Open it to see each answer.',
+    href: (n) => (n.payload.student_id && n.payload.attempt_id ? `/children/${text(n, 'student_id')}/attempts/${text(n, 'attempt_id')}` : '/'),
+    action: 'See answers',
+    flourish: 'trophy',
+    mood: 'happy',
   },
   practice_ready: {
     Icon: Barbell,

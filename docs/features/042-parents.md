@@ -2,7 +2,7 @@
 
 A fourth kind of account, for a child's parent or carer (PLAN.md §20). This
 page grows phase by phase. **Built: P0, the role and the link; P1, seeing
-the child.**
+the child; P2, making and sending work home.**
 
 ## What it does
 
@@ -88,6 +88,46 @@ How it works:
 - `realtime.child_did`, `children_got` and `children_saw_change` look up the
   parents with `FamilyService.watchers` and push `child` to each.
 
+## Making and sending work home (P2)
+
+- **Parents make quizzes, flashcards and study guides** with the same Create
+  sheet and grounded generator as teachers, from a topic, their own files
+  (**Library → My materials**) or both. The parent's home has a *Make
+  something for Aina* card; the Library lists what they made.
+- **Send home** (on each Library card and in the editor): choose which
+  children, and a due date if you like.
+  - Sending again to the same child moves them to the latest version and the
+    new due date, without a second bell note.
+  - *Take back* removes it from the child's home.
+- **The child** gets *"Mum sent you a quiz: …"* in the bell, and a **From
+  home** section on their home. They take it like practice: resume, or go
+  again as often as they like. It counts for badges (*Perfect Score* and
+  *Star Scorer* included) and for skills.
+- **The parent hears back**: *"Aina finished Fractions — 80%"*, opening the
+  answers. The child's page shows it in Work and on the overview, marked
+  *From you*, or *From Dad* when the other parent sent it.
+- The background tray and the *ready* bell note work for parents as for
+  teachers.
+
+How it works:
+
+- `purpose = "family"` joins `assign | practice` (migration `e8a4c2f1b735`).
+  `GenerationService._purpose` picks it for anyone with `make_family_sets`,
+  within `PARENT_SETS_PER_DAY`.
+- `family_shares` (parent, child, set, version, due), one per set and child.
+  `services/family_share_service.py` shares (the set must be the parent's
+  own, `family`, and ready; each child must be linked), takes back, and lists
+  a child's work from home with status and best score.
+- Every read joins `family_links`, so once a parent disconnects, the child no
+  longer sees what they sent and cannot start it.
+- `AttemptService.start_from_home` takes the share's version. An attempt on
+  a family set finds its share for the due date (late marking, the Early
+  Bird badge).
+- Events: `FamilyWorkShared` → the child's `family_shared` note, an
+  `assignments` push to the child and `child` to their parents.
+  `AttemptCompleted.shared_by` → the parent's `family_done` note.
+- Parents gain `make_family_sets` and `keep_materials`.
+
 ## Endpoints
 
 ```
@@ -108,6 +148,11 @@ GET    /api/me/children/{id}/schedule    upcoming, and past with attended
 GET    /api/me/children/{id}/schedule/{session_id}/notes    key points, once ended
 GET    /api/me/children/{id}/attempts/{attempt_id}          one try, answer by answer
 GET    /api/me/children/{id}/classes/{class_id}/coverage    the class's map, for the child
+POST   /api/family-shares                {set_id, student_ids, due_at?}: send home
+GET    /api/family-shares?set_id=        who a set has been sent to
+DELETE /api/family-shares/{id}           take it back
+POST   /api/me/from-home/{share_id}/attempts   the child starts or resumes it
+GET    /api/me/home                      + from_home, for the child
 ```
 
 ## Known limits
@@ -116,7 +161,13 @@ GET    /api/me/children/{id}/classes/{class_id}/coverage    the class's map, for
   code.** It shows nothing else, and the look-up is rate limited per address.
 - **A parent's account is one email.** Two parents share nothing but the
   child; each connects with the child's invitation.
-- **Chat, sharing material and past-due alerts arrive in P2–P4.**
+- **Chat and past-due alerts arrive in P3–P4.**
+- **Two parents do not see each other's sets** in their libraries. Each sees
+  everything sent to the child, labelled with who sent it.
+- **Work from home has no retake limit and no end-of-quiz mode.** Feedback
+  is instant, as for practice.
+- **An archived family set leaves the child's home.** What the child already
+  finished stays in their results.
 - **The home card asks for each child's week separately**: one request per
   child, at most 8.
 - **Work in progress is not pushed live.** The parent's page changes when a

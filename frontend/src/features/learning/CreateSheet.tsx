@@ -87,6 +87,7 @@ export function CreateSheet({
   }, [open, initialTopic, initialMaterials])
   const info = makeable.learning.find((k) => k.name === kind)
   const practice = info?.purpose === 'practice'
+  const family = info?.purpose === 'family'
 
   useEffect(() => {
     if (kind === null) return
@@ -127,7 +128,13 @@ export function CreateSheet({
       open={kind !== null}
       onClose={onClose}
       title={practice ? 'Make a practice set' : 'Make something to learn'}
-      description={practice ? 'Just for you — practise any topic you like.' : 'Grounded in trusted sources, ready to edit before you share.'}
+      description={
+        practice
+          ? 'Just for you — practise any topic you like.'
+          : family
+            ? 'Grounded in trusted sources, ready to check before you send it home.'
+            : 'Grounded in trusted sources, ready to edit before you share.'
+      }
       size="lg"
     >
       <form onSubmit={start} className="space-y-6">

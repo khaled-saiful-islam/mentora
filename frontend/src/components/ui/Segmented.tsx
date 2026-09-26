@@ -30,7 +30,9 @@ export function Segmented<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
-      className={cn('inline-flex rounded-full border-2 border-border bg-muted p-1', className)}
+      // On a narrow screen the choices scroll inside the pill; the page never
+      // scrolls sideways.
+      className={cn('no-scrollbar inline-flex max-w-full overflow-x-auto rounded-full border-2 border-border bg-muted p-1', className)}
     >
       {options.map((option) => {
         const active = option.value === value
@@ -42,7 +44,7 @@ export function Segmented<T extends string>({
             aria-checked={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              'relative inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-bold transition-colors',
+              'relative inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-bold transition-colors',
               active ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
             )}
           >

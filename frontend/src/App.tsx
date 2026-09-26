@@ -78,6 +78,7 @@ export default function App() {
           <Route path="/c/:conversationId" element={<Protected><Allowed capability="use_chat"><Chat /></Allowed></Protected>} />
           <Route path="/play/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="assignment" /></Allowed></Protected>} />
           <Route path="/practice/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="practice" /></Allowed></Protected>} />
+          <Route path="/from-home/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="home" /></Allowed></Protected>} />
           <Route path="/attempts/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="attempt" /></Allowed></Protected>} />
           <Route path="/results" element={<Shell capability="take_assignments"><ResultsPage /></Shell>} />
           <Route path="/badges" element={<Shell capability="take_assignments"><BadgesPage /></Shell>} />
@@ -96,7 +97,7 @@ export default function App() {
           <Route path="/library" element={<Shell capability={MAKES_SETS}><LibraryPage /></Shell>} />
           <Route path="/library/:setId" element={<Shell capability={MAKES_SETS}><EditorPage /></Shell>} />
           {/* Outside the app frame, so it prints as a handout and nothing else. */}
-          <Route path="/library/:setId/preview" element={<Protected><Allowed capability="share_learning_sets"><GuidePreviewPage /></Allowed></Protected>} />
+          <Route path="/library/:setId/preview" element={<Protected><Allowed capability={['share_learning_sets', 'make_family_sets']}><GuidePreviewPage /></Allowed></Protected>} />
           <Route path="/live" element={<Shell capability="run_live_sessions"><LiveLessonsPage /></Shell>} />
           <Route path="/live/voice-lab" element={<Shell capability="run_live_sessions"><VoiceLabPage /></Shell>} />
           <Route path="/live/new" element={<Shell capability="run_live_sessions"><SetupPage /></Shell>} />
@@ -195,7 +196,7 @@ function PublicOnly({ children }: { children: React.ReactNode }) {
  * home — the server refuses them either way; this just avoids a page of
  * refusals for someone who followed an old link.
  */
-const MAKES_SETS: (keyof Capabilities)[] = ['share_learning_sets', 'make_practice_sets']
+const MAKES_SETS: (keyof Capabilities)[] = ['share_learning_sets', 'make_practice_sets', 'make_family_sets']
 const SEES_CLASSES: (keyof Capabilities)[] = ['manage_classes', 'join_classes']
 
 type Needs = keyof Capabilities | (keyof Capabilities)[]

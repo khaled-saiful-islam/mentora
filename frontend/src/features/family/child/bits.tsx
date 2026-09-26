@@ -8,7 +8,8 @@ import { motion } from 'motion/react'
 import { ButtonLink, Chip } from '@/components/ui'
 import { lookOfKind, nounOf } from '@/features/learning/kinds'
 import { STATUS_WORDS, type SessionSummary } from '@/features/live/sessions/api'
-import type { Todo } from '@/features/play/api'
+import type { HomeWork, Todo } from '@/features/play/api'
+import { homeAsWork, type ChildOverview, type ChildWork } from '../api'
 import { dueLabel } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { rise } from '@/motion'
@@ -24,6 +25,17 @@ export function dueFor(todo: Todo, now: Date = new Date()): { text: string; late
 }
 
 export const isLate = (todo: Todo, now: Date = new Date()) => Boolean(dueFor(todo, now)?.late)
+
+/** Work sent home, as rows: "From you" when this parent sent it. */
+export function fromHome(items: HomeWork[] | undefined, me: string | undefined): ChildWork[] {
+  return (items ?? []).map((w) => homeAsWork(w, w.parent_id === me ? 'From you' : `From ${w.label}`))
+}
+
+/** What is still to do — from school and from home — past due first. */
+export function waitingOf(overview: ChildOverview, me: string | undefined): Todo[] {
+  const home = fromHome(overview.from_home, me).filter((w) => w.status !== 'done')
+  return [...overview.todo, ...home].sort((a, b) => Number(isLate(b)) - Number(isLate(a)))
+}
 
 const STATUS: Record<Todo['status'], { label: string; tone: 'neutral' | 'sky' | 'mint' }> = {
   todo: { label: 'Not started', tone: 'neutral' },

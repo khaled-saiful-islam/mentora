@@ -75,7 +75,8 @@ export const NAV: NavItem[] = [
     to: '/library',
     label: 'Library',
     Icon: Books,
-    show: (u) => can(u, 'share_learning_sets'),
+    // Teachers' sets for their classes; parents' for sending home (§20.4).
+    show: (u) => can(u, 'share_learning_sets') || can(u, 'make_family_sets'),
     matches: under('/library'),
   },
   {

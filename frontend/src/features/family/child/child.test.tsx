@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { AuthProvider } from '@/lib/auth'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Todo } from '@/features/play/api'
 import type { ChildWork } from '../api'
@@ -47,11 +48,15 @@ describe('a child’s work, as a parent sees it', () => {
     ]
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockImplementation(async () => new Response(JSON.stringify({ items }), { status: 200 })),
+      vi.fn().mockImplementation(async (path: string) =>
+        path === '/api/auth/me' ? new Response('{}', { status: 401 }) : new Response(JSON.stringify({ items, from_home: [] }), { status: 200 }),
+      ),
     )
     render(
       <MemoryRouter>
-        <WorkTab childId="k1" first="Aina" />
+        <AuthProvider>
+          <WorkTab childId="k1" first="Aina" />
+        </AuthProvider>
       </MemoryRouter>,
     )
     const late = (await screen.findByRole('heading', { name: 'Past due · 1' })).closest('section')!

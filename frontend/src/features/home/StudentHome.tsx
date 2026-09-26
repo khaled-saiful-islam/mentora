@@ -5,7 +5,7 @@
  */
 import { motion } from 'motion/react'
 import { UpNext } from '@/features/live/schedule/UpNext'
-import { ArrowRight, Barbell, Confetti, Fire, Medal, Trophy, UsersThree } from '@phosphor-icons/react'
+import { ArrowRight, Barbell, Confetti, Fire, HeartStraight, Medal, Trophy, UsersThree } from '@phosphor-icons/react'
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Alert, ButtonLink, Skeleton } from '@/components/ui'
@@ -14,7 +14,7 @@ import { Buddy, BuddyStage, greeting, tipFor, type BuddyHandle } from '@/feature
 import { EmptyArt } from '@/features/classes/EmptyArt'
 import { useNotifications } from '@/features/notifications/NotificationsProvider'
 import { playApi, type Home } from '@/features/play/api'
-import { TodoCard } from '@/features/play/TodoCard'
+import { FromHomeCard, TodoCard } from '@/features/play/TodoCard'
 import { useResource } from '@/hooks/useResource'
 import { useAuth } from '@/lib/auth'
 import { firstName } from '@/lib/user'
@@ -51,7 +51,9 @@ export default function StudentHome() {
   }, [ready])
 
   return (
-    <Page className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-8">
+    // A container: beside the sidebar the column is narrower than the window,
+    // so cards go two across by the column's width, not the screen's.
+    <Page className="@container mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-8">
       <BuddyStage buddy={user?.buddy} className="grid items-end gap-2 px-5 pt-6 pb-5 md:grid-cols-[auto_1fr] md:gap-6 md:px-8 md:pt-8">
         <div className="order-2 flex justify-center pt-16 md:order-1 md:pt-20">
           <Buddy ref={buddy} buddy={user?.buddy} size={170} bubble="top" />
@@ -65,6 +67,7 @@ export default function StudentHome() {
 
       {home.error && <Alert className="mt-6">{home.error}</Alert>}
       <UpNext className="mt-8" />
+      {data && <FromHome home={data} />}
       <section className="mt-10">
         <div className="flex items-center justify-between gap-2">
           <h2 className="font-display text-2xl font-semibold">From your teachers</h2>
@@ -73,7 +76,7 @@ export default function StudentHome() {
           </Link>
         </div>
         {!data ? (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="mt-4 grid gap-4 @xl:grid-cols-2">
             {[0, 1].map((i) => (
               <Skeleton key={i} className="h-44 rounded-[1.75rem]" />
             ))}
@@ -97,7 +100,7 @@ export default function StudentHome() {
             }
           />
         ) : (
-          <motion.ul className="mt-4 grid gap-4 sm:grid-cols-2" variants={stagger(0.07)} initial="hidden" animate="shown">
+          <motion.ul className="mt-4 grid gap-4 @xl:grid-cols-2" variants={stagger(0.07)} initial="hidden" animate="shown">
             {data.todo.map((todo) => (
               <TodoCard key={todo.assignment_id} todo={todo} />
             ))}
@@ -112,7 +115,7 @@ export default function StudentHome() {
       {data && data.done.length > 0 && (
         <section className="mt-10">
           <h2 className="font-display text-2xl font-semibold">Done lately</h2>
-          <motion.ul className="mt-4 grid gap-4 sm:grid-cols-2" variants={stagger(0.06)} initial="hidden" animate="shown">
+          <motion.ul className="mt-4 grid gap-4 @xl:grid-cols-2" variants={stagger(0.06)} initial="hidden" animate="shown">
             {data.done.map((todo) => (
               <TodoCard key={todo.assignment_id} todo={todo} />
             ))}
@@ -120,6 +123,30 @@ export default function StudentHome() {
         </section>
       )}
     </Page>
+  )
+}
+
+/** What a parent sent home — not done first, then the ones to go again. */
+function FromHome({ home }: { home: Home }) {
+  const items = [...(home.from_home ?? [])].sort((a, b) => Number(a.status === 'done') - Number(b.status === 'done'))
+  if (items.length === 0) return null
+  const senders = [...new Set(items.map((w) => w.label))]
+  return (
+    <section className="mt-10">
+      <h2 className="flex items-center gap-2 font-display text-2xl font-semibold">
+        <HeartStraight weight="fill" className="size-6 text-kind-family" aria-hidden />
+        From home
+      </h2>
+      <p className="mt-1 text-muted-foreground">
+        {senders.join(' and ')} made {items.length === 1 ? 'this' : 'these'} for you.
+      </p>
+      {/* Two across only once there are two: one card fills the row. */}
+      <motion.ul className={cn('mt-4 grid gap-4', items.length > 1 && '@xl:grid-cols-2')} variants={stagger(0.07)} initial="hidden" animate="shown">
+        {items.map((work) => (
+          <FromHomeCard key={work.share_id} work={work} />
+        ))}
+      </motion.ul>
+    </section>
   )
 }
 

@@ -7,16 +7,20 @@ from datetime import timedelta
 
 from app.badges.base import Award, Context
 
+# Work someone gave you — a teacher, or a parent from home (§20.4) — rather
+# than practice you set yourself.
+GIVEN = ("assign", "family")
+
 
 @dataclass(frozen=True)
 class PerfectScore:
     key: str = "perfect_score"
     name: str = "Perfect Score"
-    description: str = "Every answer right on a quiz from your teacher."
+    description: str = "Every answer right on a quiz from your teacher or from home."
     hint: str = "Get 100% on a quiz."
 
     def evaluate(self, ctx: Context) -> Award | None:
-        if ctx.kind == "quiz" and ctx.purpose == "assign" and ctx.percent >= 100:
+        if ctx.kind == "quiz" and ctx.purpose in GIVEN and ctx.percent >= 100:
             return Award(self.key, ctx.scope, "100% — not a single slip!")
         return None
 
@@ -25,11 +29,11 @@ class PerfectScore:
 class StarScorer:
     key: str = "star_scorer"
     name: str = "Star Scorer"
-    description: str = "90% or more on a quiz from your teacher."
+    description: str = "90% or more on a quiz from your teacher or from home."
     hint: str = "Score 90% or more on a quiz."
 
     def evaluate(self, ctx: Context) -> Award | None:
-        if ctx.kind == "quiz" and ctx.purpose == "assign" and 90 <= ctx.percent < 100:
+        if ctx.kind == "quiz" and ctx.purpose in GIVEN and 90 <= ctx.percent < 100:
             return Award(self.key, ctx.scope, f"{ctx.percent:.0f}% — so close to perfect!")
         return None
 

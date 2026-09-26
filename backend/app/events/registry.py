@@ -14,6 +14,7 @@ from app.events.catalog import (
     AttemptProgressed,
     BadgeAwarded,
     FamilyLinked,
+    FamilyWorkShared,
     LiveSessionCancelled,
     LiveSessionReminder,
     LiveSessionScheduled,
@@ -66,4 +67,8 @@ def build_bus() -> EventBus:
     for got in (AssignmentShared, LiveSessionScheduled, LiveSessionCancelled):
         bus.subscribe(got, realtime.children_got)
     bus.subscribe(AssignmentChanged, realtime.children_saw_change)
+    # Work sent home (§20.4): the child is told, and the parent hears back.
+    bus.subscribe(FamilyWorkShared, notifications.family_shared)
+    bus.subscribe(FamilyWorkShared, realtime.home_work_shared)
+    bus.subscribe(AttemptCompleted, notifications.family_done)
     return bus

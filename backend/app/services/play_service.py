@@ -107,6 +107,7 @@ class PlayService:
                 leaderboard=bool(
                     assignment and assignment.leaderboard_enabled and loaded.kind.name == "quiz"
                 ),
+                shared_by=loaded.share.parent_id if loaded.share is not None else None,
             ),
             self._session,
         )

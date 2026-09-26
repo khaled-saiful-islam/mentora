@@ -17,7 +17,7 @@ from app.artifacts.registry import build_kinds
 from app.db.models.user import User
 from app.events.registry import build_bus
 from app.learning.registry import build_learning_kinds
-from app.policies.capabilities import capabilities_for
+from app.policies.capabilities import Capabilities, capabilities_for
 from app.services.class_pulse import ClassPulseService
 from app.services.membership_service import MembershipService
 from app.services.work import work
@@ -39,6 +39,7 @@ async def makeable(user: CurrentUser, settings: SettingsDep) -> dict[str, object
         for kind in build_learning_kinds().values()
         # A student's practice is only the kinds made for students to make.
         if caps.share_learning_sets
+        or caps.make_family_sets
         or (caps.make_practice_sets and getattr(kind, "for_students", True))
     ]
     return {
@@ -46,7 +47,8 @@ async def makeable(user: CurrentUser, settings: SettingsDep) -> dict[str, object
             {"name": kind.name, "label": kind.label, "description": kind.description}
             for kind in kinds
         ],
-        # Teachers make sets to share; students make private practice sets.
+        # Teachers make sets to share; students make private practice sets;
+        # parents make sets to send home.
         "learning": [
             {
                 "name": kind.name,
@@ -55,7 +57,7 @@ async def makeable(user: CurrentUser, settings: SettingsDep) -> dict[str, object
                 "item_noun_plural": kind.item_noun_plural,
                 "default_count": kind.default_count,
                 "max_count": kind.max_count,
-                "purpose": "assign" if caps.share_learning_sets else "practice",
+                "purpose": _purpose(caps),
             }
             for kind in learning
         ],
@@ -91,3 +93,9 @@ async def my_work(user: CurrentUser) -> dict[str, object]:
     """What is being made for this person in the background, and what
     finished lately — the tray beside the bell."""
     return {"items": [item.as_dict() for item in work.for_owner(user.id)]}
+
+
+def _purpose(caps: Capabilities) -> str:
+    if caps.share_learning_sets:
+        return "assign"
+    return "family" if caps.make_family_sets else "practice"

@@ -149,6 +149,9 @@ _CAPABILITY_REFUSALS: dict[str, str] = {
     "join_classes": "Only students join classes.",
     "take_assignments": "Only students take assignments.",
     "make_practice_sets": "Practice sets are for students.",
+    "make_family_sets": "Sending work home is for parents.",
+    "see_children": "This is for a child's parents.",
+    "keep_materials": "My materials are for teachers and parents.",
     "moderate": "This needs an administrator account.",
     "manage_users": "This needs an administrator account.",
 }

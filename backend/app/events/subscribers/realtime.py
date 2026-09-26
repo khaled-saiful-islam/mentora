@@ -27,6 +27,7 @@ from app.events.catalog import (
     AttemptProgressed,
     BadgeAwarded,
     FamilyLinked,
+    FamilyWorkShared,
     LiveSessionCancelled,
     LiveSessionScheduled,
     MembershipApproved,
@@ -150,3 +151,10 @@ async def children_got(
 async def children_saw_change(event: AssignmentChanged, session: AsyncSession) -> None:
     """Work they have was closed, reopened or given a new due date."""
     await _tell_parents(session, event.audience)
+
+
+async def home_work_shared(event: FamilyWorkShared, session: AsyncSession) -> None:
+    """Something sent home: the child's home shows it, and every parent
+    watching them sees it arrive."""
+    _push(session, [event.student_id], {"topic": "assignments", "share_id": str(event.share_id)})
+    await _tell_parents(session, [event.student_id])

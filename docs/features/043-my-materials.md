@@ -74,8 +74,8 @@ POST   /api/live-sessions/{id}/documents/from-material   {material_id}
 - A new file type is a reader in `document_extract.py` plus a case in
   `classify()`. Materials, chat and live lessons all pick it up. The frontend
   adds its icon to `LOOKS` in `MaterialBits.tsx` and its extension to `ACCEPT`.
-- Parents are meant to keep materials too (PLAN §20 P2): give `Role.PARENT`
-  the `keep_materials` capability.
+- Parents keep materials too (PLAN §20 P2), through the same
+  `keep_materials` capability.
 
 ## Known limits
 

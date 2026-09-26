@@ -9,6 +9,7 @@ import {
   Eye,
   FloppyDisk,
   Globe,
+  HeartStraight,
   MagicWand,
   Play,
   Plus,
@@ -28,6 +29,7 @@ import { learningApi, type Item, type SetDetail } from './api'
 import { EDITORS } from './editors'
 import { lookOfKind, nounOf } from './kinds'
 import { ShareDialog } from './ShareDialog'
+import { SendHomeDialog } from '@/features/family/SendHomeDialog'
 
 export default function EditorPage() {
   const { setId = '' } = useParams()
@@ -49,6 +51,7 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
   const [items, setItems] = useState<Item[]>(initial.items)
   const [saving, setSaving] = useState(false)
   const [sharing, setSharing] = useState(false)
+  const [sendingHome, setSendingHome] = useState(false)
   const [deleting, setDeleting] = useState<number | null>(null)
   const { toast } = useToast()
   const kind = EDITORS[initial.kind]
@@ -138,6 +141,11 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
                 <Broadcast weight="bold" className="size-5" /> Share
               </Button>
             )}
+            {initial.purpose === 'family' && (
+              <Button variant="secondary" onClick={() => setSendingHome(true)} disabled={dirty} title={dirty ? 'Save your changes first' : undefined} className="bg-white text-grape-900 hover:bg-white/90">
+                <HeartStraight weight="fill" className="size-5 text-kind-family" aria-hidden /> Send home
+              </Button>
+            )}
             {initial.purpose === 'practice' && (
               <Link
                 to={`/practice/${initial.id}`}
@@ -216,6 +224,7 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
         />
       )}
       <ShareDialog open={sharing} set={initial} onClose={() => setSharing(false)} />
+      {sendingHome && <SendHomeDialog open set={initial} onClose={() => setSendingHome(false)} />}
     </Page>
   )
 }

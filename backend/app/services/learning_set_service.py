@@ -256,6 +256,11 @@ class LearningSetService:
         await self._session.flush()
 
     async def practice_made_today(self, owner_id: UUID) -> int:
+        return await self.made_today(owner_id, "practice")
+
+    async def made_today(self, owner_id: UUID, purpose: str) -> int:
+        """Sets of this purpose the owner made since midnight UTC — their
+        daily allowance used."""
         since = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
         # Practice Mentora made for them is a gift, not their allowance.
         made_for = exists().where(AutoPractice.set_id == LearningSet.id)
@@ -263,7 +268,7 @@ class LearningSetService:
             await self._session.scalar(
                 select(func.count()).where(
                     LearningSet.owner_id == owner_id,
-                    LearningSet.purpose == "practice",
+                    LearningSet.purpose == purpose,
                     LearningSet.created_at >= since,
                     ~made_for,
                 )

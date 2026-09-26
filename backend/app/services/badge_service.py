@@ -131,7 +131,7 @@ class BadgeService:
             number=attempt.number,
             first_percent=float(first) if first is not None else None,
             completed_at=attempt.completed_at or datetime.now(UTC),
-            due_at=loaded.assignment.due_at if loaded.assignment else None,
+            due_at=loaded.due_at,
             scope=str(attempt.assignment_id or attempt.set_id),
             practice_completed=practice_completed,
             skills=await self._skills(attempt.student_id),

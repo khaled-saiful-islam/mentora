@@ -147,6 +147,14 @@ class FamilyService:
             raise NotFoundError("No such child.")
         return student
 
+    async def link(self, parent_id: UUID, student_id: UUID) -> FamilyLink:
+        """The same gate as `child`, when what is needed is the link itself —
+        what the child calls this parent."""
+        found = await self._link(parent_id, student_id)
+        if found is None:
+            raise NotFoundError("No such child.")
+        return found
+
     async def children(self, parent_id: UUID) -> list[ChildView]:
         rows = await self._session.execute(
             select(User, FamilyLink.label, FamilyLink.created_at)

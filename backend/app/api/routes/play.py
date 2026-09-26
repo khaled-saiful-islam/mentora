@@ -15,6 +15,7 @@ from app.api.schemas.play import (
     BadgesResponse,
     EarnedBadge,
     FinishResponse,
+    HomeWorkResponse,
     TodoResponse,
     catalog,
     history_row,
@@ -26,6 +27,7 @@ from app.events.registry import build_bus
 from app.services.attempt_service import AttemptService
 from app.services.auto_practice import AutoPracticeService
 from app.services.badge_service import BadgeService
+from app.services.family_share_service import FamilyShareService
 from app.services.play_service import PlayService
 from app.services.results_service import ResultsService
 from app.services.student_home_service import StudentHomeService
@@ -54,6 +56,9 @@ async def home(user: CurrentUser, session: SessionDep) -> dict[str, object]:
         "done": [TodoResponse.of(c) for c in found["done"]],
         "badges": found["badges"],
         "streak": found["streak"],
+        "from_home": [
+            HomeWorkResponse.of(w) for w in await FamilyShareService(session).for_student(user.id)
+        ],
         "practise": insights["practise"][:2],
         "strengths": insights["strengths"][:2],
         "made_for_you": [
@@ -74,6 +79,13 @@ async def start(assignment_id: UUID, user: CurrentUser, session: SessionDep) -> 
 @router.post("/practice/{set_id}/attempts", response_model=AttemptResponse)
 async def practise(set_id: UUID, user: CurrentUser, session: SessionDep) -> AttemptResponse:
     return AttemptResponse.of(await AttemptService(session).start_practice(user, set_id))
+
+
+@router.post("/from-home/{share_id}/attempts", response_model=AttemptResponse)
+async def from_home(share_id: UUID, user: CurrentUser, session: SessionDep) -> AttemptResponse:
+    """Something a parent sent home: start it, or carry on with it."""
+    share = await FamilyShareService(session).visible(user.id, share_id)
+    return AttemptResponse.of(await AttemptService(session).start_from_home(user, share))
 
 
 @router.get("/attempts/{attempt_id}", response_model=AttemptResponse)

@@ -284,6 +284,10 @@ class Settings(BaseSettings):
     def resolved_vision_api_key(self) -> str:
         return self.vision_api_key or self.llm_api_key
 
+    # ---- Parents (§20) -------------------------------------------------------
+    # How many quizzes, decks and guides a parent may make each day.
+    parent_sets_per_day: int = 10
+
     # ---- My materials (§21) ------------------------------------------------
     # A teacher's own files, read once into text and kept to make material
     # from. A file is refused over the size; a library over the count.

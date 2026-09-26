@@ -17,6 +17,7 @@ from app.events.catalog import (
     AttemptCompleted,
     BadgeAwarded,
     FamilyLinked,
+    FamilyWorkShared,
     LiveSessionCancelled,
     LiveSessionReminder,
     LiveSessionScheduled,
@@ -253,4 +254,39 @@ async def family_linked(event: FamilyLinked, session: AsyncSession) -> None:
         kind=Kind.FAMILY_LINKED,
         actor_id=event.parent_id,
         payload={"parent_name": event.parent_name, "label": event.label},
+    )
+
+
+async def family_shared(event: FamilyWorkShared, session: AsyncSession) -> None:
+    """The child hears "Mum sent you a quiz", with a way straight in."""
+    await NotificationService(session).notify(
+        user_id=event.student_id,
+        kind=Kind.FAMILY_SHARED,
+        actor_id=event.parent_id,
+        payload={
+            "share_id": str(event.share_id),
+            "label": event.label,
+            "title": event.title,
+            "kind": event.kind,
+            "due_at": event.due_at,
+        },
+    )
+
+
+async def family_done(event: AttemptCompleted, session: AsyncSession) -> None:
+    """The parent who sent it hears how it went: "Aina finished your quiz — 80%"."""
+    if event.shared_by is None:
+        return
+    await NotificationService(session).notify(
+        user_id=event.shared_by,
+        kind=Kind.FAMILY_DONE,
+        actor_id=event.student_id,
+        payload={
+            "student_id": str(event.student_id),
+            "student_name": (event.student_name.split() or [event.student_name])[0],
+            "attempt_id": str(event.attempt_id),
+            "title": event.title,
+            "kind": event.kind,
+            "percent": round(event.percent),
+        },
     )

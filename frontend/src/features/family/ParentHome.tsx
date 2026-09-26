@@ -20,8 +20,11 @@ import { lookOf } from '@/lib/palette'
 import { firstName } from '@/lib/user'
 import { cn } from '@/lib/utils'
 import { Page, rise, stagger } from '@/motion'
+import { useLearnStudio } from '@/features/learning/LearnStudio'
+import type { LearningKindName } from '@/features/learning/api'
+import { lookOfKind } from '@/features/learning/kinds'
 import { familyApi, type Child } from './api'
-import { isLate, LessonRow, WorkRow } from './child/bits'
+import { isLate, LessonRow, waitingOf, WorkRow } from './child/bits'
 import { ResultRow } from './child/OverviewTab'
 import { useChildResource } from './child/useChild'
 import { LabelPicker } from './LabelPicker'
@@ -64,7 +67,10 @@ export default function ParentHome() {
               ))}
             </motion.ul>
           )}
-          <ConnectCard first={items.length === 0} onConnected={() => void children.reload()} />
+          <div className="space-y-5 self-start">
+            {items.length > 0 && <MakeCard names={items.map((c) => c.first_name)} />}
+            <ConnectCard first={items.length === 0} onConnected={() => void children.reload()} />
+          </div>
         </div>
       )}
     </Page>
@@ -90,7 +96,8 @@ function ChildCard({ child, onGone }: { child: Child; onGone: () => void }) {
 
   const rooms = classes.data?.items ?? []
   const week = overview.data
-  const waiting = week ? [...week.todo].sort((a, b) => Number(isLate(b)) - Number(isLate(a))) : []
+  const { user } = useAuth()
+  const waiting = week ? waitingOf(week, user?.id) : []
   const late = waiting.filter((t) => isLate(t)).length
   const page = `/children/${child.id}`
   return (
@@ -207,6 +214,49 @@ function Glance({ title, empty, more, children }: { title: string; empty: string
         </motion.ul>
       )}
     </section>
+  )
+}
+
+/** Make a quiz, some flashcards or a study guide to send home (§20.4). */
+function MakeCard({ names }: { names: string[] }) {
+  const studio = useLearnStudio()
+  const kinds: LearningKindName[] = ['quiz', 'flashcard', 'study_guide']
+  return (
+    <Card className="overflow-hidden">
+      <div className="space-y-4 p-5">
+        <div>
+          <h2 className="font-display text-xl font-semibold">Make something for {names.join(' and ')}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Pick a topic — or use your own notes — and Mentora makes it in about a minute. Then send it home.
+          </p>
+        </div>
+        <motion.ul className="grid gap-2" variants={stagger(0.06)} initial="hidden" animate="shown">
+          {kinds.map((kind) => {
+            const look = lookOfKind(kind)
+            return (
+              <motion.li key={kind} variants={rise}>
+                <motion.button
+                  type="button"
+                  onClick={() => studio.create(kind)}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex w-full items-center gap-3 rounded-2xl border-2 border-border bg-surface p-3 text-left transition-colors hover:border-hover-border"
+                >
+                  <span className={cn('grid size-10 shrink-0 place-items-center rounded-xl', look.hero)}>
+                    <look.Icon weight="fill" className="size-5" aria-hidden />
+                  </span>
+                  <span className="min-w-0 flex-1 break-words font-bold">{look.label}</span>
+                  <ArrowRight weight="bold" className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                </motion.button>
+              </motion.li>
+            )
+          })}
+        </motion.ul>
+        <Link to="/library" className="inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline">
+          What I've made <ArrowRight weight="bold" className="size-4" aria-hidden />
+        </Link>
+      </div>
+    </Card>
   )
 }
 

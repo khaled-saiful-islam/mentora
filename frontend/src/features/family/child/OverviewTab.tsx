@@ -11,16 +11,18 @@ import { timeAgo } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { rise, stagger } from '@/motion'
 import type { ChildOverview } from '../api'
-import { isLate, LessonRow, SectionTitle, WorkRow } from './bits'
+import { LessonRow, SectionTitle, waitingOf, WorkRow } from './bits'
+import { useAuth } from '@/lib/auth'
 
 export function OverviewTab({ childId, first, overview }: { childId: string; first: string; overview: ChildOverview | null }) {
+  const { user } = useAuth()
   if (!overview) return <Skeleton className="h-72 rounded-[1.75rem]" />
   const base = `/children/${childId}`
-  const waiting = [...overview.todo].sort((a, b) => Number(isLate(b)) - Number(isLate(a)))
+  const waiting = waitingOf(overview, user?.id)
   return (
     <div className="space-y-10">
       <section className="space-y-3">
-        <SectionTitle title="Waiting" note={`What ${first}'s teachers shared that isn't finished yet.`} action={<More to={`${base}/work`} label="All work" />} />
+        <SectionTitle title="Waiting" note={`What ${first} hasn't finished yet, from school and from home.`} action={<More to={`${base}/work`} label="All work" />} />
         {waiting.length === 0 ? (
           <Calm Icon={Confetti} text={`Nothing waiting — ${first} is all caught up.`} />
         ) : (
@@ -115,7 +117,7 @@ export function ResultRow({ row, to }: { row: HistoryRow; to: string }) {
         <span className="min-w-[min(100%,12rem)] flex-1">
           <span className="block break-words font-bold leading-snug">{row.title}</span>
           <span className="text-sm text-muted-foreground">
-            {row.purpose === 'practice' ? 'Practice' : 'From school'} · {timeAgo(row.completed_at)}
+            {row.purpose === 'practice' ? 'Practice' : row.purpose === 'family' ? 'From home' : 'From school'} · {timeAgo(row.completed_at)}
           </span>
         </span>
         <span className="flex items-center gap-2">

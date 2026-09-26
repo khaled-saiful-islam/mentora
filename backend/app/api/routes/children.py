@@ -22,6 +22,7 @@ from app.api.schemas.live import session_summary
 from app.api.schemas.play import (
     AttemptResponse,
     ChildWorkItem,
+    HomeWorkResponse,
     TodoResponse,
     history_row,
     made_for_you_row,
@@ -34,6 +35,7 @@ from app.services.auto_practice import AutoPracticeService
 from app.services.child_view_service import ChildViewService
 from app.services.coverage.service import CoverageService
 from app.services.family_service import FamilyService
+from app.services.family_share_service import FamilyShareService
 from app.services.live_session_service import LiveSessionService
 from app.services.live_summary_service import LiveSummaryService
 from app.services.results_service import ResultsService
@@ -52,6 +54,11 @@ SKILLS = 3
 
 async def _child(session, user: User, student_id: UUID) -> User:
     return await FamilyService(session).child(user.id, student_id)
+
+
+async def _from_home(session, child_id: UUID) -> list[HomeWorkResponse]:
+    """What any of the child's parents sent home — both parents see it all."""
+    return [HomeWorkResponse.of(w) for w in await FamilyShareService(session).for_student(child_id)]
 
 
 @router.get("/overview")
@@ -74,6 +81,7 @@ async def overview(student_id: UUID, user: CurrentUser, session: SessionDep) -> 
         "made_for_you": [
             made_for_you_row(m) for m in await AutoPracticeService(session).made_for(child.id)
         ],
+        "from_home": await _from_home(session, child.id),
     }
 
 
@@ -92,7 +100,8 @@ async def work(student_id: UUID, user: CurrentUser, session: SessionDep) -> dict
                 update={"review_attempt_id": reviews.get(c.assignment.id)}
             )
             for c in cards
-        ]
+        ],
+        "from_home": await _from_home(session, child.id),
     }
 
 
