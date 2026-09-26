@@ -11,6 +11,7 @@
  * days read alike. The safety alert is the exception, and stays plain.
  */
 import {
+  Barbell,
   Bell,
   Broadcast,
   CalendarStar,
@@ -28,6 +29,7 @@ import {
 import type { Mood } from '@/features/buddies'
 import { whenLabel } from '@/features/live/sessions/when'
 import { lookOfWork } from '@/features/work/looks'
+import { profileOf } from '@/features/buddies/profiles'
 import type { Notification } from './api'
 
 /** The show a pop-up puts on as it lands. */
@@ -202,6 +204,26 @@ export const KINDS: Record<string, KindView> = {
     action: 'See my badge',
     flourish: 'medal',
     mood: 'celebrate',
+  },
+  practice_ready: {
+    Icon: Barbell,
+    tile: 'bg-sun-100 text-sun-600 dark:bg-sun-600/25 dark:text-sun-300',
+    title: (n) => `Practice made for you: ${text(n, 'title')}`,
+    headlines: (n) => {
+      const buddy = profileOf(text(n, 'buddy') || null).name
+      const skills = ((n.payload.skills as string[] | undefined) ?? []).join(' and ') || text(n, 'title')
+      const thing = text(n, 'kind') === 'flashcard' ? 'flashcards' : 'a practice quiz'
+      return [
+        `${buddy} made you ${thing} on ${skills}!`,
+        `Let's beat ${skills} together — ${buddy} made you ${thing}`,
+        `A little practice on ${skills}, made just for you`,
+      ]
+    },
+    body: (n) => `From ${text(n, 'from_title')} · a few minutes, and it'll click.`,
+    href: (n) => (n.payload.set_id ? `/practice/${text(n, 'set_id')}` : '/'),
+    action: 'Practise now',
+    flourish: 'confetti',
+    mood: 'cheer',
   },
   work_done: {
     Icon: MagicWand,

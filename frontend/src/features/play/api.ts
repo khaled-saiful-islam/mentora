@@ -138,6 +138,17 @@ export interface SkillInsight {
   level: 'strong' | 'growing' | 'practise'
 }
 
+/** Practice Mentora made from what the student found hard. */
+export interface MadeForYou {
+  set_id: string
+  kind: PlayKind
+  title: string
+  skills: string[]
+  from_title: string
+  done: boolean
+  created_at: string
+}
+
 export interface Home {
   todo: Todo[]
   done: Todo[]
@@ -145,6 +156,7 @@ export interface Home {
   streak: number
   practise: SkillInsight[]
   strengths: SkillInsight[]
+  made_for_you?: MadeForYou[]
 }
 
 export interface HistoryRow {

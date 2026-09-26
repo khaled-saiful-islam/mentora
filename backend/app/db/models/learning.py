@@ -136,3 +136,27 @@ class AssignmentGroup(Base):
     group_id: Mapped[uuid.UUID] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("class_groups.id", ondelete="CASCADE"), primary_key=True
     )
+
+
+class AutoPractice(Base):
+    """Practice Mentora made for a student from a shared set they found hard:
+    the skills they were weak on, and the practice set made for them. One per
+    student per assignment, so a retake never makes another."""
+
+    __tablename__ = "auto_practice"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    student_id: Mapped[uuid.UUID] = _fk("users.id")
+    assignment_id: Mapped[uuid.UUID] = _fk("assignments.id")
+    set_id: Mapped[uuid.UUID | None] = _fk("learning_sets.id", ondelete="SET NULL", nullable=True)
+    # [{"slug": ..., "label": ...}] — the weak spots it practises.
+    skills: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False, default=list)
+    # making | ready | failed
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="making")
+    created_at: Mapped[datetime] = created_at()
+
+    __table_args__ = (
+        UniqueConstraint("student_id", "assignment_id", name="uq_auto_practice_assignment"),
+        CheckConstraint("status IN ('making', 'ready', 'failed')", name="ck_auto_practice_status"),
+        Index("ix_auto_practice_student", "student_id", "created_at"),
+    )

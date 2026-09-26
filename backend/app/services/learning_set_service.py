@@ -12,11 +12,11 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import NotFoundError, ValidationError
-from app.db.models.learning import Assignment, LearningSet, LearningSetVersion
+from app.db.models.learning import Assignment, AutoPractice, LearningSet, LearningSetVersion
 from app.learning.base import Item, LearningKind, Skill
 from app.learning.enrich import Enriching
 from app.learning.generator import GenerationResult
@@ -257,12 +257,15 @@ class LearningSetService:
 
     async def practice_made_today(self, owner_id: UUID) -> int:
         since = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        # Practice Mentora made for them is a gift, not their allowance.
+        made_for = exists().where(AutoPractice.set_id == LearningSet.id)
         return int(
             await self._session.scalar(
                 select(func.count()).where(
                     LearningSet.owner_id == owner_id,
                     LearningSet.purpose == "practice",
                     LearningSet.created_at >= since,
+                    ~made_for,
                 )
             )
             or 0

@@ -73,10 +73,13 @@ class GenerationService:
         self._make_generator = generator_factory
 
     async def begin(
-        self, session: AsyncSession, owner: User, draft: GenerationDraft
+        self, session: AsyncSession, owner: User, draft: GenerationDraft, *, made_for: bool = False
     ) -> LearningSet:
+        """A set row, ready for its build. `made_for` is practice Mentora made
+        for a student (`services/auto_practice.py`), which never counts
+        against the practice they make themselves."""
         kind = self._kind(draft.kind)
-        purpose = await self._purpose(session, owner)
+        purpose = await self._purpose(session, owner, made_for=made_for)
         if purpose == "practice" and not getattr(kind, "for_students", True):
             raise ForbiddenError(f"{kind.label}s are made by teachers.")
         request = self._request(kind, draft)
@@ -161,9 +164,9 @@ class GenerationService:
                     category=refused.category,
                     rule=refused.rule,
                     screen="rules" if refused.rule != "topic_check" else "topic_check",
-                    excerpt=" · ".join(
-                        filter(None, [learning_set.subject, learning_set.topic])
-                    )[:500],
+                    excerpt=" · ".join(filter(None, [learning_set.subject, learning_set.topic]))[
+                        :500
+                    ],
                 )
                 where = Where(user_id=learning_set.owner_id, set_id=set_id)
                 await ModerationService(session).record_quietly([flag], where)
@@ -261,12 +264,14 @@ class GenerationService:
             raise ValidationError(f"Pick one of: {', '.join(self._kinds)}.")
         return kind
 
-    async def _purpose(self, session: AsyncSession, owner: User) -> str:
+    async def _purpose(self, session: AsyncSession, owner: User, *, made_for: bool = False) -> str:
         caps = capabilities_for(owner.role)
         if caps.share_learning_sets:
             return "assign"
         if not caps.make_practice_sets:
             raise ForbiddenError("Your account cannot make quizzes or flashcards.")
+        if made_for:
+            return "practice"
         made = await LearningSetService(session, self._kinds).practice_made_today(owner.id)
         if made >= self._settings.student_practice_per_day:
             raise RateLimitError(

@@ -12,6 +12,7 @@ import { Alert, ButtonLink, Skeleton } from '@/components/ui'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Buddy, BuddyStage, greeting, tipFor, type BuddyHandle } from '@/features/buddies'
 import { EmptyArt } from '@/features/classes/EmptyArt'
+import { useNotifications } from '@/features/notifications/NotificationsProvider'
 import { playApi, type Home } from '@/features/play/api'
 import { TodoCard } from '@/features/play/TodoCard'
 import { useResource } from '@/hooks/useResource'
@@ -20,6 +21,7 @@ import { firstName } from '@/lib/user'
 import { cn } from '@/lib/utils'
 import { Page, pop, stagger } from '@/motion'
 import { useLive } from '@/lib/bus'
+import { MadeForYou } from './MadeForYou'
 
 export default function StudentHome() {
   const { user } = useAuth()
@@ -28,6 +30,11 @@ export default function StudentHome() {
   useLive(['assignments', 'classes'], () => void home.reload())
   const buddy = useRef<BuddyHandle>(null)
   const data = home.data
+  // Practice made for them just landed in the bell: show it here too.
+  const { latestArrival } = useNotifications()
+  useEffect(() => {
+    if (latestArrival?.type === 'practice_ready') void home.reload()
+  }, [latestArrival])
 
   // Hello first, then a tip that knows what they could practise — once, when
   // the page first has something to say, not on every live refresh.
@@ -98,6 +105,8 @@ export default function StudentHome() {
         )}
       </section>
 
+      {data && <MadeForYou className="mt-10" items={data.made_for_you ?? []} buddy={user?.buddy} />}
+
       {data && data.practise.length > 0 && <PractiseNext home={data} />}
 
       {data && data.done.length > 0 && (
@@ -146,7 +155,7 @@ function PractiseNext({ home }: { home: Home }) {
       <ul className="mt-3 flex flex-wrap gap-2">
         {home.practise.map((skill) => (
           <li key={skill.subject + skill.slug}>
-            <Link to="/library" className="inline-flex items-center gap-1.5 rounded-full bg-wrong-soft px-4 py-1.5 font-bold capitalize text-destructive hover:brightness-95">
+            <Link to={practiceFor(home, skill.label)} className="inline-flex items-center gap-1.5 rounded-full bg-wrong-soft px-4 py-1.5 font-bold capitalize text-destructive hover:brightness-95">
               <Barbell weight="fill" className="size-4" />
               {skill.label}
             </Link>
@@ -155,4 +164,10 @@ function PractiseNext({ home }: { home: Home }) {
       </ul>
     </section>
   )
+}
+
+/** Straight to the practice made for this skill, when there is one. */
+function practiceFor(home: Home, label: string): string {
+  const made = home.made_for_you?.find((m) => !m.done && m.skills.some((s) => s.toLowerCase() === label.toLowerCase()))
+  return made ? `/practice/${made.set_id}` : '/library'
 }

@@ -23,6 +23,7 @@ from app.events.catalog import (
     MembershipEnded,
     MembershipRejected,
     MembershipRequested,
+    PracticeMade,
     StudentNeedsSupport,
     WorkFinished,
 )
@@ -224,5 +225,21 @@ async def work_finished(event: WorkFinished, session: AsyncSession) -> None:
             "title": event.title,
             "link": event.link,
             "message": event.message,
+        },
+    )
+
+
+async def practice_ready(event: PracticeMade, session: AsyncSession) -> None:
+    await NotificationService(session).notify(
+        user_id=event.student_id,
+        kind=Kind.PRACTICE_READY,
+        payload={
+            "set_id": str(event.set_id),
+            "kind": event.kind,
+            "title": event.title,
+            "skills": list(event.skills),
+            "count": event.count,
+            "from_title": event.from_title,
+            "buddy": event.buddy,
         },
     )

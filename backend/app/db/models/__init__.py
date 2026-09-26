@@ -23,6 +23,7 @@ from app.db.models.feedback import MessageFeedback
 from app.db.models.learning import (
     Assignment,
     AssignmentGroup,
+    AutoPractice,
     LearningSet,
     LearningSetVersion,
 )
@@ -51,6 +52,7 @@ __all__ = [
     "Attempt",
     "AttemptAnswer",
     "AssignmentGroup",
+    "AutoPractice",
     "ArtifactState",
     "ArtifactVersion",
     "ClassGroup",

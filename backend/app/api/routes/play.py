@@ -22,6 +22,7 @@ from app.badges.catalog import CATALOG
 from app.core.errors import ValidationError
 from app.events.registry import build_bus
 from app.services.attempt_service import AttemptService
+from app.services.auto_practice import AutoPracticeService
 from app.services.badge_service import BadgeService
 from app.services.play_service import PlayService
 from app.services.results_service import ResultsService
@@ -53,6 +54,18 @@ async def home(user: CurrentUser, session: SessionDep) -> dict[str, object]:
         "streak": found["streak"],
         "practise": insights["practise"][:2],
         "strengths": insights["strengths"][:2],
+        "made_for_you": [
+            {
+                "set_id": str(m.set_id),
+                "kind": m.kind,
+                "title": m.title,
+                "skills": list(m.skills),
+                "from_title": m.from_title,
+                "done": m.done,
+                "created_at": m.created_at.isoformat(),
+            }
+            for m in await AutoPracticeService(session).made_for(user.id)
+        ],
     }
 
 

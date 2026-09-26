@@ -13,6 +13,8 @@ class Kind(StrEnum):
     JOIN_APPROVED = "join_approved"
     ASSIGNMENT_SHARED = "assignment_shared"
     BADGE_AWARDED = "badge_awarded"
+    # Practice Mentora made from what a student found hard.
+    PRACTICE_READY = "practice_ready"
     # Live lessons: on the schedule, moved, cancelled, and reminders to join.
     LIVE_SCHEDULED = "live_scheduled"
     LIVE_CANCELLED = "live_cancelled"

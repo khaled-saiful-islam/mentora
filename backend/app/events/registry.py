@@ -20,10 +20,11 @@ from app.events.catalog import (
     MembershipEnded,
     MembershipRejected,
     MembershipRequested,
+    PracticeMade,
     StudentNeedsSupport,
     WorkFinished,
 )
-from app.events.subscribers import notifications, realtime
+from app.events.subscribers import notifications, practice, realtime
 
 
 def build_bus() -> EventBus:
@@ -52,4 +53,7 @@ def build_bus() -> EventBus:
     bus.subscribe(AttemptCompleted, realtime.attempt_finished)
     bus.subscribe(StudentNeedsSupport, notifications.student_needs_support)
     bus.subscribe(WorkFinished, notifications.work_finished)
+    # A shared set found hard: practice made for the student, after commit.
+    bus.subscribe(AttemptCompleted, practice.weak_spots)
+    bus.subscribe(PracticeMade, notifications.practice_ready)
     return bus

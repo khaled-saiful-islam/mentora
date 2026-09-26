@@ -173,3 +173,20 @@ class WorkFinished(Event):
     link: str
     ok: bool
     message: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class PracticeMade(Event):
+    """Mentora made a student practice from what they found hard."""
+
+    student_id: UUID
+    set_id: UUID
+    kind: str
+    title: str
+    # The weak spots it practises, by name.
+    skills: tuple[str, ...]
+    count: int
+    # The shared set it grew from.
+    from_title: str
+    # The student's buddy, who announces it.
+    buddy: str = ""

@@ -65,3 +65,22 @@ describe('notification kinds', () => {
     expect(kindOf(n).title(n)).toBe('Something new happened')
   })
 })
+
+describe('practice made for a student', () => {
+  it('is announced by their buddy, naming the weak spot, and leads to it', async () => {
+    const { actionOf, headlineOf, kindOf } = await import('./kinds')
+    const note = {
+      id: 'p1',
+      type: 'practice_ready',
+      payload: { set_id: 's9', kind: 'quiz', title: 'The Magic of Evaporation', skills: ['Evaporation'], from_title: 'The Water Cycle', buddy: 'kiko' },
+      count: 1,
+      read: false,
+      created_at: '2026-09-26T08:00:00Z',
+      updated_at: '2026-09-26T08:00:00Z',
+    }
+    expect(headlineOf(note)).toMatch(/Evaporation/)
+    expect(kindOf(note).href?.(note)).toBe('/practice/s9')
+    expect(actionOf(note)).toBe('Practise now')
+    expect(kindOf(note).body?.(note)).toMatch(/The Water Cycle/)
+  })
+})
