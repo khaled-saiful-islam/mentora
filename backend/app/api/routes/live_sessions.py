@@ -55,6 +55,8 @@ from app.services.document_service import human_size
 from app.services.jobs import jobs
 from app.services.live_session_service import EDITABLE, LiveSessionService
 from app.services.live_template_service import LiveTemplateService
+from app.services.work import work as board
+from app.services.work_tickets import for_lesson_plan, for_lesson_recording
 
 router = APIRouter(
     prefix="/live-sessions",
@@ -218,7 +220,12 @@ async def plan(
         raise ValidationError("This session's lesson can't be written again now.")
     live.status, live.failure = "planning", None
     await session.commit()
-    jobs.start(live.id, user.id, plans.plan_events(live.id))
+    jobs.start(
+        live.id,
+        user.id,
+        plans.plan_events(live.id),
+        watcher=board.watch(live.id, user.id, for_lesson_plan(live)),
+    )
     return {"id": str(live.id), "status": live.status}
 
 
@@ -234,7 +241,12 @@ async def approve(
         raise ValidationError("This lesson has no parts yet.")
     live.status, live.failure = "recording", None
     await session.commit()
-    jobs.start(live.id, user.id, plans.record_events(live.id))
+    jobs.start(
+        live.id,
+        user.id,
+        plans.record_events(live.id),
+        watcher=board.watch(live.id, user.id, for_lesson_recording(live)),
+    )
     return {"id": str(live.id), "status": live.status}
 
 

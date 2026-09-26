@@ -17,5 +17,8 @@ class Kind(StrEnum):
     LIVE_SCHEDULED = "live_scheduled"
     LIVE_CANCELLED = "live_cancelled"
     LIVE_REMINDER = "live_reminder"
+    # Something made in the background is ready, or could not be made.
+    WORK_DONE = "work_done"
+    WORK_FAILED = "work_failed"
     # For admins: a student may be at risk, and a person should look.
     SAFETY_ALERT = "safety_alert"

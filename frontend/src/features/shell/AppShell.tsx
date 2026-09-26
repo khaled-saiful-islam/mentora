@@ -4,6 +4,7 @@ import { SignOut } from '@phosphor-icons/react'
 import { Wordmark } from '@/brand/Logo'
 import { Avatar } from '@/components/ui/Avatar'
 import { Bell } from '@/features/notifications/Bell'
+import { WorkTray } from '@/features/work/WorkTray'
 import { useAuth } from '@/lib/auth'
 import { spring } from '@/motion'
 import { nameOf } from '@/lib/user'
@@ -80,6 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Wordmark tile />
           </Link>
           <div className="ml-auto flex items-center gap-1">
+            <WorkTray align="right" />
             <Bell align="right" />
           </div>
         </header>

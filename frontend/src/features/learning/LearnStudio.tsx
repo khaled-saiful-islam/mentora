@@ -1,10 +1,10 @@
 /**
  * Making sets, from anywhere: the create sheet and the live generation panel,
- * held once for the whole app. A build keeps being followed with its panel
- * closed, so its owner hears when it is ready wherever they are.
+ * held once for the whole app. A build carries on with its panel closed; the
+ * work tray beside the bell shows how far along it is, and the bell says
+ * when it is ready (`features/work`).
  */
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { useToast } from '@/components/ui/Toast'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import type { LearningKindName, SetSummary } from './api'
 import { CreateSheet } from './CreateSheet'
 import { GenerationPanel } from './GenerationPanel'
@@ -27,8 +27,6 @@ export function LearnStudioProvider({ children }: { children: React.ReactNode })
   const [watched, setWatched] = useState<Watched | null>(null)
   const [panelOpen, setPanelOpen] = useState(false)
   const generation = useGeneration(watched?.id ?? null)
-  const { toast } = useToast()
-  const told = useRef<string | null>(null)
 
   const create = useCallback((kind?: LearningKindName, topic?: string) => {
     setSheetTopic(topic ?? '')
@@ -37,19 +35,7 @@ export function LearnStudioProvider({ children }: { children: React.ReactNode })
   const watch = useCallback((set: Watched) => {
     setWatched(set)
     setPanelOpen(true)
-    told.current = null
   }, [])
-
-  // Finished with the panel closed: say so, once. Finished while it was open
-  // counts as told — they watched it happen.
-  useEffect(() => {
-    const outcome = generation.outcome
-    if (!watched || outcome.kind === 'running' || told.current === watched.id) return
-    told.current = watched.id
-    if (panelOpen) return
-    if (outcome.kind === 'done') toast(`"${outcome.title}" is ready!`, { body: 'Open it from your library.' })
-    else toast("That set couldn't be made", { tone: 'error', body: outcome.message })
-  }, [generation.outcome, watched, panelOpen, toast])
 
   const value = useMemo(() => ({ create, watch, watching: watched?.id ?? null }), [create, watch, watched])
   return (

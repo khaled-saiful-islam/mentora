@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import {
+  MagicWand,
   ArrowRight,
   CheckCircle,
   CircleNotch,
@@ -20,6 +21,7 @@ import { Button } from '@/components/ui'
 import { celebrate, spring, useCalmMotion } from '@/motion'
 import { cn } from '@/lib/utils'
 import { isGuide, isQuiz, type Item, type SetSummary } from './api'
+import { useShowing } from '@/features/work/onScreen'
 import { lookOfKind } from './kinds'
 import { OPTION_LOOKS } from './options'
 import { stagesFor, type Generation, type StageKey } from './useGeneration'
@@ -57,6 +59,7 @@ export function GenerationPanel({
   const calm = useCalmMotion()
   const celebrated = useRef<string | null>(null)
   const { outcome } = generation
+  useShowing(set.id, open)
 
   useEffect(() => {
     if (open && outcome.kind === 'done' && celebrated.current !== set.id) {
@@ -298,8 +301,14 @@ function Footer({ set, generation, onClose, onAnother }: { set: Watched; generat
   const { outcome } = generation
   if (outcome.kind === 'running') {
     return (
-      <footer className="border-t border-border px-6 py-4 text-sm text-muted-foreground">
-        This takes about a minute. You can close this — we'll tell you when it's ready.
+      <footer className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-border bg-surface px-6 py-4">
+        <Button size="lg" onClick={onClose}>
+          <MagicWand weight="duotone" className="size-5" aria-hidden />
+          Keep working
+        </Button>
+        <p className="min-w-[12rem] flex-1 text-sm text-muted-foreground">
+          It carries on in the background — watch it fill beside the bell, and we'll ring when it's ready.
+        </p>
       </footer>
     )
   }

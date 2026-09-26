@@ -11,7 +11,7 @@ import { timeAgo } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import type { Notification } from './api'
 import { JoinRequestActions } from './JoinRequestActions'
-import { headlineOf, kindOf } from './kinds'
+import { actionOf, headlineOf, kindOf } from './kinds'
 import { useNotifications } from './NotificationsProvider'
 import { place, type Placement } from './place'
 
@@ -340,7 +340,7 @@ function Row({ note, onNavigate, ticking, delay }: { note: Notification; onNavig
             ) : (
               href && (
                 <Button size="sm" variant={note.read ? 'outline' : 'primary'} onClick={open} className="h-8 px-3">
-                  {view.action ?? 'Open'}
+                  {actionOf(note)}
                   <ArrowRight weight="bold" className="size-3.5" aria-hidden />
                 </Button>
               )

@@ -9,6 +9,7 @@ import { nameOf } from '@/lib/user'
 import { Avatar } from '@/components/ui/Avatar'
 import { Wordmark } from '@/brand/Logo'
 import { Bell } from '@/features/notifications/Bell'
+import { WorkTray } from '@/features/work/WorkTray'
 import { navFor } from '@/features/shell/nav'
 import type { ConversationSummary } from '@/hooks/useConversations'
 import { Check, DotsThree, GearSix, NotePencil, SidebarSimple, SignOut, Trash, User, UserGear, X } from '@phosphor-icons/react'
@@ -132,6 +133,7 @@ export function Sidebar({
           New chat
         </button>
 
+        <WorkTray align="left" />
         <Bell />
         <Button
           variant="ghost"
@@ -424,6 +426,7 @@ function Rail({
       <RailButton label="New chat" onClick={onNew} strong>
         <NotePencil weight="bold" className="size-4" aria-hidden />
       </RailButton>
+      <WorkTray align="left" />
       <Bell />
 
       <div className="mt-auto flex flex-col items-center gap-1">

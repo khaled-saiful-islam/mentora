@@ -17,14 +17,17 @@ import {
   CalendarX,
   Confetti,
   Heartbeat,
+  MagicWand,
   Medal,
   PaperPlaneTilt,
   Trophy,
   UserPlus,
+  WarningCircle,
   type Icon,
 } from '@phosphor-icons/react'
 import type { Mood } from '@/features/buddies'
 import { whenLabel } from '@/features/live/sessions/when'
+import { lookOfWork } from '@/features/work/looks'
 import type { Notification } from './api'
 
 /** The show a pop-up puts on as it lands. */
@@ -40,7 +43,8 @@ export interface KindView {
   headlines?: (n: Notification) => string[]
   body?: (n: Notification) => string | null
   href?: (n: Notification) => string | null
-  action?: string
+  /** The button that follows `href`: a word, or words that depend on the note. */
+  action?: string | ((n: Notification) => string)
   flourish: Flourish
   /** What a student's buddy does when announcing it. */
   mood: Mood
@@ -199,6 +203,27 @@ export const KINDS: Record<string, KindView> = {
     flourish: 'medal',
     mood: 'celebrate',
   },
+  work_done: {
+    Icon: MagicWand,
+    tile: 'bg-grape-100 text-grape-700 dark:bg-grape-800/40 dark:text-grape-100',
+    title: (n) => lookOfWork(text(n, 'kind')).ready(text(n, 'title'))[0],
+    headlines: (n) => lookOfWork(text(n, 'kind')).ready(text(n, 'title')),
+    body: (n) => lookOfWork(text(n, 'kind')).next,
+    href: (n) => text(n, 'link') || null,
+    action: (n) => lookOfWork(text(n, 'kind')).open,
+    flourish: 'confetti',
+    mood: 'celebrate',
+  },
+  work_failed: {
+    Icon: WarningCircle,
+    tile: 'bg-coral-100 text-coral-700 dark:bg-coral-700/30 dark:text-coral-100',
+    title: (n) => `${lookOfWork(text(n, 'kind')).label} on ${text(n, 'title')} couldn't be made`,
+    body: (n) => text(n, 'message') || 'Open it to try again.',
+    href: (n) => text(n, 'link') || null,
+    action: 'Take a look',
+    flourish: 'ring',
+    mood: 'oops',
+  },
   safety_alert: {
     Icon: Heartbeat,
     tile: 'bg-coral-100 text-coral-700 dark:bg-coral-700/30 dark:text-coral-100',
@@ -222,6 +247,12 @@ const FALLBACK: KindView = {
 
 export function kindOf(n: Notification): KindView {
   return KINDS[n.type] ?? FALLBACK
+}
+
+/** The words on the button that opens where a note leads. */
+export function actionOf(n: Notification): string {
+  const { action } = kindOf(n)
+  return (typeof action === 'function' ? action(n) : action) ?? 'Open'
 }
 
 /** The line to show: one of the kind's fun headlines, the same one every

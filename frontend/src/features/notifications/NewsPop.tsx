@@ -17,7 +17,8 @@ import { useSound } from '@/lib/sound'
 import { cn } from '@/lib/utils'
 import { celebrate, spring, useCalmMotion } from '@/motion'
 import type { Notification } from './api'
-import { headlineOf, kindOf, type Flourish, type KindView } from './kinds'
+import { isShowing } from '@/features/work/onScreen'
+import { actionOf, headlineOf, kindOf, type Flourish, type KindView } from './kinds'
 import { useNotifications } from './NotificationsProvider'
 
 const SHOW_MS = 7000
@@ -38,6 +39,11 @@ export function NewsPop() {
       return
     }
     if (!latestArrival || QUIET_ON.some((p) => pathname.startsWith(p))) return
+    // Finished while you were watching it: you saw it happen, so it is read.
+    if (onScreen(latestArrival)) {
+      void markRead(latestArrival.id)
+      return
+    }
     sound(latestArrival.type === 'badge_awarded' ? 'badge' : 'notify')
     setShown((now) => [latestArrival, ...now.filter((n) => n.id !== latestArrival.id)].slice(0, MAX_SHOWN))
     // Only on a new arrival, not on every navigation.
@@ -151,7 +157,7 @@ function Pop({ note, buddy, onDone, onRead }: { note: Notification; buddy: strin
           {view.body?.(note) && <p className="mt-0.5 text-sm text-muted-foreground">{view.body(note)}</p>}
           {href && (
             <Button size="sm" variant={view.serious ? 'danger' : 'primary'} className="mt-2.5" onClick={go}>
-              {view.action ?? 'Open'}
+              {actionOf(note)}
             </Button>
           )}
         </div>
@@ -230,4 +236,10 @@ function Knocks() {
       ))}
     </span>
   )
+}
+
+/** News about work you have open right now — its panel or its page. */
+function onScreen(note: Notification): boolean {
+  const id = note.payload.work_id
+  return note.type.startsWith('work_') && typeof id === 'string' && isShowing(id)
 }

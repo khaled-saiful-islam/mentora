@@ -36,9 +36,11 @@ from app.core.errors import NotFoundError, ValidationError
 from app.db.models.learning import LearningSet
 from app.db.session import session_scope
 from app.learning.model import GenerationUnavailable
-from app.services.generation_service import GenerationDraft
+from app.services.generation_service import GenerationDraft, GenerationService
 from app.services.jobs import jobs
 from app.services.learning_set_service import LearningSetService, SetView
+from app.services.work import work
+from app.services.work_tickets import for_set
 
 router = APIRouter(
     prefix="/learning-sets",
@@ -59,9 +61,7 @@ async def generate(
     learning_set = await service.begin(session, user, GenerationDraft(**body.model_dump()))
     # Committed before the job starts, so the job's own session finds the row.
     await session.commit()
-    jobs.start(
-        learning_set.id, user.id, service.events(learning_set.id, service.request_for(learning_set))
-    )
+    _build(learning_set, user.id, service)
     return SetSummary.of(SetView(learning_set, None, 0))
 
 
@@ -74,10 +74,18 @@ async def retry(
         raise ValidationError("Only a set that could not be made can be tried again.")
     learning_set.status, learning_set.failure = "generating", None
     await session.commit()
-    jobs.start(
-        learning_set.id, user.id, service.events(learning_set.id, service.request_for(learning_set))
-    )
+    _build(learning_set, user.id, service)
     return SetSummary.of(SetView(learning_set, None, 0))
+
+
+def _build(learning_set: LearningSet, owner_id: UUID, service: GenerationService) -> None:
+    """Start making the set in the background, on its owner's work board."""
+    jobs.start(
+        learning_set.id,
+        owner_id,
+        service.events(learning_set.id, service.request_for(learning_set)),
+        watcher=work.watch(learning_set.id, owner_id, for_set(learning_set)),
+    )
 
 
 @router.get("/{set_id}/stream")

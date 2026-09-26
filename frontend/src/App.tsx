@@ -13,6 +13,7 @@ import ClassesPage from '@/features/classes/ClassesPage'
 import JoinPage from '@/features/classes/JoinPage'
 import { NewsPop } from '@/features/notifications/NewsPop'
 import { NotificationsProvider } from '@/features/notifications/NotificationsProvider'
+import { WorkProvider } from '@/features/work/WorkProvider'
 import EditorPage from '@/features/learning/EditorPage'
 import GuidePreviewPage from '@/features/guide/GuidePreviewPage'
 import LibraryPage from '@/features/learning/LibraryPage'
@@ -52,6 +53,7 @@ export default function App() {
       <MotionProvider>
       <ToastProvider>
       <NotificationsProvider>
+      <WorkProvider>
       <LearnStudioProvider>
         <Routes>
           <Route path="/signin" element={<PublicOnly><SignInPage /></PublicOnly>} />
@@ -99,6 +101,7 @@ export default function App() {
         </Routes>
         <NewsPop />
       </LearnStudioProvider>
+      </WorkProvider>
       </NotificationsProvider>
       </ToastProvider>
       </MotionProvider>

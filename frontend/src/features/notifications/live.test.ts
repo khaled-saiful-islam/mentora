@@ -15,6 +15,6 @@ describe('liveOf', () => {
   })
 
   it('listens for every page topic the server sends', () => {
-    expect(LIVE_TOPICS).toEqual(['classes', 'members', 'assignments', 'progress', 'leaderboard', 'moderation', 'live'])
+    expect(LIVE_TOPICS).toEqual(['classes', 'members', 'assignments', 'progress', 'leaderboard', 'moderation', 'live', 'work'])
   })
 })

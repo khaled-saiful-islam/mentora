@@ -24,6 +24,7 @@ from app.events.catalog import (
     MembershipRejected,
     MembershipRequested,
     StudentNeedsSupport,
+    WorkFinished,
 )
 from app.learning.registry import build_learning_kinds
 from app.services.notification_service import NotificationService
@@ -211,3 +212,17 @@ async def live_reminder(event: LiveSessionReminder, session: AsyncSession) -> No
             # One bell entry per session that updates as the start draws near.
             group_key=f"live:{event.session_id}:reminder",
         )
+
+
+async def work_finished(event: WorkFinished, session: AsyncSession) -> None:
+    await NotificationService(session).notify(
+        user_id=event.owner_id,
+        kind=Kind.WORK_DONE if event.ok else Kind.WORK_FAILED,
+        payload={
+            "work_id": str(event.work_id),
+            "kind": event.kind,
+            "title": event.title,
+            "link": event.link,
+            "message": event.message,
+        },
+    )

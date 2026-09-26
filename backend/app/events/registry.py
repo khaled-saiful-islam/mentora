@@ -21,6 +21,7 @@ from app.events.catalog import (
     MembershipRejected,
     MembershipRequested,
     StudentNeedsSupport,
+    WorkFinished,
 )
 from app.events.subscribers import notifications, realtime
 
@@ -50,4 +51,5 @@ def build_bus() -> EventBus:
     bus.subscribe(AttemptProgressed, realtime.attempt_progressed)
     bus.subscribe(AttemptCompleted, realtime.attempt_finished)
     bus.subscribe(StudentNeedsSupport, notifications.student_needs_support)
+    bus.subscribe(WorkFinished, notifications.work_finished)
     return bus

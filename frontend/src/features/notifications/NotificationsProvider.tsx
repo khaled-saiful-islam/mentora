@@ -197,7 +197,7 @@ function connect(refresh: () => Promise<void>, setLive: (up: boolean) => void): 
 }
 
 /** The pushes that are about pages, not the bell. */
-export const LIVE_TOPICS = ['classes', 'members', 'assignments', 'progress', 'leaderboard', 'moderation', 'live'] as const
+export const LIVE_TOPICS = ['classes', 'members', 'assignments', 'progress', 'leaderboard', 'moderation', 'live', 'work'] as const
 
 /** A live push, or null for a garbled one. */
 export function liveOf(data: string): LiveMessage | null {

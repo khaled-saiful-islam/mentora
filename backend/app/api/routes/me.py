@@ -19,6 +19,7 @@ from app.events.registry import build_bus
 from app.learning.registry import build_learning_kinds
 from app.policies.capabilities import capabilities_for
 from app.services.membership_service import MembershipService
+from app.services.work import work
 
 router = APIRouter(prefix="/me", tags=["me"])
 
@@ -79,3 +80,10 @@ async def leave_class(
 ) -> Response:
     await MembershipService(session, build_bus()).leave(student.id, class_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/work")
+async def my_work(user: CurrentUser) -> dict[str, object]:
+    """What is being made for this person in the background, and what
+    finished lately — the tray beside the bell."""
+    return {"items": [item.as_dict() for item in work.for_owner(user.id)]}

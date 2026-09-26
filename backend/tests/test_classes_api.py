@@ -169,7 +169,7 @@ async def test_reading_the_bell(client, teacher, student, room) -> None:
         read = await c.post(f"/api/notifications/{note['id']}/read")
         count = (await c.get("/api/notifications/unread-count")).json()
     assert read.json()["read"] is True
-    assert count == {"unread": 0}
+    assert count == {"unread": 0, "unseen": 0}
 
 
 async def test_archiving_and_restoring(client, teacher, room) -> None:

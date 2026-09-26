@@ -158,3 +158,18 @@ class LiveSessionReminder(Event):
     scheduled_at: str
     # "day", "soon" (15 minutes) or "now".
     when: str
+
+
+@dataclass(frozen=True, slots=True)
+class WorkFinished(Event):
+    """Something being made in the background is done, or could not be."""
+
+    owner_id: UUID
+    work_id: UUID
+    # A learning kind ("quiz", "flashcard", "study_guide"), or "live_plan" /
+    # "live_recording".
+    kind: str
+    title: str
+    link: str
+    ok: bool
+    message: str | None = None

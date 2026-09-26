@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   CalendarPlus,
   FileText,
+  MagicWand,
   Microphone,
   PencilSimple,
   Play,
@@ -21,6 +22,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Alert, Button, ButtonLink, Card, Input, Skeleton } from '@/components/ui'
 import { useResource } from '@/hooks/useResource'
 import { cn } from '@/lib/utils'
+import { useShowing } from '@/features/work/onScreen'
 import { Page, rise, spring } from '@/motion'
 import { followWork, sessionsApi, STATUS_WORDS, type SessionDetail, type Segment, type WorkEvent } from './api'
 import { SegmentCard } from './SegmentCard'
@@ -40,6 +42,8 @@ export default function SessionPage() {
   const [error, setError] = useState<string | null>(null)
   const live = detail.data
   const player = useSegmentPlayer(live ? { voice: live.voice.voice, speed: live.voice.speed, model: 'ilmu-tts-v2.1' } : null)
+  // You are watching it: when it finishes, no pop-up needs to say so.
+  useShowing(live?.id)
 
   useWork(live, (event) => {
     if (event.type === 'stage') setStage(event.label)
@@ -312,6 +316,7 @@ function Writing({ stage, parts, written }: { stage: string | null; parts: strin
         </ol>
         {written > 0 && <p className="mt-2 text-sm text-muted-foreground">{written} segment{written === 1 ? '' : 's'} written so far — they appear below.</p>}
       </div>
+      <KeepWorking doing="Astra keeps writing" />
     </Card>
   )
 }
@@ -332,7 +337,24 @@ function Recording({ progress }: { progress: { done: number; total: number } | n
           </div>
         </div>
       </div>
+      <KeepWorking doing="Astra keeps recording" className="mt-4" />
     </Card>
+  )
+}
+
+/** Nobody has to sit and watch: the work carries on, and the bell rings. */
+function KeepWorking({ doing, className }: { doing: string; className?: string }) {
+  const navigate = useNavigate()
+  return (
+    <div className={cn('flex w-full flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4', className)}>
+      <Button variant="outline" size="sm" onClick={() => navigate('/live')}>
+        <MagicWand weight="duotone" className="size-4" aria-hidden />
+        Keep working
+      </Button>
+      <p className="min-w-[12rem] flex-1 text-sm text-muted-foreground">
+        {doing} in the background. Watch it beside the bell — we'll ring when it's done.
+      </p>
+    </div>
   )
 }
 
