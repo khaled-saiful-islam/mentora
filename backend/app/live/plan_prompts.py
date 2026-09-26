@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from app.core.grades import Grade
 from app.live.prompts import TUTOR_VOICE
-from app.live.settings import APPROACHES, DIFFICULTY_RULES, SessionSettings
+from app.live.settings import APPROACHES, DIFFICULTY_RULES, SessionSettings, check_size
 
 SEGMENT_SHAPE = (
     '{"title": "a short title", "key_points": ["under 12 words", "…"], '
@@ -96,6 +96,11 @@ def part_user(
         else f"End by pointing, in one sentence, to what comes next. {after}"
     )
     style = APPROACHES[settings.approach]
+    size = check_size(settings.grade_level)
+    check = (
+        f"The quick check is on screen for only {size.seconds} seconds: its question at most "
+        f"{size.question_words} words, each option at most {size.option_words} words."
+    )
     words = round(seconds * 2.8)
     names = ", ".join(students) if students else "the group"
     extra = (
@@ -112,7 +117,7 @@ def part_user(
         f"Approach — {style.label}: {style.rules}\n"
         f"Level: {DIFFICULTY_RULES[settings.difficulty]}\n"
         f"Students you may name once or twice, warmly and in passing: {names}.\n"
-        f"{opening}\n{closing}{extra}\n\n<sources>\n{sources or NO_SOURCES}\n</sources>"
+        f"{check}\n{opening}\n{closing}{extra}\n\n<sources>\n{sources or NO_SOURCES}\n</sources>"
     )
 
 

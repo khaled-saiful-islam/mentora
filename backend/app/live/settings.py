@@ -7,6 +7,7 @@ quiz afterwards. Stored on the session as a frozen copy.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
 
@@ -146,3 +147,32 @@ DIFFICULTY_RULES: dict[str, str] = {
     "intermediate": "The group knows the basics. Name the proper terms and explain them.",
     "advanced": "The group is confident. Go deeper, connect ideas, stretch them.",
 }
+
+
+# --- quick checks, by age -----------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class CheckSize:
+    """How long a quick check stays open, and so how short it must be to read
+    in that time: young readers get longer, older students a brisk one."""
+
+    seconds: int
+    question_words: int
+    option_words: int
+
+
+CHECK_EARLY = CheckSize(seconds=30, question_words=12, option_words=4)
+CHECK_MIDDLE = CheckSize(seconds=20, question_words=14, option_words=5)
+CHECK_UPPER = CheckSize(seconds=15, question_words=12, option_words=5)
+
+
+def check_size(grade_level: str | None) -> CheckSize:
+    """Year 1–3: 30 s. Year 4–6: 20 s. Form 1 and up: 15 s."""
+    code = grade_level or ""
+    if code.startswith("year_"):
+        year = int(code.split("_")[1]) if code.split("_")[1].isdigit() else 4
+        return CHECK_EARLY if year <= 3 else CHECK_MIDDLE
+    if code.startswith(("form_", "lower_", "upper_")):
+        return CHECK_UPPER
+    return CHECK_MIDDLE

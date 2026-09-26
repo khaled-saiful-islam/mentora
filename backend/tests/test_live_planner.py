@@ -214,3 +214,26 @@ async def test_each_part_that_asks_for_a_picture_gets_a_safe_one() -> None:
     first = next(e for e in events if isinstance(e, PartWritten)).segments[0]
     assert first.image["image"] == "https://example.org/leaf.png"
     assert first.as_dict()["image"]["page"] == "https://example.org/leaf"
+
+
+def test_a_quick_check_is_open_longer_for_young_readers() -> None:
+    from app.live.settings import check_size
+
+    assert check_size("year_2").seconds == 30
+    assert check_size("year_5").seconds == 20
+    assert check_size("form_3").seconds == 15
+    assert check_size("upper_6").seconds == 15
+
+
+def test_a_quick_check_too_long_for_its_time_is_sent_back() -> None:
+    from app.live.planner import check_problems
+    from app.live.settings import CHECK_UPPER
+
+    long = {"question": " ".join(["word"] * 20) + "?", "options": ["A", "B"], "answer": 0}
+    wordy = {"question": "Which?", "options": ["one two three four five six", "B"], "answer": 0}
+    assert "15 seconds" in check_problems(long, CHECK_UPPER)[0]
+    assert "5 words or fewer" in check_problems(wordy, CHECK_UPPER)[0]
+    assert (
+        check_problems({"question": "Which?", "options": ["A", "B"], "answer": 0}, CHECK_UPPER)
+        == []
+    )

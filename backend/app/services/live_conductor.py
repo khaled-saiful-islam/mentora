@@ -45,6 +45,7 @@ from app.live.answering import Answerer
 from app.live.audio import Narrator, clip_key
 from app.live.beats import SENTENCE_GAP
 from app.live.mp3 import duration
+from app.live.settings import check_size
 from app.live.speakable import speakable
 from app.live.timeline import Step, reveal_line, steps_of
 from app.moderation.base import Flag
@@ -66,8 +67,9 @@ class Timing:
     lead: float = 0.6
     # How long a called student has to ask.
     question_wait: float = 45.0
-    # How long a quick check stays open.
-    check_open: float = 20.0
+    # How long a quick check stays open; None means by the group's age
+    # (live/settings.py: 30 s for Year 1–3, 20 s for Year 4–6, 15 s after).
+    check_open: float | None = None
     # Quiet after an answer, before the lesson carries on.
     after_answer: float = 0.8
 
@@ -77,6 +79,8 @@ class Hand:
     id: UUID
     student_id: UUID
     name: str
+    # Sent with the hand: read out and answered straight away.
+    question: str | None = None
 
 
 class Voice:
@@ -130,7 +134,6 @@ class Conductor:
         self._taught: list[str] = []
         self._at_part_end = True
         self._settings: dict[str, Any] = {}
-        self._names: dict[UUID, str] = {}
         self.done = asyncio.Event()
 
     # --- what the room can ask of it ---------------------------------------------
@@ -321,6 +324,10 @@ class Conductor:
         )
         await self._hand_status(hand.id, "called")
         lines = student_lines(self.session_id, hand.name)
+        if hand.question:
+            await self._answer_sent(hand, hand.question, lines)
+            self._done_calling()
+            return
         loop = asyncio.get_running_loop()
         self._question = loop.create_future()
         await self._say(lines.call, lane="tutor", pause=0.3)
@@ -371,6 +378,21 @@ class Conductor:
         else:
             await self._hand_status(hand.id, "answered", question=question, answer=" ".join(said))
 
+    async def _answer_sent(self, hand: Hand, question: str, lines: Any) -> None:
+        """ "Aina asks: why are leaves green?" — the question read out for the
+        room, then answered. Screened first: one that must stay out of the room
+        is never read aloud; Astra thanks them and moves on."""
+        said = await self._answerer.screen(question)
+        if said is None:
+            self._room.publish({"type": "phase", "phase": "answering"})
+            await self._line("student", question, student_id=hand.student_id)
+            await self._say(lines.redirect, lane="tutor", pause=self._t.after_answer)
+            await self._hand_status(hand.id, "redirected", question=question)
+            await self._flag(hand, question, {"decision": "block", "category": "none"})
+            return
+        await self._say(f"{hand.name} asks: {said}", lane="tutor", pause=0.5)
+        await self._answer(hand, question, lines)
+
     def _done_calling(self) -> None:
         self._called = None
         self._question = None
@@ -399,7 +421,8 @@ class Conductor:
         checkin = step.checkin or {}
         await self._until_quiet()
         opens = time.time()
-        closes = opens + self._t.check_open
+        seconds = self._t.check_open or check_size(self._settings.get("grade_level")).seconds
+        closes = opens + seconds
         self._answers = {}
         self._checkin = {
             "segment_id": step.segment_id,
@@ -407,7 +430,9 @@ class Conductor:
             "options": checkin.get("options"),
         }
         self._room.publish({"type": "phase", "phase": "checkin"})
-        self._room.publish({"type": "checkin", **self._checkin, "closes_at": closes})
+        self._room.publish(
+            {"type": "checkin", **self._checkin, "closes_at": closes, "seconds": seconds}
+        )
         while time.time() < closes and not self._stop:
             here = self._room.here()
             if here and all(student in self._answers for student in here):

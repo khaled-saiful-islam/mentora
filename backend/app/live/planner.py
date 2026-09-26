@@ -27,7 +27,13 @@ from app.learning.research import Researcher, Source
 from app.learning.study_guide import picture_from
 from app.live import plan_prompts as prompts
 from app.live.beats import Beat, beats_from, spoken_seconds
-from app.live.settings import SEGMENT_SECONDS, SessionSettings
+from app.live.settings import (
+    CHECK_MIDDLE,
+    SEGMENT_SECONDS,
+    CheckSize,
+    SessionSettings,
+    check_size,
+)
 from app.live.speakability import problems as spoken_problems
 from app.moderation.base import Decision
 from app.moderation.rules import InputRules
@@ -243,7 +249,9 @@ class LessonPlanner:
         segments = _segments(reply, index, subtopic, seconds)
         if not segments:
             raise PlanUnavailable(f'Part {index + 1}, "{subtopic}", could not be written.')
-        found = await self._problems(segments, subtopic, grade, listing, request.students)
+        found = await self._problems(
+            segments, subtopic, grade, listing, request.students, check_size(settings.grade_level)
+        )
         if found:
             logger.info("live.part %d: repairing %d problems", index, len(found))
             written = json.dumps(reply, ensure_ascii=False)
@@ -286,12 +294,14 @@ class LessonPlanner:
         grade: Grade | None,
         listing: str,
         students: Sequence[str],
+        size: CheckSize = CHECK_MIDDLE,
     ) -> list[str]:
         found: list[str] = []
         for segment in segments:
             found += spoken_problems(
                 list(segment.beats), target_seconds=segment.target_seconds, students=students
             )
+            found += check_problems(segment.checkin, size)
         script = "\n\n".join(_script(s) for s in segments)
         system, user = prompts.verify(subtopic, grade, script, listing)
         verdict = await self._model.ask(
@@ -333,6 +343,21 @@ def _segments(
             )
         )
     return out
+
+
+def check_problems(checkin: dict[str, Any] | None, size: CheckSize) -> list[str]:
+    """A quick check longer than the room can read in its time."""
+    if not checkin:
+        return []
+    found = []
+    if len(checkin["question"].split()) > size.question_words:
+        found.append(
+            f"The quick check's question is too long to read in {size.seconds} seconds — "
+            f"{size.question_words} words at most: “{checkin['question']}”"
+        )
+    if any(len(o.split()) > size.option_words for o in checkin["options"]):
+        found.append(f"Each quick-check option must be {size.option_words} words or fewer.")
+    return found
 
 
 def checkin_from(value: Any) -> dict[str, Any] | None:

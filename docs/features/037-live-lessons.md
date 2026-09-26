@@ -19,7 +19,7 @@
 **Students** (*Schedule* in the menu):
 - The next lesson is an **Up next** card on Home, with a live countdown. Ten minutes before the start its button becomes a glowing *Join the lesson*.
 - **My schedule** (`/schedule`) lists lessons by day, then past ones.
-- Each lesson's page (`/room/:id`) has a countdown and **Add to my calendar** (an `.ics` file with a 15-minute alarm).
+- Each lesson's page (`/room/:id`) has a countdown to the start.
 - **Notifications:** new on the schedule, moved, cancelled. Everything updates live through the `live` push topic.
 
 ## How it works
@@ -53,7 +53,6 @@
 **Students** (`join_live_sessions`):
 - `/me/live-sessions`
 - `/me/live-sessions/:id`
-- `/me/live-sessions/:id/calendar.ics`
 
 ## Known limits
 

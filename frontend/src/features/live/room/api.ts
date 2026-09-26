@@ -37,7 +37,7 @@ export type RoomEvent =
   | { type: 'hands'; seq: number; queue: { id: string; student_id: string; name: string }[] }
   | { type: 'called'; seq: number; student_id: string | null; name?: string }
   | { type: 'question'; seq: number; student_id: string; name: string; text: string }
-  | { type: 'checkin'; seq: number; segment_id: string; question: string; options: string[]; closes_at: number }
+  | { type: 'checkin'; seq: number; segment_id: string; question: string; options: string[]; closes_at: number; seconds?: number }
   | { type: 'checkin_count'; seq: number; segment_id: string; answered: number }
   | { type: 'checkin_result'; seq: number; segment_id: string; counts: number[]; answer: number; explanation: string; total: number }
   | { type: 'ended'; seq: number }
@@ -75,13 +75,9 @@ const json = (body: unknown) => ({ body: JSON.stringify(body) })
 export const roomApi = {
   join: (id: string) => apiFetch<Joined>(`/live-rooms/${id}/join`, { method: 'POST' }),
   time: () => apiFetch<{ now: number }>('/live-rooms/time'),
-  hand: (id: string) => apiFetch<{ id: string; left: number }>(`/live-rooms/${id}/hand`, { method: 'POST' }),
+  hand: (id: string, question?: string) =>
+    apiFetch<{ id: string; left: number }>(`/live-rooms/${id}/hand`, { method: 'POST', ...json({ question: question ?? null }) }),
   lower: (id: string) => apiFetch<void>(`/live-rooms/${id}/hand`, { method: 'DELETE' }),
-  askAloud: (id: string, wav: Blob) => {
-    const form = new FormData()
-    form.append('clip', wav, 'question.wav')
-    return apiFetch<{ text: string }>(`/live-rooms/${id}/question/voice`, { method: 'POST', body: form })
-  },
   report: (id: string, text: string) => apiFetch<{ ok: boolean }>(`/live-rooms/${id}/report`, { method: 'POST', ...json({ text }) }),
   ask: (id: string, text: string) => apiFetch<{ ok: boolean }>(`/live-rooms/${id}/question`, { method: 'POST', ...json({ text }) }),
   checkin: (id: string, segment_id: string, choice: number) =>

@@ -215,14 +215,11 @@ async def test_scheduling_puts_it_on_the_groups_schedule_only(
 
     async with live(inside) as c:
         mine = (await c.get("/api/me/live-sessions")).json()
-        ics = await c.get(f"/api/me/live-sessions/{made['id']}/calendar.ics")
     assert [s["id"] for s in mine["upcoming"]] == [made["id"]]
     assert mine["upcoming"][0]["teacher_name"]
-    assert ics.status_code == 200 and "BEGIN:VEVENT" in ics.text and "TRIGGER:-PT15M" in ics.text
 
     async with live(outside) as c:
         assert (await c.get("/api/me/live-sessions")).json()["upcoming"] == []
-        assert (await c.get(f"/api/me/live-sessions/{made['id']}/calendar.ics")).status_code == 404
 
     # Only this test's students: the database is shared with other test data.
     mine_only = Notification.user_id.in_([inside.id, outside.id])

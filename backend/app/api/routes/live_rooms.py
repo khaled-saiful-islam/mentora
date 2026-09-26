@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, File, Query, Response, UploadFile, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy import func, select
 from sse_starlette.sse import EventSourceResponse
@@ -27,7 +27,6 @@ from app.api.deps import (
     NarratorDep,
     SessionDep,
     StreamUser,
-    TranscriberDep,
     require_capability,
 )
 from app.api.schemas.live import session_summary
@@ -38,7 +37,6 @@ from app.db.session import session_scope
 from app.events.registry import build_bus
 from app.moderation.base import Flag
 from app.policies.capabilities import capabilities_for
-from app.providers.speech import SpeechError
 from app.services.live_conductor import Hand
 from app.services.live_plan_service import first_name
 from app.services.live_room import Member
@@ -54,13 +52,16 @@ control = APIRouter(
 )
 
 _KEY = re.compile(r"^[0-9a-f]{64}$")
-# Half a minute of 16 kHz mono WAV is under a megabyte.
-MAX_CLIP_BYTES = 1_200_000
 OPEN = ("lobby", "live")
 
 
 class QuestionBody(BaseModel):
     text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=400)]
+
+
+class HandBody(BaseModel):
+    # The question itself, sent with the hand — typed or said into the box.
+    question: Annotated[str, StringConstraints(strip_whitespace=True, max_length=400)] | None = None
 
 
 class CheckinBody(BaseModel):
@@ -172,8 +173,14 @@ async def clip(
 
 @router.post("/{session_id}/hand", status_code=status.HTTP_202_ACCEPTED)
 async def raise_hand(
-    session_id: UUID, user: CurrentUser, session: SessionDep, runtime: LiveRuntimeDep
+    session_id: UUID,
+    user: CurrentUser,
+    session: SessionDep,
+    runtime: LiveRuntimeDep,
+    body: HandBody | None = None,
 ) -> dict[str, Any]:
+    """A hand goes up — usually with the question already in it, so Astra can
+    read it out and answer as soon as the sentence ends."""
     live, role = await _access(session, user, session_id)
     conductor = runtime.conductor(live.id)
     if role != "student" or conductor is None or live.status != "live":
@@ -182,10 +189,13 @@ async def raise_hand(
     asked = await _asked(session, live.id, user.id)
     if asked >= allowed:
         raise ConflictError(f"You've asked {asked} questions already — that's all for this lesson.")
-    hand = LiveHand(id=uuid4(), session_id=live.id, student_id=user.id, status="queued")
+    question = body.question if body and body.question and len(body.question) > 1 else None
+    hand = LiveHand(
+        id=uuid4(), session_id=live.id, student_id=user.id, status="queued", question=question
+    )
     session.add(hand)
     await session.commit()
-    conductor.raise_hand(Hand(hand.id, user.id, first_name(user)))
+    conductor.raise_hand(Hand(hand.id, user.id, first_name(user), question))
     return {"id": str(hand.id), "left": allowed - asked - 1}
 
 
@@ -227,42 +237,6 @@ async def question(
     if conductor is None or not conductor.ask(user.id, body.text):
         raise ConflictError("It isn't your turn to ask just now.")
     return {"ok": True}
-
-
-@router.post("/{session_id}/question/voice", status_code=status.HTTP_202_ACCEPTED)
-async def spoken_question(
-    session_id: UUID,
-    user: CurrentUser,
-    session: SessionDep,
-    runtime: LiveRuntimeDep,
-    transcriber: TranscriberDep,
-    clip: UploadFile = File(...),
-) -> dict[str, Any]:
-    """A question said aloud while called on. The clip is heard, turned into
-    words, and dropped — only the words are kept, like everything said here."""
-    live, _ = await _access(session, user, session_id)
-    conductor = runtime.conductor(live.id)
-    if conductor is None or not conductor.is_called(user.id):
-        raise ConflictError("It isn't your turn to ask just now.")
-    audio = await clip.read(MAX_CLIP_BYTES + 1)
-    if not audio or len(audio) > MAX_CLIP_BYTES:
-        raise ValidationError("That recording is too long. Keep a question under half a minute.")
-    try:
-        text = await transcriber.transcribe(
-            audio, filename=clip.filename or "question.wav", mime=clip.content_type or "audio/wav"
-        )
-    except SpeechError as exc:
-        raise ValidationError(str(exc)) from exc
-    finally:
-        del audio
-    text = " ".join(text.split())
-    if len(text) < 2:
-        raise ValidationError(
-            "Astra didn't catch that. Try again, a little closer to the microphone."
-        )
-    if not conductor.ask(user.id, text[:400]):
-        raise ConflictError("It isn't your turn to ask just now.")
-    return {"text": text[:400]}
 
 
 @router.post("/{session_id}/checkin", status_code=status.HTTP_202_ACCEPTED)

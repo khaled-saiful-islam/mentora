@@ -4,7 +4,7 @@
 
 **For the group's students** (`/room/:id`, from the schedule or the Up next card):
 
-- **Before the room opens:** a countdown and *Add to my calendar*.
+- **Before the room opens:** a countdown.
 - **Reminders:** a bell notification a day before (only if the lesson was scheduled further out than that), 15 minutes before, and at the start, the last only to those not yet in the room.
 - **The lobby** (from 10 minutes before):
   - Astra on a night sky, and each classmate who comes in floats up as **their own buddy** with their first name.
@@ -14,15 +14,21 @@
   - Everyone hears the same sentence at the same time, with the words lighting up as they are said, the key idea on screen and a star per part along the top.
   - A student who arrives late starts part-way through the sentence being said.
   - A dropped connection carries on from the last thing it heard.
-- **Raise my hand:**
+- **Ask Astra, out loud or typed** (updated 2026-09-26): during the lesson every student has an *Ask Astra a question* box.
+  - Tap the mic, say the question, and the words appear in the box (`/api/voice/transcribe`) to read or fix. Or type it.
+  - *Send* puts it in the queue with the student's place in line, and it can be taken back. When its turn comes, Astra reads it out ("Aina asks: …"), thanks them by name and answers for the room.
+  - A question that must stay out of the room is never read aloud.
+  - The box has dark words on white, readable on the night sky.
+- **Raise my hand** (the older path, kept for the API):
   - A waving hand and the student's place in line appear.
   - Astra finishes the sentence, then calls on them by name ("Go on, Aina. I'm listening."), and the question box opens.
   - Astra thanks them by name, answers for the whole room, and brings everyone back ("So, let's go back to our little tree…").
-  - **Hold to talk** (Phase 4): the microphone opens only while the called student holds the button (or Space) and closes when they let go. The browser turns the recording into a 16 kHz mono WAV (`room/wav.ts`), and `POST /live-rooms/:id/question/voice` hears it with `TRANSCRIBE_MODEL` (ILMU `ilmu-asr-v4.2`, about 0.3 s). The clip is refused unless this student is the one called on right now. It is never stored; only the words go into the transcript. Typing works the same way.
+  - **Voice:** `features/voice/VoiceInput` is a text box with a mic. The browser records only between two taps (at most 30 s) and turns it into a 16 kHz mono WAV (`voice/wav.ts`). `POST /api/voice/transcribe` hears it with `TRANSCRIBE_MODEL` (ILMU `ilmu-asr-v4.2`, about 0.3 s), at `RATE_LIMIT_TRANSCRIBE_PER_MINUTE`. The clip is never stored. The same box is used for a practice set's topic.
   - Each student has a set number of questions. With *questions at pauses*, hands are taken at the end of each part.
   - A question that must not be answered in the room is never read aloud. Astra redirects kindly, the question is logged for the safety queue, and a student who may be at risk is brought to a person's attention.
 - **Quick checks:**
-  - At the end of each part, a question pops up for 20 seconds, or until everyone here has answered.
+  - At the end of each part a question pops up, with a timer bar: **30 s for Year 1–3, 20 s for Year 4–6, 15 s from Form 1** (`live/settings.check_size`). It closes early once everyone here has answered.
+  - The shorter the time, the shorter the question: 12–14 words at most, and options of 4–5 words. The planner is told, and a check that runs longer is sent back to be rewritten.
   - Then the group's answers are shown as bars, and Astra says the right answer and why.
 - **The end:** a celebration. Then *Take the quiz* appears, for a quiz made from the lesson, the teacher's files and the questions the group asked, and shared with the group. Afterwards the room shows **My notes**: the key points of each part and the whole lesson as it was said.
 
@@ -89,9 +95,8 @@
 | POST | `/live-rooms/:id/join` | Snapshot, roster, recent transcript, questions left, the quiz if made |
 | GET | `/live-rooms/:id/stream?since=` | The room's events (SSE) |
 | GET | `/live-rooms/:id/clips/:key` | One recorded clip |
-| POST, DELETE | `/live-rooms/:id/hand` | Raise or lower a hand |
+| POST, DELETE | `/live-rooms/:id/hand` | Send a question into the queue (`{question}`), or take it back |
 | POST | `/live-rooms/:id/question` | Only while called on |
-| POST | `/live-rooms/:id/question/voice` | A spoken question (WAV, 30 s at most), only while called on |
 | POST | `/live-rooms/:id/checkin` | Answer a quick check |
 | POST | `/live-rooms/:id/report` | Report a problem |
 | GET | `/live-rooms/:id/notes` | Once ended |

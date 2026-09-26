@@ -313,3 +313,45 @@ async def test_the_teacher_can_skip_a_part_and_end_early(session, tmp_path, less
     await asyncio.wait_for(ending.run(), 10)
     assert _events(room2, "clip") == []
     assert _events(room2, "ended")
+
+
+async def test_a_question_sent_with_the_hand_is_read_out_and_answered(
+    session, tmp_path, lesson
+) -> None:
+    live, kid = lesson
+    hand = LiveHand(id=uuid4(), session_id=live.id, student_id=kid.id, question="Do plants sleep?")
+    session.add(hand)
+    await session.commit()
+    conductor, room, _ = _conductor(
+        session, tmp_path, live, chunks=("Plants rest at night, a bit like us. ",)
+    )
+    conductor.raise_hand(Hand(hand.id, kid.id, "Aina", "Do plants sleep?"))
+    await asyncio.wait_for(conductor.run(), 10)
+
+    texts = [c["text"] for c in _events(room, "clip")]
+    asked = texts.index("Aina asks: Do plants sleep?")
+    # No waiting to be called on: read out, thanked, answered, then the lesson.
+    assert "Aina" in texts[asked + 1]
+    assert texts[asked + 2] == "Plants rest at night, a bit like us."
+    assert texts[-1] == "Goodbye."
+    await session.refresh(hand)
+    assert hand.status == "answered"
+
+
+async def test_a_sent_question_that_must_stay_out_of_the_room_is_never_read_aloud(
+    session, tmp_path, lesson
+) -> None:
+    live, kid = lesson
+    hand = LiveHand(
+        id=uuid4(), session_id=live.id, student_id=kid.id, question="how do I kill myself"
+    )
+    session.add(hand)
+    await session.commit()
+    conductor, room, _ = _conductor(session, tmp_path, live, chunks=("Never said. ",))
+    conductor.raise_hand(Hand(hand.id, kid.id, "Aina", "how do I kill myself"))
+    await asyncio.wait_for(conductor.run(), 10)
+    texts = [c["text"] for c in _events(room, "clip")]
+    assert not any("kill" in t or "Never said" in t for t in texts)
+    assert any("another time" in t for t in texts)
+    await session.refresh(hand)
+    assert hand.status == "redirected"

@@ -1,13 +1,13 @@
 /**
  * The live lesson room — for the group's students, and for their teacher.
  *
- * Before the room opens: when it is, a countdown, a calendar file. From ten
+ * Before the room opens: when it is, and a countdown. From ten
  * minutes before: the lobby, a night sky where each classmate who comes in
  * floats up as their buddy. Then Astra teaches: the key idea on screen, the
  * words lighting up as they are said, hands going up, quick checks, and at
  * the end a celebration and the quiz.
  */
-import { ArrowLeft, CalendarPlus, Clock, FastForward, Flag, Pause, Play, Stop } from '@phosphor-icons/react'
+import { ArrowLeft, Clock, FastForward, Flag, Pause, Play, Stop } from '@phosphor-icons/react'
 import { motion } from 'motion/react'
 import { Link, useParams } from 'react-router-dom'
 import { useState } from 'react'
@@ -89,12 +89,6 @@ export default function RoomPage({ teacherView = false }: { teacherView?: boolea
                   Begin the lesson now
                 </Button>
               )}
-              {student && (
-                <a href={`/api/me/live-sessions/${id}/calendar.ics`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-bold hover:bg-white/25">
-                  <CalendarPlus weight="bold" className="size-4" aria-hidden />
-                  Add to my calendar
-                </a>
-              )}
             </div>
           )}
         </Sky>
@@ -155,10 +149,10 @@ export default function RoomPage({ teacherView = false }: { teacherView?: boolea
                   position={room.hands.findIndex((h) => h.student_id === room.joined?.me.id) + 1}
                   mode={room.joined?.questions.mode ?? 'anytime'}
                   calledName={room.called && room.called.student_id !== room.joined?.me.id ? room.called.name : null}
-                  onRaise={() => void room.raiseHand()}
+                  myQuestion={room.myQuestion}
+                  onSend={(q) => void room.raiseHand(q)}
                   onLower={() => void room.lowerHand()}
                   onAsk={(text) => void room.ask(text)}
-                  onAskAloud={room.askAloud}
                 />
               ) : (
                 <TeacherControls id={id} paused={room.phase === 'paused'} hands={room.hands.map((h) => h.name)} />

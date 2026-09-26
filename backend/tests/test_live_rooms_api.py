@@ -241,7 +241,6 @@ async def test_nothing_a_student_sends_reaches_another_student() -> None:
         "/live-rooms/{session_id}/join",
         "/live-rooms/{session_id}/hand",
         "/live-rooms/{session_id}/question",
-        "/live-rooms/{session_id}/question/voice",
         "/live-rooms/{session_id}/checkin",
         "/live-rooms/{session_id}/report",
     }
@@ -396,60 +395,20 @@ async def test_the_summary_says_who_came_what_they_asked_and_how_checks_went(
         assert (await c.get(f"/api/live-sessions/{live.id}/summary")).status_code == 403
 
 
-async def test_a_spoken_question_is_heard_only_from_the_called_student(
-    room_api, runtime, session, scheduled
-) -> None:
+async def test_a_hand_can_go_up_with_its_question(room_api, runtime, session, scheduled) -> None:
     live, kid, _ = scheduled
     live.status = "live"
     await session.commit()
     conductor = await runtime.start(live.id)
-    clip = {"clip": ("question.wav", b"RIFF....WAVE", "audio/wav")}
     async with room_api(kid) as c:
-        early = await c.post(f"/api/live-rooms/{live.id}/question/voice", files=clip)
-        conductor.called = kid.id
-        heard = await c.post(f"/api/live-rooms/{live.id}/question/voice", files=clip)
-        room_api.ears.fail = True
-        missed = await c.post(f"/api/live-rooms/{live.id}/question/voice", files=clip)
-    assert early.status_code == 409 and room_api.ears.heard == [b"RIFF....WAVE"]
-    assert heard.status_code == 202 and heard.json() == {"text": "why are leaves green"}
-    assert conductor.asked == ["why are leaves green"]
-    assert missed.status_code == 422
-
-
-async def test_a_recording_that_is_too_long_is_refused(
-    room_api, runtime, session, scheduled
-) -> None:
-    live, kid, _ = scheduled
-    live.status = "live"
-    await session.commit()
-    conductor = await runtime.start(live.id)
-    conductor.called = kid.id
-    async with room_api(kid) as c:
-        big = await c.post(
-            f"/api/live-rooms/{live.id}/question/voice",
-            files={"clip": ("q.wav", b"x" * 1_300_000, "audio/wav")},
+        up = await c.post(
+            f"/api/live-rooms/{live.id}/hand", json={"question": "  Do plants sleep?  "}
         )
-    assert big.status_code == 422
-
-
-async def test_a_report_reaches_the_safety_queue_and_flags_the_lesson(
-    room_api, session, scheduled, teacher
-) -> None:
-    from app.db.models.moderation import ModerationEvent
-
-    live, kid, outsider = scheduled
-    async with room_api(kid) as c:
-        sent = await c.post(
-            f"/api/live-rooms/{live.id}/report", json={"text": "The picture was scary."}
-        )
-    async with room_api(outsider) as c:
-        stranger = await c.post(f"/api/live-rooms/{live.id}/report", json={"text": "Hmm."})
-    assert sent.status_code == 202 and stranger.status_code == 404
-    await session.refresh(live)
-    assert live.flagged_at is not None
-    [event] = (
-        (await session.execute(select(ModerationEvent).where(ModerationEvent.user_id == kid.id)))
+    assert up.status_code == 202
+    assert conductor.hands[0].question == "Do plants sleep?"
+    [row] = (
+        (await session.execute(select(LiveHand).where(LiveHand.session_id == live.id)))
         .scalars()
         .all()
     )
-    assert event.kind == "report" and "scary" in event.excerpt
+    assert row.question == "Do plants sleep?"

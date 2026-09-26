@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { VoiceInput } from '@/features/voice/VoiceInput'
 import { AnimatePresence, motion } from 'motion/react'
 import { Globe, Minus, Plus, Sparkle, WarningCircle } from '@phosphor-icons/react'
 import { Alert, Button, Field, Input } from '@/components/ui'
@@ -111,16 +112,15 @@ export function CreateSheet({
         </div>
 
         <Field label="Topic" htmlFor="learn-topic">
-          <Input
+          <VoiceInput
             id="learn-topic"
             required
-            minLength={2}
             maxLength={200}
             autoFocus
             placeholder={`e.g. ${example}`}
             value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            className="h-14 text-lg"
+            onChange={setTopic}
+            inputClassName="text-lg"
           />
         </Field>
 

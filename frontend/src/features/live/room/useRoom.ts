@@ -43,6 +43,8 @@ export function useRoom(id: string) {
   const [hands, setHands] = useState<{ student_id: string; name: string }[]>([])
   const [called, setCalled] = useState<{ student_id: string; name: string } | null>(null)
   const [mine, setMine] = useState<MyHand>('none')
+  const [myQuestion, setMyQuestion] = useState<string | null>(null)
+  const sentQuestion = useRef<string | null>(null)
   const [left, setLeft] = useState(0)
   const [checkin, setCheckin] = useState<Checkin | null>(null)
   const [answered, setAnswered] = useState(0)
@@ -114,10 +116,13 @@ export function useRoom(id: string) {
         case 'called':
           if (event.student_id) {
             setCalled({ student_id: event.student_id, name: event.name ?? '' })
-            if (event.student_id === me.current) setMine('called')
+            // A question sent with the hand is read out and answered at once.
+            if (event.student_id === me.current) setMine(sentQuestion.current ? 'asked' : 'called')
           } else {
             setCalled(null)
             setMine('none')
+            sentQuestion.current = null
+            setMyQuestion(null)
           }
           break
         case 'question':
@@ -231,10 +236,12 @@ export function useRoom(id: string) {
     setSoundOn(true)
   }, [id, serverNow])
 
-  const raiseHand = useCallback(async () => {
+  const raiseHand = useCallback(async (question?: string) => {
     try {
-      const made = await roomApi.hand(id)
+      const made = await roomApi.hand(id, question)
       setLeft(made.left)
+      sentQuestion.current = question ?? null
+      setMyQuestion(question ?? null)
       setMine('up')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Your hand could not go up.')
@@ -243,6 +250,8 @@ export function useRoom(id: string) {
 
   const lowerHand = useCallback(async () => {
     await roomApi.lower(id).catch(() => undefined)
+    sentQuestion.current = null
+    setMyQuestion(null)
     setMine('none')
   }, [id])
 
@@ -258,18 +267,6 @@ export function useRoom(id: string) {
     [id],
   )
 
-  const askAloud = useCallback(
-    async (wav: Blob) => {
-      try {
-        await roomApi.askAloud(id, wav)
-        setMine('asked')
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Astra didn't catch that. Try again, or type it.")
-      }
-    },
-    [id],
-  )
-
   const choose = useCallback(
     async (option: number) => {
       if (!checkin || choice !== null) return
@@ -280,9 +277,9 @@ export function useRoom(id: string) {
   )
 
   return {
-    joined, error, phase, roster, line, speaking, show, image, progress, segment, hands, called, mine, left,
+    joined, error, phase, roster, line, speaking, show, image, progress, segment, hands, called, mine, myQuestion, left,
     checkin, answered, choice, result, quiz, said, soundOn, removed, level, serverNow,
-    enableSound, raiseHand, lowerHand, ask, askAloud, choose,
+    enableSound, raiseHand, lowerHand, ask, choose,
   }
 }
 

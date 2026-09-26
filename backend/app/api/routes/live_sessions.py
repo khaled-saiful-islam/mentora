@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -20,7 +19,6 @@ from app.api.deps import (
     CurrentUser,
     LivePlanServiceDep,
     SessionDep,
-    SettingsDep,
     StreamUser,
     limit_generate,
     limit_upload,
@@ -371,48 +369,6 @@ async def my_session(session_id: UUID, user: CurrentUser, session: SessionDep) -
         if view.session.id == session_id:
             return session_summary(view)
     raise NotFoundError("No such live session.")
-
-
-@mine.get("/{session_id}/calendar.ics")
-async def calendar(
-    session_id: UUID, user: CurrentUser, session: SessionDep, settings: SettingsDep
-) -> Response:
-    live = await LiveSessionService(session).visible(user.id, session_id)
-    if live.scheduled_at is None:
-        raise ValidationError("This session has no time yet.")
-    body = _ics(live, settings.app_name)
-    headers = {"Content-Disposition": f'attachment; filename="live-lesson-{live.id}.ics"'}
-    return Response(body, media_type="text/calendar", headers=headers)
-
-
-def _ics(live: LiveSession, app_name: str) -> str:
-    start = live.scheduled_at.astimezone(UTC) if live.scheduled_at else datetime.now(UTC)
-    end = start + timedelta(minutes=int(live.settings.get("duration_minutes") or 15))
-    stamp = datetime.now(UTC)
-
-    def fmt(moment: datetime) -> str:
-        return moment.strftime("%Y%m%dT%H%M%SZ")
-
-    title = live.title.replace("\n", " ").replace(",", "\\,").replace(";", "\\;")
-    lines = [
-        "BEGIN:VCALENDAR",
-        "VERSION:2.0",
-        f"PRODID:-//{app_name}//Live lessons//EN",
-        "BEGIN:VEVENT",
-        f"UID:{live.id}@{app_name.lower()}",
-        f"DTSTAMP:{fmt(stamp)}",
-        f"DTSTART:{fmt(start)}",
-        f"DTEND:{fmt(end)}",
-        f"SUMMARY:Live lesson: {title}",
-        "BEGIN:VALARM",
-        "TRIGGER:-PT15M",
-        "ACTION:DISPLAY",
-        f"DESCRIPTION:{title} starts in 15 minutes",
-        "END:VALARM",
-        "END:VEVENT",
-        "END:VCALENDAR",
-    ]
-    return "\r\n".join(lines) + "\r\n"
 
 
 # --- streaming ----------------------------------------------------------------

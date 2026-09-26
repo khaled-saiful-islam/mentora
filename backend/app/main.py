@@ -36,6 +36,7 @@ from app.api.routes import (
     results,
     shares,
     teaching,
+    voice,
 )
 from app.core.config import deployment_warnings, get_settings
 from app.core.errors import MentoraError, RateLimitError
@@ -170,6 +171,7 @@ def create_app() -> FastAPI:
     app.include_router(shares.owner_router, prefix="/api")
     app.include_router(shares.public_router, prefix="/api")
     app.include_router(teaching.router, prefix="/api")
+    app.include_router(voice.router, prefix="/api")
     return app
 
 

@@ -161,6 +161,8 @@ class Settings(BaseSettings):
     # Hearing a student's spoken question (push-to-talk). ILMU hears English
     # and Malay well; it cannot yet hear Tamil.
     transcribe_model: str = "ilmu-asr-v4.2"
+    # Spoken clips turned into words, per person per minute.
+    rate_limit_transcribe_per_minute: int = 20
     # The clock that sends reminders and starts live lessons. Off in tests.
     live_scheduler_enabled: bool = True
 

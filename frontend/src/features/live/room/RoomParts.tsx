@@ -2,16 +2,16 @@
  * The pieces of the live room: classmates (seen, never messaged), the hand,
  * the quick check, and the end of the lesson.
  */
-import { CheckCircle, HandWaving, Microphone, PaperPlaneRight, Sparkle, SpeakerHigh, Trophy } from '@phosphor-icons/react'
+import { CheckCircle, HandWaving, PaperPlaneRight, Sparkle, SpeakerHigh, Trophy } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Button, Input } from '@/components/ui'
+import { Button } from '@/components/ui'
 import { Buddy } from '@/features/buddies'
 import { cn } from '@/lib/utils'
 import { celebrate, spring, useCalmMotion } from '@/motion'
 import type { RosterEntry, RoomEvent } from './api'
-import { usePushToTalk } from './usePushToTalk'
+import { VoiceInput } from '@/features/voice/VoiceInput'
 import type { MyHand } from './useRoom'
 
 /** Who is in the room, each as their buddy. Look, don't talk. */
@@ -64,138 +64,135 @@ export function HandControl({
   position,
   mode,
   calledName,
-  onRaise,
+  myQuestion,
+  onSend,
   onLower,
   onAsk,
-  onAskAloud,
 }: {
   mine: MyHand
   left: number
   position: number
   mode: 'anytime' | 'pauses'
   calledName: string | null
-  onRaise: () => void
+  myQuestion: string | null
+  /** Send a question — said or typed — into the queue. */
+  onSend: (question: string) => void
   onLower: () => void
+  /** The question from a student called on without one. */
   onAsk: (text: string) => void
-  onAskAloud: (wav: Blob) => Promise<void>
 }) {
   const calm = useCalmMotion()
   const [text, setText] = useState('')
-  const talk = usePushToTalk(onAskAloud)
+  const ready = text.trim().length > 1
 
   if (mine === 'called') {
     return (
-      <motion.form
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={spring.gentle}
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (text.trim().length > 1) onAsk(text.trim())
-        }}
-        className="space-y-2 rounded-3xl bg-sun-400/15 p-4 ring-2 ring-sun-400"
-      >
-        <p className="font-display text-lg font-bold text-sun-300">Astra is listening — ask your question</p>
-        <div className="flex flex-wrap items-center gap-4">
-          <motion.button
-            type="button"
-            aria-label="Hold to talk"
-            onPointerDown={(e) => {
-              e.currentTarget.setPointerCapture(e.pointerId)
-              void talk.start()
-            }}
-            onPointerUp={() => void talk.stop()}
-            onPointerCancel={() => void talk.stop()}
-            onKeyDown={(e) => {
-              if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) {
-                e.preventDefault()
-                void talk.start()
-              }
-            }}
-            onKeyUp={(e) => {
-              if (e.key === ' ' || e.key === 'Enter') void talk.stop()
-            }}
-            disabled={talk.state === 'sending'}
-            animate={{ scale: talk.state === 'listening' && !calm ? 1 + talk.level * 0.25 : 1 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-            className={cn(
-              'relative grid size-20 shrink-0 touch-none select-none place-items-center rounded-full font-bold shadow-lg',
-              talk.state === 'listening' ? 'bg-coral-400 text-white ring-8 ring-coral-400/30' : 'bg-sun-400 text-grape-900',
-            )}
-          >
-            <Microphone weight="fill" className="size-9" aria-hidden />
-          </motion.button>
-          <p className="min-w-[min(100%,12rem)] flex-1 text-sm font-semibold text-white/85">
-            {talk.state === 'listening'
-              ? 'Listening… let go when you finish.'
-              : talk.state === 'sending'
-                ? 'Sending your question to Astra…'
-                : talk.state === 'denied'
-                  ? 'Your microphone is off. Type your question below instead.'
-                  : 'Hold the button and say your question — or type it below.'}
-          </p>
-        </div>
-        <label htmlFor="room-question" className="sr-only">
-          Type your question
-        </label>
-        <div className="flex flex-wrap gap-2">
-          <Input
-            id="room-question"
-            autoFocus
-            value={text}
-            maxLength={400}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Type your question…"
-            className="min-w-[min(100%,14rem)] flex-1 bg-white text-foreground"
-          />
-          <Button type="submit" variant="sun" disabled={text.trim().length < 2}>
-            <PaperPlaneRight weight="fill" className="size-4" aria-hidden />
-            Ask
-          </Button>
-        </div>
-      </motion.form>
+      <QuestionBox
+        title="Astra is listening — ask your question"
+        text={text}
+        setText={setText}
+        onSubmit={() => ready && onAsk(text.trim())}
+        action="Ask"
+      />
     )
   }
   if (mine === 'asked') {
-    return <p className="rounded-3xl bg-white/10 p-4 text-center font-semibold">Astra is answering your question…</p>
+    return (
+      <div className="rounded-3xl bg-white/10 p-4 text-center">
+        <p className="font-display text-lg font-bold text-sun-300">Astra is answering your question</p>
+        {myQuestion && <p className="mt-1 break-words text-white/85">“{myQuestion}”</p>}
+      </div>
+    )
   }
   if (mine === 'up') {
     return (
-      <div className="flex flex-wrap items-center justify-center gap-3 rounded-3xl bg-white/10 p-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-3xl bg-white/10 p-4">
         <motion.span
           animate={calm ? undefined : { rotate: [0, 16, -8, 16, 0] }}
           transition={{ duration: 1.1, repeat: Infinity, repeatDelay: 0.5 }}
           style={{ originX: 0.7, originY: 0.9 }}
-          className="inline-flex"
+          className="inline-flex shrink-0"
         >
-          <HandWaving weight="fill" className="size-7 text-sun-300" aria-hidden />
+          <HandWaving weight="fill" className="size-8 text-sun-300" aria-hidden />
         </motion.span>
-        <span className="font-bold">
-          {position <= 1 ? "You're next!" : `You're ${ordinal(position)} in line.`}
-          {mode === 'pauses' && ' Astra takes hands at the end of each part.'}
-        </span>
+        <div className="min-w-[min(100%,14rem)] flex-1">
+          <p className="font-bold">
+            {position <= 1 ? "You're next — Astra will read your question out." : `You're ${ordinal(position)} in line.`}
+            {mode === 'pauses' && ' Questions are answered at the end of each part.'}
+          </p>
+          {myQuestion && <p className="mt-0.5 break-words text-sm text-white/80">“{myQuestion}”</p>}
+        </div>
         <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={onLower}>
-          Put my hand down
+          Take it back
         </Button>
       </div>
     )
   }
+  if (left <= 0) {
+    return <p className="rounded-3xl bg-white/10 p-4 text-center text-sm font-semibold text-white/85">You've asked all your questions for this lesson.</p>
+  }
   return (
-    <div className="flex flex-wrap items-center justify-center gap-3">
-      {calledName && <span className="text-sm font-semibold text-white/80">{calledName} is asking a question…</span>}
-      <motion.button
-        type="button"
-        onClick={onRaise}
-        disabled={left <= 0}
-        whileHover={{ y: -3 }}
-        whileTap={{ scale: 0.95 }}
-        className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 font-bold text-grape-900 shadow-lg disabled:opacity-50"
-      >
-        <HandWaving weight="fill" className="size-5 text-kind-live" aria-hidden />
-        {left > 0 ? 'Raise my hand' : 'No questions left'}
-      </motion.button>
-      {left > 0 && <span className="text-sm text-white/70">{left} question{left === 1 ? '' : 's'} left</span>}
-    </div>
+    <QuestionBox
+      title="Ask Astra a question"
+      hint={`Tap the mic and say it, or type it. ${left} question${left === 1 ? '' : 's'} left.${calledName ? ` (${calledName} is asking now.)` : ''}`}
+      text={text}
+      setText={setText}
+      onSubmit={() => {
+        if (!ready) return
+        onSend(text.trim())
+        setText('')
+      }}
+      action="Send"
+    />
+  )
+}
+
+function QuestionBox({
+  title,
+  hint,
+  text,
+  setText,
+  onSubmit,
+  action,
+}: {
+  title: string
+  hint?: string
+  text: string
+  setText: (t: string) => void
+  onSubmit: () => void
+  action: string
+}) {
+  const ready = text.trim().length > 1
+  return (
+    <motion.form
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={spring.gentle}
+      onSubmit={(e) => {
+        e.preventDefault()
+        onSubmit()
+      }}
+      className="space-y-2 rounded-3xl bg-white/10 p-4 ring-2 ring-white/20 focus-within:ring-sun-400"
+    >
+      <p className="font-display text-lg font-bold text-sun-300">{title}</p>
+      {hint && <p className="text-sm text-white/80">{hint}</p>}
+      <div className="flex flex-wrap items-start gap-2">
+        <VoiceInput
+          id="room-question"
+          label="Your question"
+          value={text}
+          onChange={setText}
+          placeholder="What would you like to ask?"
+          tone="dark"
+          onEnter={onSubmit}
+          className="min-w-[min(100%,16rem)] flex-1"
+        />
+        <Button type="submit" variant="sun" size="lg" disabled={!ready}>
+          <PaperPlaneRight weight="fill" className="size-4" aria-hidden />
+          {action}
+        </Button>
+      </div>
+    </motion.form>
   )
 }
 
@@ -228,6 +225,7 @@ export function CheckinCard({
   }, [result, choice, calm])
 
   const shown = checkin ?? null
+  const total = shown?.seconds ?? 20
   const [kept, setKept] = useState<string[]>([])
   useEffect(() => {
     if (checkin) setKept(checkin.options)
@@ -243,11 +241,26 @@ export function CheckinCard({
       className="rounded-3xl bg-white p-5 text-grape-900 shadow-xl"
       aria-label="Quick check"
     >
-      <p className="mb-1 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-kind-live">
-        <Sparkle weight="fill" className="size-3.5" aria-hidden />
-        Quick check {shown && `· ${secondsLeft}s`}
-      </p>
-      {shown && <h3 className="mb-3 break-words font-display text-xl font-bold">{shown.question}</h3>}
+      <div className="mb-2 flex items-center gap-3">
+        <p className="inline-flex shrink-0 items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-kind-live">
+          <Sparkle weight="fill" className="size-3.5" aria-hidden />
+          Quick check
+        </p>
+        {shown && (
+          <>
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted" role="timer" aria-label={`${secondsLeft} seconds left`}>
+              <motion.div
+                className={cn('h-full rounded-full', secondsLeft <= 5 ? 'bg-coral-400' : 'bg-kind-live-vivid')}
+                initial={false}
+                animate={{ width: `${(secondsLeft / total) * 100}%` }}
+                transition={{ duration: 0.5, ease: 'linear' }}
+              />
+            </div>
+            <span className="w-8 shrink-0 text-right text-sm font-bold tabular-nums">{secondsLeft}s</span>
+          </>
+        )}
+      </div>
+      {shown && <h3 className={cn('mb-3 break-words font-display font-bold leading-snug', total <= 15 ? 'text-base' : 'text-lg')}>{shown.question}</h3>}
       {shown && (
         <div className="grid gap-2 sm:grid-cols-2">
           {options.map((option, i) => (
@@ -258,7 +271,7 @@ export function CheckinCard({
               onClick={() => onChoose(i)}
               whileTap={{ scale: 0.97 }}
               className={cn(
-                'break-words rounded-2xl border-2 px-3 py-2.5 text-left font-bold transition-colors',
+                'break-words rounded-2xl border-2 px-3 py-2 text-left text-sm font-bold transition-colors',
                 choice === i ? 'border-kind-live-vivid bg-kind-live-vivid text-white' : 'border-border hover:border-kind-live-vivid',
               )}
             >

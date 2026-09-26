@@ -86,6 +86,13 @@ class Answerer:
             yield _bridge()
         yield {"type": "done"}
 
+    async def screen(self, question: str) -> str | None:
+        """The question as it may be said in the room, or None if it may not."""
+        screening = await self._gate.check_input(question)
+        if screening.decision in KEEP_OUT:
+            return None
+        return speakable(screening.text)
+
     async def warm(self, *, topic: str, grade: Grade | None, taught: list[str]) -> None:
         """Send the answer's prompt ahead, while a hand is up, so the real question
         meets a warm model. Measured on ILMU: a cold question waited about three
