@@ -234,7 +234,7 @@ async def _sentences(events: AsyncIterator[Any]) -> AsyncIterator[str]:
 
 
 def _bridge() -> dict[str, Any]:
-    return {"type": "sentence", "text": "Okay, let's get back to where we were.", "last": True}
+    return {"type": "sentence", "text": "So, let's go back to where we were.", "last": True}
 
 
 def _text(value: Any, fallback: str) -> str:

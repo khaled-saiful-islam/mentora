@@ -144,14 +144,16 @@ class Settings(BaseSettings):
     speech_model: str = "ilmu-tts-v2.1"
     speech_base_url: str = ""
     speech_api_key: str = ""
-    speech_voice: str = "fable"
-    # 1.0 is a newsreader's pace, near 190 words a minute. A teacher talking to
-    # a class is nearer 150, which is what 0.85 gives.
-    speech_speed: float = 0.85
+    # A calm, warm female storyteller (see VOICE_NOTES in providers/speech.py).
+    speech_voice: str = "voice_1"
+    # The slowest ILMU allows. voice_1 still says about 195 words a minute at
+    # it, so calm comes from recording sentence by sentence with a gap between
+    # (live/beats.py), which brings a lesson to storybook pace.
+    speech_speed: float = 0.8
     speech_timeout_seconds: float = 30.0
     # What the voice lab offers to compare, comma-separated.
-    speech_voices: str = "alloy,echo,fable,onyx,nova,shimmer"
-    speech_models: str = "ilmu-tts-v2.1,ilmu-tts-v2"
+    speech_voices: str = "voice_1,voice_4"
+    speech_models: str = "ilmu-tts-v2.1"
     # Recorded beats. A cache: anything in it can be made again.
     live_audio_dir: str = ".cache/live-audio"
     # Clips per person per minute. A lesson preview asks for a dozen at once.

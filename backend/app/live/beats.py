@@ -18,14 +18,18 @@ from typing import Any
 
 from app.live.speakable import speakable
 
-# Seconds of silence after a beat, by name.
-PAUSES: dict[str, float] = {"short": 0.3, "breath": 0.6, "think": 1.5}
+# Seconds of silence after a beat, by name. Generous: a calm storyteller lets
+# things land.
+PAUSES: dict[str, float] = {"short": 0.35, "breath": 0.8, "think": 1.8}
 DEFAULT_PAUSE = "breath"
+# Each sentence is recorded on its own and followed by this much quiet. It is
+# where the calm comes from: the voice itself cannot go slower than it does.
+SENTENCE_GAP = 0.45
 
 MAX_SENTENCES = 4
 MAX_WORDS = 60
-# A teacher talking to a class, which is what `speech_speed` is tuned to.
-WORDS_PER_MINUTE = 150
+# The default voice at the default speed, measured (voice_1 at 0.8).
+WORDS_PER_MINUTE = 195
 
 # A sentence ends at . ! ? or … followed by a space and something that starts
 # a sentence. "Mr. Tan" and "3.5" do not end one.
@@ -49,8 +53,20 @@ class Beat:
     def words(self) -> int:
         return len(self.say.split())
 
+    @property
+    def sentences(self) -> list[str]:
+        return sentences(self.say)
+
     def as_dict(self) -> dict[str, Any]:
-        return {"id": self.id, "say": self.say, "show": self.show, "pause": self.pause}
+        return {
+            "id": self.id,
+            "say": self.say,
+            "show": self.show,
+            "pause": self.pause,
+            # Recorded one by one, so a raised hand waits only for the sentence
+            # being said, and each caption line is one sentence.
+            "sentences": self.sentences,
+        }
 
 
 def sentences(text: str) -> list[str]:
@@ -94,7 +110,8 @@ def beats_from(raw: list[Any], *, prefix: str = "b") -> list[Beat]:
 
 def spoken_seconds(beats: list[Beat]) -> float:
     words = sum(beat.words for beat in beats)
-    return words / WORDS_PER_MINUTE * 60 + sum(PAUSES[beat.pause] for beat in beats)
+    gaps = sum(max(0, len(beat.sentences) - 1) for beat in beats) * SENTENCE_GAP
+    return words / WORDS_PER_MINUTE * 60 + gaps + sum(PAUSES[beat.pause] for beat in beats)
 
 
 def _chunks(parts: list[str]) -> list[tuple[str, bool]]:

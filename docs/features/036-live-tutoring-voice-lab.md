@@ -34,6 +34,24 @@ only) is where that is judged, using the same pieces a live session will use:
 OpenAI-style `/audio/speech` adapter. ILMU serves it at the chat base URL with
 the same key, so there is nothing new to configure.
 
+**A calm, female storyteller** (asked for on 2026-09-26). ILMU has five voices
+(`VOICE_NOTES`); the lab offers the two female ones, `voice_1` (warm, the
+default) and `voice_4` (brighter). The OpenAI names are aliases — `nova` *is*
+`voice_1`. Measured facts that shaped the pace:
+
+- only `ilmu-tts-v2.1` honours `speed`; `ilmu-tts-v2` ignores it;
+- ILMU accepts 0.8–1.2 (0.79 and 1.25 are refused), and `voice_1` still says
+  about 195 words a minute at 0.8;
+- ellipses barely slow it (195 → 185) — so calm cannot come from the voice.
+
+It comes from the recording: **each sentence is its own clip**, followed by a
+0.45 s gap (a question put to the room gets 0.8 s before its answer), and beats
+end on longer pauses (`breath` 0.8 s, `think` 1.8 s). Measured in the browser,
+a lesson plays at about **150 words a minute** — storybook pace. It also means a
+raised hand waits only for the sentence being said. The script is written as
+gentle storytelling: a character, a place, something that happens; at most one
+exclamation mark a beat (checked); no "settle down, class".
+
 **Answers feel live.** The instant a hand is taken, a line pre-written per
 student plays ("Okay, Aina, over to you."; then "Great thinking, Aina.").
 While the hand is up the page calls `/live/voice-lab/warm`, which streams the
@@ -86,7 +104,10 @@ All under `/api/live`, `run_live_sessions` capability (teachers, admins).
 ## Known limits
 
 - **Word timings are estimated**, not measured: the voice returns none. Close
-  within a beat, exact at every beat's start.
+  within a sentence, exact at every sentence's start.
+- **Sentences are recorded separately**, so the voice's tune resets at each
+  full stop. That is where a person's does too; a vendor with stitching
+  (`previous_text`) would smooth it further.
 - **The lesson takes 15–35 s to write** (one call, sometimes a repair). A live
   session's plan is made in advance and approved, so this is a preview cost.
 - **The audio cache is inside the container** (`.cache/live-audio`) and is lost

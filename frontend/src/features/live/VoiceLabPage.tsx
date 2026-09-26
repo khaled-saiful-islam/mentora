@@ -25,8 +25,12 @@ const QUESTIONS = [
   'What happens if a plant gets no sunlight?',
 ]
 
-// A teacher's pace is about 150 words a minute at 0.85.
-const WORDS_PER_MINUTE_AT_ONE = 176
+// ILMU's slowest is 0.8, which with the gaps between sentences is storybook pace.
+function paceOf(speed: number): string {
+  if (speed <= 0.85) return 'Calm, like a story'
+  if (speed <= 1.0) return 'Natural'
+  return 'Brisk'
+}
 
 export default function VoiceLabPage() {
   const [offer, setOffer] = useState<VoiceOffer | null>(null)
@@ -34,7 +38,7 @@ export default function VoiceLabPage() {
   const [topic, setTopic] = useState('photosynthesis')
   const [grade, setGrade] = useState<string>('year_5')
   const [names, setNames] = useState('Aina, Hafiz, Mei')
-  const lab = useVoiceLab(choice ?? { voice: 'fable', model: 'ilmu-tts-v2.1', speed: 0.85 })
+  const lab = useVoiceLab(choice ?? { voice: 'voice_1', model: 'ilmu-tts-v2.1', speed: 0.8 })
   const students = useMemo(() => names.split(',').map((n) => n.trim()).filter(Boolean).slice(0, 8), [names])
 
   useEffect(() => {
@@ -231,12 +235,11 @@ function VoiceCard({
   onChange: (next: VoiceChoice) => void
   disabled: boolean
 }) {
-  const wpm = Math.round(WORDS_PER_MINUTE_AT_ONE * choice.speed)
   return (
     <Card className="space-y-4 p-5">
       <div>
         <h2 className="font-display text-xl font-semibold">The voice</h2>
-        <p className="text-sm text-muted-foreground">Change it, then play the same lesson again to compare.</p>
+        <p className="text-sm text-muted-foreground">A calm, warm storyteller. Change it, then play the same lesson again to compare.</p>
       </div>
       <div role="radiogroup" aria-label="Voice" className="flex flex-wrap gap-2">
         {offer.voices.map((voice) => (
@@ -248,16 +251,17 @@ function VoiceCard({
             disabled={disabled}
             onClick={() => onChange({ ...choice, voice })}
             className={cn(
-              'rounded-full border-2 px-3 py-1.5 text-sm font-bold capitalize transition-colors disabled:opacity-50',
+              'rounded-full border-2 px-3 py-1.5 text-sm font-bold transition-colors disabled:opacity-50',
               choice.voice === voice
                 ? 'border-kind-live-vivid bg-kind-live-vivid text-white'
                 : 'border-border bg-surface hover:border-kind-live-vivid',
             )}
           >
-            {voice}
+            {offer.labels[voice] ?? voice}
           </button>
         ))}
       </div>
+      {offer.models.length > 1 && (
       <Field label="Voice model" htmlFor="lab-model">
         <select
           id="lab-model"
@@ -273,7 +277,8 @@ function VoiceCard({
           ))}
         </select>
       </Field>
-      <Field label={`Pace — about ${wpm} words a minute`} htmlFor="lab-speed" hint="A teacher talking to a class is near 150.">
+      )}
+      <Field label={`Pace — ${paceOf(choice.speed)}`} htmlFor="lab-speed" hint="Each sentence gets a gentle pause after it.">
         <input
           id="lab-speed"
           type="range"

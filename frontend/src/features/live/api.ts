@@ -8,6 +8,8 @@ export interface Beat {
   say: string
   show: string | null
   pause: Pause
+  /** Recorded one by one, with a gentle gap after each. */
+  sentences: string[]
 }
 
 export interface StudentLines {
@@ -27,6 +29,8 @@ export interface Lesson {
 
 export interface VoiceOffer {
   voices: string[]
+  /** What each voice sounds like, e.g. "Warm female voice". */
+  labels: Record<string, string>
   models: string[]
   voice: string
   model: string

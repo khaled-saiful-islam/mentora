@@ -4,8 +4,12 @@
  * human can be tested without a sound card.
  */
 
-/** Seconds of silence after a clip, by name. `join` runs sentences of one answer together. */
-export const PAUSE_SECONDS = { join: 0.12, short: 0.3, breath: 0.6, think: 1.5 } as const
+/**
+ * Seconds of silence after a clip, by name — the same as the server's
+ * (`live/beats.py`). Each sentence is its own clip, and the `sentence` gap
+ * after it is where a calm storyteller's pace comes from.
+ */
+export const PAUSE_SECONDS = { join: 0.12, sentence: 0.45, short: 0.35, breath: 0.8, think: 1.8 } as const
 export type Silence = keyof typeof PAUSE_SECONDS
 
 /** How far ahead of "now" a clip is scheduled, so it never starts late with a click. */

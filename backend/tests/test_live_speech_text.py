@@ -5,7 +5,14 @@ from __future__ import annotations
 
 import pytest
 
-from app.live.beats import PAUSES, beats_from, sentences, spoken_seconds
+from app.live.beats import (
+    PAUSES,
+    SENTENCE_GAP,
+    WORDS_PER_MINUTE,
+    beats_from,
+    sentences,
+    spoken_seconds,
+)
 from app.live.sentences import SentenceStream
 from app.live.speakability import problems
 from app.live.speakable import speakable
@@ -84,8 +91,25 @@ def test_empty_and_malformed_beats_are_dropped_and_symbols_spoken() -> None:
 def test_spoken_time_counts_words_at_a_teachers_pace_and_the_pauses() -> None:
     sentence = "Word " + " ".join(["word"] * 49) + "."
     beats = beats_from([{"say": " ".join([sentence] * 3), "pause": "think"}])
-    # 150 words at 150 a minute is a minute, plus the pauses between beats.
-    assert spoken_seconds(beats) == pytest.approx(60 + PAUSES["think"] + 2 * PAUSES["short"])
+    # Words at the voice's pace, the pauses between beats, and nothing between
+    # sentences here because each beat is a single sentence.
+    assert spoken_seconds(beats) == pytest.approx(
+        150 / WORDS_PER_MINUTE * 60 + PAUSES["think"] + 2 * PAUSES["short"]
+    )
+
+
+def test_sentences_within_a_beat_each_leave_a_gap_and_are_listed_for_recording() -> None:
+    [beat] = beats_from([{"say": "One idea. Another idea. A third idea.", "pause": "breath"}])
+    assert beat.as_dict()["sentences"] == ["One idea.", "Another idea.", "A third idea."]
+    words = 7 / WORDS_PER_MINUTE * 60
+    assert spoken_seconds([beat]) == pytest.approx(words + 2 * SENTENCE_GAP + PAUSES["breath"])
+
+
+def test_a_storyteller_is_calm_not_shouting() -> None:
+    beats = beats_from([{"say": "Wow! Amazing! Okay everyone, settle down."}])
+    found = problems(beats)
+    assert any("calm storyteller" in p for p in found)
+    assert any("settle down" in p for p in found)
 
 
 def test_a_script_that_sounds_written_is_caught() -> None:

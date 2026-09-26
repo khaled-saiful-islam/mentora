@@ -34,6 +34,11 @@ export interface Said {
   text: string
 }
 
+/** A question put to the room mid-beat gets a breath before its answer. */
+function gapAfter(sentence: string): Silence {
+  return /\?["')]*$/.test(sentence.trim()) ? 'breath' : 'sentence'
+}
+
 // After an answer, a breath before the lesson carries on.
 const RESUME_AFTER_MS = 650
 
@@ -115,7 +120,8 @@ export function useVoiceLab(choice: VoiceChoice) {
     setLine({ key: c.id, text: c.text, start: heard.start, duration: heard.duration, speaker: 'tutor' })
     setSaid((all) => [...all, { id: c.id, speaker: 'tutor', text: c.text }])
     if (c.lane === 'lesson') {
-      const index = s.current.lesson?.beats.findIndex((b) => b.id === c.id) ?? -1
+      const beatId = c.id.split('.')[0]
+      const index = s.current.lesson?.beats.findIndex((b) => b.id === beatId) ?? -1
       if (index >= 0) {
         s.current.beat = index
         setBeat(index)
@@ -213,9 +219,14 @@ export function useVoiceLab(choice: VoiceChoice) {
       onError: () => setError('A part of the lesson could not be voiced. Carrying on.'),
     })
     move('teaching')
-    const beats = made.beats.map((b) => clip(b.id, b.say, 'lesson', b.pause))
-    const recap = made.recap ? [clip('recap', made.recap, 'lesson', 'breath')] : []
-    s.current.queue.add(...beats, ...recap)
+    // One clip per sentence: the gap after each is what makes the pace calm,
+    // and a raised hand waits only for the sentence being said.
+    const spoken = made.beats.flatMap((b) => {
+      const parts = b.sentences.length ? b.sentences : [b.say]
+      return parts.map((text, i) => clip(`${b.id}.${i}`, text, 'lesson', i < parts.length - 1 ? gapAfter(text) : b.pause))
+    })
+    const recap = made.recap ? [clip('recap.0', made.recap, 'lesson', 'breath')] : []
+    s.current.queue.add(...spoken, ...recap)
   }, [stopAll, clearScreen, onStart, onEnd, onIdle, move, clip])
 
   const pause = useCallback(async () => {
@@ -267,7 +278,7 @@ export function useVoiceLab(choice: VoiceChoice) {
         for await (const event of events) {
           if (event.type === 'done') break
           s.current.answer = { ...s.current.answer, pending: s.current.answer.pending + 1 }
-          queue.add(clip(nextId('ans'), event.text, 'tutor', 'join'))
+          queue.add(clip(nextId('ans'), event.text, 'tutor', 'sentence'))
         }
       } catch {
         setError('The tutor could not answer just now.')

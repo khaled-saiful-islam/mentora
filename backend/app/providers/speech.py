@@ -18,10 +18,21 @@ from app.core.config import Settings
 
 logger = logging.getLogger(__name__)
 
-# Beyond these the voice stops sounding like a person: slurred below, a
-# chipmunk above.
-MIN_SPEED = 0.6
-MAX_SPEED = 1.3
+# What ILMU accepts, measured: 0.79 and 1.25 are refused with a 422. Only
+# `ilmu-tts-v2.1` honours speed at all; `ilmu-tts-v2` ignores it.
+MIN_SPEED = 0.8
+MAX_SPEED = 1.2
+
+# ILMU's five voices (docs.ilmu.ai, text-to-speech), by the id it takes. The
+# OpenAI names are aliases: nova, coral and sage are voice_1; shimmer and marin
+# are voice_4; alloy and echo are voice_2; fable is voice_3; onyx is voice_5.
+VOICE_NOTES: dict[str, str] = {
+    "voice_1": "Warm female voice",
+    "voice_4": "Bright female voice",
+    "voice_2": "Male voice",
+    "voice_3": "Male voice, higher",
+    "voice_5": "Male voice, deeper",
+}
 
 
 @dataclass(frozen=True, slots=True)

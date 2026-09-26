@@ -25,6 +25,8 @@ _AS_IF_ANSWERED = re.compile(
     re.I,
 )
 _STIFF = (
+    "settle down",
+    "alright, class",
     "in this lesson, we will",
     "in this segment",
     "in conclusion",
@@ -52,6 +54,11 @@ def problems(
         if _UNSAYABLE.search(beat.say):
             found.append(
                 f"Has symbols a voice cannot say — write them as words: “{_clip(beat.say)}”"
+            )
+        if beat.say.count("!") > 1:
+            found.append(
+                f"Too excited for a calm storyteller — keep it gentle, one “!” at most: "
+                f"“{_clip(beat.say, 60)}”"
             )
         lowered = beat.say.lower()
         for phrase in _STIFF:

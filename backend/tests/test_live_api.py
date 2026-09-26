@@ -61,8 +61,9 @@ async def test_a_teacher_sees_the_voices_on_offer(live, teacher) -> None:
     async with live(teacher) as c:
         offered = (await c.get("/api/live/voices")).json()
     assert offered["voice"] in offered["voices"]
+    assert offered["labels"][offered["voice"]].endswith("female voice")
     assert offered["model"] in offered["models"]
-    assert offered["min_speed"] < offered["speed"] < offered["max_speed"]
+    assert offered["min_speed"] <= offered["speed"] < offered["max_speed"]
 
 
 async def test_a_teacher_gets_a_spoken_lesson_and_lines_for_each_student(live, teacher) -> None:
@@ -102,11 +103,11 @@ async def test_a_lesson_the_model_could_not_write_is_a_plain_error(live, teacher
 async def test_speech_comes_back_as_audio_in_the_voice_asked_for(live, teacher) -> None:
     async with live(teacher) as c:
         response = await c.post(
-            "/api/live/speech", json={"text": "Water is H₂O.", "voice": "nova", "speed": 0.9}
+            "/api/live/speech", json={"text": "Water is H₂O.", "voice": "voice_4", "speed": 0.9}
         )
     assert response.status_code == 200
     assert response.headers["content-type"] == "audio/mpeg"
-    assert response.content == b"nova:Water is H two O."
+    assert response.content == b"voice_4:Water is H two O."
 
 
 @pytest.mark.parametrize(
@@ -154,3 +155,12 @@ async def test_the_model_can_be_warmed_while_a_hand_is_up(live, teacher) -> None
     async with live(teacher) as c:
         response = await c.post("/api/live/voice-lab/warm", json={"topic": "rain"})
     assert response.status_code == 204
+
+
+async def test_lesson_lines_sent_back_are_bounded(live, teacher) -> None:
+    async with live(teacher) as c:
+        response = await c.post(
+            "/api/live/voice-lab/answer",
+            json={"question": "Why?", "student": "Aina", "topic": "rain", "taught": ["x" * 601]},
+        )
+    assert response.status_code == 422

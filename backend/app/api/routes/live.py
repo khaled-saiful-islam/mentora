@@ -6,16 +6,17 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Response
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, StringConstraints, field_validator
 from sse_starlette.sse import EventSourceResponse
 
 from app.api.deps import (
     NarratorDep,
     SettingsDep,
     VoiceLabDep,
+    limit_chat,
     limit_generate,
     limit_speech,
     require_capability,
@@ -24,7 +25,7 @@ from app.core.errors import UpstreamError, ValidationError
 from app.core.grades import Grade, grade_for, is_grade
 from app.learning.model import GenerationUnavailable
 from app.live.voice_lab import LessonUnavailable, lines_for
-from app.providers.speech import MAX_SPEED, MIN_SPEED, SpeechError
+from app.providers.speech import MAX_SPEED, MIN_SPEED, VOICE_NOTES, SpeechError
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,10 @@ MAX_STUDENTS = 8
 def _name(value: str) -> str:
     # First names only are ever spoken in a room.
     return " ".join(value.split())[:40].split(" ")[0]
+
+
+# One line of the lesson already said, sent back as the answer's context.
+Taught = Annotated[str, StringConstraints(max_length=600)]
 
 
 class LessonRequest(BaseModel):
@@ -72,13 +77,14 @@ class AnswerRequest(BaseModel):
     student: str = Field(min_length=1, max_length=40)
     topic: str = Field(min_length=2, max_length=160)
     grade_level: str | None = None
-    taught: list[str] = Field(default_factory=list, max_length=40)
+    taught: list[Taught] = Field(default_factory=list, max_length=40)
 
 
 @router.get("/voices")
 async def voices(settings: SettingsDep) -> dict[str, Any]:
     return {
         "voices": settings.speech_voice_list,
+        "labels": {v: VOICE_NOTES.get(v, v) for v in settings.speech_voice_list},
         "models": settings.speech_model_list,
         "voice": settings.speech_voice,
         "model": settings.speech_model,
@@ -128,7 +134,7 @@ async def speech(body: SpeechRequest, narrator: NarratorDep, settings: SettingsD
     )
 
 
-@router.post("/voice-lab/answer")
+@router.post("/voice-lab/answer", dependencies=[Depends(limit_chat)])
 async def answer(body: AnswerRequest, lab: VoiceLabDep) -> EventSourceResponse:
     events = lab.answer(
         question=body.question,
@@ -143,10 +149,10 @@ async def answer(body: AnswerRequest, lab: VoiceLabDep) -> EventSourceResponse:
 class WarmRequest(BaseModel):
     topic: str = Field(min_length=2, max_length=160)
     grade_level: str | None = None
-    taught: list[str] = Field(default_factory=list, max_length=40)
+    taught: list[Taught] = Field(default_factory=list, max_length=40)
 
 
-@router.post("/voice-lab/warm", status_code=204)
+@router.post("/voice-lab/warm", status_code=204, dependencies=[Depends(limit_chat)])
 async def warm(body: WarmRequest, lab: VoiceLabDep) -> Response:
     """Called the moment a hand goes up, so the answer starts quickly."""
     await lab.warm(topic=body.topic, grade=_grade(body.grade_level), taught=body.taught)

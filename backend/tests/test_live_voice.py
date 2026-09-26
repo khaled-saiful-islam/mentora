@@ -65,15 +65,15 @@ async def test_speech_is_asked_for_in_the_openai_shape_with_the_speed_kept_sane(
         seen["body"] = json.loads(request.content)
         return httpx.Response(200, content=b"ID3...", headers={"content-type": "audio/mpeg"})
 
-    speech = await _speech(handler).synthesize("Hello, class.", voice="fable", speed=9)
+    speech = await _speech(handler).synthesize("Hello, class.", voice="voice_1", speed=9)
     assert speech.audio == b"ID3..."
     assert seen["url"] == "https://voice.test/v1/audio/speech"
     assert seen["auth"] == "Bearer k"
     assert seen["body"] == {
         "model": "tts-model",
         "input": "Hello, class.",
-        "voice": "fable",
-        "speed": 1.3,
+        "voice": "voice_1",
+        "speed": 1.2,
         "response_format": "mp3",
     }
 
@@ -204,7 +204,7 @@ async def test_a_question_that_cannot_be_answered_in_the_room_is_redirected_kind
 
 async def test_a_model_failure_mid_answer_ends_on_a_bridge_not_silence() -> None:
     events = await _answer(_lab({}, fail="down"), "Why are leaves green?")
-    assert events[-2]["text"].startswith("Okay, let's get back")
+    assert events[-2]["text"].startswith("So, let's go back")
     assert events[-1] == {"type": "done"}
 
 
