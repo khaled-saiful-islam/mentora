@@ -124,5 +124,7 @@ THANKS = (
     "That's a thoughtful question, {name}.",
     "I'm glad you asked that, {name}.",
 )
+# When the student called on does not ask after all.
+LATER = "That's okay, {name}. Put your hand up again whenever you're ready."
 # When a question cannot be answered in the room. Never repeats the question.
 REDIRECT = "Thank you, {name}. That's one for another time, so let's carry on with our story."

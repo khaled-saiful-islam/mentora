@@ -22,10 +22,12 @@ from app.core.security import decode_access_token
 from app.db.models.user import User
 from app.db.repositories.users import SqlUserRepository
 from app.db.session import SessionFactory, session_scope
+from app.events.registry import build_bus
 from app.guards.registry import build_guards
 from app.learning.factory import build_generator, build_model, build_researcher
 from app.learning.model import Meter
 from app.learning.registry import build_learning_kinds
+from app.live.answering import Answerer
 from app.live.audio import AudioCache, Narrator
 from app.live.planner import LessonPlanner
 from app.live.voice_lab import VoiceLab
@@ -42,6 +44,9 @@ from app.services.cancellation import registry as cancellation_registry
 from app.services.chat_service import ChatService, TurnSettings
 from app.services.generation_service import GenerationService
 from app.services.live_plan_service import LivePlanService
+from app.services.live_quiz_service import LiveQuizService
+from app.services.live_room import rooms as live_rooms
+from app.services.live_runtime import LiveRuntime
 from app.services.quota import TokenQuota
 from app.services.rate_limit import Limit, RateLimiter
 from app.tools.registry import build_tools
@@ -370,6 +375,46 @@ def get_live_plan_service(settings: SettingsDep) -> LivePlanService:
 
 
 LivePlanServiceDep = Annotated[LivePlanService, Depends(get_live_plan_service)]
+
+
+def _live_answerer(grade_level: str | None) -> Answerer:
+    settings = get_settings()
+    chat = OpenAICompatibleProvider(
+        base_url=settings.resolved_learning_base_url,
+        api_key=settings.resolved_learning_api_key,
+        model=settings.resolved_learning_model,
+        timeout=settings.learning_timeout_seconds,
+    )
+    # A live question is a student's, so the whole student gate screens it.
+    gate = build_gate(settings, role="student", grade_level=grade_level, provider=chat)
+    return Answerer(chat, gate or ModerationGate())
+
+
+@lru_cache
+def live_runtime() -> LiveRuntime:
+    """One per process: the running lessons live in it."""
+    settings = get_settings()
+    quizzes = LiveQuizService(
+        session_maker=session_scope,
+        generation=lambda: get_generation_service(settings),
+        bus=build_bus,
+    )
+    return LiveRuntime(
+        settings=settings,
+        session_maker=session_scope,
+        narrator=_narrator(),
+        answerer=_live_answerer,
+        make_quiz=quizzes.make,
+        bus=build_bus,
+        rooms=live_rooms,
+    )
+
+
+def get_live_runtime() -> LiveRuntime:
+    return live_runtime()
+
+
+LiveRuntimeDep = Annotated[LiveRuntime, Depends(get_live_runtime)]
 
 
 async def limit_auth(request: Request, session: SessionDep, settings: SettingsDep) -> None:

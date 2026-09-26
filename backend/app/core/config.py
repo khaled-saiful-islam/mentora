@@ -158,6 +158,8 @@ class Settings(BaseSettings):
     live_audio_dir: str = ".cache/live-audio"
     # Clips per person per minute. A lesson preview asks for a dozen at once.
     rate_limit_speech_per_minute: int = 120
+    # The clock that sends reminders and starts live lessons. Off in tests.
+    live_scheduler_enabled: bool = True
 
     # ---- Artifacts -------------------------------------------------------
     # An artifact is one self-contained HTML document — a poster today, a deck

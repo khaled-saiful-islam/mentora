@@ -87,6 +87,7 @@ export default function App() {
           <Route path="/live/new" element={<Shell capability="run_live_sessions"><SetupPage /></Shell>} />
           <Route path="/live/:id" element={<Shell capability="run_live_sessions"><SessionPage /></Shell>} />
           <Route path="/live/:id/setup" element={<Shell capability="run_live_sessions"><SetupPage /></Shell>} />
+          <Route path="/live/:id/room" element={<Shell capability="run_live_sessions"><RoomPage teacherView /></Shell>} />
           <Route path="/schedule" element={<Shell capability="join_live_sessions"><SchedulePage /></Shell>} />
           <Route path="/room/:id" element={<Shell capability="join_live_sessions"><RoomPage /></Shell>} />
           <Route path="/buddy" element={<Shell><BuddyPage /></Shell>} />

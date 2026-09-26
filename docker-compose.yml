@@ -34,6 +34,9 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-mentora}:${POSTGRES_PASSWORD:-mentora}@db:5432/${POSTGRES_DB:-mentora}
     env_file:
       - .env
+    volumes:
+      # Astra's recorded voice: every lesson's clips, kept across rebuilds.
+      - mentora-live-audio:/srv/.cache/live-audio
     ports:
       - "${API_PORT:-8301}:8000"
     healthcheck:
@@ -56,3 +59,4 @@ services:
 
 volumes:
   mentora-db:
+  mentora-live-audio:

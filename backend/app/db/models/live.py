@@ -145,3 +145,78 @@ class LiveSessionTemplate(Base):
     updated_at: Mapped[datetime] = updated_at()
 
     __table_args__ = (Index("ix_live_session_templates_teacher", "teacher_id"),)
+
+
+class LiveParticipant(Base):
+    """A student in the room: when they first came, when last seen, how long."""
+
+    __tablename__ = "live_participants"
+
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("live_sessions.id", ondelete="CASCADE"), primary_key=True
+    )
+    student_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    first_joined_at: Mapped[datetime] = created_at()
+    last_seen_at: Mapped[datetime] = created_at()
+    seconds_present: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # Taken out of the room by the teacher; they cannot come back in.
+    removed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class LiveHand(Base):
+    """A raised hand, and what became of it."""
+
+    __tablename__ = "live_hands"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    session_id: Mapped[uuid.UUID] = _fk("live_sessions.id")
+    student_id: Mapped[uuid.UUID] = _fk("users.id")
+    # queued · called · answered · redirected · dismissed · lowered · missed
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="queued")
+    via: Mapped[str] = mapped_column(String(8), nullable=False, default="text")
+    question: Mapped[str | None] = mapped_column(Text)
+    answer: Mapped[str | None] = mapped_column(Text)
+    raised_at: Mapped[datetime] = created_at()
+    called_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    answered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (Index("ix_live_hands_session", "session_id", "raised_at"),)
+
+
+class LiveTranscriptLine(Base):
+    """What was said, in order: the tutor's sentences and students' questions."""
+
+    __tablename__ = "live_transcript"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    session_id: Mapped[uuid.UUID] = _fk("live_sessions.id")
+    seq: Mapped[int] = mapped_column(Integer, nullable=False)
+    # tutor · student · system
+    speaker: Mapped[str] = mapped_column(String(8), nullable=False)
+    student_id: Mapped[uuid.UUID | None] = _fk("users.id", ondelete="SET NULL", nullable=True)
+    segment_id: Mapped[uuid.UUID | None] = _fk(
+        "live_segments.id", ondelete="SET NULL", nullable=True
+    )
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    at: Mapped[datetime] = created_at()
+
+    __table_args__ = (Index("ix_live_transcript_session", "session_id", "seq"),)
+
+
+class LiveCheckinAnswer(Base):
+    """One student's answer to a quick check."""
+
+    __tablename__ = "live_checkin_answers"
+
+    segment_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("live_segments.id", ondelete="CASCADE"), primary_key=True
+    )
+    student_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    session_id: Mapped[uuid.UUID] = _fk("live_sessions.id")
+    choice: Mapped[int] = mapped_column(Integer, nullable=False)
+    correct: Mapped[bool] = mapped_column(nullable=False)
+    answered_at: Mapped[datetime] = created_at()

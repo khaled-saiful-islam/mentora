@@ -15,7 +15,7 @@ import { countdown, joinOpen, whenLabel } from './when'
 const TONES: Partial<Record<SessionSummary['status'], string>> = {
   scheduled: 'bg-kind-live-vivid text-white',
   lobby: 'bg-sun-400 text-grape-900',
-  live: 'bg-coral-500 text-white',
+  live: 'bg-coral-400 text-white',
   failed: 'bg-destructive/15 text-destructive',
   cancelled: 'bg-muted text-muted-foreground',
   ended: 'bg-mint-100 text-mint-700 dark:bg-mint-700/30 dark:text-mint-100',

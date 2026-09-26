@@ -27,6 +27,7 @@ from app.api.routes import (
     invites,
     learning,
     live,
+    live_rooms,
     live_sessions,
     me,
     memories,
@@ -54,8 +55,15 @@ async def lifespan(app: FastAPI):
         settings.llm_base_url,
     )
     _check_deployment_safety()
+    live_clock = _start_live_clock()
 
     yield
+
+    if live_clock is not None:
+        live_clock.cancel()
+    from app.api.deps import live_runtime
+
+    await live_runtime().close_all()
 
     # A turn now outlives the request that asked for it, so something has to
     # end it: otherwise a reload leaves the model being polled for an answer
@@ -71,6 +79,21 @@ async def lifespan(app: FastAPI):
     # leak one per restart.
     await close_renderer()
     await engine.dispose()
+
+
+def _start_live_clock():
+    """Reminders, the room opening, and live lessons starting on time."""
+    if not settings.live_scheduler_enabled:
+        return None
+    import asyncio
+
+    from app.api.deps import live_runtime
+    from app.db.session import session_scope
+    from app.events.registry import build_bus
+    from app.services.live_scheduler import LiveScheduler
+
+    clock = LiveScheduler(runtime=live_runtime(), session_maker=session_scope, bus=build_bus)
+    return asyncio.create_task(clock.run(), name="live-clock")
 
 
 def _check_deployment_safety() -> None:
@@ -112,11 +135,7 @@ def create_app() -> FastAPI:
     async def handle_mentora_error(_: Request, exc: MentoraError) -> JSONResponse:
         # Retry-After is the only header any of these carry, and it is the
         # difference between a client backing off and a client hammering.
-        headers = (
-            {"Retry-After": str(exc.retry_after)}
-            if isinstance(exc, RateLimitError)
-            else None
-        )
+        headers = {"Retry-After": str(exc.retry_after)} if isinstance(exc, RateLimitError) else None
         return JSONResponse(
             status_code=exc.status_code,
             content={"error": {"code": exc.code, "message": exc.message}},
@@ -141,6 +160,8 @@ def create_app() -> FastAPI:
     app.include_router(live_sessions.router, prefix="/api")
     app.include_router(live_sessions.templates, prefix="/api")
     app.include_router(live_sessions.mine, prefix="/api")
+    app.include_router(live_rooms.router, prefix="/api")
+    app.include_router(live_rooms.control, prefix="/api")
     app.include_router(me.router, prefix="/api")
     app.include_router(memories.router, prefix="/api")
     app.include_router(notifications.router, prefix="/api")

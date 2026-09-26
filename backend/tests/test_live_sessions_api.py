@@ -224,11 +224,10 @@ async def test_scheduling_puts_it_on_the_groups_schedule_only(
         assert (await c.get("/api/me/live-sessions")).json()["upcoming"] == []
         assert (await c.get(f"/api/me/live-sessions/{made['id']}/calendar.ics")).status_code == 404
 
-    notes = (
-        (await session.execute(select(Notification).where(Notification.type == "live_scheduled")))
-        .scalars()
-        .all()
-    )
+    # Only this test's students: the database is shared with other test data.
+    mine_only = Notification.user_id.in_([inside.id, outside.id])
+    query = select(Notification).where(Notification.type == "live_scheduled", mine_only)
+    notes = (await session.execute(query)).scalars().all()
     assert [n.user_id for n in notes] == [inside.id]
     assert notes[0].payload["title"] == "photosynthesis"
 

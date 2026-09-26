@@ -61,6 +61,10 @@ class Narrator:
         self._cache = cache
         self._recording: dict[str, asyncio.Task[bytes]] = {}
 
+    def cached(self, key: str) -> bytes | None:
+        """A clip already recorded, by its key — what a room serves."""
+        return self._cache.get(key)
+
     async def speak(self, text: str, *, model: str, voice: str, speed: float) -> bytes:
         said = speakable(text)
         key = clip_key(model=model, voice=voice, speed=speed, text=said)

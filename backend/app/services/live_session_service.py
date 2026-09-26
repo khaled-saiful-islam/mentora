@@ -30,6 +30,7 @@ from app.db.repositories.classes import ClassRepository, GroupRepository
 from app.events.bus import EventBus
 from app.events.catalog import LiveSessionCancelled, LiveSessionScheduled
 from app.live.settings import SessionSettings
+from app.live.timeline import already_told
 
 # Settings that change what the lesson says; editing one means writing it again.
 PLAN_FIELDS = (
@@ -47,6 +48,7 @@ SCHEDULABLE = ("approved", "scheduled")
 # Far enough ahead for a real class, near enough to be a real plan.
 MAX_AHEAD = timedelta(days=120)
 MAX_DOCUMENTS = 5
+START_NOW_GRACE = timedelta(minutes=2)
 
 
 @dataclass(frozen=True, slots=True)
@@ -251,7 +253,8 @@ class LiveSessionService:
         if live.status not in SCHEDULABLE:
             raise ValidationError("Approve the lesson before scheduling it.")
         now = datetime.now(UTC)
-        when = at or now
+        # "Start now" gives the group a couple of minutes to come in.
+        when = at or now + START_NOW_GRACE
         if when.tzinfo is None:
             raise ValidationError("Give the start time with its time zone.")
         if when < now - timedelta(minutes=1):
@@ -261,8 +264,9 @@ class LiveSessionService:
         moved = live.status == "scheduled" and live.scheduled_at is not None
         live.scheduled_at = when
         live.status = "scheduled"
-        # Moving it means the reminders are due again for the new time.
-        live.reminders_sent = []
+        # Moving it means the reminders are due again for the new time — except
+        # any the new time makes pointless.
+        live.reminders_sent = already_told(when, now)
         await self._session.flush()
         await self._announce_scheduled(teacher, live, moved=moved)
         return live

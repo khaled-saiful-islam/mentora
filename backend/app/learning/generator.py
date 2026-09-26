@@ -56,6 +56,12 @@ class GenerationRequest:
     grade_level: str | None = None
     count: int = 10
     language: str = "en"
+    # Given sources, used instead of searching — a live lesson's own
+    # transcript and the teacher's files, which is what its quiz must test.
+    sources: tuple[Source, ...] = ()
+    # Given skills as (slug, label), used instead of mapping them — so a
+    # quiz's results land under the parts the teacher named.
+    skills: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -158,12 +164,16 @@ class LearningGenerator:
         yield Stage("check", "done", "Checking the topic", plan.topic)
 
         yield Stage("research", "running", "Searching trusted sources")
-        sources = await self._research(request, plan)
+        sources = list(request.sources) or await self._research(request, plan)
         yield SourcesFound(tuple(sources))
         yield Stage("research", "done", "Searching trusted sources", _found(sources))
 
         yield Stage("skills", "running", "Mapping the skills")
-        skills = await self._skills(plan, sources)
+        skills = (
+            tuple(Skill(slug, label) for slug, label in request.skills)
+            if request.skills
+            else await self._skills(plan, sources)
+        )
         yield SkillsMapped(skills)
         yield Stage("skills", "done", "Mapping the skills", ", ".join(s.label for s in skills))
 

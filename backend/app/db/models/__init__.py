@@ -27,10 +27,14 @@ from app.db.models.learning import (
     LearningSetVersion,
 )
 from app.db.models.live import (
+    LiveCheckinAnswer,
+    LiveHand,
+    LiveParticipant,
     LiveSegment,
     LiveSession,
     LiveSessionDocument,
     LiveSessionTemplate,
+    LiveTranscriptLine,
 )
 from app.db.models.memory import Memory
 from app.db.models.moderation import ModerationEvent
@@ -59,10 +63,14 @@ __all__ = [
     "GroupMember",
     "LearningSet",
     "LearningSetVersion",
+    "LiveCheckinAnswer",
+    "LiveHand",
+    "LiveParticipant",
     "LiveSegment",
     "LiveSession",
     "LiveSessionDocument",
     "LiveSessionTemplate",
+    "LiveTranscriptLine",
     "Memory",
     "ModerationEvent",
     "Message",

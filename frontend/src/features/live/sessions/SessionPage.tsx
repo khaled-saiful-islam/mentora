@@ -18,12 +18,13 @@ import {
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Alert, Button, Card, Input, Skeleton } from '@/components/ui'
+import { Alert, Button, ButtonLink, Card, Input, Skeleton } from '@/components/ui'
 import { useResource } from '@/hooks/useResource'
 import { cn } from '@/lib/utils'
 import { Page, rise, spring } from '@/motion'
 import { followWork, sessionsApi, STATUS_WORDS, type SessionDetail, type Segment, type WorkEvent } from './api'
 import { SegmentCard } from './SegmentCard'
+import { Summary } from './Summary'
 import { AstraBadge } from './SessionCard'
 import { useSegmentPlayer } from './useSegmentPlayer'
 import { toLocalInput, whenLabel } from './when'
@@ -141,6 +142,15 @@ export default function SessionPage() {
           </ActionBar>
         )}
         {live.status === 'recording' && <Recording progress={progress} />}
+        {['live', 'lobby'].includes(live.status) && (
+          <ActionBar title={live.status === 'live' ? 'The lesson is live' : 'The room is open'} body="Watch it, see the hands, pause, skip or end.">
+            <ButtonLink to={`/live/${live.id}/room`} variant="sun">
+              <Play weight="fill" className="size-4" aria-hidden />
+              Go to the room
+            </ButtonLink>
+          </ActionBar>
+        )}
+        {live.status === 'ended' && <Summary id={live.id} />}
         {(live.status === 'approved' || live.status === 'scheduled') && (
           <Schedule live={live} onSchedule={(at) => act(() => sessionsApi.schedule(live.id, at))} onCancel={() => act(() => sessionsApi.cancel(live.id))} />
         )}
@@ -368,6 +378,12 @@ function Schedule({
             <Play weight="fill" className="size-4" aria-hidden />
             Start now
           </Button>
+        )}
+        {scheduled && (
+          <ButtonLink to={`/live/${live.id}/room`} variant="sun">
+            <Play weight="fill" className="size-4" aria-hidden />
+            Open the room
+          </ButtonLink>
         )}
         {scheduled && (
           <Button

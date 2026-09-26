@@ -28,11 +28,13 @@ export interface StageProps {
   /** A note over the stage: who has their hand up, what is happening. */
   status?: React.ReactNode
   hand?: string | null
+  /** Leave out the caption strip, when nothing more will be said. */
+  quiet?: boolean
   className?: string
   children?: React.ReactNode
 }
 
-export function LiveStage({ beats, beat, show, line, now, speaking, level, mood, status, hand, className, children }: StageProps) {
+export function LiveStage({ beats, beat, show, line, now, speaking, level, mood, status, hand, quiet, className, children }: StageProps) {
   const calm = useCalmMotion()
   const stars = useMemo(() => STARS, [])
   return (
@@ -120,9 +122,11 @@ export function LiveStage({ beats, beat, show, line, now, speaking, level, mood,
         </div>
       </div>
 
-      <div className="mt-4 rounded-3xl bg-black/25 px-4 py-4 backdrop-blur-sm sm:px-6">
-        <Captions line={line} now={now} />
-      </div>
+      {!quiet && (
+        <div className="mt-4 rounded-3xl bg-black/25 px-4 py-4 backdrop-blur-sm sm:px-6">
+          <Captions line={line} now={now} />
+        </div>
+      )}
 
       {children && <div className="mt-4">{children}</div>}
     </section>

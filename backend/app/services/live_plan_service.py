@@ -32,6 +32,7 @@ from app.db.models.user import User
 from app.learning.model import GenerationUnavailable, Meter
 from app.live.audio import Narrator
 from app.live.beats import Beat, beats_from
+from app.live.lines import Lines, lines_for
 from app.live.planner import (
     Document,
     LessonPlanner,
@@ -43,7 +44,7 @@ from app.live.planner import (
     Stage,
 )
 from app.live.settings import SessionSettings
-from app.live.voice_lab import Lines, lines_for
+from app.live.timeline import reveal_line
 from app.services.live_session_service import LiveSessionService
 
 logger = logging.getLogger(__name__)
@@ -236,9 +237,11 @@ class LivePlanService:
             for segment in await service.segments(session_id):
                 for beat in segment.beats:
                     said += beat.get("sentences") or [beat.get("say", "")]
+                if segment.checkin:
+                    said.append(reveal_line(segment.checkin))
             for name in await self._names(db, await service.audience(live)):
                 lines = student_lines(session_id, name)
-                said += [lines.call, lines.thanks, lines.redirect]
+                said += [lines.call, lines.thanks, lines.redirect, lines.later]
         return list(dict.fromkeys(t for t in said if t and t.strip()))
 
     async def _voice(self, session_id: UUID) -> tuple[str, float]:
