@@ -4,11 +4,13 @@
  * teacher to the lesson's own page, where the lesson is written and checked.
  *
  * `/live/:id/setup` opens the same steps to change a session already made.
+ * `/live/new?class=…&topic=…&subject=…` starts one already filled in — the
+ * coverage map's "Make it" for a live lesson.
  */
 import { ArrowLeft, ArrowRight, Broadcast, Check, Lightbulb, ListChecks, Sparkle, UsersThree } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Alert, Button, Card } from '@/components/ui'
 import { classesApi, type ClassRoom, type Group } from '@/features/classes/api'
 import { cn } from '@/lib/utils'
@@ -28,11 +30,20 @@ export default function SetupPage() {
   const { id } = useParams()
   const editing = Boolean(id)
   const navigate = useNavigate()
+  const [query] = useSearchParams()
   const [step, setStep] = useState(editing ? 1 : 0)
-  const [settings, setSettings] = useState<SessionSettings>(DEFAULT_SETTINGS)
+  const [settings, setSettings] = useState<SessionSettings>(() =>
+    editing
+      ? DEFAULT_SETTINGS
+      : {
+          ...DEFAULT_SETTINGS,
+          topic: (query.get('topic') ?? '').slice(0, 160),
+          subject: (query.get('subject') ?? DEFAULT_SETTINGS.subject).slice(0, 80),
+        },
+  )
   const [classes, setClasses] = useState<ClassRoom[] | null>(null)
   const [groups, setGroups] = useState<Group[] | null>(null)
-  const [classId, setClassId] = useState('')
+  const [classId, setClassId] = useState(editing ? '' : (query.get('class') ?? ''))
   const [groupId, setGroupId] = useState('')
   const [templates, setTemplates] = useState<Template[]>([])
   const [templateId, setTemplateId] = useState<string | null>(null)

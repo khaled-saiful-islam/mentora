@@ -42,6 +42,7 @@ import Profile from '@/pages/Profile'
 import AdminPage from '@/features/admin/AdminPage'
 import Shared from '@/pages/Shared'
 import SharedArtifact from '@/pages/SharedArtifact'
+import ReportPage from '@/features/coverage/ReportPage'
 import Settings from '@/pages/Settings'
 
 export default function App() {
@@ -64,6 +65,7 @@ export default function App() {
               shared link would defeat the entire feature. */}
           <Route path="/s/:token" element={<Shared />} />
           <Route path="/a/:token" element={<SharedArtifact />} />
+          <Route path="/r/:token" element={<ReportPage />} />
           <Route path="/" element={<Protected><Home /></Protected>} />
           <Route path="/chat" element={<Protected><Allowed capability="use_chat"><Chat /></Allowed></Protected>} />
           <Route path="/studio" element={<Protected><Allowed capability="studio_artifacts"><Chat /></Allowed></Protected>} />

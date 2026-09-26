@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Archive, ArrowLeft, ArrowCounterClockwise, PencilSimple, QrCode, Sparkle, UserCirclePlus, UsersFour, UsersThree } from '@phosphor-icons/react'
+import { Archive, ArrowLeft, ArrowCounterClockwise, MapTrifold, PencilSimple, QrCode, Sparkle, UserCirclePlus, UsersFour, UsersThree } from '@phosphor-icons/react'
 import { Alert, Button, Skeleton } from '@/components/ui'
 import { Confirm } from '@/components/ui/Confirm'
 import { Tabs } from '@/components/ui/Tabs'
@@ -14,12 +14,13 @@ import { useLive, useOn } from '@/lib/bus'
 import { classesApi, type ClassDraft, type ClassRoom } from './api'
 import { ClassFormDialog } from './ClassFormDialog'
 import { GroupsTab } from './GroupsTab'
+import { CoverageTab } from '@/features/coverage/CoverageTab'
 import { AssignmentsTab } from './AssignmentsTab'
 import { InviteTab } from './InviteTab'
 import { RequestsTab } from './RequestsTab'
 import { StudentsTab } from './StudentsTab'
 
-const TABS = ['students', 'requests', 'groups', 'assignments', 'invite'] as const
+const TABS = ['students', 'requests', 'groups', 'assignments', 'coverage', 'invite'] as const
 type Tab = (typeof TABS)[number]
 
 export default function ClassPage() {
@@ -95,6 +96,7 @@ export default function ClassPage() {
           { key: 'requests', label: 'Requests', to: `${base}/requests`, badge: data?.pending, icon: <UserCirclePlus weight="bold" className="size-4" /> },
           { key: 'groups', label: 'Groups', to: `${base}/groups`, icon: <UsersFour weight="bold" className="size-4" /> },
           { key: 'assignments', label: 'Shared', to: `${base}/assignments`, icon: <Sparkle weight="bold" className="size-4" /> },
+          { key: 'coverage', label: 'Coverage', to: `${base}/coverage`, icon: <MapTrifold weight="bold" className="size-4" /> },
           { key: 'invite', label: 'Invite', to: `${base}/invite`, icon: <QrCode weight="bold" className="size-4" /> },
         ]}
       />
@@ -104,6 +106,7 @@ export default function ClassPage() {
         {tab === 'requests' && <RequestsTab key={version} classId={classId} onChange={refreshCounts} />}
         {tab === 'groups' && <GroupsTab key={version} classId={classId} onChange={refreshCounts} />}
         {tab === 'assignments' && <AssignmentsTab key={version} classId={classId} />}
+        {tab === 'coverage' && <CoverageTab classId={classId} subject={data?.subject ?? null} />}
         {tab === 'invite' && data && <InviteTab room={data} />}
       </motion.div>
 

@@ -21,7 +21,10 @@ htmlcov/
 node_modules/
 dist/
 .vite/
-coverage/
+# Test-coverage reports only — not the coverage feature's own folders.
+/coverage/
+/frontend/coverage/
+/backend/coverage/
 *.tsbuildinfo
 
 # Playwright
