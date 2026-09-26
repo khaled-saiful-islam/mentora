@@ -1,6 +1,7 @@
 """What a parent sees of one child that the child's own pages do not
-already build (PLAN.md §20.3): their practice with its best scores, and which
-live lessons they came to.
+already build (PLAN.md §20.3): their practice with its best scores, which
+live lessons they came to, and the brief the parent's chat helper reads
+(§20.6).
 
 Everything else a parent sees is the child's own services — home, results,
 schedule — called for the child's id. The family gate (`FamilyService.child`)
@@ -11,17 +12,28 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.context.persona import ChildBrief
+from app.core.grades import grade_label
 from app.db.models.attempt import Attempt
 from app.db.models.learning import AutoPractice
 from app.db.models.live import LiveParticipant
+from app.db.models.user import User
+from app.events.bus import EventBus
+from app.services.family_service import FamilyService, first_name
+from app.services.family_share_service import FamilyShareService
 from app.services.learning_set_service import LearningSetService, SetView
+from app.services.results_service import ResultsService
+from app.services.student_home_service import StudentHomeService
 
 PRACTICE_SHOWN = 60
+# Skills named in a brief, each way — enough to talk about, never a report.
+BRIEF_SKILLS = 3
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +63,27 @@ class ChildViewService:
             )
             for v in views
         ]
+
+    async def briefs(self, parent_id: UUID, now: datetime) -> tuple[ChildBrief, ...]:
+        """Each of this parent's children, as their chat helper should know
+        them: a first name, a year, skills by name and work by count."""
+        children = await FamilyService(self._session).children(parent_id)
+        return tuple([await self._brief(view.student, now) for view in children])
+
+    async def _brief(self, child: User, now: datetime) -> ChildBrief:
+        insights = await ResultsService(self._session, EventBus()).insights(child.id)
+        cards = await StudentHomeService(self._session).assignments(child)
+        dues = [c.assignment.due_at for c in cards if c.status in ("todo", "in_progress")]
+        home = await FamilyShareService(self._session).for_student(child.id)
+        dues += [w.share.due_at for w in home if w.status != "done"]
+        return ChildBrief(
+            first_name=first_name(child),
+            grade_label=grade_label(child.grade_level),
+            strong=tuple(s["label"] for s in insights["strengths"][:BRIEF_SKILLS]),
+            practise=tuple(s["label"] for s in insights["practise"][:BRIEF_SKILLS]),
+            waiting=len(dues),
+            late=sum(1 for due in dues if due is not None and due < now),
+        )
 
     async def attended(self, child_id: UUID, session_ids: Sequence[UUID]) -> set[UUID]:
         """Which of these live lessons the child was in the room for."""

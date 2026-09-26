@@ -2,7 +2,8 @@
 
 A fourth kind of account, for a child's parent or carer (PLAN.md §20). This
 page grows phase by phase. **Built: P0, the role and the link; P1, seeing
-the child; P2, making and sending work home; P3, past-due alerts.**
+the child; P2, making and sending work home; P3, past-due alerts; P4, the
+chat.**
 
 ## What it does
 
@@ -159,6 +160,36 @@ How it works:
 - Tests drive `check(session, now)` with a clock set years ahead, so nothing
   in a shared database falls in the window.
 
+## The chat (P4)
+
+- **Chat** is in a parent's menu (`/chat`). Its welcome asks *"How can I help
+  at home?"*, with ideas that use the child's name and year (*"What Year 4
+  covers"*), and a *Create something* panel to make a quiz, flashcards or a
+  study guide to send home.
+- **The helper is written for parents** (`context/persona.py`, `PARENT`):
+  - plain words and practical ideas for home;
+  - the Malaysian school years (KSSR, KSSM);
+  - effort and short, regular practice;
+  - care, and the class teacher or counsellor, when a parent is worried.
+- **It knows their children** — first name, year, up to three skills they
+  are strong at and three worth practising, and how much work is waiting or
+  past due. So *"What should Aina practise this week?"* gets an answer about
+  Aina. It never gets a score, a classmate or anyone else's child. Each name
+  and skill is flattened to one short line, so it reads as data.
+- **Adult guardrails.** The prompt-injection guard runs as for everyone. The
+  student screen (moderation) does not, as for teachers.
+- **No studio.** The artifact tools are never built into a parent's turn, and
+  the Create menu offers only quizzes, flashcards and study guides.
+
+How it works:
+
+- `use_chat` for parents; the chat, conversations, files and memories open to
+  them with it.
+- `deps.family_briefs` is an async dependency of the chat service. For a
+  parent it asks `ChildViewService.briefs` (insights, work and work from
+  home, per child). For anyone else it returns nothing and costs nothing. A
+  failure drops the briefs and logs, and the turn carries on.
+
 ## Endpoints
 
 ```
@@ -192,7 +223,6 @@ GET    /api/me/home                      + from_home, for the child
   code.** It shows nothing else, and the look-up is rate limited per address.
 - **A parent's account is one email.** Two parents share nothing but the
   child; each connects with the child's invitation.
-- **The parent chat arrives in P4.**
 - **Only the last `OVERDUE_LOOK_BACK_HOURS` (48) are watched.** Work that went
   past due longer ago — while the server was down, or before this shipped —
   is never announced.
@@ -211,5 +241,7 @@ GET    /api/me/home                      + from_home, for the child
   child, at most 8.
 - **Work in progress is not pushed live.** The parent's page changes when a
   piece is finished, not with each answer.
+- **The chat's knowledge of a child is a snapshot** taken when the turn
+  starts. A result that lands mid-conversation is known from the next turn.
 - **A study guide's review is its score only.** Its parts are read, not
   answered, so there is no answer-by-answer view.

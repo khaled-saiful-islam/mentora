@@ -1,7 +1,8 @@
 /**
  * The new-chat screen. A student meets their buddy and a handful of questions
  * they can tap to get going; a teacher gets the studio — the box in the
- * middle, a few ideas, and everything that can be made.
+ * middle, a few ideas, and everything that can be made. A parent gets the
+ * same shape, about helping at home (§20.6).
  */
 import { AnimatePresence, motion } from 'motion/react'
 import {
@@ -10,6 +11,7 @@ import {
   Calculator,
   ChalkboardTeacher,
   Globe,
+  HeartStraight,
   Lightbulb,
   ListChecks,
   Megaphone,
@@ -18,6 +20,8 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { LogoMark } from '@/brand/Logo'
 import { Buddy, BuddyStage, greeting, profileOf } from '@/features/buddies'
+import { familyApi } from '@/features/family/api'
+import { useResource } from '@/hooks/useResource'
 import { useAuth } from '@/lib/auth'
 import { firstName } from '@/lib/user'
 import { cn } from '@/lib/utils'
@@ -47,6 +51,19 @@ const FOR_TEACHERS: Starter[] = [
   { Icon: Megaphone, tone: 'bg-sky-100 text-sky-700 dark:bg-sky-700/30 dark:text-sky-100', label: 'A note to parents', text: 'Write a short note to parents about Sports Day' },
 ]
 
+/** For a parent: helping at home, with their child's name and year when
+ *  there is one child to speak of. */
+function forParents(child: string | undefined, grade: string | null | undefined): Starter[] {
+  const who = child ?? 'my child'
+  const year = grade ?? 'Year 4'
+  return [
+    { Icon: Calculator, tone: 'bg-sky-100 text-sky-700 dark:bg-sky-700/30 dark:text-sky-100', label: 'Fractions at home', text: `How can I help ${who} with fractions at home, using everyday things?` },
+    { Icon: BookOpenText, tone: 'bg-sun-100 text-sun-600 dark:bg-sun-600/25 dark:text-sun-300', label: `What ${year} covers`, text: `What does ${year} cover in Malaysian schools this year, subject by subject?` },
+    { Icon: ListChecks, tone: 'bg-mint-100 text-mint-700 dark:bg-mint-700/30 dark:text-mint-100', label: 'A weekend revision plan', text: `Make a gentle 20-minutes-a-day revision plan for ${who} this weekend` },
+    { Icon: Lightbulb, tone: 'bg-grape-100 text-grape-700 dark:bg-grape-800/40 dark:text-grape-100', label: 'When homework is hard', text: `${child ?? 'My child'} gets upset when homework is hard. How can I help without doing it for them?` },
+  ]
+}
+
 /** What the headline says can be made, each in its own colour. */
 const MAKES = [
   { word: 'quiz', tone: 'text-kind-quiz' },
@@ -70,10 +87,32 @@ export function ChatWelcome({
 }) {
   const { user } = useAuth()
   const student = user?.role === 'student'
+  const parent = user?.role === 'parent'
+  const kids = useResource(parent ? 'chat-children' : null, () => familyApi.children())
+  const first = kids.data?.items[0]
   // A different four each visit, so the screen never feels like wallpaper.
-  const starters = useMemo(() => (student ? shuffle(FOR_STUDENTS).slice(0, 4) : FOR_TEACHERS), [student])
+  const starters = useMemo(
+    () => (student ? shuffle(FOR_STUDENTS).slice(0, 4) : parent ? forParents(first?.first_name, first?.grade_label) : FOR_TEACHERS),
+    [student, parent, first?.first_name, first?.grade_label],
+  )
   const name = user ? firstName(user) : 'friend'
 
+  if (parent) {
+    const names = kids.data?.items.map((k) => k.first_name) ?? []
+    return (
+      <Studio
+        name={name}
+        starters={starters}
+        onPick={onPick}
+        composer={composer}
+        headline={<>How can I help <span className="text-kind-family">at home</span>?</>}
+        lead={names.length ? `Ask anything about helping ${names.join(' and ')} learn — or make something to send home.` : 'Ask anything about helping your child learn — or make something to send home.'}
+        mark={<HeartStraight weight="fill" className="size-8 text-kind-family" aria-hidden />}
+      >
+        {children}
+      </Studio>
+    )
+  }
   if (!student) return <Studio name={name} starters={starters} onPick={onPick} composer={composer}>{children}</Studio>
 
   return (
@@ -119,26 +158,32 @@ function Studio({
   onPick,
   composer,
   children,
+  headline = <>Let's make a <Turning /></>,
+  lead = 'Ask anything below — or pick something to create.',
+  mark = <LogoMark twinkle className="size-9" />,
 }: {
   name: string
   starters: Starter[]
   onPick: (text: string) => void
   composer?: React.ReactNode
   children?: React.ReactNode
+  headline?: React.ReactNode
+  lead?: string
+  mark?: React.ReactNode
 }) {
   return (
     <div className="flex flex-1 flex-col overflow-y-auto">
       <div className="mx-auto flex w-full max-w-5xl flex-col items-center px-4 pb-12 pt-[max(2rem,6vh)]">
         <motion.span initial={{ scale: 0.5, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={spring.bouncy} className="grid size-14 place-items-center rounded-3xl bg-grape-100 shadow-lg dark:bg-grape-800/40">
-          <LogoMark twinkle className="size-9" />
+          {mark}
         </motion.span>
         <p className="mt-4 font-display text-lg font-semibold text-muted-foreground">
           {greeting()}, {name}!
         </p>
         <h1 className="mt-1 text-center font-display text-4xl font-bold tracking-tight md:text-5xl">
-          Let's make a <Turning />
+          {headline}
         </h1>
-        <p className="mt-2 text-center text-muted-foreground">Ask anything below — or pick something to create.</p>
+        <p className="mt-2 text-center text-muted-foreground">{lead}</p>
 
         {composer && <div className="mt-7 w-full max-w-3xl">{composer}</div>}
 

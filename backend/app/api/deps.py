@@ -6,14 +6,16 @@ arguments and knows nothing about requests.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
+from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Cookie, Depends, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.context.persona import persona_for
+from app.context.persona import ChildBrief, persona_for
 from app.context.registry import build_contributors
 from app.core.config import Settings, get_settings
 from app.core.errors import AuthError, ForbiddenError
@@ -55,6 +57,8 @@ from app.services.live_runtime import LiveRuntime
 from app.services.quota import TokenQuota
 from app.services.rate_limit import Limit, RateLimiter
 from app.tools.registry import build_tools
+
+logger = logging.getLogger(__name__)
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
@@ -204,7 +208,27 @@ StaffUser = Annotated[User, Depends(require_roles(Role.ADMIN, Role.TEACHER))]
 StudentUser = Annotated[User, Depends(require_roles(Role.STUDENT))]
 
 
-def get_chat_service(settings: SettingsDep, user: CurrentUser) -> ChatService:
+async def family_briefs(user: CurrentUser, session: SessionDep) -> tuple[ChildBrief, ...]:
+    """A parent's children, for the chat helper to know them (§20.6). Nobody
+    else has any, so nobody else pays for the lookup. A failure costs the
+    helper its knowledge of the children, never the turn."""
+    if user.role != Role.PARENT.value:
+        return ()
+    from app.services.child_view_service import ChildViewService
+
+    try:
+        return await ChildViewService(session).briefs(user.id, datetime.now(UTC))
+    except Exception:  # the chat works without it
+        logger.exception("could not brief the chat on %s's children", user.id)
+        return ()
+
+
+FamilyBriefs = Annotated[tuple[ChildBrief, ...], Depends(family_briefs)]
+
+
+def get_chat_service(
+    settings: SettingsDep, user: CurrentUser, children: FamilyBriefs = ()
+) -> ChatService:
     """Built per request, but cheap: the provider holds no connection pool,
     contributors are stateless, and tools are thin wrappers.
 
@@ -215,7 +239,9 @@ def get_chat_service(settings: SettingsDep, user: CurrentUser) -> ChatService:
     """
     studio = capabilities_for(user.role).studio_artifacts
     provider = build_provider(settings)
-    persona = persona_for(user.role, grade_level=user.grade_level, buddy=user.buddy)
+    persona = persona_for(
+        user.role, grade_level=user.grade_level, buddy=user.buddy, children=children
+    )
     return ChatService(
         session_maker=session_scope,
         provider=provider,

@@ -29,7 +29,13 @@ describe('navFor', () => {
 
   it('starts a chat at /chat or in the studio, since / is everyone\'s home', () => {
     expect(chatRoot(user('student', {}))).toBe('/chat')
-    expect(chatRoot(user('teacher', {}))).toBe('/studio')
+    expect(chatRoot(user('parent', { use_chat: true }))).toBe('/chat')
+    expect(chatRoot(user('teacher', { studio_artifacts: true }))).toBe('/studio')
+  })
+
+  it('gives a parent their children, what they made, and the chat', () => {
+    const keys = navFor(user('parent', { use_chat: true, see_children: true, make_family_sets: true, keep_materials: true })).map((i) => i.key)
+    expect(keys).toEqual(['home', 'library', 'chat', 'settings'])
   })
 
   it('adds admin for administrators', () => {

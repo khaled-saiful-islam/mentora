@@ -127,7 +127,9 @@ child's 6-letter code.
 - **An instant alert when work goes past due**, whether a teacher or a
   parent set it. It arrives once, says where the work came from, and opens
   the child's work.
-- **Being built (PLAN.md §20):** the chat, without the studio.
+- **A chat of their own**, for helping at home: plain words, practical
+  ideas, and it knows their children by name and year and what each is
+  practising. It never shows a score or another child. There is no studio.
 
 See [`docs/features/042-parents.md`](docs/features/042-parents.md).
 

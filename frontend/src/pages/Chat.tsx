@@ -155,7 +155,13 @@ export default function Chat() {
       onRemoveFile={(id) => {
         if (activeConversationId) void documents.remove(id, activeConversationId)
       }}
-      placeholder={user?.role === 'student' ? `Ask ${profileOf(user.buddy).name} anything…` : 'Ask, plan or make something…'}
+      placeholder={
+        user?.role === 'student'
+          ? `Ask ${profileOf(user.buddy).name} anything…`
+          : user?.role === 'parent'
+            ? 'Ask anything about helping your child learn…'
+            : 'Ask, plan or make something…'
+      }
       note={
         user?.role === 'student'
           ? `${profileOf(user.buddy).name} can make mistakes too — check big things with your teacher.`
@@ -193,7 +199,7 @@ export default function Chat() {
 
         {empty ? (
           <ChatWelcome onPick={(text) => void chat.send(text)} composer={hero ? box('hero') : null}>
-            {staff && <CreatePanel items={makes} onPick={create} />}
+            {staff && <CreatePanel items={makes} onPick={create} hints={user?.role === 'parent' ? { learning: 'To send home, for your child to play, read and practise' } : undefined} />}
           </ChatWelcome>
         ) : (
           <MessageList

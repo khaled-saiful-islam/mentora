@@ -18,16 +18,19 @@ const SPOTLIGHT_MS = 3200
 export function CreatePanel({
   items,
   onPick,
+  hints,
 }: {
   items: Creatable[]
   onPick: (item: Creatable, example: string) => void
+  /** A group's hint in other words — a parent makes for home, not a class. */
+  hints?: Partial<Record<Group, string>>
 }) {
   const groups = useMemo(() => GROUPS.filter((g) => items.some((i) => i.group === g.key)), [items])
   const [tab, setTab] = useState<Group>(groups[0]?.key ?? 'learning')
   const shown = items.filter((i) => i.group === tab)
 
   if (items.length === 0) return null
-  const hint = groups.find((g) => g.key === tab)?.hint
+  const hint = hints?.[tab] ?? groups.find((g) => g.key === tab)?.hint
 
   return (
     <section aria-label="Create something" className="w-full">

@@ -59,7 +59,8 @@ def test_a_code_has_a_readable_label() -> None:
 
 EXPECTED: dict[str, dict[Role, bool]] = {
     # Closed to students for now; parents get it in §20 P4.
-    "use_chat": {Role.ADMIN: True, Role.TEACHER: True, Role.STUDENT: False, Role.PARENT: False},
+    # §20.6: parents chat as adults supporting a child; students not yet.
+    "use_chat": {Role.ADMIN: True, Role.TEACHER: True, Role.STUDENT: False, Role.PARENT: True},
     "studio_artifacts": {
         Role.ADMIN: True,
         Role.TEACHER: True,

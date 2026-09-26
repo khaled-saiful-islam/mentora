@@ -20,13 +20,14 @@ export interface NavItem {
 
 const under = (prefix: string) => (path: string) => path === prefix || path.startsWith(`${prefix}/`)
 const studioPaths = (path: string) => path === '/studio' || path.startsWith('/c/')
-const studentChatPaths = (path: string) => path === '/chat' || path.startsWith('/c/')
+const chatPaths = (path: string) => path === '/chat' || path.startsWith('/c/')
 const isStudent = (u: User) => u.role === 'student'
 
-/** Where a new chat starts. `/` is everyone's home, so the chat lives at
- *  `/chat` for a student and in the studio for staff. */
+/** Where a new chat starts. `/` is everyone's home, so the chat lives in the
+ *  studio for those who make things there, and at `/chat` for everyone else
+ *  (a parent; a student, once theirs is open). */
 export function chatRoot(user: User | null): string {
-  return user && isStudent(user) ? '/chat' : '/studio'
+  return user && !can(user, 'studio_artifacts') ? '/chat' : '/studio'
 }
 
 export const NAV: NavItem[] = [
@@ -92,8 +93,9 @@ export const NAV: NavItem[] = [
     to: '/chat',
     label: 'Chat',
     Icon: ChatsCircle,
-    show: (u) => isStudent(u) && can(u, 'use_chat'),
-    matches: studentChatPaths,
+    // The chat without the studio: parents now (§20.6), students later.
+    show: (u) => can(u, 'use_chat') && !can(u, 'studio_artifacts'),
+    matches: chatPaths,
   },
   {
     key: 'results',

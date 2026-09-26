@@ -46,7 +46,7 @@ export function ChatHeader({
         )}
         <div className="min-w-0">
           <p className="line-clamp-3 break-words font-display text-sm font-semibold leading-tight @md:text-base" title={student ? undefined : title}>{student ? `Chat with ${buddy.name}` : title || 'New chat'}</p>
-          <p className="text-xs text-muted-foreground">{student ? title || 'Your study buddy' : 'Studio'}</p>
+          <p className="text-xs text-muted-foreground">{student ? title || 'Your study buddy' : can(user, 'studio_artifacts') ? 'Studio' : 'Chat'}</p>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
