@@ -106,11 +106,12 @@ function ClassTile({ room, onLeave }: { room: StudentClass; onLeave: () => void 
   const pulse = room.pulse
   return (
     <motion.li variants={rise} layout>
-      <Card className="flex flex-col overflow-hidden md:flex-row">
+      {/* Side by side only where the column is wide enough for both. */}
+      <Card className="flex flex-col overflow-hidden xl:flex-row">
         <Link
           to={`/classes/${room.class_id}`}
           className={cn(
-            'group relative block p-5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40 md:w-72 md:shrink-0',
+            'group relative block p-5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40 xl:w-72 xl:shrink-0',
             look.hero,
             look.onHero,
           )}

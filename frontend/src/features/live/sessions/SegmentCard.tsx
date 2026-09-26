@@ -156,7 +156,7 @@ export function SegmentCard({
                 </span>
               </p>
               {beat.show ? (
-                <p className="flex items-start gap-1.5 break-words rounded-2xl border-2 border-dashed border-kind-live-vivid/40 px-3 py-2 text-sm font-semibold text-kind-live">
+                <p className="flex items-start gap-1.5 self-start break-words rounded-2xl border-2 border-dashed border-kind-live-vivid/40 px-3 py-2 text-sm font-semibold text-kind-live">
                   <Sparkle weight="fill" className="mt-0.5 size-3.5 shrink-0" aria-hidden />
                   {beat.show}
                 </p>

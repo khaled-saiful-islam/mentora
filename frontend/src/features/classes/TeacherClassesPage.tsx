@@ -61,7 +61,7 @@ export default function TeacherClassesPage() {
 
       <div className="mt-8">
         {classes.loading && !classes.data ? (
-          <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
+          <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
             {[0, 1, 2].map((i) => (
               <Skeleton key={i} className="h-72 rounded-[1.75rem]" />
             ))}
@@ -89,7 +89,7 @@ export default function TeacherClassesPage() {
             {view === 'active' && <Glance classes={items} />}
             <motion.ul
               key={view}
-              className={cn('mt-6 grid gap-5 md:grid-cols-2', items.length + 1 >= 3 && '2xl:grid-cols-3')}
+              className={cn('mt-6 grid gap-5 lg:grid-cols-2', items.length + 1 >= 3 && '2xl:grid-cols-3')}
               variants={stagger(0.06)}
               initial="hidden"
               animate="shown"
@@ -103,7 +103,7 @@ export default function TeacherClassesPage() {
                   hint="You'll get a link and a code to share."
                   onClick={() => setCreating(true)}
                   count={items.length}
-                  columns={items.length + 1 >= 3 ? { md: 2, '2xl': 3 } : { md: 2 }}
+                  columns={items.length + 1 >= 3 ? { lg: 2, '2xl': 3 } : { lg: 2 }}
                 />
               )}
             </motion.ul>
@@ -124,7 +124,7 @@ function Glance({ classes }: { classes: ClassRoom[] }) {
   const waitingAt = classes.find((c) => c.pending > 0)
   const next = soonest(classes.map((c) => c.pulse?.next_live ?? null))
   return (
-    <motion.div className="grid grid-cols-3 gap-3 lg:grid-cols-4" variants={stagger(0.05)} initial="hidden" animate="shown">
+    <motion.div className="grid grid-cols-3 gap-3 xl:grid-cols-4" variants={stagger(0.05)} initial="hidden" animate="shown">
       <GlanceTile Icon={UsersThree} value={students} label={`${students === 1 ? 'student' : 'students'} in ${classes.length} ${classes.length === 1 ? 'class' : 'classes'}`} />
       <GlanceTile
         Icon={UserCirclePlus}
@@ -134,7 +134,7 @@ function Glance({ classes }: { classes: ClassRoom[] }) {
         loud={pending > 0}
       />
       <GlanceTile Icon={PaperPlaneTilt} value={shared} label="shared and open" to="/library" />
-      <motion.div variants={rise} className="col-span-3 lg:col-span-1">
+      <motion.div variants={rise} className="col-span-3 xl:col-span-1">
         {next ? (
           <Card className="flex h-full min-w-0 flex-col justify-center p-3">
             <NextLiveLine live={next} to={(id) => `/live/${id}`} empty="" />
@@ -173,7 +173,7 @@ function GlanceTile({
   loud?: boolean
 }) {
   const body = (
-    <Card className={cn('flex h-full flex-col items-start gap-2 p-3 transition-colors sm:flex-row sm:items-center sm:gap-3 sm:p-4', to && 'hover:border-hover-border', loud && 'border-coral-400/50 bg-coral-100/60 dark:bg-coral-700/20')}>
+    <Card className={cn('flex h-full flex-col items-start gap-2 p-3 transition-colors lg:flex-row lg:items-center lg:gap-3 lg:p-4', to && 'hover:border-hover-border', loud && 'border-coral-400/50 bg-coral-100/60 dark:bg-coral-700/20')}>
       <span className={cn('grid size-11 shrink-0 place-items-center rounded-2xl', loud ? 'bg-coral-400 text-white' : 'bg-primary/10 text-primary')}>
         <Icon weight="duotone" className="size-6" aria-hidden />
       </span>

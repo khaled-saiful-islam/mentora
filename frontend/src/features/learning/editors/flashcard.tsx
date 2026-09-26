@@ -6,7 +6,7 @@ function FlashcardEditor({ item, skills, sources, onChange }: ItemEditorProps<Fl
   const set = (patch: Partial<FlashcardItem>) => onChange({ ...item, ...patch })
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 @md:grid-cols-2">
         <div className="rounded-2xl border-2 border-kind-flashcard-vivid/40 bg-kind-flashcard-vivid/5 p-2">
           <p className="px-3 pt-1 text-xs font-bold uppercase tracking-wider text-kind-flashcard">Front</p>
           <GrowingText label="Front" value={item.front} maxLength={200} placeholder="A word or a question" onChange={(front) => set({ front })} className="font-display text-lg font-semibold" />

@@ -91,6 +91,20 @@ export function InviteTab({ room }: { room: ClassRoom }) {
         <QrPicture text={link} disabled={!data.enabled} />
         <p className="mt-4 font-bold">Scan to join {room.name}</p>
         <p className="text-sm text-muted-foreground">Put it on the projector — phones and tablets can scan it.</p>
+        <ol className="mt-5 w-full max-w-xs space-y-2 text-left text-sm">
+          {JOIN_STEPS.map((step, i) => (
+            <motion.li
+              key={step}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 + i * 0.1 }}
+              className="flex items-start gap-3 rounded-2xl bg-muted/60 px-3 py-2"
+            >
+              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary font-bold text-primary-foreground">{i + 1}</span>
+              <span className="pt-0.5">{step}</span>
+            </motion.li>
+          ))}
+        </ol>
       </Card>
 
       {rotating && (
@@ -109,6 +123,13 @@ export function InviteTab({ room }: { room: ClassRoom }) {
     </div>
   )
 }
+
+/** What to say to the room while the QR code is up. */
+const JOIN_STEPS = [
+  'Open Mentora and sign in — or scan to sign up.',
+  'Tap Join a class and type the code, or just scan.',
+  'Wait a moment: you let them in from Requests.',
+]
 
 /** Six big letters that flip in one after another when the code changes. */
 function CodeTiles({ code }: { code: string }) {

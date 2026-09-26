@@ -28,7 +28,7 @@ export function Summary({ results }: { results: AssignmentResults }) {
     { label: 'Still going', value: String(summary.in_progress), note: `${summary.not_started} not started` },
   ]
   return (
-    <motion.div className="grid grid-cols-2 gap-3 md:grid-cols-4" variants={stagger(0.06)} initial="hidden" animate="shown">
+    <motion.div className="grid grid-cols-2 gap-3 lg:grid-cols-4" variants={stagger(0.06)} initial="hidden" animate="shown">
       {cards.map((card) => (
         <motion.div key={card.label} variants={rise} className="rounded-3xl border-2 border-border bg-surface p-4">
           <p className="text-sm font-bold text-muted-foreground">{card.label}</p>

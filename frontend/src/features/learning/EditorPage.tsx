@@ -154,7 +154,9 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
       </section>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_18rem]">
-        <div className="space-y-4">
+        {/* A container: the editors inside lay out by this column's width, not
+            the window's — beside the side panel it is narrower than it looks. */}
+        <div className="@container min-w-0 space-y-4">
           {kind.extras && extras !== null && (
             <Card className="p-4 sm:p-5">
               <h2 className="mb-3 font-display text-lg font-semibold">{kind.extras.title}</h2>

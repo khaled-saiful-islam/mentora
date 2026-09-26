@@ -29,6 +29,37 @@ One Mentora look for everyone, in a light and a dark variant:
   spark over it. It appears as `LogoMark` (inline, `currentColor`), as
   `LogoTile` (the app icon), in `public/mentora.svg`, and as PWA icons.
 
+## Layout rules
+
+The density pass (2026-09-26) came from a sweep of every student and teacher
+page at 1440, 1024, 768 and 390 wide. It found three kinds of waste: lone
+cards in wide rows, tall boxes around a thin column of words, and text
+squeezed to a few letters a line. Keep these rules so they stay gone:
+
+- **No lone card in a wide row.**
+  - A grid goes three-wide only once it has three things.
+  - A list someone can add to ends with `AddTile` (`components/ui/AddTile.tsx`).
+    `fillsGap()` shows it only at breakpoints where the last row has room,
+    never alone on a new row.
+  - When there is little to list, put something useful beside it (the
+    teacher home's classes sit next to *Coming up live*).
+- **Text has a floor.** In a row that also holds buttons, the text column gets
+  `min-w-[min(100%,14rem)] flex-1`, never bare `min-w-0 flex-1`, so the buttons
+  wrap below instead of squeezing the words.
+- **Lay out by the column, not the window.**
+  - Inside a column narrowed by a side panel (the set editor), inner grids use
+    container queries: `@container` on the column, `@md:`/`@xl:` on the grids.
+  - Viewport breakpoints lie there: at 1024 wide the editor column is under
+    400px.
+- **Side by side only when both fit.** Multi-column rows switch on at a width
+  where each part keeps its words on sensible lines:
+  - The student class card is two columns at `xl`.
+  - Four result stats at `lg`.
+  - The class list's cards are two-up from `lg`.
+- **Empty states are wide, not tall.** `EmptyState` puts its picture beside
+  the words from `sm`.
+- **Animation stays.** A tidy-up never removes or pauses existing motion.
+
 ## How it works
 
 - `theme.css` holds every colour as a bare HSL triplet, so `hsl(var(--x) / .2)`

@@ -85,7 +85,7 @@ function Helpers({ item, set }: { item: GuideSection; set: Set }) {
     <div className="space-y-4">
       <ListField label="Remember" noun="point" items={item.points} limit={LIMITS.point} most={MOST_POINTS} onChange={(points) => set({ points })} />
       <TermsField terms={item.terms} onChange={(terms) => set({ terms })} />
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 @xl:grid-cols-3">
         <LabelledText label="Remember it like this" value={item.hook} limit={LIMITS.hook} placeholder="A rhyme or a memory trick" onChange={(hook) => set({ hook })} />
         <LabelledText label="Did you know?" value={item.fact} limit={LIMITS.fact} placeholder="A surprising true fact" onChange={(fact) => set({ fact })} />
         <LabelledText label="In real life" value={item.example} limit={LIMITS.example} placeholder="Where this shows up in Malaysia" onChange={(example) => set({ example })} />
@@ -128,7 +128,7 @@ function TermsField({ terms, onChange }: { terms: GuideTerm[]; onChange: (terms:
       <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Words to know</p>
       <ul className="mt-1 space-y-2">
         {terms.map((term, i) => (
-          <li key={i} className="grid items-start gap-1 rounded-2xl border-2 border-border p-1.5 sm:grid-cols-[10rem_1fr_9rem_auto]">
+          <li key={i} className="grid items-start gap-1 rounded-2xl border-2 border-border p-1.5 @xl:grid-cols-[10rem_1fr_9rem_auto]">
             <input aria-label={`Word ${i + 1}`} value={term.term} maxLength={LIMITS.term} placeholder="Word" onChange={(e) => change(i, { term: e.target.value })} className="rounded-xl bg-transparent px-2 py-1.5 font-bold outline-none focus-visible:bg-surface" />
             <GrowingText label={`Meaning of word ${i + 1}`} value={term.meaning} maxLength={LIMITS.meaning} placeholder="What it means" onChange={(meaning) => change(i, { meaning })} className="text-sm" />
             <input aria-label={`Translation of word ${i + 1}`} value={term.translation} maxLength={LIMITS.term} placeholder="In BM / English" onChange={(e) => change(i, { translation: e.target.value })} className="rounded-xl bg-transparent px-2 py-1.5 text-sm outline-none focus-visible:bg-surface" />
@@ -207,7 +207,7 @@ export function GuideExtrasEditor({ extras, onChange }: { extras: GuideExtras; o
   const set = (patch: Partial<GuideExtras>) => onChange({ ...extras, ...patch })
   const challenge = extras.challenge ?? { title: '', steps: [] }
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid gap-4 @2xl:grid-cols-2">
       <div className="space-y-2">
         <LabelledText label="The big question" value={extras.big_question} limit={200} placeholder="A question that makes them want to read on" onChange={(big_question) => set({ big_question })} />
         <LabelledText label="Introduction" value={extras.intro} limit={700} placeholder="What the guide is about, and why it matters" onChange={(intro) => set({ intro })} />

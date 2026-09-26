@@ -143,7 +143,7 @@ function Glance({ data }: { data: Teaching }) {
   return (
     <motion.div className="mt-6 grid gap-4 md:grid-cols-3" variants={stagger(0.07)} initial="hidden" animate="shown">
       <motion.div variants={pop} className="rounded-3xl border-2 border-border bg-surface p-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
           <p className="text-sm font-bold text-muted-foreground">Working right now</p>
           <LiveBadge />
         </div>

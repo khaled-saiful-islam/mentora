@@ -13,7 +13,7 @@ function QuizEditor({ item, skills, sources, onChange }: ItemEditorProps<QuizIte
   return (
     <div className="space-y-3">
       <GrowingText label="Question" value={item.prompt} maxLength={300} placeholder="Write the question" onChange={(prompt) => set({ prompt })} className="font-display text-lg font-semibold" />
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 @md:grid-cols-2">
         {item.options.map((option, index) => {
           const look = OPTION_LOOKS[index]
           const right = index === item.answer

@@ -54,7 +54,9 @@ export function AssignmentsTab({ classId }: { classId: string }) {
               <span className={cn('grid size-12 shrink-0 place-items-center rounded-2xl shadow-press', look.hero)}>
                 <look.Icon weight="duotone" className="size-7" />
               </span>
-              <div className="min-w-0 flex-1">
+              {/* A floor on the text's width, so on a phone the buttons move
+                  below it instead of squeezing it to a letter a line. */}
+              <div className="min-w-[min(100%,14rem)] flex-1">
                 <p className="break-words font-display text-lg font-semibold">{a.title}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
                   {a.group_names.length ? (
@@ -70,14 +72,16 @@ export function AssignmentsTab({ classId }: { classId: string }) {
                   <span>· shared {timeAgo(a.created_at)}</span>
                 </div>
               </div>
-              <ButtonLink to={`/assignments/${a.id}`} size="sm">
-                <ChartBar weight="bold" className="size-4" />
-                Results
-              </ButtonLink>
-              <Button variant="outline" size="sm" onClick={() => void toggle(a)}>
-                {a.closed ? <LockSimpleOpen weight="bold" className="size-4" /> : <LockSimple weight="bold" className="size-4" />}
-                {a.closed ? 'Reopen' : 'Close'}
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <ButtonLink to={`/assignments/${a.id}`} size="sm">
+                  <ChartBar weight="bold" className="size-4" />
+                  Results
+                </ButtonLink>
+                <Button variant="outline" size="sm" onClick={() => void toggle(a)}>
+                  {a.closed ? <LockSimpleOpen weight="bold" className="size-4" /> : <LockSimple weight="bold" className="size-4" />}
+                  {a.closed ? 'Reopen' : 'Close'}
+                </Button>
+              </div>
             </Card>
           </motion.li>
         )
