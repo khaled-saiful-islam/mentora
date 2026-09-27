@@ -64,8 +64,22 @@
   - new badges on shining medals, and the student's leaderboard place
   - per-skill chips, and the buttons "Check my answers", "Try again" (only
     when retakes are allowed) and "Home"
-- **`/results`** shows a student's strengths, what to practise next, a bar for
-  every skill, and their history.
+- **`/results`** (`features/results/ResultsView.tsx`) is written for a child
+  to read:
+  - their buddy sums it up in one sentence: *"You're a star at X! Next, let's
+    practise Y."*
+  - four numbers: finished, their usual score (the last five), stars won, and
+    whether lately is going up, steady or down (the last three against the
+    three before)
+  - their last ten scores as bars, oldest to newest, coloured by stars
+  - skills in three groups — *Got it!*, *Getting there*, *Let's practise* —
+    each with a star meter and "N of M right", and a *Practise* button when
+    practice was made for that skill
+  - what they finished, grouped Today / This week / Earlier, each with a
+    verdict (*Brilliant!* … *Tricky one*) and where it came from
+
+  A parent's *Results* tab for their child shows the same view, with the
+  child's buddy and no *Practise* buttons.
 - **`/badges`** shows a trophy shelf of earned badges, and locked silhouettes
   with hints for the rest.
 - **`/leaderboard/:id`** shows a podium with each student's buddy, the rest

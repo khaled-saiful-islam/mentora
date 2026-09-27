@@ -79,7 +79,7 @@ export default function ChildPage() {
       <div className="mt-6">
         {active === 'overview' && <OverviewTab childId={childId} first={first} overview={overview.data} />}
         {active === 'work' && <WorkTab childId={childId} first={first} />}
-        {active === 'results' && <ResultsTab childId={childId} first={first} />}
+        {active === 'results' && <ResultsTab childId={childId} first={first} buddy={child?.buddy} />}
         {active === 'practice' && <PracticeTab childId={childId} first={first} />}
         {active === 'schedule' && <ScheduleTab childId={childId} first={first} />}
         {active === 'classes' && <ClassesTab childId={childId} first={first} />}
