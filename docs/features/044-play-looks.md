@@ -8,15 +8,16 @@ before sharing it, in each look.
 
 **The looks** (`features/play/level.ts`):
 
-| | Year 1–3 — *playground* | Year 4–6 — *lively* | Form 1–5 and up — *focused* |
+| | Year 1–3 — *playground* | Year 4–6 — *quest* | Form 1–5 and up — *focused* |
 |---|---|---|---|
-| Answer tiles | Bright, each in its shape's colour; the shapes bob while waiting; they tumble in | The usual white tiles | The usual white tiles |
-| Question | Big, playful lettering | As before | As before |
-| Progress | A path of stars: gold when right, grey when not, the current one twinkling (up to 15 items) | The bar | The bar |
-| A right answer | Confetti every time, and *"Yay! You got it!"* | *"+10"* rising, and a points counter | *"Correct!"* |
+| Behind the game | Shapes drifting slowly | A still, dotted map grid | Plain |
+| Question | Big, playful lettering | In its own card, with a colour strip across the top | As before |
+| Answer tiles | Bright, each in its shape's colour; the shapes bob; they tumble in | White with a bold edge in the shape's colour; they slide in like dealt cards | The usual white tiles |
+| Progress | A path of stars: gold when right, grey when not, the current one twinkling (up to 15 items) | The bar, with a rocket riding it to the current question | The bar |
+| A right answer | Confetti every time, and *"Yay! You got it!"* | Stars burst from the tile, *"+10"* rises, a points counter ticks | *"Correct!"* |
 | Read it to me | Reads the question and each answer by its shape (*"Triangle: …"*), or the card | — | — |
-| Flashcards | Bright cards, big words, a bouncier flip, smiley buttons, confetti for *I knew it!* | Points for each one known | As before |
-| Finish | A bigger party, with confetti from one star | *"You won 80 points!"* | As before |
+| Flashcards | Bright cards, big words, a bouncier flip, smiley buttons, confetti for *I knew it!* | A bold band across the top of each card; points for each one known | As before |
+| Finish | A bigger party, with confetti from one star | *"You won 80 points!"* and a rank: Rookie, Explorer, Adventurer or Champion | As before |
 
 - The Form look is exactly what students had before this change.
 - **Calm motion always wins.** A child who asked for less movement keeps the

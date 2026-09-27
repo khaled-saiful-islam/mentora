@@ -25,7 +25,7 @@ import type { Played, QuizItem } from './api'
 import { usePlayBackend } from './backend'
 import { pick, POINTS_EACH, usePlayLook, type PlayLook } from './level'
 import { PlayHeader } from './PlayChrome'
-import { PlayBackdrop, PointsBurst, ReadAloudButton } from './PlayFun'
+import { PlayBackdrop, PointsBurst, ReadAloudButton, SparkleBurst } from './PlayFun'
 import type { PlayerProps } from './players'
 import { playedById, quizItems, resumeAt, segments, skillLabel } from './session'
 
@@ -35,16 +35,18 @@ interface Marker {
   key: string
   /** The whole tile in the marker's colour, for the youngest. */
   bright: string
+  /** A bold edge in the marker's colour, for Year 4–6. */
+  accent: string
   /** What it is called when read aloud: "the triangle". */
   name: string
 }
 
 // Shape, colour and key for each position — the same everywhere.
 const MARKERS: Marker[] = [
-  { Icon: Triangle, tile: 'bg-coral-400', key: '1', bright: 'border-coral-400 bg-coral-100 dark:bg-coral-700/25', name: 'Triangle' },
-  { Icon: Diamond, tile: 'bg-sky-400', key: '2', bright: 'border-sky-400 bg-sky-100 dark:bg-sky-700/25', name: 'Diamond' },
-  { Icon: Circle, tile: 'bg-sun-400', key: '3', bright: 'border-sun-400 bg-sun-100 dark:bg-sun-600/20', name: 'Circle' },
-  { Icon: Square, tile: 'bg-mint-400', key: '4', bright: 'border-mint-400 bg-mint-100 dark:bg-mint-700/25', name: 'Square' },
+  { Icon: Triangle, tile: 'bg-coral-400', key: '1', bright: 'border-coral-400 bg-coral-100 dark:bg-coral-700/25', accent: 'border-l-coral-400', name: 'Triangle' },
+  { Icon: Diamond, tile: 'bg-sky-400', key: '2', bright: 'border-sky-400 bg-sky-100 dark:bg-sky-700/25', accent: 'border-l-sky-400', name: 'Diamond' },
+  { Icon: Circle, tile: 'bg-sun-400', key: '3', bright: 'border-sun-400 bg-sun-100 dark:bg-sun-600/20', accent: 'border-l-sun-400', name: 'Circle' },
+  { Icon: Square, tile: 'bg-mint-400', key: '4', bright: 'border-mint-400 bg-mint-100 dark:bg-mint-700/25', accent: 'border-l-mint-400', name: 'Square' },
 ]
 
 const END_MODE_ADVANCE_MS = 650
@@ -123,7 +125,7 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
   const heard = `${item.prompt}. ${item.options.map((o, i) => `${MARKERS[i % MARKERS.length].name}: ${o}`).join('. ')}`
   return (
     <div className="flex min-h-dvh flex-col">
-      {look.backdrop && <PlayBackdrop />}
+      <PlayBackdrop kind={look.backdrop} />
       <PlayHeader
         title={attempt.title}
         kind="quiz"
@@ -141,14 +143,17 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
             exit={{ opacity: 0, x: -60, rotate: -2, transition: { duration: 0.18 } }}
             transition={spring.gentle}
           >
-            <div className="flex flex-wrap items-center gap-2">
-              <Chip tone="sun" className="text-sm">
-                Question {index + 1} of {items.length}
-              </Chip>
-              <Chip className="text-sm capitalize">{skillLabel(attempt, item.skill)}</Chip>
-              {look.readAloud && <ReadAloudButton voice={voice} id={item.id} text={heard} className="ml-auto" />}
+            <div className={cn(look.questionCard && 'relative overflow-hidden rounded-3xl border-2 border-border bg-surface p-5 shadow-sm')}>
+              {look.questionCard && <span aria-hidden className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-kind-quiz-vivid via-sun-400 to-mint-400" />}
+              <div className="flex flex-wrap items-center gap-2">
+                <Chip tone="sun" className="text-sm">
+                  Question {index + 1} of {items.length}
+                </Chip>
+                <Chip className="text-sm capitalize">{skillLabel(attempt, item.skill)}</Chip>
+                {look.readAloud && <ReadAloudButton voice={voice} id={item.id} text={heard} className="ml-auto" />}
+              </div>
+              <h1 className={cn(look.questionCard ? 'mt-3' : 'mt-4', look.question)}>{item.prompt}</h1>
             </div>
-            <h1 className={cn('mt-4', look.question)}>{item.prompt}</h1>
             <Options item={item} answer={answer} instant={instant} disabled={sending} look={look} onChoose={(n) => void choose(n)} />
           </motion.section>
         </AnimatePresence>
@@ -166,6 +171,8 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
 const ENTER = {
   plain: { hidden: { opacity: 0, y: 16, scale: 0.96 }, shown: { opacity: 1, y: 0, scale: 1 } },
   bright: { hidden: { opacity: 0, y: 28, scale: 0.8, rotate: -4 }, shown: { opacity: 1, y: 0, scale: 1, rotate: 0, transition: spring.bouncy } },
+  // Year 4–6: slid in from the side, one after another, like cards dealt.
+  quest: { hidden: { opacity: 0, x: -24 }, shown: { opacity: 1, x: 0, transition: spring.snappy } },
 }
 
 function Options({
@@ -246,8 +253,14 @@ function OptionTile({
 }) {
   const verdict = state === 'right' || state === 'reveal' ? Check : state === 'wrong' ? X : null
   const bright = look.tiles === 'bright'
-  // A bright tile waiting to be picked, or passed over, keeps its colour.
-  const tile = bright && (state === 'open' || state === 'dim') ? cn(marker.bright, 'border-4 hover:shadow-lg', state === 'dim' && 'opacity-55') : TILE[state]
+  // A bright tile waiting to be picked, or passed over, keeps its colour; a
+  // quest tile keeps its coloured edge whatever happens.
+  const tile =
+    bright && (state === 'open' || state === 'dim')
+      ? cn(marker.bright, 'border-4 hover:shadow-lg', state === 'dim' && 'opacity-55')
+      : look.tiles === 'quest'
+        ? cn(TILE[state], 'border-l-[10px]', marker.accent)
+        : TILE[state]
   return (
     <motion.button
       type="button"
@@ -259,7 +272,7 @@ function OptionTile({
       animate={state === 'wrong' ? wobble : state === 'right' ? { scale: [1, 1.05, 1] } : { scale: 1 }}
       transition={spring.snappy}
       className={cn(
-        'group flex w-full items-center gap-4 border-2 p-3 pr-4 text-left shadow-sm transition-[border-color,background-color,box-shadow,opacity]',
+        'group relative flex w-full items-center gap-4 border-2 p-3 pr-4 text-left shadow-sm transition-[border-color,background-color,box-shadow,opacity]',
         'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40 disabled:cursor-default',
         look.tileSize,
         bright ? 'rounded-3xl' : 'rounded-2xl',
@@ -275,6 +288,7 @@ function OptionTile({
         <marker.Icon weight="fill" className={bright ? 'size-8' : 'size-6'} />
       </motion.span>
       <span className={cn('flex-1 leading-snug font-bold', look.tileText)}>{text}</span>
+      {look.sparkle && state === 'right' && <SparkleBurst />}
       {verdict ? (
         <motion.span
           initial={{ scale: 0, rotate: -45 }}

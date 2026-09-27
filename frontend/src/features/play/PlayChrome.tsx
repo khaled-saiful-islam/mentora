@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 import { spring } from '@/motion'
 import type { PlayKind } from './api'
 import { usePlayLook } from './level'
-import { PointsChip, ProgressStars, STAR_PATH_MAX } from './PlayFun'
+import { PointsChip, ProgressJourney, ProgressStars, STAR_PATH_MAX } from './PlayFun'
 import type { Segment } from './session'
 
 const SEGMENT: Record<Segment, string> = {
@@ -112,7 +112,17 @@ export function PlayHeader({
         </span>
         <div className="min-w-0 flex-1">
           <p className="break-words font-display text-base font-semibold leading-tight">{title}</p>
-          <div className="mt-1.5">{stars ? <ProgressStars parts={parts} /> : <ProgressSegments parts={parts} />}</div>
+          <div className="mt-1.5">
+            {stars ? (
+              <ProgressStars parts={parts} />
+            ) : play.journey ? (
+              <ProgressJourney parts={parts}>
+                <ProgressSegments parts={parts} />
+              </ProgressJourney>
+            ) : (
+              <ProgressSegments parts={parts} />
+            )}
+          </div>
         </div>
         {play.points && points !== undefined && <PointsChip points={points} />}
         <StreakFlame streak={streak} />

@@ -45,7 +45,8 @@ describe('the look for a year', () => {
 
   it('keeps still for a child who asked for calm, but keeps the colour and words', () => {
     const calm = lookFor('little', true)
-    expect([calm.bob, calm.backdrop, calm.cheerEveryRight]).toEqual([false, false, false])
+    expect([calm.bob, calm.backdrop, calm.cheerEveryRight]).toEqual([false, 'none', false])
+    expect(lookFor('middle', true).backdrop).toBe('grid')
     expect([calm.tiles, calm.starPath, calm.readAloud]).toEqual(['bright', true, true])
     expect(lookFor('senior').rightWords).toEqual(['Correct!'])
   })

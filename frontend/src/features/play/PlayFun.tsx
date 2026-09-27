@@ -4,7 +4,7 @@
  * reads the words aloud. Each one is only drawn by the look that wants it.
  */
 import { AnimatePresence, motion } from 'motion/react'
-import { Circle, Diamond, SpeakerHigh, SpeakerSlash, Star, Triangle } from '@phosphor-icons/react'
+import { Circle, Diamond, RocketLaunch, Sparkle, SpeakerHigh, SpeakerSlash, Star, Triangle } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { spring } from '@/motion'
 import type { ReadAloud } from '@/features/guide/useReadAloud'
@@ -20,7 +20,17 @@ const DRIFTERS = [
   { Icon: Circle, tone: 'text-sun-400/25', left: '70%', top: '36%', size: 'size-8', rise: 10, spin: 0, time: 5 },
 ] as const
 
-export function PlayBackdrop() {
+export function PlayBackdrop({ kind }: { kind: 'drift' | 'grid' | 'none' }) {
+  if (kind === 'none') return null
+  if (kind === 'grid') {
+    // Year 4–6: a quiet dotted grid, still — a map to adventure across.
+    return (
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 bg-background [background-image:radial-gradient(hsl(var(--primary)/0.12)_1.5px,transparent_1.5px)] [background-size:26px_26px]"
+      />
+    )
+  }
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-gradient-to-b from-sky-100/60 via-background to-sun-100/50 dark:from-sky-700/10 dark:to-sun-600/10">
       {DRIFTERS.map((d, i) => (
@@ -68,6 +78,51 @@ export function ProgressStars({ parts }: { parts: Segment[] }) {
         </motion.span>
       ))}
     </div>
+  )
+}
+
+/** The progress bar with a rocket riding it to the current question. */
+export function ProgressJourney({ parts, children }: { parts: Segment[]; children: React.ReactNode }) {
+  const at = Math.max(0, parts.findIndex((p) => p === 'current'))
+  const done = parts.every((p) => p !== 'current' && p !== 'todo')
+  const share = parts.length ? ((done ? parts.length : at) + 0.5) / parts.length : 0
+  return (
+    <div className="relative pt-1">
+      {children}
+      <motion.span
+        aria-hidden
+        className="pointer-events-none absolute -top-2.5 grid size-6 -translate-x-1/2 place-items-center rounded-full bg-primary text-primary-foreground shadow-md"
+        initial={false}
+        animate={{ left: `${Math.min(100, share * 100)}%`, rotate: [0, -8, 0] }}
+        transition={{ left: spring.gentle, rotate: { duration: 1.6, repeat: Infinity } }}
+      >
+        <RocketLaunch weight="fill" className="size-3.5" />
+      </motion.span>
+    </div>
+  )
+}
+
+/** Little stars flying out of a right answer. */
+const RAYS = [0, 60, 120, 180, 240, 300]
+
+export function SparkleBurst() {
+  return (
+    <span aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center overflow-visible">
+      {RAYS.map((deg, i) => {
+        const rad = (deg * Math.PI) / 180
+        return (
+          <motion.span
+            key={deg}
+            className="absolute text-star"
+            initial={{ x: 0, y: 0, scale: 0.4, opacity: 1 }}
+            animate={{ x: Math.cos(rad) * 70, y: Math.sin(rad) * 40, scale: 1, opacity: 0, rotate: 90 }}
+            transition={{ duration: 0.8, delay: i * 0.02, ease: 'easeOut' }}
+          >
+            {i % 2 ? <Star weight="fill" className="size-4" /> : <Sparkle weight="fill" className="size-5" />}
+          </motion.span>
+        )
+      })}
+    </span>
   )
 }
 

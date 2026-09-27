@@ -4,7 +4,7 @@
  * whatever happened. Kind to a low score; it never says "fail".
  */
 import { animate, motion, useMotionValue, useTransform } from 'motion/react'
-import { ArrowClockwise, ClipboardText, House, Ranking, Star } from '@phosphor-icons/react'
+import { ArrowClockwise, ClipboardText, House, Medal, Ranking, Star } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 import { Button, ButtonLink } from '@/components/ui'
 import { BadgeMedal } from '@/features/badges/medals'
@@ -14,7 +14,7 @@ import { useSound } from '@/lib/sound'
 import { cn } from '@/lib/utils'
 import { celebrate, pop, spring, stagger, useCalmMotion } from '@/motion'
 import type { Finish } from './api'
-import { POINTS_EACH, usePlayLook } from './level'
+import { POINTS_EACH, rankFor, usePlayLook } from './level'
 import { verdictFor, type Verdict } from './session'
 
 const HEADLINE: Record<Verdict, string[]> = {
@@ -102,6 +102,17 @@ export function FinishScreen({
           >
             <Star weight="fill" className="size-5" aria-hidden />
             You won {won} points!
+          </motion.p>
+        )}
+        {look.rank && !guide && (
+          <motion.p
+            initial={{ y: 12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ ...spring.gentle, delay: 2.4 }}
+            className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 font-bold text-primary-foreground shadow-press"
+          >
+            <Medal weight="fill" className="size-5" aria-hidden />
+            Rank: {rankFor(attempt.percent)}
           </motion.p>
         )}
       </BuddyStage>

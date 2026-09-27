@@ -109,7 +109,7 @@ export function FlashcardPlayer({ attempt, buddy, exitTo, onFinished }: PlayerPr
 
   return (
     <div className="flex min-h-dvh flex-col">
-      {look.backdrop && <PlayBackdrop />}
+      <PlayBackdrop kind={look.backdrop} />
       <PlayHeader
         title={phase === 'second' ? `${attempt.title} · round 2` : attempt.title}
         kind="flashcard"
@@ -215,7 +215,7 @@ function Flashcard({
         // The youngest get a flip with a little bounce at the end.
         transition={bright ? spring.bouncy : { type: 'spring', stiffness: 260, damping: 24 }}
       >
-        <Face side="front" bright={bright}>
+        <Face side="front" bright={bright} quest={look.tiles === 'quest'}>
           <p className="text-sm font-bold tracking-wide text-kind-flashcard uppercase">Front</p>
           <p className={cn('mt-3 leading-tight', bright ? 'font-celebrate text-4xl md:text-5xl' : 'font-display text-3xl font-semibold md:text-4xl')}>{card.front}</p>
           {card.hint && (
@@ -255,16 +255,20 @@ function Flashcard({
   )
 }
 
-function Face({ side, bright = false, children }: { side: 'front' | 'back'; bright?: boolean; children: React.ReactNode }) {
+function Face({ side, bright = false, quest = false, children }: { side: 'front' | 'back'; bright?: boolean; quest?: boolean; children: React.ReactNode }) {
   return (
     <span
       className={cn(
         'absolute inset-0 flex flex-col items-center justify-center rounded-[2rem] p-8 text-center shadow-lg [backface-visibility:hidden]',
         bright ? 'border-4' : 'border-2',
+        // Year 4–6: a bold band across the top of the card, like a trading card.
+        quest && 'border-t-[12px]',
         side === 'front'
           ? bright
             ? 'border-sky-400 bg-gradient-to-br from-sky-100 to-grape-100 dark:from-sky-700/25 dark:to-grape-800/40'
-            : 'border-border bg-surface'
+            : quest
+              ? 'border-border border-t-kind-flashcard-vivid bg-surface'
+              : 'border-border bg-surface'
           : 'border-kind-flashcard-vivid [transform:rotateY(180deg)]',
       )}
       style={side === 'back' ? { backgroundColor: 'hsl(var(--surface))', backgroundImage: `linear-gradient(hsl(var(--kind-flashcard-vivid) / ${bright ? 0.22 : 0.12}), hsl(var(--kind-flashcard-vivid) / ${bright ? 0.22 : 0.12}))` } : undefined}

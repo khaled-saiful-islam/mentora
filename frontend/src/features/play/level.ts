@@ -4,8 +4,10 @@
  * - **little** (Year 1–3): a playground — big bright tiles that bob, a star
  *   path for progress, confetti on every right answer, "read it to me", and
  *   words a six-year-old knows.
- * - **middle** (Year 4–6): lively but calmer — points to win on each right
- *   answer, the usual tiles and progress bar.
+ * - **middle** (Year 4–6): a quest — tiles with a bold colour edge, the
+ *   question in its own card, a rocket riding the progress bar, a sparkle
+ *   and points for each right answer, and a rank at the end. Livelier than
+ *   the Forms, calmer than the youngest.
  * - **senior** (Form 1–5 and up): the clean, focused look Mentora had.
  *
  * The look is picked for the student from their own year (the set's year
@@ -40,8 +42,17 @@ export interface PlayLook {
   level: PlayLevel
   /** The question or card text. */
   question: string
-  /** Answer tiles: the usual white ones, or each in its own bright colour. */
-  tiles: 'plain' | 'bright'
+  /** Answer tiles: the usual white ones, each in its own bright colour, or
+   *  white with a bold colour edge. */
+  tiles: 'plain' | 'bright' | 'quest'
+  /** The question sits in a card of its own. */
+  questionCard: boolean
+  /** A rocket rides the progress bar to the current question. */
+  journey: boolean
+  /** Stars burst from a right answer. */
+  sparkle: boolean
+  /** A title earned at the end: Explorer, Adventurer, Champion. */
+  rank: boolean
   /** How tall a tile is, and how big its words. */
   tileSize: string
   tileText: string
@@ -53,8 +64,8 @@ export interface PlayLook {
   points: boolean
   /** A path of stars for progress, instead of the bar. */
   starPath: boolean
-  /** Shapes drifting behind the game. */
-  backdrop: boolean
+  /** Behind the game: shapes drifting, a quiet dotted grid, or nothing. */
+  backdrop: 'drift' | 'grid' | 'none'
   /** A button that reads the question or card aloud. */
   readAloud: boolean
   /** What the verdict says. */
@@ -69,13 +80,17 @@ const LOOKS: Record<PlayLevel, Omit<PlayLook, 'level'>> = {
   little: {
     question: 'font-celebrate text-3xl leading-snug md:text-4xl',
     tiles: 'bright',
+    questionCard: false,
+    journey: false,
+    sparkle: false,
+    rank: false,
     tileSize: 'min-h-24',
     tileText: 'text-xl',
     bob: true,
     cheerEveryRight: true,
     points: false,
     starPath: true,
-    backdrop: true,
+    backdrop: 'drift',
     readAloud: true,
     rightWords: ['Yay! You got it!', 'Woohoo!', 'Super star!', 'You did it!'],
     wrongWords: ['Oops! Nice try!', 'Almost there!', 'Good try!'],
@@ -83,15 +98,19 @@ const LOOKS: Record<PlayLevel, Omit<PlayLook, 'level'>> = {
     confettiPower: 1.5,
   },
   middle: {
-    question: 'font-display text-2xl leading-snug font-semibold md:text-3xl',
-    tiles: 'plain',
+    question: 'font-display text-2xl leading-snug font-bold md:text-3xl',
+    tiles: 'quest',
+    questionCard: true,
+    journey: true,
+    sparkle: true,
+    rank: true,
     tileSize: 'min-h-20',
     tileText: 'text-lg',
     bob: false,
     cheerEveryRight: false,
     points: true,
     starPath: false,
-    backdrop: false,
+    backdrop: 'grid',
     readAloud: false,
     rightWords: ['Correct!', 'Nailed it!', 'Spot on!'],
     wrongWords: ['Not quite', 'So close!'],
@@ -101,13 +120,17 @@ const LOOKS: Record<PlayLevel, Omit<PlayLook, 'level'>> = {
   senior: {
     question: 'font-display text-2xl leading-snug font-semibold md:text-3xl',
     tiles: 'plain',
+    questionCard: false,
+    journey: false,
+    sparkle: false,
+    rank: false,
     tileSize: 'min-h-20',
     tileText: 'text-lg',
     bob: false,
     cheerEveryRight: false,
     points: false,
     starPath: false,
-    backdrop: false,
+    backdrop: 'none',
     readAloud: false,
     rightWords: ['Correct!'],
     wrongWords: ['Not quite'],
@@ -119,11 +142,20 @@ const LOOKS: Record<PlayLevel, Omit<PlayLook, 'level'>> = {
 export function lookFor(level: PlayLevel, calm = false): PlayLook {
   const look = { level, ...LOOKS[level] }
   // Asked for less movement: keep the colour and the words, drop the motion.
-  return calm ? { ...look, bob: false, backdrop: false, cheerEveryRight: false } : look
+  const still = look.backdrop === 'drift' ? 'none' : look.backdrop
+  return calm ? { ...look, bob: false, backdrop: still, cheerEveryRight: false, sparkle: false, journey: false } : look
 }
 
 /** Points for a first-try result: ten a right answer. */
 export const POINTS_EACH = 10
+
+/** The title a Year 4–6 player earns for a score. */
+export function rankFor(percent: number): string {
+  if (percent >= 90) return 'Champion'
+  if (percent >= 70) return 'Adventurer'
+  if (percent >= 40) return 'Explorer'
+  return 'Rookie'
+}
 
 const LevelContext = createContext<PlayLevel>('senior')
 
