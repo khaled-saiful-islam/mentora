@@ -158,6 +158,9 @@ class Settings(BaseSettings):
     live_audio_dir: str = ".cache/live-audio"
     # Clips per person per minute. A lesson preview asks for a dozen at once.
     rate_limit_speech_per_minute: int = 120
+    # The languages "Read it to me" says in the tutor's voice, comma-separated.
+    # Any other set is read by the browser's own voice.
+    read_aloud_languages: str = "en"
     # Hearing a student's spoken question (push-to-talk). ILMU hears English
     # and Malay well; it cannot yet hear Tamil.
     transcribe_model: str = "ilmu-asr-v4.2"
@@ -229,6 +232,10 @@ class Settings(BaseSettings):
     @property
     def speech_model_list(self) -> list[str]:
         return _listed(self.speech_models) or [self.speech_model]
+
+    @property
+    def read_aloud_language_list(self) -> list[str]:
+        return [x.lower() for x in _listed(self.read_aloud_languages)]
 
     @property
     def resolved_artifact_base_url(self) -> str:

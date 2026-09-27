@@ -17,9 +17,12 @@ from sse_starlette.sse import EventSourceResponse
 from app.api.deps import (
     CurrentUser,
     GenerationServiceDep,
+    NarratorDep,
     SessionDep,
+    SettingsDep,
     StreamUser,
     limit_generate,
+    limit_speech,
     require_any_capability,
 )
 from app.api.schemas.learning import (
@@ -32,6 +35,7 @@ from app.api.schemas.learning import (
     SetList,
     SetSummary,
 )
+from app.api.schemas.read_aloud import SpokenDep, clip
 from app.core.errors import NotFoundError, ValidationError
 from app.db.models.learning import LearningSet
 from app.db.session import session_scope
@@ -40,6 +44,7 @@ from app.learning.model import GenerationUnavailable
 from app.services.generation_service import GenerationDraft, GenerationService
 from app.services.jobs import jobs
 from app.services.learning_set_service import LearningSetService, SetView
+from app.services.read_aloud import ReadAloudService
 from app.services.work import work
 from app.services.work_tickets import for_set
 
@@ -163,6 +168,22 @@ async def index(
 @router.get("/{set_id}", response_model=SetDetail)
 async def read(set_id: UUID, user: CurrentUser, session: SessionDep) -> SetDetail:
     return SetDetail.of(await LearningSetService(session).view(user.id, set_id))
+
+
+@router.get("/{set_id}/speech", dependencies=[Depends(limit_speech)])
+async def speech(
+    set_id: UUID,
+    spoken: SpokenDep,
+    user: CurrentUser,
+    session: SessionDep,
+    narrator: NarratorDep,
+    settings: SettingsDep,
+) -> Response:
+    """Read it to me while previewing a set — what a student would hear."""
+    audio = await ReadAloudService(session, narrator, settings).for_set(
+        user.id, set_id, spoken.item, spoken.part, spoken.n
+    )
+    return clip(audio, keep=False)
 
 
 @router.patch("/{set_id}", response_model=SetDetail)

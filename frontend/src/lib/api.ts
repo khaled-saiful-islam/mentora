@@ -64,6 +64,8 @@ export interface PublicConfig {
   images_enabled: boolean
   currency: string
   supported_languages: string[]
+  /** The languages "Read it to me" says in the tutor's voice. */
+  read_aloud_languages: string[]
   /** The school levels, in picker order. */
   grades: Grade[]
 }

@@ -15,7 +15,7 @@ before sharing it, in each look.
 | Answer tiles | Bright, each in its shape's colour; the shapes bob; they tumble in | White with a bold edge in the shape's colour; they slide in like dealt cards | The usual white tiles |
 | Progress | A path of stars: gold when right, grey when not, the current one twinkling (up to 15 items) | The bar, with a rocket riding it to the current question | The bar |
 | A right answer | Confetti every time, and *"Yay! You got it!"* | Stars burst from the tile, *"+10"* rises, a points counter ticks | *"Correct!"* |
-| Read it to me | Reads the question and each answer by its shape (*"Triangle: …"*), or the card | — | — |
+| Read it to me | Astra's voice reads the question and each answer by its shape (*"Triangle: …"*), or the card | — | — |
 | Flashcards | Bright cards, big words, a bouncier flip, smiley buttons, confetti for *I knew it!* | A bold band across the top of each card; points for each one known | As before |
 | Finish | A bigger party, with confetti from one star | *"You won 80 points!"* and a rank: Rookie, Explorer, Adventurer or Champion | As before |
 
@@ -46,8 +46,26 @@ Form, Lower or Upper Six, or no year at all — gets the focused look.
   - The players, the header and the finish screen read it through
     `PlayLevelProvider` / `usePlayLook`.
 - `PlayFun.tsx` holds the extras — the drifting backdrop, `ProgressStars`,
-  `PointsChip`, `PointsBurst` and `ReadAloudButton` (the study guides' own
-  `useReadAloud`). Each is drawn only by the look that wants it.
+  `PointsChip`, `PointsBurst` and `ReadAloudButton`. Each is drawn only by the
+  look that wants it.
+- **Read it to me** (`usePlayVoice.ts`, `services/read_aloud.py`) uses the
+  same warm female voice as live lessons (`SPEECH_VOICE`, `SPEECH_SPEED`):
+  - The browser never sends the words. It asks for one *part* of an item —
+    `?item=…&part=question|option|front|back&n=…` — from the student's attempt
+    (`GET /api/me/attempts/{id}/speech`) or, in a preview, from the owner's
+    set (`GET /api/learning-sets/{id}/speech`). The server says what is on
+    screen, in the shown order, so the voice can't be made to say anything
+    else.
+  - Each part is its own clip, played in turn with a breath between (longer
+    after the question). All of them are asked for at once, so the next is
+    ready by its turn. Clips are recorded once and cached (`Narrator`), and
+    count against `RATE_LIMIT_SPEECH_PER_MINUTE`.
+  - An attempt's clips may be kept by the browser for an hour; a preview's
+    are not, because the set may have just been edited.
+  - `READ_ALOUD_LANGUAGES` (default `en`, also in `/api/config`) says which
+    sets get the tutor's voice. Any other language, or a voice that fails, is
+    read by the browser's own voice instead — the button always does
+    something.
 - `PlayPage` provides the look from the student's year, falling back to the
   set's.
 - **The backend seam** (`backend.ts`): a player sends answers to
@@ -73,8 +91,12 @@ Form, Lower or Upper Six, or no year at all — gets the focused look.
 - **Preview always gives instant feedback.** A set shared for end-of-quiz
   feedback plays the same in preview; the difference is only when the
   verdicts appear.
-- **Read it to me uses the browser's voice.** It depends on the device, and
-  it isn't offered where the browser has no speech synthesis.
+- **The tutor's voice reads English only for now.** A set in another
+  language is read by the browser's voice, which depends on the device.
+- **The first tap on a new question waits for the recording** — about a
+  second for the question. After that it is cached for everyone.
+- **Study guides still use the browser's voice**, because they light up each
+  word as it is read, and a recorded clip doesn't say where it has got to.
 - **A student whose year is set wrong gets the wrong look.** The look reads
   the year on their account, nothing else.
 - **The star path is for up to 15 items.** A longer set shows the bar, which

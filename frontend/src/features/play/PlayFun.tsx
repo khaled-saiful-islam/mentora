@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Circle, Diamond, RocketLaunch, Sparkle, SpeakerHigh, SpeakerSlash, Star, Triangle } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { spring } from '@/motion'
-import type { ReadAloud } from '@/features/guide/useReadAloud'
+import type { Line, PlayVoice } from './usePlayVoice'
 import type { Segment } from './session'
 
 /** Soft shapes floating slowly behind the game. Decoration only. */
@@ -159,8 +159,9 @@ export function PointsBurst({ amount, show }: { amount: number; show: boolean })
   )
 }
 
-/** Read these words aloud — for children still learning to read. */
-export function ReadAloudButton({ voice, id, text, className }: { voice: ReadAloud; id: string; text: string; className?: string }) {
+/** Read these words aloud, in the tutor's voice — for children still
+ *  learning to read. */
+export function ReadAloudButton({ voice, id, lines, className }: { voice: PlayVoice; id: string; lines: Line[]; className?: string }) {
   if (!voice.supported) return null
   const reading = voice.reading === id
   return (
@@ -169,7 +170,7 @@ export function ReadAloudButton({ voice, id, text, className }: { voice: ReadAlo
       onClick={(event) => {
         event.stopPropagation()
         if (reading) voice.stop()
-        else voice.read(id, text)
+        else voice.read(id, lines)
       }}
       whileTap={{ scale: 0.9 }}
       animate={reading ? { scale: [1, 1.08, 1] } : { scale: 1 }}

@@ -4,6 +4,7 @@
  * the person turned sound on in their settings.
  */
 import { useCallback } from 'react'
+import { audioContext } from './audio'
 import { usePreferences } from './prefs'
 
 export type Sound = 'tap' | 'correct' | 'wrong' | 'flip' | 'streak' | 'finish' | 'badge' | 'notify'
@@ -48,11 +49,10 @@ const TUNES: Record<Sound, Note[]> = {
   ],
 }
 
-let context: AudioContext | null = null
-
 export function playSound(sound: Sound): void {
   try {
-    context ??= new AudioContext()
+    const context = audioContext()
+    if (!context) return
     const now = context.currentTime
     for (const [frequency, start, length, wave] of TUNES[sound]) {
       const osc = context.createOscillator()

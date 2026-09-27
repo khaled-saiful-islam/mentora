@@ -13,7 +13,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Button, Chip } from '@/components/ui'
 import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/features/auth/errors'
-import { useReadAloud } from '@/features/guide/useReadAloud'
 import { useSound } from '@/lib/sound'
 import { cn } from '@/lib/utils'
 import { celebrate, spring, useCalmMotion } from '@/motion'
@@ -22,6 +21,7 @@ import { usePlayBackend } from './backend'
 import { POINTS_EACH, usePlayLook, type PlayLook } from './level'
 import { PlayHeader } from './PlayChrome'
 import { PlayBackdrop, PointsBurst, ReadAloudButton } from './PlayFun'
+import { usePlayVoice } from './usePlayVoice'
 import type { PlayerProps } from './players'
 import { cardItems, playedById, resumeAt, segments, skillLabel, type Segment } from './session'
 
@@ -45,7 +45,7 @@ export function FlashcardPlayer({ attempt, buddy, exitTo, onFinished }: PlayerPr
   const calm = useCalmMotion()
   const backend = usePlayBackend()
   const look = usePlayLook()
-  const voice = useReadAloud(attempt.language)
+  const voice = usePlayVoice(attempt.id, attempt.language)
 
   const deck = phase === 'second' ? again : cards
   const card = deck[index]
@@ -128,7 +128,7 @@ export function FlashcardPlayer({ attempt, buddy, exitTo, onFinished }: PlayerPr
                   Card {index + 1} of {deck.length}
                 </Chip>
                 <Chip className="text-sm capitalize">{skillLabel(attempt, card.skill)}</Chip>
-                {look.readAloud && <ReadAloudButton voice={voice} id={`${card.id}-${flipped ? 'back' : 'front'}`} text={flipped ? card.back : card.front} />}
+                {look.readAloud && <ReadAloudButton voice={voice} id={`${card.id}-${flipped ? 'back' : 'front'}`} lines={[{ spoken: { item: card.id, part: flipped ? 'back' : 'front' }, text: flipped ? card.back : card.front }]} />}
               </div>
               <Deck left={deck.length - index - 1}>
                 <PointsBurst key={burst} amount={POINTS_EACH} show={burst > 0} />

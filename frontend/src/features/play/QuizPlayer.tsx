@@ -17,7 +17,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button, Chip } from '@/components/ui'
 import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/features/auth/errors'
-import { useReadAloud } from '@/features/guide/useReadAloud'
 import { useSound } from '@/lib/sound'
 import { cn } from '@/lib/utils'
 import { celebrate, spring, useCalmMotion, wobble } from '@/motion'
@@ -26,6 +25,7 @@ import { usePlayBackend } from './backend'
 import { pick, POINTS_EACH, usePlayLook, type PlayLook } from './level'
 import { PlayHeader } from './PlayChrome'
 import { PlayBackdrop, PointsBurst, ReadAloudButton, SparkleBurst } from './PlayFun'
+import { usePlayVoice, type Line } from './usePlayVoice'
 import type { PlayerProps } from './players'
 import { playedById, quizItems, resumeAt, segments, skillLabel } from './session'
 
@@ -41,7 +41,8 @@ interface Marker {
   name: string
 }
 
-// Shape, colour and key for each position — the same everywhere.
+// Shape, colour and key for each position — the same everywhere. The tutor's
+// voice names the shapes the same way (`SHAPES` in `services/read_aloud.py`).
 const MARKERS: Marker[] = [
   { Icon: Triangle, tile: 'bg-coral-400', key: '1', bright: 'border-coral-400 bg-coral-100 dark:bg-coral-700/25', accent: 'border-l-coral-400', name: 'Triangle' },
   { Icon: Diamond, tile: 'bg-sky-400', key: '2', bright: 'border-sky-400 bg-sky-100 dark:bg-sky-700/25', accent: 'border-l-sky-400', name: 'Diamond' },
@@ -64,7 +65,7 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
   const calm = useCalmMotion()
   const backend = usePlayBackend()
   const look = usePlayLook()
-  const voice = useReadAloud(attempt.language)
+  const voice = usePlayVoice(attempt.id, attempt.language)
   const instant = attempt.feedback_mode === 'instant'
   const item = items[index]
   const answer = item ? played[item.id] : undefined
@@ -122,7 +123,11 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
   useKeys(item?.options.length ?? 0, (n) => void choose(n), answer && instant ? next : null)
 
   if (!item) return null
-  const heard = `${item.prompt}. ${item.options.map((o, i) => `${MARKERS[i % MARKERS.length].name}: ${o}`).join('. ')}`
+  // The server says the same words, by the same shape names (`read_aloud.py`).
+  const heard: Line[] = [
+    { spoken: { item: item.id, part: 'question' }, text: item.prompt },
+    ...item.options.map((o, n): Line => ({ spoken: { item: item.id, part: 'option', n }, text: `${MARKERS[n % MARKERS.length].name}: ${o}` })),
+  ]
   return (
     <div className="flex min-h-dvh flex-col">
       <PlayBackdrop kind={look.backdrop} />
@@ -150,7 +155,7 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
                   Question {index + 1} of {items.length}
                 </Chip>
                 <Chip className="text-sm capitalize">{skillLabel(attempt, item.skill)}</Chip>
-                {look.readAloud && <ReadAloudButton voice={voice} id={item.id} text={heard} className="ml-auto" />}
+                {look.readAloud && <ReadAloudButton voice={voice} id={item.id} lines={heard} className="ml-auto" />}
               </div>
               <h1 className={cn(look.questionCard ? 'mt-3' : 'mt-4', look.question)}>{item.prompt}</h1>
             </div>

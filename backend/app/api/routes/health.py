@@ -43,11 +43,12 @@ async def public_config() -> dict[str, object]:
         "images_enabled": settings.vision_enabled,
         "currency": settings.llm_price_currency,
         "supported_languages": settings.supported_language_list,
+        # Which sets "Read it to me" says in the tutor's voice.
+        "read_aloud_languages": settings.read_aloud_language_list,
         # The school levels, in picker order, for signup and set creation.
         # What each person may *make* depends on who they are, so it is not
         # here: see /api/me/makeable.
         "grades": [
-            {"code": grade.code, "label": grade.label, "stage": grade.stage}
-            for grade in GRADES
+            {"code": grade.code, "label": grade.label, "stage": grade.stage} for grade in GRADES
         ],
     }

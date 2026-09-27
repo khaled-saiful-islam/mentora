@@ -5,9 +5,16 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 
-from app.api.deps import CurrentUser, SessionDep, require_capability
+from app.api.deps import (
+    CurrentUser,
+    NarratorDep,
+    SessionDep,
+    SettingsDep,
+    limit_speech,
+    require_capability,
+)
 from app.api.schemas.learning import SetSummary
 from app.api.schemas.play import (
     AnswerRequest,
@@ -22,6 +29,7 @@ from app.api.schemas.play import (
     history_row,
     made_for_you_row,
 )
+from app.api.schemas.read_aloud import SpokenDep, clip
 from app.badges.catalog import CATALOG
 from app.core.errors import ValidationError
 from app.events.registry import build_bus
@@ -31,6 +39,7 @@ from app.services.badge_service import BadgeService
 from app.services.child_view_service import ChildViewService
 from app.services.family_share_service import FamilyShareService
 from app.services.play_service import PlayService
+from app.services.read_aloud import ReadAloudService
 from app.services.results_service import ResultsService
 from app.services.student_home_service import StudentHomeService
 
@@ -125,6 +134,22 @@ async def answer(
         user.id, attempt_id, body.item_id, response, body.time_ms
     )
     return AnswerResponse.of(result)
+
+
+@router.get("/attempts/{attempt_id}/speech", dependencies=[Depends(limit_speech)])
+async def speech(
+    attempt_id: UUID,
+    spoken: SpokenDep,
+    user: CurrentUser,
+    session: SessionDep,
+    narrator: NarratorDep,
+    settings: SettingsDep,
+) -> Response:
+    """Read it to me: one part of an item, in the tutor's voice."""
+    audio = await ReadAloudService(session, narrator, settings).for_attempt(
+        user.id, attempt_id, spoken.item, spoken.part, spoken.n
+    )
+    return clip(audio, keep=True)
 
 
 @router.post("/attempts/{attempt_id}/complete", response_model=FinishResponse)

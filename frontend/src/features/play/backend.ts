@@ -3,6 +3,9 @@
  * them and keeps them. For a teacher or parent previewing a set, the page
  * itself, which marks them from the answer key it already has and keeps
  * nothing. The players never know which.
+ *
+ * It also says where "Read it to me" gets each clip: the student's attempt,
+ * or the set being previewed.
  */
 import { createContext, useContext } from 'react'
 import { playApi, type AnswerResult } from './api'
@@ -14,11 +17,27 @@ export interface AnswerBody {
   time_ms: number
 }
 
-export interface PlayBackend {
-  answer: (attemptId: string, body: AnswerBody) => Promise<AnswerResult>
+/** One part of an item the tutor's voice can say. */
+export type Spoken = { item: string; part: 'question' | 'front' | 'back' } | { item: string; part: 'option'; n: number }
+
+export function spokenQuery(spoken: Spoken): string {
+  const query = new URLSearchParams({ item: spoken.item, part: spoken.part })
+  if (spoken.part === 'option') query.set('n', String(spoken.n))
+  return query.toString()
 }
 
-const BackendContext = createContext<PlayBackend>({ answer: playApi.answer })
+export interface PlayBackend {
+  answer: (attemptId: string, body: AnswerBody) => Promise<AnswerResult>
+  /** The address of one clip in the tutor's voice. */
+  speech: (attemptId: string, spoken: Spoken) => string
+}
+
+const server: PlayBackend = {
+  answer: playApi.answer,
+  speech: (attemptId, spoken) => `/api/me/attempts/${attemptId}/speech?${spokenQuery(spoken)}`,
+}
+
+const BackendContext = createContext<PlayBackend>(server)
 
 export const PlayBackendProvider = BackendContext.Provider
 
