@@ -91,9 +91,7 @@ async def test_an_artifact_comes_back_with_its_document(api, artifact) -> None:
     assert body["version"] == 1
 
 
-async def test_a_static_kind_reports_a_frame_that_cannot_run_a_script(
-    api, artifact
-) -> None:
+async def test_a_static_kind_reports_a_frame_that_cannot_run_a_script(api, artifact) -> None:
     """The component does not decide this. The kind does, so the preview and a
     shared page cannot end up disagreeing."""
     async with api as client:
@@ -219,9 +217,7 @@ async def test_sharing_again_keeps_the_link_working(api, artifact, session) -> N
     assert "v2" in served.text
 
 
-async def test_a_share_is_a_copy_so_a_later_edit_is_not_published(
-    api, artifact, session
-) -> None:
+async def test_a_share_is_a_copy_so_a_later_edit_is_not_published(api, artifact, session) -> None:
     """A link that followed the artifact would republish every later edit
     without the owner deciding to."""
     async with api as client:
@@ -368,9 +364,7 @@ async def test_fixing_a_word_does_not_make_a_new_version(api, wordy) -> None:
 async def test_an_edit_that_changes_nothing_does_not_make_a_version(api, wordy) -> None:
     async with api as client:
         await sign_in(client)
-        body = (
-            await client.post(f"/api/artifacts/{wordy.id}/text", json={"changes": []})
-        ).json()
+        body = (await client.post(f"/api/artifacts/{wordy.id}/text", json={"changes": []})).json()
 
     assert body["version"] == 1
 
@@ -470,3 +464,19 @@ async def test_no_renderer_is_a_message_not_a_crash(api, artifact, monkeypatch) 
     # A message, with the document still one query parameter away.
     assert response.status_code == 422
     assert "cannot export" in response.json()["error"]["message"]
+
+
+async def test_making_or_reworking_one_is_switched_off(api, artifact) -> None:
+    """Posters and the rest are no longer made — not in the chat, and not by
+    asking the model to rework one. What was made stays readable."""
+    async with api as client:
+        await sign_in(client)
+        seen = await client.get(f"/api/artifacts/{artifact.id}")
+        reworked = await client.post(
+            f"/api/artifacts/{artifact.id}/revise", json={"instruction": "make it blue"}
+        )
+        chat = await client.post(
+            "/api/chat/stream", json={"content": "make it blue", "artifact_id": str(artifact.id)}
+        )
+    assert seen.status_code == 200
+    assert reworked.status_code == chat.status_code == 403

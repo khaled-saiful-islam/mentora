@@ -23,7 +23,7 @@ import { Buddy, BuddyStage, greeting, profileOf } from '@/features/buddies'
 import { familyApi } from '@/features/family/api'
 import { useResource } from '@/hooks/useResource'
 import { useAuth } from '@/lib/auth'
-import { firstName } from '@/lib/user'
+import { can, firstName } from '@/lib/user'
 import { cn } from '@/lib/utils'
 import { pop, rise, spring, stagger, useCalmMotion } from '@/motion'
 
@@ -64,14 +64,16 @@ function forParents(child: string | undefined, grade: string | null | undefined)
   ]
 }
 
-/** What the headline says can be made, each in its own colour. */
+/** What the headline says can be made, each in its own colour. The studio's
+ *  own kinds only where the studio is open. */
 const MAKES = [
-  { word: 'quiz', tone: 'text-kind-quiz' },
-  { word: 'study guide', tone: 'text-kind-study-guide' },
-  { word: 'poster', tone: 'text-kind-poster' },
-  { word: 'lesson plan', tone: 'text-primary' },
-  { word: 'slide deck', tone: 'text-kind-slides' },
-  { word: 'game', tone: 'text-kind-games' },
+  { word: 'quiz', tone: 'text-kind-quiz', studio: false },
+  { word: 'study guide', tone: 'text-kind-study-guide', studio: false },
+  { word: 'poster', tone: 'text-kind-poster', studio: true },
+  { word: 'lesson plan', tone: 'text-primary', studio: false },
+  { word: 'slide deck', tone: 'text-kind-slides', studio: true },
+  { word: 'flashcard deck', tone: 'text-kind-flashcard', studio: false },
+  { word: 'game', tone: 'text-kind-games', studio: true },
 ] as const
 const TURN_MS = 2400
 
@@ -216,13 +218,16 @@ function Studio({
 /** The thing to make, changing every couple of seconds. */
 function Turning() {
   const calm = useCalmMotion()
+  const { user } = useAuth()
+  const studio = can(user, 'studio_artifacts')
+  const words = useMemo(() => MAKES.filter((m) => studio || !m.studio), [studio])
   const [at, setAt] = useState(0)
   useEffect(() => {
     if (calm) return
-    const timer = window.setInterval(() => setAt((n) => (n + 1) % MAKES.length), TURN_MS)
+    const timer = window.setInterval(() => setAt((n) => (n + 1) % words.length), TURN_MS)
     return () => window.clearInterval(timer)
-  }, [calm])
-  const make = MAKES[at]
+  }, [calm, words.length])
+  const make = words[at % words.length]
   return (
     // Clipped to its own line, so the word rising in or out never crosses
     // the greeting above it.
@@ -239,7 +244,7 @@ function Turning() {
           {make.word}
         </motion.span>
       </AnimatePresence>
-      <span className="sr-only">, a quiz, a study guide, a poster and more</span>
+      <span className="sr-only">, {studio ? 'a quiz, a study guide, a poster and more' : 'a quiz, a study guide, flashcards or a lesson plan'}</span>
     </span>
   )
 }

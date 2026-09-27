@@ -125,6 +125,17 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
           </div>
           <div className="flex flex-wrap gap-2">
             <TextSizeControl compact className="border-white/30 bg-white/15 text-white [&_button]:text-white" />
+            {(initial.kind === 'quiz' || initial.kind === 'flashcard') && (
+              <Link
+                to={`/library/${initial.id}/try`}
+                aria-disabled={dirty}
+                onClick={(event) => dirty && event.preventDefault()}
+                title={dirty ? 'Save your changes first' : 'Play it as a student would'}
+                className={cn(buttonClass('secondary'), 'bg-white/15 text-white ring-1 ring-white/30 hover:bg-white/25', dirty && 'pointer-events-none opacity-50')}
+              >
+                <Eye weight="bold" className="size-5" /> Preview
+              </Link>
+            )}
             {kind.previewable && (
               <Link
                 to={`/library/${initial.id}/preview`}

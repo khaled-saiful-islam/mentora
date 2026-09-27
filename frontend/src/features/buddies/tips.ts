@@ -38,7 +38,7 @@ export const TIPS: Record<TipPlace, readonly string[]> = {
   ],
   results: [
     'Look at what you missed — that is where the learning is.',
-    'Try a practice set on your trickiest skill.',
+    'Have a go at the practice made for your trickiest skill.',
     'Come back tomorrow and see how much you remember!',
   ],
 }
@@ -52,7 +52,7 @@ export interface SkillNudges {
  *  own skills. `seed` makes it repeatable in a test. */
 export function tipFor(place: TipPlace, skills: SkillNudges = {}, seed: number = Math.random()): string {
   const nudges = [
-    ...(skills.practise ?? []).map((s) => `Let's get stronger at ${s} — a practice set would help!`),
+    ...(skills.practise ?? []).map((s) => `Let's get stronger at ${s} — a little practice would help!`),
     ...(skills.strengths ?? []).map((s) => `You're a star at ${s}! Keep it shining.`),
   ]
   const pool = place === 'home' || place === 'results' ? [...nudges, ...nudges, ...TIPS[place]] : TIPS[place]

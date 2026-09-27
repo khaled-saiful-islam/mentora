@@ -41,9 +41,12 @@ from app.db.models.artifact_share import ArtifactShare
 from app.db.repositories.artifacts import SqlArtifactRepository
 from app.services.artifact_share_service import ArtifactShareService
 
-# Studio artifacts are for teachers and admins. The gate is on the router, so a
-# route added here later is gated without anyone remembering to gate it.
-_STUDIO = [Depends(require_capability("studio_artifacts"))]
+# Studio artifacts already made are for teachers and admins to see, download
+# and share. The gate is on the router, so a route added here later is gated
+# without anyone remembering to gate it. Making or reworking one with the
+# model is its own capability, off for everyone for now.
+_STUDIO = [Depends(require_capability("view_artifacts"))]
+_MAKING = [Depends(require_capability("studio_artifacts"))]
 router = APIRouter(prefix="/artifacts", tags=["artifacts"], dependencies=_STUDIO)
 by_conversation = APIRouter(
     prefix="/conversations/{conversation_id}/artifacts", tags=["artifacts"], dependencies=_STUDIO
@@ -156,7 +159,7 @@ async def edit_text(
     return await read(artifact_id, session, user, settings)
 
 
-@router.post("/{artifact_id}/revise", response_model=ArtifactDetail)
+@router.post("/{artifact_id}/revise", response_model=ArtifactDetail, dependencies=_MAKING)
 async def revise(
     artifact_id: UUID,
     payload: ReviseRequest,

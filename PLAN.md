@@ -1108,3 +1108,29 @@ them.
   - Parents get the same library when they make material (§20 P2).
   - Scanned PDFs with no text layer are read by the vision model when one is
     set. Otherwise the file is refused with a clear message.
+
+---
+
+## 22. Changes requested 2026-09-27
+
+1. **Students practise; they do not make sets.** Quizzes and flashcards come
+   from teachers and parents, or from Mentora's *Made for you* practice built
+   on each student's weak spots.
+   - `make_practice_sets` is off for students, and `auto_practice` now checks
+     `take_assignments`.
+   - A student *Practice* page (`/practice`) lists practice made for them, work
+     from home, and any sets made earlier (kept playable).
+2. **Preview as a student** for quizzes and flashcards
+   (`/library/:id/try`). It runs the real players, marked locally, and saves
+   nothing.
+3. **Three looks by year** for quizzes and flashcards, picked from the
+   student's year:
+   - Year 1–3: engaging, most animation;
+   - Year 4–6: less animation, with points;
+   - Form 1–5: the look as it was.
+4. **Studio creation revoked for everyone.** No posters, slides, games,
+   websites or apps via the chat or anywhere. Existing ones stay viewable
+   (`view_artifacts`). `/studio` goes to `/chat`.
+
+Docs: `044-play-looks.md`, plus notes in `024`, `025`, `029`, `030` and `035`.
+

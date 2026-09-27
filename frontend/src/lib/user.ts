@@ -23,6 +23,7 @@ export interface Capabilities {
   /** The open-ended chat. Off for students for now, and refused by the API. */
   use_chat: boolean
   studio_artifacts: boolean
+  view_artifacts: boolean
   share_learning_sets: boolean
   make_practice_sets: boolean
   manage_classes: boolean

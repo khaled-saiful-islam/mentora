@@ -32,6 +32,8 @@ import StudentHome from '@/features/home/StudentHome'
 import TeacherHome from '@/features/home/TeacherHome'
 import ParentHome from '@/features/family/ParentHome'
 import ChildPage from '@/features/family/child/ChildPage'
+import PracticePage from '@/features/home/PracticePage'
+import PlayPreviewPage from '@/features/play/PreviewPage'
 import ChildAttemptPage from '@/features/family/child/AttemptReviewPage'
 import ParentSignUp from '@/features/family/ParentSignUp'
 import FamilyInvitePage from '@/features/family/FamilyInvitePage'
@@ -74,12 +76,13 @@ export default function App() {
           <Route path="/r/:token" element={<ReportPage />} />
           <Route path="/" element={<Protected><Home /></Protected>} />
           <Route path="/chat" element={<Protected><Allowed capability="use_chat"><Chat /></Allowed></Protected>} />
-          <Route path="/studio" element={<Protected><Allowed capability="studio_artifacts"><Chat /></Allowed></Protected>} />
+          <Route path="/studio" element={<Protected><StudioOrChat /></Protected>} />
           <Route path="/c/:conversationId" element={<Protected><Allowed capability="use_chat"><Chat /></Allowed></Protected>} />
           <Route path="/play/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="assignment" /></Allowed></Protected>} />
           <Route path="/practice/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="practice" /></Allowed></Protected>} />
           <Route path="/from-home/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="home" /></Allowed></Protected>} />
           <Route path="/attempts/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="attempt" /></Allowed></Protected>} />
+          <Route path="/practice" element={<Shell capability="take_assignments"><PracticePage /></Shell>} />
           <Route path="/results" element={<Shell capability="take_assignments"><ResultsPage /></Shell>} />
           <Route path="/badges" element={<Shell capability="take_assignments"><BadgesPage /></Shell>} />
           <Route path="/leaderboard/:assignmentId" element={<Shell><LeaderboardPage /></Shell>} />
@@ -97,6 +100,7 @@ export default function App() {
           <Route path="/library" element={<Shell capability={MAKES_SETS}><LibraryPage /></Shell>} />
           <Route path="/library/:setId" element={<Shell capability={MAKES_SETS}><EditorPage /></Shell>} />
           {/* Outside the app frame, so it prints as a handout and nothing else. */}
+          <Route path="/library/:setId/try" element={<Protected><Allowed capability={MAKES_SETS}><PlayPreviewPage /></Allowed></Protected>} />
           <Route path="/library/:setId/preview" element={<Protected><Allowed capability={['share_learning_sets', 'make_family_sets']}><GuidePreviewPage /></Allowed></Protected>} />
           <Route path="/live" element={<Shell capability="run_live_sessions"><LiveLessonsPage /></Shell>} />
           <Route path="/live/voice-lab" element={<Shell capability="run_live_sessions"><VoiceLabPage /></Shell>} />
@@ -196,7 +200,9 @@ function PublicOnly({ children }: { children: React.ReactNode }) {
  * home — the server refuses them either way; this just avoids a page of
  * refusals for someone who followed an old link.
  */
-const MAKES_SETS: (keyof Capabilities)[] = ['share_learning_sets', 'make_practice_sets', 'make_family_sets']
+// Making sets: teachers for their classes, parents for home. Students
+// practise what is made for them (`/practice`).
+const MAKES_SETS: (keyof Capabilities)[] = ['share_learning_sets', 'make_family_sets']
 const SEES_CLASSES: (keyof Capabilities)[] = ['manage_classes', 'join_classes']
 
 type Needs = keyof Capabilities | (keyof Capabilities)[]
@@ -209,6 +215,14 @@ function Shell({ children, capability }: { children: React.ReactNode; capability
       </Allowed>
     </Protected>
   )
+}
+
+/** The studio where it is open; the chat for everyone else, so an old link
+ *  or bookmark still lands somewhere useful. */
+function StudioOrChat() {
+  const { user } = useAuth()
+  if (!user?.capabilities.studio_artifacts) return <Navigate to="/chat" replace />
+  return <Chat />
 }
 
 function Allowed({ children, capability }: { children: React.ReactNode; capability?: Needs }) {

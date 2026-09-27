@@ -41,7 +41,6 @@ async def test_a_student_cannot_make_a_study_guide(api, student) -> None:  # noq
             "/api/learning-sets/generate", json={"kind": "study_guide", "topic": "rain"}
         )
     assert refused.status_code == 403
-    assert "teachers" in refused.json()["error"]["message"]
 
 
 async def test_the_opening_and_ending_can_be_edited_and_are_cleaned(

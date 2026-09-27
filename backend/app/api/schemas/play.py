@@ -48,6 +48,8 @@ class AttemptResponse(BaseModel):
     # What it is written in: the voice that reads it aloud, and which way a
     # word to know is translated.
     language: str
+    # The year the set was written for, e.g. "year_2".
+    grade_level: str | None = None
     score: int
     max_score: int
     percent: float
@@ -75,6 +77,7 @@ class AttemptResponse(BaseModel):
             skills=view.skills,
             extras=view.extras,
             language=view.language,
+            grade_level=view.grade_level,
             score=a.score if a.status == "completed" or view.feedback_mode == "instant" else 0,
             max_score=a.max_score,
             percent=float(a.percent),

@@ -28,8 +28,13 @@
 - **Sharing** sends a set to a class or some of its groups. Options: feedback
   after each question or at the end (quizzes), a due date, retakes, shuffled
   question order, and a leaderboard (quizzes only). Students are notified.
-- **Students make private practice sets** the same way, up to
-  `STUDENT_PRACTICE_PER_DAY`. These can never be shared.
+- **Students do not make sets** (2026-09-27). A `practice` set is now one
+  Mentora makes for a student from what they found hard (`040-made-for-you.md`),
+  or one a student made before this changed. These can never be shared.
+  `STUDENT_PRACTICE_PER_DAY` only matters if `make_practice_sets` is turned
+  back on.
+- **Preview as a student**: a quiz or flashcards plays in the real players,
+  in each of the three looks, before it is shared (`044-play-looks.md`).
 
 ## How it works
 

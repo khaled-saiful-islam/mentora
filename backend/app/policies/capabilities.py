@@ -20,11 +20,17 @@ from app.core.roles import Role, parse_role
 class Capabilities:
     # The open-ended chat: conversations, their files and their memories.
     use_chat: bool = False
-    # Posters, slides, games, websites and apps — the studio artifacts.
+    # Making posters, slides, games, websites and apps — the studio artifacts
+    # — or reworking one with the model. Off for everyone for now: the chat is
+    # never offered the tools, and every route that makes one refuses.
     studio_artifacts: bool = False
+    # Seeing, downloading and sharing the ones already made.
+    view_artifacts: bool = False
     # Quizzes and flashcards made to be assigned to a class.
     share_learning_sets: bool = False
-    # A student's own private quizzes and flashcards, never assigned.
+    # A student making their own private quizzes and flashcards. Off: a
+    # student practises what their teachers and parents make, and what
+    # Mentora makes for them from what they found hard (`auto_practice`).
     make_practice_sets: bool = False
     manage_classes: bool = False
     join_classes: bool = False
@@ -55,7 +61,7 @@ class Capabilities:
 
 _TEACHING = {
     "use_chat": True,
-    "studio_artifacts": True,
+    "view_artifacts": True,
     "share_learning_sets": True,
     "manage_classes": True,
     "run_live_sessions": True,
@@ -67,12 +73,12 @@ _TEACHING = {
 _BY_ROLE: dict[Role, Capabilities] = {
     Role.ADMIN: Capabilities(**_TEACHING, moderate=True, manage_users=True),
     Role.TEACHER: Capabilities(**_TEACHING),
-    # No chat for students for now: they make practice sets and take their
-    # class's work, and the chat is closed to them at the API, not only hidden.
-    # Turning it back on is `use_chat=True` here — the guardrails, the buddy
-    # persona and the safety queue for student chat are all still in place.
+    # No chat for students for now, and no making sets: they take their
+    # class's work, work sent from home, and the practice made for them. Both
+    # are closed at the API, not only hidden. Turning chat back on is
+    # `use_chat=True` here — the guardrails, the buddy persona and the safety
+    # queue for student chat are all still in place.
     Role.STUDENT: Capabilities(
-        make_practice_sets=True,
         join_classes=True,
         take_assignments=True,
         join_live_sessions=True,

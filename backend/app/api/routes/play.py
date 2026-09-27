@@ -8,6 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import CurrentUser, SessionDep, require_capability
+from app.api.schemas.learning import SetSummary
 from app.api.schemas.play import (
     AnswerRequest,
     AnswerResponse,
@@ -27,6 +28,7 @@ from app.events.registry import build_bus
 from app.services.attempt_service import AttemptService
 from app.services.auto_practice import AutoPracticeService
 from app.services.badge_service import BadgeService
+from app.services.child_view_service import ChildViewService
 from app.services.family_share_service import FamilyShareService
 from app.services.play_service import PlayService
 from app.services.results_service import ResultsService
@@ -86,6 +88,25 @@ async def from_home(share_id: UUID, user: CurrentUser, session: SessionDep) -> A
     """Something a parent sent home: start it, or carry on with it."""
     share = await FamilyShareService(session).visible(user.id, share_id)
     return AttemptResponse.of(await AttemptService(session).start_from_home(user, share))
+
+
+@router.get("/practice")
+async def my_practice(user: CurrentUser, session: SessionDep) -> dict[str, object]:
+    """Everything there is to practise that is the student's own: what Mentora
+    made for them, and any sets they made before students stopped making them."""
+    rows = await ChildViewService(session).practice(user.id)
+    return {
+        "items": [
+            {
+                **SetSummary.of(r.view).model_dump(mode="json"),
+                "best": r.best,
+                "tries": r.tries,
+                "made_for_you": r.made_for_you,
+            }
+            for r in rows
+            if r.view.learning_set.status == "ready"
+        ]
+    }
 
 
 @router.get("/attempts/{attempt_id}", response_model=AttemptResponse)

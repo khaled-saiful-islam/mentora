@@ -3,18 +3,25 @@
  * swipe the card, or press ← / →. The ones you did not know come back for a
  * second round at the end, which is practice only; the first answer is the
  * one that counts.
+ *
+ * The youngest (`level.ts`) get bright cards with big words, a star path,
+ * confetti for every one they knew and "read it to me"; Year 4–6 win points.
  */
 import { AnimatePresence, motion, useMotionValue, useTransform, type PanInfo } from 'motion/react'
-import { ArrowCounterClockwise, ArrowsClockwise, Check, Lightbulb } from '@phosphor-icons/react'
+import { ArrowCounterClockwise, ArrowsClockwise, Check, Lightbulb, Smiley, SmileyMeh } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 import { Button, Chip } from '@/components/ui'
 import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/features/auth/errors'
+import { useReadAloud } from '@/features/guide/useReadAloud'
 import { useSound } from '@/lib/sound'
 import { cn } from '@/lib/utils'
-import { spring } from '@/motion'
-import { playApi, type CardItem, type Played } from './api'
+import { celebrate, spring, useCalmMotion } from '@/motion'
+import type { CardItem, Played } from './api'
+import { usePlayBackend } from './backend'
+import { POINTS_EACH, usePlayLook, type PlayLook } from './level'
 import { PlayHeader } from './PlayChrome'
+import { PlayBackdrop, PointsBurst, ReadAloudButton } from './PlayFun'
 import type { PlayerProps } from './players'
 import { cardItems, playedById, resumeAt, segments, skillLabel, type Segment } from './session'
 
@@ -31,17 +38,25 @@ export function FlashcardPlayer({ attempt, buddy, exitTo, onFinished }: PlayerPr
   const [flipped, setFlipped] = useState(false)
   const [leaving, setLeaving] = useState<'knew' | 'notYet' | null>(null)
   const [sending, setSending] = useState(false)
+  const [burst, setBurst] = useState(0)
   const shownAt = useRef(Date.now())
   const { toast } = useToast()
   const sound = useSound()
+  const calm = useCalmMotion()
+  const backend = usePlayBackend()
+  const look = usePlayLook()
+  const voice = useReadAloud(attempt.language)
 
   const deck = phase === 'second' ? again : cards
   const card = deck[index]
+  const points = Object.values(played).filter((p) => p.knew === true).length * POINTS_EACH
 
   useEffect(() => {
     shownAt.current = Date.now()
     setFlipped(false)
     setLeaving(null)
+    voice.stop()
+    // A new card starts quiet; `voice.stop` is stable.
   }, [index, phase])
 
   useEffect(() => {
@@ -67,10 +82,12 @@ export function FlashcardPlayer({ attempt, buddy, exitTo, onFinished }: PlayerPr
     setLeaving(knew ? 'knew' : 'notYet')
     buddy.current?.cue(knew ? 'knew' : 'notYet')
     sound(knew ? 'correct' : 'tap')
+    if (knew && look.cheerEveryRight) celebrate({ calm, power: 0.35, origin: { x: 0.5, y: 0.6 } })
+    if (knew && look.points && phase === 'first') setBurst((n) => n + 1)
     if (phase === 'first') {
       setSending(true)
       try {
-        const result = await playApi.answer(attempt.id, { item_id: card.id, knew, time_ms: Date.now() - shownAt.current })
+        const result = await backend.answer(attempt.id, { item_id: card.id, knew, time_ms: Date.now() - shownAt.current })
         setPlayed((now) => ({ ...now, [card.id]: result.played }))
       } catch (error) {
         setLeaving(null)
@@ -92,7 +109,14 @@ export function FlashcardPlayer({ attempt, buddy, exitTo, onFinished }: PlayerPr
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <PlayHeader title={phase === 'second' ? `${attempt.title} · round 2` : attempt.title} kind="flashcard" parts={parts} exitTo={exitTo} />
+      {look.backdrop && <PlayBackdrop />}
+      <PlayHeader
+        title={phase === 'second' ? `${attempt.title} · round 2` : attempt.title}
+        kind="flashcard"
+        parts={parts}
+        points={points}
+        exitTo={exitTo}
+      />
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center px-4 pt-6 pb-10 md:pt-10">
         {phase === 'between' ? (
           <RoundTwo count={again.length} onGo={() => (setIndex(0), setPhase('second'))} onSkip={onFinished} />
@@ -104,13 +128,15 @@ export function FlashcardPlayer({ attempt, buddy, exitTo, onFinished }: PlayerPr
                   Card {index + 1} of {deck.length}
                 </Chip>
                 <Chip className="text-sm capitalize">{skillLabel(attempt, card.skill)}</Chip>
+                {look.readAloud && <ReadAloudButton voice={voice} id={`${card.id}-${flipped ? 'back' : 'front'}`} text={flipped ? card.back : card.front} />}
               </div>
               <Deck left={deck.length - index - 1}>
+                <PointsBurst key={burst} amount={POINTS_EACH} show={burst > 0} />
                 <AnimatePresence mode="wait">
-                  <Flashcard key={`${phase}-${card.id}`} card={card} flipped={flipped} leaving={leaving} onFlip={flip} onSwipe={(knew) => void mark(knew)} />
+                  <Flashcard key={`${phase}-${card.id}`} card={card} flipped={flipped} leaving={leaving} look={look} onFlip={flip} onSwipe={(knew) => void mark(knew)} />
                 </AnimatePresence>
               </Deck>
-              <Controls flipped={flipped} disabled={sending || Boolean(leaving)} onFlip={flip} onMark={(knew) => void mark(knew)} />
+              <Controls flipped={flipped} disabled={sending || Boolean(leaving)} look={look} onFlip={flip} onMark={(knew) => void mark(knew)} />
             </>
           )
         )}
@@ -140,15 +166,18 @@ function Flashcard({
   card,
   flipped,
   leaving,
+  look,
   onFlip,
   onSwipe,
 }: {
   card: CardItem
   flipped: boolean
   leaving: 'knew' | 'notYet' | null
+  look: PlayLook
   onFlip: () => void
   onSwipe: (knew: boolean) => void
 }) {
+  const bright = look.tiles === 'bright'
   const [hint, setHint] = useState(false)
   const x = useMotionValue(0)
   const tilt = useTransform(x, [-200, 200], [-12, 12])
@@ -183,11 +212,12 @@ function Flashcard({
         aria-label={flipped ? 'Show the front' : 'Flip the card'}
         className="relative block size-full cursor-pointer rounded-[2rem] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40 [transform-style:preserve-3d]"
         animate={{ rotateY: flipped ? 180 : 0 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+        // The youngest get a flip with a little bounce at the end.
+        transition={bright ? spring.bouncy : { type: 'spring', stiffness: 260, damping: 24 }}
       >
-        <Face side="front">
+        <Face side="front" bright={bright}>
           <p className="text-sm font-bold tracking-wide text-kind-flashcard uppercase">Front</p>
-          <p className="mt-3 font-display text-3xl leading-tight font-semibold md:text-4xl">{card.front}</p>
+          <p className={cn('mt-3 leading-tight', bright ? 'font-celebrate text-4xl md:text-5xl' : 'font-display text-3xl font-semibold md:text-4xl')}>{card.front}</p>
           {card.hint && (
             <span className="mt-5">
               {hint ? (
@@ -214,9 +244,9 @@ function Flashcard({
             Tap to flip
           </span>
         </Face>
-        <Face side="back">
+        <Face side="back" bright={bright}>
           <p className="text-sm font-bold tracking-wide text-kind-flashcard uppercase">Back</p>
-          <p className="mt-3 text-2xl leading-snug font-bold md:text-3xl">{card.back}</p>
+          <p className={cn('mt-3 leading-snug font-bold', bright ? 'text-3xl md:text-4xl' : 'text-2xl md:text-3xl')}>{card.back}</p>
           <motion.span style={{ opacity: knewGlow }} className="pointer-events-none absolute inset-0 rounded-[2rem] ring-8 ring-correct ring-inset" />
           <motion.span style={{ opacity: notYetGlow }} className="pointer-events-none absolute inset-0 rounded-[2rem] ring-8 ring-wrong ring-inset" />
         </Face>
@@ -225,33 +255,51 @@ function Flashcard({
   )
 }
 
-function Face({ side, children }: { side: 'front' | 'back'; children: React.ReactNode }) {
+function Face({ side, bright = false, children }: { side: 'front' | 'back'; bright?: boolean; children: React.ReactNode }) {
   return (
     <span
       className={cn(
-        'absolute inset-0 flex flex-col items-center justify-center rounded-[2rem] border-2 p-8 text-center shadow-lg [backface-visibility:hidden]',
-        side === 'front' ? 'border-border bg-surface' : 'border-kind-flashcard-vivid [transform:rotateY(180deg)]',
+        'absolute inset-0 flex flex-col items-center justify-center rounded-[2rem] p-8 text-center shadow-lg [backface-visibility:hidden]',
+        bright ? 'border-4' : 'border-2',
+        side === 'front'
+          ? bright
+            ? 'border-sky-400 bg-gradient-to-br from-sky-100 to-grape-100 dark:from-sky-700/25 dark:to-grape-800/40'
+            : 'border-border bg-surface'
+          : 'border-kind-flashcard-vivid [transform:rotateY(180deg)]',
       )}
-      style={side === 'back' ? { backgroundColor: 'hsl(var(--surface))', backgroundImage: 'linear-gradient(hsl(var(--kind-flashcard-vivid) / 0.12), hsl(var(--kind-flashcard-vivid) / 0.12))' } : undefined}
+      style={side === 'back' ? { backgroundColor: 'hsl(var(--surface))', backgroundImage: `linear-gradient(hsl(var(--kind-flashcard-vivid) / ${bright ? 0.22 : 0.12}), hsl(var(--kind-flashcard-vivid) / ${bright ? 0.22 : 0.12}))` } : undefined}
     >
       {children}
     </span>
   )
 }
 
-function Controls({ flipped, disabled, onFlip, onMark }: { flipped: boolean; disabled: boolean; onFlip: () => void; onMark: (knew: boolean) => void }) {
+function Controls({
+  flipped,
+  disabled,
+  look,
+  onFlip,
+  onMark,
+}: {
+  flipped: boolean
+  disabled: boolean
+  look: PlayLook
+  onFlip: () => void
+  onMark: (knew: boolean) => void
+}) {
+  const bright = look.tiles === 'bright'
   return (
     <div className="mt-8 flex w-full max-w-lg items-center justify-center gap-3">
       <AnimatePresence mode="wait" initial={false}>
         {flipped ? (
           <motion.div key="mark" className="flex w-full gap-3" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}>
-            <Button size="lg" variant="outline" className="flex-1 border-wrong text-wrong" disabled={disabled} onClick={() => onMark(false)}>
-              <ArrowCounterClockwise weight="bold" className="size-5" />
+            <Button size="lg" variant="outline" className={cn('flex-1 border-wrong text-wrong', bright && 'h-16 text-xl')} disabled={disabled} onClick={() => onMark(false)}>
+              {bright ? <SmileyMeh weight="fill" className="size-7" /> : <ArrowCounterClockwise weight="bold" className="size-5" />}
               Not yet
             </Button>
-            <Button size="lg" className="flex-1 bg-correct text-white" disabled={disabled} onClick={() => onMark(true)}>
-              <Check weight="bold" className="size-5" />
-              Knew it!
+            <Button size="lg" className={cn('flex-1 bg-correct text-white', bright && 'h-16 text-xl')} disabled={disabled} onClick={() => onMark(true)}>
+              {bright ? <Smiley weight="fill" className="size-7" /> : <Check weight="bold" className="size-5" />}
+              {bright ? 'I knew it!' : 'Knew it!'}
             </Button>
           </motion.div>
         ) : (

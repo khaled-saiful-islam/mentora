@@ -63,6 +63,9 @@ export interface Attempt {
   extras: Partial<GuideExtras>
   /** What it is written in, e.g. `en` or `ms`. */
   language: string
+  /** The year the set was written for, e.g. `year_2` — how it looks when the
+   *  student's own year is not known. */
+  grade_level?: string | null
   score: number
   max_score: number
   percent: number
@@ -168,6 +171,19 @@ export interface HomeWork {
   review_attempt_id: string | null
 }
 
+/** A set of the student's own to practise: made for them, or made by them
+ *  before students stopped making sets. */
+export interface MyPractice {
+  id: string
+  kind: PlayKind
+  title: string
+  item_count: number
+  updated_at: string
+  best: number | null
+  tries: number
+  made_for_you: boolean
+}
+
 export interface Home {
   from_home?: HomeWork[]
   todo: Todo[]
@@ -215,6 +231,7 @@ export const playApi = {
   assignments: () => apiFetch<Todo[]>('/me/assignments'),
   start: (assignmentId: string) => apiFetch<Attempt>(`/me/assignments/${assignmentId}/attempts`, { method: 'POST' }),
   practise: (setId: string) => apiFetch<Attempt>(`/me/practice/${setId}/attempts`, { method: 'POST' }),
+  practice: () => apiFetch<{ items: MyPractice[] }>('/me/practice'),
   fromHome: (shareId: string) => apiFetch<Attempt>(`/me/from-home/${shareId}/attempts`, { method: 'POST' }),
   attempt: (attemptId: string) => apiFetch<Attempt>(`/me/attempts/${attemptId}`),
   answer: (attemptId: string, body: { item_id: string; choice?: number; knew?: boolean; time_ms: number }) =>

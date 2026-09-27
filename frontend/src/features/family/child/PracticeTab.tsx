@@ -22,7 +22,7 @@ export function PracticeTab({ childId, first }: { childId: string; first: string
       <EmptyState
         art={<EmptyArt Icon={Barbell} tone="from-kind-family-vivid/30 to-sun-100" />}
         title="No practice yet"
-        body={`${first} can make their own practice quizzes and flashcards, and Mentora makes some when a quiz was tricky. They show up here.`}
+        body={`When a quiz from school is tricky, Mentora makes ${first} a little practice on exactly those skills. It shows up here.`}
       />
     )
   }
@@ -31,7 +31,7 @@ export function PracticeTab({ childId, first }: { childId: string; first: string
   return (
     <div className="space-y-8">
       {madeFor.length > 0 && <Group title="Made for them" note={`From what ${first} found tricky in class.`} items={madeFor} />}
-      {own.length > 0 && <Group title={`${first}'s own`} note="Practice sets they made themselves." items={own} />}
+      {own.length > 0 && <Group title="Earlier practice" note={`Sets ${first} made before practice came only from school and home.`} items={own} />}
     </div>
   )
 }

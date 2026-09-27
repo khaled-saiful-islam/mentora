@@ -1,5 +1,10 @@
 # 035 — The studio's front page and the Create menu
 
+> **The studio kinds are switched off (2026-09-27, see `024-artifacts.md`).**
+> A teacher's chat now opens at `/chat`, with the same front page offering
+> only quizzes, flashcards and study guides. The headline turns through
+> those and "lesson plan", never "poster" or "game".
+
 ## What it does
 
 **An empty studio** (a teacher's new chat) is a page with room to breathe:

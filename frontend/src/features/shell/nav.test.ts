@@ -12,8 +12,14 @@ describe('navFor', () => {
     expect(keys).toEqual(['home', 'studio', 'classes', 'library', 'settings'])
   })
 
+  it('gives a teacher the chat now that the studio is closed', () => {
+    const keys = navFor(user('teacher', { use_chat: true, view_artifacts: true, manage_classes: true, share_learning_sets: true })).map((i) => i.key)
+    expect(keys).toEqual(['home', 'classes', 'library', 'chat', 'settings'])
+    expect(chatRoot(user('teacher', { use_chat: true }))).toBe('/chat')
+  })
+
   it('gives a student their home, classes and buddy, never the studio', () => {
-    const keys = navFor(user('student', { join_classes: true, make_practice_sets: true, take_assignments: true })).map((i) => i.key)
+    const keys = navFor(user('student', { join_classes: true, take_assignments: true })).map((i) => i.key)
     expect(keys).toEqual(['home', 'classes', 'practice', 'results', 'badges', 'buddy', 'settings'])
   })
 
@@ -23,7 +29,7 @@ describe('navFor', () => {
   })
 
   it('keeps the phone tab bar to six for a student', () => {
-    const items = navFor(user('student', { use_chat: true, join_classes: true, make_practice_sets: true, take_assignments: true }))
+    const items = navFor(user('student', { use_chat: true, join_classes: true, take_assignments: true }))
     expect(items.filter((i) => i.tab !== false).map((i) => i.key)).toEqual(['home', 'classes', 'practice', 'chat', 'badges', 'settings'])
   })
 

@@ -132,7 +132,8 @@ async def test_a_teacher_signup_creates_an_account_and_signs_it_in(client, repo)
     assert body["role"] == "teacher"
     assert body["is_admin"] is False
     assert body["username"] is None
-    assert body["capabilities"]["studio_artifacts"] is True
+    assert body["capabilities"]["studio_artifacts"] is False
+    assert body["capabilities"]["view_artifacts"] is True
     assert "mentora_session=" in response.headers["set-cookie"]
     assert repo.count == 2
 

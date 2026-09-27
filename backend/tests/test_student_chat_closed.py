@@ -21,10 +21,12 @@ def test_students_do_not_have_chat_and_staff_do() -> None:
     assert capabilities_for("admin").use_chat is True
 
 
-def test_students_keep_making_practice_sets() -> None:
-    """What stays open, so closing chat is not mistaken for closing learning."""
+def test_students_keep_their_learning() -> None:
+    """What stays open, so closing chat is not mistaken for closing learning.
+    Making sets is closed too: they practise what is made for them."""
     caps = capabilities_for("student")
-    assert caps.make_practice_sets and caps.take_assignments and caps.join_classes
+    assert caps.take_assignments and caps.join_classes and caps.join_live_sessions
+    assert not caps.make_practice_sets
 
 
 @pytest.mark.parametrize(
@@ -59,4 +61,4 @@ async def test_the_browser_is_told_so_it_can_hide_the_chat(client, student) -> N
         me = (await api.get("/api/auth/me")).json()
 
     assert me["capabilities"]["use_chat"] is False
-    assert me["capabilities"]["make_practice_sets"] is True
+    assert me["capabilities"]["take_assignments"] is True

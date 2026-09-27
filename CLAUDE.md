@@ -195,6 +195,10 @@ error, because those tokens were still paid for.
 
 ## Artifacts
 
+**Making artifacts is switched off for every role** (`studio_artifacts`,
+2026-09-27). Existing ones stay viewable through `view_artifacts`. What
+follows is how the feature works when it is on.
+
 An artifact is **one self-contained HTML document** — a poster, a slide deck, a
 game, a website or an app. Not a component and not a template plus data: a
 document is the only format the browser, the printer, the share link and the

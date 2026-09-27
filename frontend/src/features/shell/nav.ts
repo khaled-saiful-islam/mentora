@@ -81,12 +81,13 @@ export const NAV: NavItem[] = [
     matches: under('/library'),
   },
   {
+    // What a student practises: made for them, and sent from home.
     key: 'practice',
-    to: '/library',
+    to: '/practice',
     label: 'Practice',
     Icon: Barbell,
-    show: (u) => can(u, 'make_practice_sets'),
-    matches: under('/library'),
+    show: (u) => isStudent(u) && can(u, 'take_assignments'),
+    matches: under('/practice'),
   },
   {
     key: 'chat',

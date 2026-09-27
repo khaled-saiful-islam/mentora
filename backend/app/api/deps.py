@@ -146,7 +146,8 @@ _ROLE_REFUSALS: dict[frozenset[Role], str] = {
 # Said when a capability is missing, in words the person refused will follow.
 _CAPABILITY_REFUSALS: dict[str, str] = {
     "use_chat": "Chat isn't open to students yet.",
-    "studio_artifacts": "Posters, slides, games, websites and apps are for teachers.",
+    "studio_artifacts": "Making posters, slides, games, websites and apps is switched off.",
+    "view_artifacts": "Posters, slides, games, websites and apps are for teachers.",
     "share_conversations": "Share links are for teachers.",
     "manage_classes": "Classes are run by teachers.",
     "share_learning_sets": "Sharing quizzes and flashcards is for teachers.",

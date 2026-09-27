@@ -1,5 +1,17 @@
 # 024 — Artifacts: posters, slide decks, games, websites and apps
 
+> **Switched off (2026-09-27).** No one makes these any more. The
+> `studio_artifacts` capability is off for every role, so:
+> - the tools below are never offered;
+> - the chat refuses an `artifact_id`;
+> - `/revise` refuses.
+>
+> Artifacts already made stay viewable, downloadable and shareable by the
+> teachers and admins who made them (`view_artifacts`). The code stays, and
+> turning making back on is `studio_artifacts=True` for a role
+> (`policies/capabilities.py`). The rest of this page describes the feature
+> as it works when on.
+
 ## What it does
 
 Ask for a poster, a deck, a game, a website or an app and get one — designed,

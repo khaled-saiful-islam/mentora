@@ -62,6 +62,9 @@ class AttemptView:
     can_retake: bool
     extras: dict[str, Any] = field(default_factory=dict)
     language: str = "en"
+    # The year the set was written for — how it looks, when the student's own
+    # year is not known.
+    grade_level: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -263,6 +266,7 @@ class AttemptService:
             and (loaded.assignment is None or _may_retake(loaded.assignment, used)),
             extras=dict(loaded.version.extras or {}),
             language=loaded.learning_set.language,
+            grade_level=loaded.learning_set.grade_level,
         )
 
     def _shown(self, loaded: Loaded, item_id: str) -> dict[str, Any]:

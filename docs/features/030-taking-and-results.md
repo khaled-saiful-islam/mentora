@@ -6,8 +6,11 @@
   up where they left off. Quizzes give feedback either instantly or at the end,
   as the teacher chose when sharing. Flashcards are marked "knew it" or "not
   yet".
-- **Students take their own practice sets** the same way. These never appear
-  in a class, on a leaderboard or in a teacher's results.
+- **Students take the practice made for them** the same way, from *My
+  practice* (`/practice`). These never appear in a class, on a leaderboard or
+  in a teacher's results.
+- **How it looks follows the student's year** — Year 1–3, Year 4–6 or the
+  Forms (`044-play-looks.md`).
 - **Work a parent sends home** is taken like practice (`/from-home/:id`), at
   the version the parent sent, with its due date for late marking. It counts
   for the score badges, and the parent hears the result

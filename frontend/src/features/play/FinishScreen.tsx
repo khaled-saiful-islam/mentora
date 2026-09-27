@@ -14,12 +14,20 @@ import { useSound } from '@/lib/sound'
 import { cn } from '@/lib/utils'
 import { celebrate, pop, spring, stagger, useCalmMotion } from '@/motion'
 import type { Finish } from './api'
+import { POINTS_EACH, usePlayLook } from './level'
 import { verdictFor, type Verdict } from './session'
 
 const HEADLINE: Record<Verdict, string[]> = {
   great: ['Amazing!', 'Superstar!', 'Brilliant!'],
   good: ['Great job!', 'Nicely done!', 'Well played!'],
   keep: ['Good try!', 'Keep going!', 'You did it!'],
+}
+
+// For the youngest: every ending is a party.
+const LITTLE_HEADLINE: Record<Verdict, string[]> = {
+  great: ["You're a superstar!", 'Hooray!', 'Wow, wow, wow!'],
+  good: ['Yay! Great job!', 'You did it!', 'High five!'],
+  keep: ['You did it!', 'Good try!', 'Well done for trying!'],
 }
 
 const CUE: Record<Verdict, Cue> = { great: 'finishGreat', good: 'finishGood', keep: 'finishKeep' }
@@ -29,26 +37,34 @@ export function FinishScreen({
   onReview,
   onRetake,
   leaderboardTo,
+  home = { to: '/', label: 'Home' },
 }: {
   finish: Finish
   onReview: () => void
   onRetake: (() => void) | null
   leaderboardTo: string | null
+  /** Where the last button goes — home for a student, back to editing for a preview. */
+  home?: { to: string; label: string }
 }) {
   const { user } = useAuth()
   const calm = useCalmMotion()
   const sound = useSound()
+  const look = usePlayLook()
   const buddy = useRef<BuddyHandle>(null)
   const { attempt, stars } = finish
   const verdict = verdictFor(stars)
-  const [headline] = useState(() => HEADLINE[verdict][Math.floor(Math.random() * 3)])
+  const little = look.level === 'little'
+  const [headline] = useState(() => (little ? LITTLE_HEADLINE : HEADLINE)[verdict][Math.floor(Math.random() * 3)])
   const flashcards = attempt.kind === 'flashcard'
   const guide = attempt.kind === 'study_guide'
+  const won = look.points && !guide ? attempt.score * POINTS_EACH : 0
 
   useEffect(() => {
     sound('finish')
     const cue = window.setTimeout(() => buddy.current?.cue(CUE[verdict]), 500)
-    if (stars >= 2) window.setTimeout(() => celebrate({ calm, power: stars === 3 ? 1.3 : 0.8 }), 900)
+    if (stars >= look.confettiFrom) {
+      window.setTimeout(() => celebrate({ calm, power: (stars === 3 ? 1.3 : 0.8) * look.confettiPower }), 900)
+    }
     if (finish.badges.length) window.setTimeout(() => sound('badge'), 2200)
     return () => window.clearTimeout(cue)
     // Once, on arrival: a re-render must not replay the fanfare.
@@ -62,7 +78,7 @@ export function FinishScreen({
           initial={{ scale: 0.3, opacity: 0, rotate: -6 }}
           animate={{ scale: 1, opacity: 1, rotate: 0 }}
           transition={{ ...spring.bouncy, delay: 0.2 }}
-          className="mt-2 font-celebrate text-5xl text-primary md:text-6xl"
+          className={cn('mt-2 font-celebrate text-primary', little ? 'text-6xl md:text-7xl' : 'text-5xl md:text-6xl')}
         >
           {headline}
         </motion.h1>
@@ -77,6 +93,17 @@ export function FinishScreen({
           <ScoreRing percent={attempt.percent} score={attempt.score} total={attempt.max_score} label={flashcards ? 'knew' : 'right'} />
           <Stars count={stars} />
         </div>
+        {won > 0 && (
+          <motion.p
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ ...spring.bouncy, delay: 2 }}
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-sun-100 px-4 py-2 font-display text-xl font-semibold text-sun-600 dark:bg-sun-600/25 dark:text-sun-300"
+          >
+            <Star weight="fill" className="size-5" aria-hidden />
+            You won {won} points!
+          </motion.p>
+        )}
       </BuddyStage>
 
       {finish.badges.length > 0 && (
@@ -136,9 +163,9 @@ export function FinishScreen({
             Try again
           </Button>
         )}
-        <ButtonLink to="/" size="lg">
+        <ButtonLink to={home.to} size="lg">
           <House weight="fill" className="size-5" />
-          Home
+          {home.label}
         </ButtonLink>
       </div>
     </div>

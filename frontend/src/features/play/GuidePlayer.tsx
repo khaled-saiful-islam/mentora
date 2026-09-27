@@ -24,7 +24,8 @@ import { translationLabel } from '@/features/guide/text'
 import { useReadAloud } from '@/features/guide/useReadAloud'
 import { useSound } from '@/lib/sound'
 import { spring, useCalmMotion } from '@/motion'
-import { playApi, type Attempt, type GuidePage, type Played } from './api'
+import type { Attempt, GuidePage, Played } from './api'
+import { usePlayBackend } from './backend'
 import { PlayHeader } from './PlayChrome'
 import type { PlayerProps } from './players'
 import { playedById, resumeAt, segments, skillLabel } from './session'
@@ -48,6 +49,7 @@ export function GuidePlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps)
   const { toast } = useToast()
   const sound = useSound()
   const calm = useCalmMotion()
+  const backend = usePlayBackend()
   const label = translationLabel(attempt.language)
   const next = resumeAt(pages, played)
   const index = typeof place === 'number' ? place : place === 'end' ? pages.length : -1
@@ -81,7 +83,7 @@ export function GuidePlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps)
     setSending(true)
     sound('tap')
     try {
-      const result = await playApi.answer(attempt.id, { item_id: page.id, choice, time_ms: Date.now() - shownAt.current })
+      const result = await backend.answer(attempt.id, { item_id: page.id, choice, time_ms: Date.now() - shownAt.current })
       setPlayed((now) => ({ ...now, [page.id]: result.played }))
       if (result.played.correct) {
         sound('correct')

@@ -2,7 +2,7 @@
  * Taking something: start or pick up where you left off, play it with your
  * buddy in the corner, then celebrate and look back over it.
  *
- * `/play/:id` is a class assignment, `/practice/:id` your own practice set,
+ * `/play/:id` is a class assignment, `/practice/:id` practice made for you,
  * `/attempts/:id` one you have already started or finished.
  */
 import { AnimatePresence, motion } from 'motion/react'
@@ -18,6 +18,7 @@ import { firstName } from '@/lib/user'
 import { Page } from '@/motion'
 import { playApi, type Attempt, type Finish } from './api'
 import { FinishScreen } from './FinishScreen'
+import { levelFor, PlayLevelProvider } from './level'
 import { PLAYERS } from './players'
 import { Review } from './Review'
 import { starsFor } from './session'
@@ -32,7 +33,7 @@ type Step =
   | { name: 'finished'; finish: Finish }
   | { name: 'review'; attempt: Attempt }
 
-const EXIT: Record<PlaySource, string> = { assignment: '/', practice: '/library', home: '/', attempt: '/results' }
+const EXIT: Record<PlaySource, string> = { assignment: '/', practice: '/practice', home: '/', attempt: '/results' }
 
 function begin(source: PlaySource, id: string): Promise<Attempt> {
   if (source === 'assignment') return playApi.start(id)
@@ -92,45 +93,52 @@ export default function PlayPage({ source }: { source: PlaySource }) {
     return () => void load(attempt.assignment_id ? 'assignment' : 'practice', attempt.assignment_id ?? attempt.set_id)
   }
 
-  if (step.name === 'loading' || step.name === 'finishing') return <Loading finishing={step.name === 'finishing'} />
-  if (step.name === 'error') {
-    return (
-      <Page className="mx-auto max-w-xl px-4 py-16 text-center">
-        <Alert>{step.message}</Alert>
-        <div className="mt-6 flex justify-center gap-3">
-          <Button variant="outline" onClick={() => void load(source, id)}>
-            <ArrowClockwise weight="bold" className="size-4" />
-            Try again
-          </Button>
-          <ButtonLink to={exitTo}>Back</ButtonLink>
-        </div>
-      </Page>
-    )
-  }
-  if (step.name === 'finished') {
-    const { attempt } = step.finish
-    return (
-      <FinishScreen
-        finish={step.finish}
-        onReview={() => setStep({ name: 'review', attempt })}
-        onRetake={again(attempt)}
-        leaderboardTo={attempt.leaderboard && attempt.assignment_id ? `/leaderboard/${attempt.assignment_id}` : null}
-      />
-    )
-  }
-  if (step.name === 'review') return <ReviewPage attempt={step.attempt} exitTo={exitTo} onRetake={again(step.attempt)} />
+  // The look for this child's year — or, if theirs is unknown, the set's.
+  const shown = step.name === 'finished' ? step.finish.attempt : 'attempt' in step ? step.attempt : null
+  const level = levelFor(user?.grade_level, shown?.grade_level)
+  return <PlayLevelProvider value={level}>{screen()}</PlayLevelProvider>
 
-  const Player = PLAYERS[step.attempt.kind]
-  return (
-    <>
-      <Player key={step.attempt.id} attempt={step.attempt} buddy={buddy} exitTo={exitTo} onFinished={() => void finish(step.attempt)} />
-      <BuddyCorner buddy={user?.buddy} handle={buddy} />
-    </>
-  )
+  function screen() {
+    if (step.name === 'loading' || step.name === 'finishing') return <Loading finishing={step.name === 'finishing'} />
+    if (step.name === 'error') {
+      return (
+        <Page className="mx-auto max-w-xl px-4 py-16 text-center">
+          <Alert>{step.message}</Alert>
+          <div className="mt-6 flex justify-center gap-3">
+            <Button variant="outline" onClick={() => void load(source, id)}>
+              <ArrowClockwise weight="bold" className="size-4" />
+              Try again
+            </Button>
+            <ButtonLink to={exitTo}>Back</ButtonLink>
+          </div>
+        </Page>
+      )
+    }
+    if (step.name === 'finished') {
+      const { attempt } = step.finish
+      return (
+        <FinishScreen
+          finish={step.finish}
+          onReview={() => setStep({ name: 'review', attempt })}
+          onRetake={again(attempt)}
+          leaderboardTo={attempt.leaderboard && attempt.assignment_id ? `/leaderboard/${attempt.assignment_id}` : null}
+        />
+      )
+    }
+    if (step.name === 'review') return <ReviewPage attempt={step.attempt} exitTo={exitTo} onRetake={again(step.attempt)} />
+
+    const Player = PLAYERS[step.attempt.kind]
+    return (
+      <>
+        <Player key={step.attempt.id} attempt={step.attempt} buddy={buddy} exitTo={exitTo} onFinished={() => void finish(step.attempt)} />
+        <BuddyCorner buddy={user?.buddy} handle={buddy} />
+      </>
+    )
+  }
 }
 
 /** The buddy keeping you company: small in a corner, above everything. */
-function BuddyCorner({ buddy, handle }: { buddy: string | null | undefined; handle: React.RefObject<BuddyHandle> }) {
+export function BuddyCorner({ buddy, handle }: { buddy: string | null | undefined; handle: React.RefObject<BuddyHandle> }) {
   const wide = useMediaQuery('(min-width: 768px)')
   return (
     <motion.div

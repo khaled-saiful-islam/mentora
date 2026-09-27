@@ -296,14 +296,15 @@ class GenerationService:
 
     async def _purpose(self, session: AsyncSession, owner: User, *, made_for: bool = False) -> str:
         caps = capabilities_for(owner.role)
+        if made_for and caps.take_assignments:
+            # Practice Mentora makes for a student, from what they found hard.
+            return "practice"
         if caps.share_learning_sets:
             return "assign"
         if caps.make_family_sets:
             return await self._family(session, owner)
         if not caps.make_practice_sets:
             raise ForbiddenError("Your account cannot make quizzes or flashcards.")
-        if made_for:
-            return "practice"
         made = await LearningSetService(session, self._kinds).practice_made_today(owner.id)
         if made >= self._settings.student_practice_per_day:
             raise RateLimitError(

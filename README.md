@@ -17,6 +17,15 @@ next. **Parents** connect through their child's invitation and follow along.
 A playful, big-text view built for children: rounded display fonts, a text
 size control everywhere they read, and animation that respects reduced motion.
 
+**Three looks, picked from the student's year.**
+- **Year 1–3** get bright bobbing tiles, a star path, confetti for every right
+  answer, big playful words and *Read it to me*.
+- **Year 4–6** win points on each right answer.
+- **Form 1–5** get the clean, focused look.
+
+Students practise what their teachers and family send, and what their buddy
+makes from the bits they found tricky. They don't make sets themselves.
+
 | | |
 |---|---|
 | ![A quiz question answered correctly, with the explanation and the buddy cheering](docs/screenshots/quiz-correct.png) | ![The finish screen: 100%, three stars and two new badges](docs/screenshots/quiz-finish.png) |
@@ -88,8 +97,8 @@ and [`docs/features/038-live-room.md`](docs/features/038-live-room.md).
 | **A home that shows the class at a glance** — who is answering right now, who is at the door, and how each shared set is going. | **Results as they happen.** Score spread, per-student drill-down, and which questions and skills need another look. |
 | ![The quiz editor: questions, answers, explanations, skills and difficulty](docs/screenshots/quiz-editor.png) | ![A class page with its students, requests, groups, shared work and invite link](docs/screenshots/class.png) |
 | **Generate, then edit.** Every question, answer, explanation, skill and difficulty is editable, and every set is versioned. | **Classes, groups and invites.** Students join with a link or a code; the teacher lets them in. |
-| ![The studio: a chat beside a poster it designed, with zoom and edit controls](docs/screenshots/studio.png) | ![The notification panel with news from the class](docs/screenshots/notifications.png) |
-| **The studio** makes posters, slide decks, websites, apps and games for the classroom, with a zoomable preview. | **Live notifications** — join requests answerable in place, and news with a sense of fun. |
+| ![Previewing a quiz in the Year 1–3 look: bright tiles, a star path and Read it to me](docs/screenshots/preview-year-1-3.png) | ![The notification panel with news from the class](docs/screenshots/notifications.png) |
+| **Preview as a student.** Play a quiz or flashcards before sharing, in each of the three looks. Nothing is saved. | **Live notifications** — join requests answerable in place, and news with a sense of fun. |
 
 - **My materials.** Upload the worksheets, chapters and notes you teach from
   once (PDF, Word, PowerPoint or text). Make quizzes, flashcards, study guides
@@ -149,8 +158,12 @@ See [`docs/features/042-parents.md`](docs/features/042-parents.md).
 - **Study guides.** A topic taught part by part at three reading levels, with
   pictures, words to know in Malay, read-aloud, a concept map, a check after
   every part, and a printable handout.
-- **Practice sets.** Students make their own private quizzes and flashcards
-  on any topic, within a daily limit.
+- **Practice made for each student.** When a shared quiz is tricky, Mentora
+  makes a short practice set on exactly the skills missed. Students practise;
+  only teachers and parents make sets.
+- **Three looks by year.** Quizzes and flashcards play differently for Year
+  1–3, Year 4–6 and the Forms, picked from the student's year. Teachers and
+  parents preview all three.
 - **Results and skills.** Per-student, per-question and per-skill results,
   a score spread, and a student's own strengths and next steps.
 - **Coverage and reports home.** A syllabus map per class and private
@@ -166,8 +179,13 @@ See [`docs/features/042-parents.md`](docs/features/042-parents.md).
 - **Accessible by default.** Text size from small to biggest, playful,
   classic or easy-read fonts, reduced motion, light and dark themes.
 
-> **Students have no open chat for now.** They make practice sets from
-> Practice and take their class's work; every chat route refuses them. See
+> **Students have no open chat for now, and don't make sets.** They take
+> their class's work, work sent from home, and the practice made for them;
+> every chat and set-making route refuses them.
+>
+> **The studio is switched off.** No one makes posters, slides, games,
+> websites or apps, in the chat or anywhere else. Ones already made can still
+> be opened, downloaded and shared. See
 > [`docs/features/025-roles-and-signup.md`](docs/features/025-roles-and-signup.md).
 
 ## Quick start
@@ -208,11 +226,10 @@ setting. The ones you are most likely to change:
 |---|---|
 | `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | Any OpenAI-compatible model endpoint |
 | `LEARNING_MODEL` | The model that writes quizzes and flashcards (empty uses `LLM_MODEL`) |
-| `SERPAPI_KEY` | Web search, for grounded sets and the studio |
+| `SERPAPI_KEY` | Web search, for grounded sets |
 | `SPEECH_MODEL`, `SPEECH_VOICE`, `TRANSCRIBE_MODEL` | Astra's voice, and hearing students' spoken questions, in live lessons |
 | `MATERIALS_PER_OWNER`, `MATERIAL_MAX_BYTES` | How many files a teacher or parent can keep in My materials, and how big each can be |
 | `PARENT_SETS_PER_DAY` | How many quizzes, decks and guides a parent may make each day |
-| `STUDENT_PRACTICE_PER_DAY` | How many practice sets a student may make each day |
 | `MODERATION_ENABLED` | The student guardrails |
 | `PUBLIC_BASE_URL` | Where invite and share links point — set it for any real deployment |
 

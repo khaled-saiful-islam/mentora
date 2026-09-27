@@ -5,6 +5,10 @@
  *
  * Instant mode says right or wrong straight away and explains. End mode only
  * locks the answer in; the verdicts wait for the finish screen.
+ *
+ * How it looks follows the child's year (`level.ts`): bright bobbing tiles, a
+ * star path and "read it to me" for Year 1–3, points for Year 4–6, and the
+ * clean look for Forms.
  */
 import { AnimatePresence, motion } from 'motion/react'
 import { ArrowRight, Check, Circle, Diamond, Lightbulb, Square, Triangle, X } from '@phosphor-icons/react'
@@ -13,11 +17,15 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button, Chip } from '@/components/ui'
 import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/features/auth/errors'
+import { useReadAloud } from '@/features/guide/useReadAloud'
 import { useSound } from '@/lib/sound'
 import { cn } from '@/lib/utils'
 import { celebrate, spring, useCalmMotion, wobble } from '@/motion'
-import { playApi, type Played, type QuizItem } from './api'
+import type { Played, QuizItem } from './api'
+import { usePlayBackend } from './backend'
+import { pick, POINTS_EACH, usePlayLook, type PlayLook } from './level'
 import { PlayHeader } from './PlayChrome'
+import { PlayBackdrop, PointsBurst, ReadAloudButton } from './PlayFun'
 import type { PlayerProps } from './players'
 import { playedById, quizItems, resumeAt, segments, skillLabel } from './session'
 
@@ -25,14 +33,18 @@ interface Marker {
   Icon: Icon
   tile: string
   key: string
+  /** The whole tile in the marker's colour, for the youngest. */
+  bright: string
+  /** What it is called when read aloud: "the triangle". */
+  name: string
 }
 
 // Shape, colour and key for each position — the same everywhere.
 const MARKERS: Marker[] = [
-  { Icon: Triangle, tile: 'bg-coral-400', key: '1' },
-  { Icon: Diamond, tile: 'bg-sky-400', key: '2' },
-  { Icon: Circle, tile: 'bg-sun-400', key: '3' },
-  { Icon: Square, tile: 'bg-mint-400', key: '4' },
+  { Icon: Triangle, tile: 'bg-coral-400', key: '1', bright: 'border-coral-400 bg-coral-100 dark:bg-coral-700/25', name: 'Triangle' },
+  { Icon: Diamond, tile: 'bg-sky-400', key: '2', bright: 'border-sky-400 bg-sky-100 dark:bg-sky-700/25', name: 'Diamond' },
+  { Icon: Circle, tile: 'bg-sun-400', key: '3', bright: 'border-sun-400 bg-sun-100 dark:bg-sun-600/20', name: 'Circle' },
+  { Icon: Square, tile: 'bg-mint-400', key: '4', bright: 'border-mint-400 bg-mint-100 dark:bg-mint-700/25', name: 'Square' },
 ]
 
 const END_MODE_ADVANCE_MS = 650
@@ -44,15 +56,22 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
   const [streak, setStreak] = useState(0)
   const [sending, setSending] = useState(false)
   const shownAt = useRef(Date.now())
+  const [burst, setBurst] = useState(0)
   const { toast } = useToast()
   const sound = useSound()
   const calm = useCalmMotion()
+  const backend = usePlayBackend()
+  const look = usePlayLook()
+  const voice = useReadAloud(attempt.language)
   const instant = attempt.feedback_mode === 'instant'
   const item = items[index]
   const answer = item ? played[item.id] : undefined
+  const points = Object.values(played).filter((p) => p.correct === true).length * POINTS_EACH
 
   useEffect(() => {
     shownAt.current = Date.now()
+    voice.stop()
+    // A new question starts quiet; `voice.stop` is stable.
   }, [index])
 
   const next = useCallback(() => {
@@ -66,7 +85,7 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
     setSending(true)
     sound('tap')
     try {
-      const result = await playApi.answer(attempt.id, { item_id: item.id, choice, time_ms: Date.now() - shownAt.current })
+      const result = await backend.answer(attempt.id, { item_id: item.id, choice, time_ms: Date.now() - shownAt.current })
       setPlayed((now) => ({ ...now, [item.id]: result.played }))
       setStreak(result.streak)
       react(result.played, result.streak)
@@ -83,6 +102,8 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
       sound(streakNow >= 3 && streakNow % 3 === 0 ? 'streak' : 'correct')
       buddy.current?.cue('correct', { streak: streakNow })
       if (streakNow >= 3 && streakNow % 3 === 0) celebrate({ calm, power: 0.6, origin: { x: 0.5, y: 0.7 } })
+      else if (look.cheerEveryRight) celebrate({ calm, power: 0.35, origin: { x: 0.5, y: 0.75 } })
+      if (look.points) setBurst((n) => n + 1)
     } else if (result.correct === false) {
       sound('wrong')
       buddy.current?.cue('wrong')
@@ -99,9 +120,18 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
   useKeys(item?.options.length ?? 0, (n) => void choose(n), answer && instant ? next : null)
 
   if (!item) return null
+  const heard = `${item.prompt}. ${item.options.map((o, i) => `${MARKERS[i % MARKERS.length].name}: ${o}`).join('. ')}`
   return (
     <div className="flex min-h-dvh flex-col">
-      <PlayHeader title={attempt.title} kind="quiz" parts={segments(items, played, index)} streak={instant ? streak : 0} exitTo={exitTo} />
+      {look.backdrop && <PlayBackdrop />}
+      <PlayHeader
+        title={attempt.title}
+        kind="quiz"
+        parts={segments(items, played, index)}
+        streak={instant ? streak : 0}
+        points={instant ? points : undefined}
+        exitTo={exitTo}
+      />
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 pt-6 pb-40 md:pt-10">
         <AnimatePresence mode="wait">
           <motion.section
@@ -116,17 +146,26 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
                 Question {index + 1} of {items.length}
               </Chip>
               <Chip className="text-sm capitalize">{skillLabel(attempt, item.skill)}</Chip>
+              {look.readAloud && <ReadAloudButton voice={voice} id={item.id} text={heard} className="ml-auto" />}
             </div>
-            <h1 className="mt-4 font-display text-2xl leading-snug font-semibold md:text-3xl">{item.prompt}</h1>
-            <Options item={item} answer={answer} instant={instant} disabled={sending} onChoose={(n) => void choose(n)} />
+            <h1 className={cn('mt-4', look.question)}>{item.prompt}</h1>
+            <Options item={item} answer={answer} instant={instant} disabled={sending} look={look} onChoose={(n) => void choose(n)} />
           </motion.section>
         </AnimatePresence>
       </main>
       <AnimatePresence>
-        {answer && instant && <Verdict key={item.id} item={item} answer={answer} last={resumeAt(items, played) >= items.length} onNext={next} />}
+        {answer && instant && (
+          <Verdict key={item.id} item={item} answer={answer} look={look} burst={look.points && answer.correct === true && burst > 0} last={resumeAt(items, played) >= items.length} onNext={next} />
+        )}
       </AnimatePresence>
     </div>
   )
+}
+
+// The youngest get tiles that tumble in; everyone else, a quick rise.
+const ENTER = {
+  plain: { hidden: { opacity: 0, y: 16, scale: 0.96 }, shown: { opacity: 1, y: 0, scale: 1 } },
+  bright: { hidden: { opacity: 0, y: 28, scale: 0.8, rotate: -4 }, shown: { opacity: 1, y: 0, scale: 1, rotate: 0, transition: spring.bouncy } },
 }
 
 function Options({
@@ -134,12 +173,14 @@ function Options({
   answer,
   instant,
   disabled,
+  look,
   onChoose,
 }: {
   item: QuizItem
   answer: Played | undefined
   instant: boolean
   disabled: boolean
+  look: PlayLook
   onChoose: (choice: number) => void
 }) {
   const right = answer?.reveal?.answer
@@ -148,7 +189,7 @@ function Options({
       className="mt-6 grid gap-3 sm:grid-cols-2"
       initial="hidden"
       animate="shown"
-      variants={{ shown: { transition: { staggerChildren: 0.06, delayChildren: 0.1 } } }}
+      variants={{ shown: { transition: { staggerChildren: look.tiles === 'bright' ? 0.1 : 0.06, delayChildren: 0.1 } } }}
     >
       {item.options.map((option, i) => {
         const chosen = answer?.choice === i
@@ -166,8 +207,8 @@ function Options({
                   ? 'reveal'
                   : 'dim'
         return (
-          <motion.li key={i} variants={{ hidden: { opacity: 0, y: 16, scale: 0.96 }, shown: { opacity: 1, y: 0, scale: 1 } }}>
-            <OptionTile marker={MARKERS[i % MARKERS.length]} text={option} state={state} disabled={disabled || Boolean(answer)} onClick={() => onChoose(i)} />
+          <motion.li key={i} variants={ENTER[look.tiles]}>
+            <OptionTile marker={MARKERS[i % MARKERS.length]} text={option} state={state} look={look} position={i} disabled={disabled || Boolean(answer)} onClick={() => onChoose(i)} />
           </motion.li>
         )
       })}
@@ -190,16 +231,23 @@ function OptionTile({
   marker,
   text,
   state,
+  look,
+  position,
   disabled,
   onClick,
 }: {
   marker: Marker
   text: string
   state: TileState
+  look: PlayLook
+  position: number
   disabled: boolean
   onClick: () => void
 }) {
   const verdict = state === 'right' || state === 'reveal' ? Check : state === 'wrong' ? X : null
+  const bright = look.tiles === 'bright'
+  // A bright tile waiting to be picked, or passed over, keeps its colour.
+  const tile = bright && (state === 'open' || state === 'dim') ? cn(marker.bright, 'border-4 hover:shadow-lg', state === 'dim' && 'opacity-55') : TILE[state]
   return (
     <motion.button
       type="button"
@@ -211,15 +259,22 @@ function OptionTile({
       animate={state === 'wrong' ? wobble : state === 'right' ? { scale: [1, 1.05, 1] } : { scale: 1 }}
       transition={spring.snappy}
       className={cn(
-        'group flex min-h-20 w-full items-center gap-4 rounded-2xl border-2 p-3 pr-4 text-left shadow-sm transition-[border-color,background-color,box-shadow,opacity]',
+        'group flex w-full items-center gap-4 border-2 p-3 pr-4 text-left shadow-sm transition-[border-color,background-color,box-shadow,opacity]',
         'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40 disabled:cursor-default',
-        TILE[state],
+        look.tileSize,
+        bright ? 'rounded-3xl' : 'rounded-2xl',
+        tile,
       )}
     >
-      <span className={cn('grid size-12 shrink-0 place-items-center rounded-xl text-white shadow-press', marker.tile)} aria-hidden>
-        <marker.Icon weight="fill" className="size-6" />
-      </span>
-      <span className="flex-1 text-lg leading-snug font-bold">{text}</span>
+      <motion.span
+        className={cn('grid shrink-0 place-items-center rounded-xl text-white shadow-press', bright ? 'size-14' : 'size-12', marker.tile)}
+        aria-hidden
+        animate={look.bob && state === 'open' ? { y: [0, -5, 0], rotate: [0, position % 2 ? 6 : -6, 0] } : { y: 0, rotate: 0 }}
+        transition={look.bob && state === 'open' ? { duration: 1.8, repeat: Infinity, delay: position * 0.25, ease: 'easeInOut' } : spring.snappy}
+      >
+        <marker.Icon weight="fill" className={bright ? 'size-8' : 'size-6'} />
+      </motion.span>
+      <span className={cn('flex-1 leading-snug font-bold', look.tileText)}>{text}</span>
       {verdict ? (
         <motion.span
           initial={{ scale: 0, rotate: -45 }}
@@ -238,8 +293,24 @@ function OptionTile({
   )
 }
 
-function Verdict({ item, answer, last, onNext }: { item: QuizItem; answer: Played; last: boolean; onNext: () => void }) {
+function Verdict({
+  item,
+  answer,
+  look,
+  burst,
+  last,
+  onNext,
+}: {
+  item: QuizItem
+  answer: Played
+  look: PlayLook
+  /** Points just won, rising out of the verdict. */
+  burst: boolean
+  last: boolean
+  onNext: () => void
+}) {
   const right = answer.correct === true
+  const said = pick(right ? look.rightWords : look.wrongWords, item.id)
   const correctText = typeof answer.reveal?.answer === 'number' ? item.options[answer.reveal.answer] : null
   const next = useRef<HTMLButtonElement>(null)
   useEffect(() => next.current?.focus(), [])
@@ -252,7 +323,8 @@ function Verdict({ item, answer, last, onNext }: { item: QuizItem; answer: Playe
       className={cn('fixed inset-x-0 bottom-0 z-40 border-t-4 pb-[env(safe-area-inset-bottom)]', right ? 'border-correct bg-correct-soft' : 'border-wrong bg-wrong-soft')}
       aria-live="polite"
     >
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 py-4 pr-24 pl-4 sm:flex-row sm:items-center md:pr-40 xl:pr-4">
+      <div className="relative mx-auto flex w-full max-w-3xl flex-col gap-3 py-4 pr-24 pl-4 sm:flex-row sm:items-center md:pr-40 xl:pr-4">
+        <PointsBurst amount={POINTS_EACH} show={burst} />
         <div className="flex min-w-0 flex-1 items-start gap-3">
           <motion.span
             initial={{ scale: 0, rotate: -90 }}
@@ -263,7 +335,7 @@ function Verdict({ item, answer, last, onNext }: { item: QuizItem; answer: Playe
             {right ? <Check weight="bold" className="size-6" /> : <X weight="bold" className="size-6" />}
           </motion.span>
           <div className="min-w-0">
-            <p className="font-display text-2xl font-semibold">{right ? 'Correct!' : 'Not quite'}</p>
+            <p className={cn(look.level === 'little' ? 'font-celebrate text-3xl' : 'font-display text-2xl font-semibold')}>{said}</p>
             {!right && correctText && (
               <p className="font-bold">
                 The answer is <span className="underline decoration-correct decoration-4 underline-offset-4">{correctText}</span>

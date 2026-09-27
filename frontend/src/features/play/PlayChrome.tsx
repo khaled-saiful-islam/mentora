@@ -11,6 +11,8 @@ import { lookOfKind } from '@/features/learning/kinds'
 import { cn } from '@/lib/utils'
 import { spring } from '@/motion'
 import type { PlayKind } from './api'
+import { usePlayLook } from './level'
+import { PointsChip, ProgressStars, STAR_PATH_MAX } from './PlayFun'
 import type { Segment } from './session'
 
 const SEGMENT: Record<Segment, string> = {
@@ -80,15 +82,20 @@ export function PlayHeader({
   kind,
   parts,
   streak = 0,
+  points,
   exitTo,
 }: {
   title: string
   kind: PlayKind
   parts: Segment[]
   streak?: number
+  /** The running score, shown by the looks that keep one. */
+  points?: number
   exitTo: string
 }) {
   const look = lookOfKind(kind)
+  const play = usePlayLook()
+  const stars = play.starPath && parts.length <= STAR_PATH_MAX
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex w-full max-w-4xl items-center gap-3 px-4 py-3">
@@ -105,10 +112,9 @@ export function PlayHeader({
         </span>
         <div className="min-w-0 flex-1">
           <p className="break-words font-display text-base font-semibold leading-tight">{title}</p>
-          <div className="mt-1.5">
-            <ProgressSegments parts={parts} />
-          </div>
+          <div className="mt-1.5">{stars ? <ProgressStars parts={parts} /> : <ProgressSegments parts={parts} />}</div>
         </div>
+        {play.points && points !== undefined && <PointsChip points={points} />}
         <StreakFlame streak={streak} />
         <TextSizeControl compact className="shrink-0" />
       </div>

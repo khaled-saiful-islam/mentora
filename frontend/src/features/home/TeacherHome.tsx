@@ -69,7 +69,7 @@ export default function TeacherHome() {
           <Action Icon={Cards} label="Make flashcards" onClick={() => studio.create('flashcard')} />
           <Action Icon={BookOpenText} label="Make a study guide" onClick={() => studio.create('study_guide')} />
           <Action Icon={Plus} label="New class" to="/classes?new=1" />
-          <Action Icon={Sparkle} label="Open the studio" to="/studio" />
+          <Action Icon={Sparkle} label="Ask Mentora" to="/chat" />
         </div>
       </section>
 

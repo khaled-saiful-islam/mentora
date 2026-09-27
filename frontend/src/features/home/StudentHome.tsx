@@ -85,10 +85,10 @@ export default function StudentHome() {
           <EmptyState
             art={<EmptyArt Icon={Confetti} tone="from-mint-100 to-sun-100" />}
             title="All caught up!"
-            body="Nothing waiting right now. Make your own practice set, or join a class with a code."
+            body="Nothing waiting right now. Have a go at your practice, or join a class with a code."
             action={
               <div className="flex flex-wrap justify-center gap-2">
-                <ButtonLink to="/library" variant="sun">
+                <ButtonLink to="/practice" variant="sun">
                   <Barbell weight="fill" className="size-5" />
                   Practise
                 </ButtonLink>
@@ -178,7 +178,7 @@ function PractiseNext({ home }: { home: Home }) {
   return (
     <section className="mt-10 rounded-[1.75rem] border-2 border-dashed border-border p-5">
       <h2 className="font-display text-xl font-semibold">Worth another look</h2>
-      <p className="mt-1 text-muted-foreground">These were tricky last time. A practice set on one would help!</p>
+      <p className="mt-1 text-muted-foreground">These were tricky last time. A little practice on one would help!</p>
       <ul className="mt-3 flex flex-wrap gap-2">
         {home.practise.map((skill) => (
           <li key={skill.subject + skill.slug}>
@@ -196,5 +196,5 @@ function PractiseNext({ home }: { home: Home }) {
 /** Straight to the practice made for this skill, when there is one. */
 function practiceFor(home: Home, label: string): string {
   const made = home.made_for_you?.find((m) => !m.done && m.skills.some((s) => s.toLowerCase() === label.toLowerCase()))
-  return made ? `/practice/${made.set_id}` : '/library'
+  return made ? `/practice/${made.set_id}` : '/practice'
 }

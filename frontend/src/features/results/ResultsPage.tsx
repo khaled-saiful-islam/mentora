@@ -64,7 +64,7 @@ export function SkillList({
   tone: 'mint' | 'coral'
   skills: SkillInsight[]
   empty: string
-  /** The student's own page offers to make a practice set. */
+  /** The student's own page points to their practice. */
   practiseLink?: boolean
 }) {
   return (
@@ -87,8 +87,8 @@ export function SkillList({
         </ul>
       )}
       {practiseLink && tone === 'coral' && skills.length > 0 && (
-        <Link to="/library" className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline">
-          Make a practice set <ArrowRight weight="bold" className="size-4" />
+        <Link to="/practice" className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline">
+          Go to my practice <ArrowRight weight="bold" className="size-4" />
         </Link>
       )}
     </section>

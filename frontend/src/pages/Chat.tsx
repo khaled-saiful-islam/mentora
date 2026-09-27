@@ -26,6 +26,7 @@ import { useLearnStudio } from '@/features/learning/LearnStudio'
 import { useDocuments } from '@/hooks/useDocuments'
 import { apiFetch } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
+import { can } from '@/lib/user'
 import { chatRoot } from '@/features/shell/nav'
 
 export default function Chat() {
@@ -136,8 +137,9 @@ export default function Chat() {
       onSend={(text, options) =>
         chat.send(text, {
           searchMode: options.searchMode,
-          // What is on screen, so "make it warmer" has a subject.
-          artifactId: chat.openArtifact,
+          // What is on screen, so "make it warmer" has a subject — only where
+          // the studio is open; the server refuses the id everywhere else.
+          artifactId: can(user, 'studio_artifacts') ? chat.openArtifact : null,
           // The pending files become cards on this message, and leave the
           // composer — the server binds them to the same id.
           documents: documents.pending,

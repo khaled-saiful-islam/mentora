@@ -16,14 +16,26 @@ Parents are covered in [`042-parents.md`](042-parents.md).
 What each role may do is decided in one place,
 `app/policies/capabilities.py`, and enforced on the backend:
 
-- **Studio artifacts** (posters, slides, games, websites, apps) are for
-  teachers and admins. A student is refused at every artifact route (403), at
-  the chat route's `artifact_id`, and — the last line — never has the artifact
-  tools built into their turn at all.
+- **Studio artifacts** (posters, slides, games, websites, apps) are **no
+  longer made** (2026-09-27). `studio_artifacts` is off for every role:
+  - no turn is built with the artifact tools;
+  - the chat route refuses an `artifact_id`;
+  - reworking one with the model (`/revise`) refuses;
+  - `/studio` sends everyone to `/chat`.
+
+  Those already made stay open to the teachers and admins who made them —
+  view, download, edit the words, share — through `view_artifacts`. A student
+  is refused at every artifact route (403).
 - **Public share links** to a conversation are for teachers and admins.
-- **The chat is closed to students for now** (`use_chat`). They make practice
-  quizzes and flashcards from Practice (`POST /api/learning-sets`, which is not part
-  of the chat) and take their class's work. Every chat route — the stream,
+- **Students do not make sets** (`make_practice_sets` is off, 2026-09-27).
+  - They practise what their teachers share, what their parents send home,
+    and what Mentora makes from what they found hard (`auto_practice`, which
+    now checks `take_assignments`).
+  - Their **Practice** page (`/practice`, from `GET /api/me/practice`) lists
+    all of it, with any sets they made before.
+  - Every set-making route refuses them.
+- **The chat is closed to students for now** (`use_chat`). They take their
+  class's work and their practice. Every chat route — the stream,
   conversations, their files and memories — refuses them with a 403 at the
   router, and the menu, `/chat` and `/c/…` are hidden and redirect home.
   Re-opening it is `use_chat=True` on the student row of the capability table;

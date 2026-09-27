@@ -117,7 +117,9 @@ class AutoPracticeService:
         if event.assignment_id is None or event.kind not in PRACTISED_AS:
             return None
         student = await self._session.get(User, event.student_id)
-        if student is None or not capabilities_for(student.role).make_practice_sets:
+        # A student who takes work gets practice made for them; they no
+        # longer make their own (`make_practice_sets` is off).
+        if student is None or not capabilities_for(student.role).take_assignments:
             return None
         if await self._already(event.student_id, event.assignment_id):
             return None

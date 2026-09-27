@@ -61,7 +61,15 @@ EXPECTED: dict[str, dict[Role, bool]] = {
     # Closed to students for now; parents get it in §20 P4.
     # §20.6: parents chat as adults supporting a child; students not yet.
     "use_chat": {Role.ADMIN: True, Role.TEACHER: True, Role.STUDENT: False, Role.PARENT: True},
+    # Making studio artifacts is off for everyone; those already made stay
+    # viewable by the teachers and admins who made them.
     "studio_artifacts": {
+        Role.ADMIN: False,
+        Role.TEACHER: False,
+        Role.STUDENT: False,
+        Role.PARENT: False,
+    },
+    "view_artifacts": {
         Role.ADMIN: True,
         Role.TEACHER: True,
         Role.STUDENT: False,
@@ -85,10 +93,11 @@ EXPECTED: dict[str, dict[Role, bool]] = {
         Role.STUDENT: False,
         Role.PARENT: False,
     },
+    # Students practise what is made for them; nobody makes private sets now.
     "make_practice_sets": {
         Role.ADMIN: False,
         Role.TEACHER: False,
-        Role.STUDENT: True,
+        Role.STUDENT: False,
         Role.PARENT: False,
     },
     "manage_classes": {

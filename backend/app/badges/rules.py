@@ -112,8 +112,8 @@ class Bookworm:
 class SelfStarter:
     key: str = "self_starter"
     name: str = "Self-Starter"
-    description: str = "Finished a practice set you made yourself."
-    hint: str = "Make and finish your own practice set."
+    description: str = "Finished your first practice set."
+    hint: str = "Finish a practice set made for you."
 
     def evaluate(self, ctx: Context) -> Award | None:
         if ctx.purpose == "practice" and ctx.practice_completed >= 1:

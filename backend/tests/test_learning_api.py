@@ -141,17 +141,16 @@ async def test_building_spends_from_the_token_quota(session, api, teacher) -> No
     assert (await TokenQuota(session).usage(teacher.id, None)).tokens > before
 
 
-async def test_a_student_makes_private_practice_up_to_a_daily_limit(api, student, scripted) -> None:
-    state, _ = scripted
-    state["per_day"] = 1
-    detail = await _build(api, student)
-    assert detail["purpose"] == "practice"
+async def test_a_student_practises_but_never_makes_a_set(api, student) -> None:
+    """Sets come from teachers, parents, and Mentora's own practice."""
     async with api(student) as c:
-        again = await c.post(
+        refused = await c.post(
             "/api/learning-sets/generate", json={"kind": "flashcard", "topic": "planets"}
         )
-    assert again.status_code == 429
-    assert "daily limit" in again.json()["error"]["message"]
+        listed = await c.get("/api/learning-sets")
+        practice = await c.get("/api/me/practice")
+    assert refused.status_code == listed.status_code == 403
+    assert practice.status_code == 200
 
 
 async def test_editing_an_unshared_set_changes_it_in_place(api, teacher) -> None:
@@ -291,9 +290,11 @@ async def test_bad_shares_are_refused(api, teacher, change, status) -> None:
 
 
 async def test_a_practice_set_cannot_be_shared_and_students_cannot_share(
-    api, student, teacher
+    api, session, student, teacher
 ) -> None:
-    practice = await _build(api, student)
+    from tests.play_helpers import ready_set
+
+    practice = {"id": str((await ready_set(session, student, purpose="practice")).id)}
     async with api(student) as c:
         assert (
             await c.post(
@@ -353,6 +354,5 @@ async def test_makeable_lists_the_learning_kinds_for_each_role(api, teacher, stu
         kid = (await c.get("/api/me/makeable")).json()["learning"]
     assert {k["name"] for k in staff} == {"quiz", "flashcard", "study_guide"}
     assert {k["purpose"] for k in staff} == {"assign"}
-    # Study guides are for teachers to make; a student practises with the rest.
-    assert {k["name"] for k in kid} == {"quiz", "flashcard"}
-    assert {k["purpose"] for k in kid} == {"practice"}
+    # A student makes nothing: they practise what is made for them.
+    assert kid == []
