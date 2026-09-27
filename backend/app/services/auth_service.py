@@ -280,6 +280,12 @@ class AuthService:
             user.onboarded_at = datetime.now(UTC)
         return await self._users.save(user)
 
+    async def finish_tour(self, user_id: UUID) -> User:
+        user = await self._require(user_id)
+        if user.toured_at is None:
+            user.toured_at = datetime.now(UTC)
+        return await self._users.save(user)
+
     async def _require(self, user_id: UUID) -> User:
         user = await self._users.get_by_id(user_id)
         if user is None:

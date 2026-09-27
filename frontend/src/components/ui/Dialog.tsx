@@ -132,7 +132,7 @@ function Panel({
 }
 
 /** Keep Tab inside the dialog: out of it is the page it is covering. */
-function trapTab(event: KeyboardEvent, root: HTMLElement | null) {
+export function trapTab(event: KeyboardEvent, root: HTMLElement | null) {
   if (!root) return
   const focusable = Array.from(
     root.querySelectorAll<HTMLElement>(

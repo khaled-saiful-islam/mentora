@@ -18,6 +18,7 @@ function user(text_scale: number) {
     buddy: null,
     preferences: { text_scale, font_style: 'playful', motion: 'system', sound: false },
     onboarded: true,
+    toured: true,
     capabilities: {},
     created_at: '2026-01-01T00:00:00Z',
   }

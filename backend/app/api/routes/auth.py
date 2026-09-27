@@ -229,6 +229,12 @@ async def finish_onboarding(auth: AuthServiceDep, user: CurrentUser) -> UserResp
     return UserResponse.of(await auth.finish_onboarding(user.id))
 
 
+@router.post("/me/toured", response_model=UserResponse)
+async def finish_tour(auth: AuthServiceDep, user: CurrentUser) -> UserResponse:
+    """The first-visit tour was finished or closed: it is not shown again."""
+    return UserResponse.of(await auth.finish_tour(user.id))
+
+
 @router.post(
     "/me/password",
     status_code=status.HTTP_204_NO_CONTENT,

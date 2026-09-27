@@ -59,6 +59,8 @@ export interface User {
   buddy: string | null
   preferences: Preferences
   onboarded: boolean
+  /** Whether they have seen the first-visit tour. */
+  toured: boolean
   capabilities: Capabilities
   created_at: string
 }

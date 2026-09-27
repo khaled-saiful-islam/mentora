@@ -56,6 +56,8 @@ class User(Base):
         JSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
     )
     onboarded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # When they finished or closed the first-visit tour; null shows it once.
+    toured_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # Tokens this account may spend in any rolling 24 hours. NULL is unlimited,

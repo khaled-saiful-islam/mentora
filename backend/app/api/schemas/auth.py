@@ -96,6 +96,8 @@ class UserResponse(BaseModel):
     buddy: str | None
     preferences: dict[str, Any]
     onboarded: bool
+    # Whether the first-visit tour has been seen (finished or closed).
+    toured: bool
     capabilities: dict[str, bool]
     created_at: datetime
 
@@ -113,6 +115,7 @@ class UserResponse(BaseModel):
             buddy=user.buddy,
             preferences=effective_preferences(user.role, user.preferences).as_dict(),
             onboarded=user.onboarded_at is not None,
+            toured=user.toured_at is not None,
             capabilities=capabilities_for(user.role).as_dict(),
             created_at=user.created_at,
         )

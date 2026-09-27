@@ -18,6 +18,7 @@ const STUDENT = {
   buddy: null,
   preferences: { text_scale: 115, font_style: 'playful', motion: 'reduce', sound: false },
   onboarded: false,
+  toured: false,
   capabilities: {},
   created_at: '2026-09-25T00:00:00Z',
 }

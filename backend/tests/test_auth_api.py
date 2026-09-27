@@ -213,6 +213,24 @@ async def test_onboarding_is_remembered(client) -> None:
     assert (before, after) == (False, True)
 
 
+async def test_the_tour_is_shown_once_then_remembered(client) -> None:
+    async with client as c:
+        await c.post(
+            "/api/auth/signin", json={"identifier": "admin", "password": "hunter2hunter2"}
+        )
+        before = (await c.get("/api/auth/me")).json()["toured"]
+        after = (await c.post("/api/auth/me/toured")).json()["toured"]
+        again = (await c.post("/api/auth/me/toured")).json()["toured"]
+        still = (await c.get("/api/auth/me")).json()["toured"]
+    assert (before, after, again, still) == (False, True, True, True)
+
+
+async def test_the_tour_needs_someone_signed_in(client) -> None:
+    async with client as c:
+        response = await c.post("/api/auth/me/toured")
+    assert response.status_code == 401
+
+
 async def test_profile_update_requires_authentication(client) -> None:
     async with client as c:
         response = await c.patch("/api/auth/me", json={"display_name": "Nobody"})

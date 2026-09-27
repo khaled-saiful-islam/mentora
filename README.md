@@ -19,8 +19,11 @@ size control everywhere they read, and animation that respects reduced motion.
 
 **Three looks, picked from the student's year.**
 - **Year 1–3** get bright bobbing tiles, a star path, confetti for every right
-  answer, big playful words and *Read it to me*.
-- **Year 4–6** win points on each right answer.
+  answer, big playful words, a photo beside a question when one fits (and
+  never one that gives the answer away), and *Read it to me* in Astra's warm
+  voice.
+- **Year 4–6** play a quest: a map grid, a rocket riding the progress bar,
+  points on each right answer and a rank at the end.
 - **Form 1–5** get the clean, focused look.
 
 Students practise what their teachers and family send, and what their buddy
@@ -36,8 +39,15 @@ makes from the bits they found tricky. They don't make sets themselves.
 ![Five study buddies: Kiko the kancil, Bolt the robot, Ollie the owl, Momo the baby dragon and Rimau the tiger cub](docs/screenshots/buddies.png)
 
 **Five study buddies** — Kiko, Bolt, Ollie, Momo and Rimau — each with their
-own voice, moves and tricks. They greet, give tips, cheer right answers and
-comfort wrong ones.
+own voice, moves, tricks and sounds (a babble in their own pitch under every
+speech bubble). They greet, cheer right answers, comfort wrong ones, and
+coach: halfway and last-one cheers, a nudge when a child is stuck, and a way
+to think after two misses. **My results** is written for a child to read: the
+buddy's one-line summary, recent scores, and skills sorted into *Got it*,
+*Getting there* and *Let's practise*.
+
+**A first-visit tour** for students, teachers and parents: a few animated
+steps showing what each can do, easy to skip, and reopened from Settings.
 
 | | |
 |---|---|
@@ -101,9 +111,9 @@ and [`docs/features/038-live-room.md`](docs/features/038-live-room.md).
 | **Preview as a student.** Play a quiz or flashcards before sharing, in each of the three looks. Nothing is saved. | **Live notifications** — join requests answerable in place, and news with a sense of fun. |
 
 - **My materials.** Upload the worksheets, chapters and notes you teach from
-  once (PDF, Word, PowerPoint or text). Make quizzes, flashcards, study guides
-  and live lessons from them. Every item cites your file. The web fills gaps
-  only if you ask it to.
+  once (PDF, Word, PowerPoint or text), or **take a photo** of a page or the
+  board. Make quizzes, flashcards, study guides and live lessons from them.
+  Every item cites your file. The web fills gaps only if you ask it to.
 - **The coverage map.** It shows how much of the year's syllabus each class
   has covered, month by month and topic by topic, with the class's score on
   each. It can draft the syllabus, suggest a plan for the rest of the year,
@@ -163,7 +173,8 @@ See [`docs/features/042-parents.md`](docs/features/042-parents.md).
   only teachers and parents make sets.
 - **Three looks by year.** Quizzes and flashcards play differently for Year
   1–3, Year 4–6 and the Forms, picked from the student's year. Teachers and
-  parents preview all three.
+  parents preview all three. Year 1–3 get checked photos beside questions and
+  *Read it to me* in the tutor's voice.
 - **Results and skills.** Per-student, per-question and per-skill results,
   a score spread, and a student's own strengths and next steps.
 - **Coverage and reports home.** A syllabus map per class and private
