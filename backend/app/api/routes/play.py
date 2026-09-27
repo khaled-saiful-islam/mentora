@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Query, Response
 from app.api.deps import (
     CurrentUser,
     NarratorDep,
+    PictureFillerDep,
     SessionDep,
     SettingsDep,
     limit_speech,
@@ -38,6 +39,7 @@ from app.services.auto_practice import AutoPracticeService
 from app.services.badge_service import BadgeService
 from app.services.child_view_service import ChildViewService
 from app.services.family_share_service import FamilyShareService
+from app.services.item_picture_service import ItemPictureService
 from app.services.play_service import PlayService
 from app.services.read_aloud import ReadAloudService
 from app.services.results_service import ResultsService
@@ -134,6 +136,16 @@ async def answer(
         user.id, attempt_id, body.item_id, response, body.time_ms
     )
     return AnswerResponse.of(result)
+
+
+@router.get("/attempts/{attempt_id}/pictures")
+async def pictures(
+    attempt_id: UUID, user: CurrentUser, session: SessionDep, filler: PictureFillerDep
+) -> dict[str, object]:
+    """Pictures beside the questions, for the Year 1–3 look: those found so
+    far, and whether any are still being looked for."""
+    found = await ItemPictureService(session, filler).for_attempt(user.id, attempt_id)
+    return {"pictures": found.pictures, "done": found.done}
 
 
 @router.get("/attempts/{attempt_id}/speech", dependencies=[Depends(limit_speech)])

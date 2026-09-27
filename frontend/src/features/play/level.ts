@@ -68,6 +68,8 @@ export interface PlayLook {
   backdrop: 'drift' | 'grid' | 'none'
   /** A button that reads the question or card aloud. */
   readAloud: boolean
+  /** A photo beside each question or card, where one was found that fits. */
+  pictures: boolean
   /** What the verdict says. */
   rightWords: string[]
   wrongWords: string[]
@@ -92,6 +94,7 @@ const LOOKS: Record<PlayLevel, Omit<PlayLook, 'level'>> = {
     starPath: true,
     backdrop: 'drift',
     readAloud: true,
+    pictures: true,
     rightWords: ['Yay! You got it!', 'Woohoo!', 'Super star!', 'You did it!'],
     wrongWords: ['Oops! Nice try!', 'Almost there!', 'Good try!'],
     confettiFrom: 1,
@@ -112,6 +115,7 @@ const LOOKS: Record<PlayLevel, Omit<PlayLook, 'level'>> = {
     starPath: false,
     backdrop: 'grid',
     readAloud: false,
+    pictures: false,
     rightWords: ['Correct!', 'Nailed it!', 'Spot on!'],
     wrongWords: ['Not quite', 'So close!'],
     confettiFrom: 2,
@@ -132,6 +136,7 @@ const LOOKS: Record<PlayLevel, Omit<PlayLook, 'level'>> = {
     starPath: false,
     backdrop: 'none',
     readAloud: false,
+    pictures: false,
     rightWords: ['Correct!'],
     wrongWords: ['Not quite'],
     confettiFrom: 2,

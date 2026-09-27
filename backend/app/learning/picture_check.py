@@ -159,6 +159,11 @@ class VisionPictureCheck:
     async def verdict(
         self, picture: Picture, *, want: str, topic: str, grade: str | None
     ) -> Verdict | None:
+        content = await self.look(picture, _ask(want, topic, grade))
+        return verdict_from(content) if content is not None else None
+
+    async def look(self, picture: Picture, question: str) -> str | None:
+        """The model's reply to a question about the picture; None if it had none."""
         payload = {
             "model": self._model,
             "temperature": 0.0,
@@ -168,7 +173,7 @@ class VisionPictureCheck:
                     "role": "user",
                     "content": [
                         {"type": "image_url", "image_url": {"url": picture.thumbnail}},
-                        {"type": "text", "text": _ask(want, topic, grade)},
+                        {"type": "text", "text": question},
                     ],
                 }
             ],
@@ -180,8 +185,7 @@ class VisionPictureCheck:
         if response.status_code != 200:
             logger.info("picture check %s: %s", response.status_code, response.text[:200])
             return None
-        content = response.json()["choices"][0]["message"]["content"] or ""
-        return verdict_from(content)
+        return response.json()["choices"][0]["message"]["content"] or ""
 
 
 def _ask(want: str, topic: str, grade: str | None) -> str:

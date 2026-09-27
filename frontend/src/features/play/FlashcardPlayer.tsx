@@ -20,7 +20,8 @@ import type { CardItem, Played } from './api'
 import { usePlayBackend } from './backend'
 import { POINTS_EACH, usePlayLook, type PlayLook } from './level'
 import { PlayHeader } from './PlayChrome'
-import { PlayBackdrop, PointsBurst, ReadAloudButton } from './PlayFun'
+import { PlayBackdrop, PointsBurst, QuestionPicture, ReadAloudButton } from './PlayFun'
+import { useItemPictures, usePictureFor, type ReadyPicture } from './pictures'
 import { usePlayVoice } from './usePlayVoice'
 import type { PlayerProps } from './players'
 import { cardItems, playedById, resumeAt, segments, skillLabel, type Segment } from './session'
@@ -46,9 +47,11 @@ export function FlashcardPlayer({ attempt, buddy, exitTo, onFinished }: PlayerPr
   const backend = usePlayBackend()
   const look = usePlayLook()
   const voice = usePlayVoice(attempt.id, attempt.language)
+  const pictures = useItemPictures(attempt.id, look.pictures)
 
   const deck = phase === 'second' ? again : cards
   const card = deck[index]
+  const picture = usePictureFor(pictures, card?.id)
   const points = Object.values(played).filter((p) => p.knew === true).length * POINTS_EACH
 
   useEffect(() => {
@@ -133,7 +136,7 @@ export function FlashcardPlayer({ attempt, buddy, exitTo, onFinished }: PlayerPr
               <Deck left={deck.length - index - 1}>
                 <PointsBurst key={burst} amount={POINTS_EACH} show={burst > 0} />
                 <AnimatePresence mode="wait">
-                  <Flashcard key={`${phase}-${card.id}`} card={card} flipped={flipped} leaving={leaving} look={look} onFlip={flip} onSwipe={(knew) => void mark(knew)} />
+                  <Flashcard key={`${phase}-${card.id}`} card={card} picture={picture} flipped={flipped} leaving={leaving} look={look} onFlip={flip} onSwipe={(knew) => void mark(knew)} />
                 </AnimatePresence>
               </Deck>
               <Controls flipped={flipped} disabled={sending || Boolean(leaving)} look={look} onFlip={flip} onMark={(knew) => void mark(knew)} />
@@ -164,6 +167,7 @@ function Deck({ left, children }: { left: number; children: React.ReactNode }) {
 
 function Flashcard({
   card,
+  picture,
   flipped,
   leaving,
   look,
@@ -171,6 +175,7 @@ function Flashcard({
   onSwipe,
 }: {
   card: CardItem
+  picture: ReadyPicture | null
   flipped: boolean
   leaving: 'knew' | 'notYet' | null
   look: PlayLook
@@ -193,7 +198,8 @@ function Flashcard({
   const away = leaving === 'knew' ? 520 : leaving === 'notYet' ? -520 : 0
   return (
     <motion.div
-      className="relative aspect-[4/5] w-full touch-pan-y sm:aspect-[3/2]"
+      // The youngest get a taller card, with room for a picture.
+      className={cn('relative aspect-[4/5] w-full touch-pan-y', bright ? 'sm:aspect-[4/3]' : 'sm:aspect-[3/2]')}
       // Perspective here, on the flipping card's own parent: a transformed
       // ancestor further up flattens 3D, and the flip would read as a squash.
       style={{ x, rotate: tilt, perspective: 1400 }}
@@ -216,8 +222,10 @@ function Flashcard({
         transition={bright ? spring.bouncy : { type: 'spring', stiffness: 260, damping: 24 }}
       >
         <Face side="front" bright={bright} quest={look.tiles === 'quest'}>
-          <p className="text-sm font-bold tracking-wide text-kind-flashcard uppercase">Front</p>
-          <p className={cn('mt-3 leading-tight', bright ? 'font-celebrate text-4xl md:text-5xl' : 'font-display text-3xl font-semibold md:text-4xl')}>{card.front}</p>
+          {/* With a picture, the label steps aside and the word is a size
+              smaller, so the front still fits the card. */}
+          {picture ? <QuestionPicture key={picture.image} picture={picture} on="card" /> : <p className="text-sm font-bold tracking-wide text-kind-flashcard uppercase">Front</p>}
+          <p className={cn('mt-3 leading-tight', bright ? (picture ? 'font-celebrate text-3xl md:text-4xl' : 'font-celebrate text-4xl md:text-5xl') : 'font-display text-3xl font-semibold md:text-4xl')}>{card.front}</p>
           {card.hint && (
             <span className="mt-5">
               {hint ? (
@@ -239,7 +247,7 @@ function Flashcard({
               )}
             </span>
           )}
-          <span className="absolute bottom-5 inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
+          <span className={cn('inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground', picture ? 'mt-4' : 'absolute bottom-5')}>
             <ArrowsClockwise weight="bold" className="size-4" />
             Tap to flip
           </span>

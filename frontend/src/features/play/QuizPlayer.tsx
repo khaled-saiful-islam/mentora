@@ -24,7 +24,8 @@ import type { Played, QuizItem } from './api'
 import { usePlayBackend } from './backend'
 import { pick, POINTS_EACH, usePlayLook, type PlayLook } from './level'
 import { PlayHeader } from './PlayChrome'
-import { PlayBackdrop, PointsBurst, ReadAloudButton, SparkleBurst } from './PlayFun'
+import { PlayBackdrop, PointsBurst, QuestionPicture, ReadAloudButton, SparkleBurst } from './PlayFun'
+import { useItemPictures, usePictureFor } from './pictures'
 import { usePlayVoice, type Line } from './usePlayVoice'
 import type { PlayerProps } from './players'
 import { playedById, quizItems, resumeAt, segments, skillLabel } from './session'
@@ -66,8 +67,10 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
   const backend = usePlayBackend()
   const look = usePlayLook()
   const voice = usePlayVoice(attempt.id, attempt.language)
+  const pictures = useItemPictures(attempt.id, look.pictures)
   const instant = attempt.feedback_mode === 'instant'
   const item = items[index]
+  const picture = usePictureFor(pictures, item?.id)
   const answer = item ? played[item.id] : undefined
   const points = Object.values(played).filter((p) => p.correct === true).length * POINTS_EACH
 
@@ -157,6 +160,7 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
                 <Chip className="text-sm capitalize">{skillLabel(attempt, item.skill)}</Chip>
                 {look.readAloud && <ReadAloudButton voice={voice} id={item.id} lines={heard} className="ml-auto" />}
               </div>
+              {picture && <QuestionPicture key={picture.image} picture={picture} />}
               <h1 className={cn(look.questionCard ? 'mt-3' : 'mt-4', look.question)}>{item.prompt}</h1>
             </div>
             <Options item={item} answer={answer} instant={instant} disabled={sending} look={look} onChoose={(n) => void choose(n)} />

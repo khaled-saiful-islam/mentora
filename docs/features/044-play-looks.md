@@ -16,6 +16,7 @@ before sharing it, in each look.
 | Progress | A path of stars: gold when right, grey when not, the current one twinkling (up to 15 items) | The bar, with a rocket riding it to the current question | The bar |
 | A right answer | Confetti every time, and *"Yay! You got it!"* | Stars burst from the tile, *"+10"* rises, a points counter ticks | *"Correct!"* |
 | Read it to me | Astra's voice reads the question and each answer by its shape (*"Triangle: …"*), or the card | — | — |
+| Pictures | A photo of what the question or card is about, where one fits and gives nothing away (`045-question-pictures.md`) | — | — |
 | Flashcards | Bright cards, big words, a bouncier flip, smiley buttons, confetti for *I knew it!* | A bold band across the top of each card; points for each one known | As before |
 | Finish | A bigger party, with confetti from one star | *"You won 80 points!"* and a rank: Rookie, Explorer, Adventurer or Champion | As before |
 

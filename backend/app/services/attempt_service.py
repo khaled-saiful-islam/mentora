@@ -377,6 +377,11 @@ class AttemptService:
 
     # --- internals -------------------------------------------------------
 
+    async def loaded(self, student_id: UUID, attempt_id: UUID) -> Loaded:
+        """A student's attempt with its set and version, for what reads its
+        items without marking them (the pictures beside them)."""
+        return await self._load(student_id, attempt_id)
+
     async def _load(self, student_id: UUID, attempt_id: UUID) -> Loaded:
         attempt = (
             await self._session.execute(

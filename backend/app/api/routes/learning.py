@@ -18,6 +18,7 @@ from app.api.deps import (
     CurrentUser,
     GenerationServiceDep,
     NarratorDep,
+    PictureFillerDep,
     SessionDep,
     SettingsDep,
     StreamUser,
@@ -42,6 +43,7 @@ from app.db.session import session_scope
 from app.learning.generator import GenerationRequest
 from app.learning.model import GenerationUnavailable
 from app.services.generation_service import GenerationDraft, GenerationService
+from app.services.item_picture_service import ItemPictureService
 from app.services.jobs import jobs
 from app.services.learning_set_service import LearningSetService, SetView
 from app.services.read_aloud import ReadAloudService
@@ -168,6 +170,15 @@ async def index(
 @router.get("/{set_id}", response_model=SetDetail)
 async def read(set_id: UUID, user: CurrentUser, session: SessionDep) -> SetDetail:
     return SetDetail.of(await LearningSetService(session).view(user.id, set_id))
+
+
+@router.get("/{set_id}/pictures")
+async def pictures(
+    set_id: UUID, user: CurrentUser, session: SessionDep, filler: PictureFillerDep
+) -> dict[str, object]:
+    """The pictures a Year 1–3 child would see beside each question."""
+    found = await ItemPictureService(session, filler).for_set(user.id, set_id)
+    return {"pictures": found.pictures, "done": found.done}
 
 
 @router.get("/{set_id}/speech", dependencies=[Depends(limit_speech)])
