@@ -5,8 +5,10 @@ export interface Material {
   id: string
   title: string
   filename: string
-  /** "pdf", "docx", "pptx" or "text". */
+  /** "pdf", "docx", "pptx", "text" or "image" (a photo). */
   kind: string
+  /** A photo's own picture, small, for its card. */
+  thumbnail?: string | null
   size_bytes: number
   /** "pages", "slides", "paragraphs" or "lines". */
   unit: string
@@ -28,11 +30,15 @@ export const materialsApi = {
   remove: (id: string) => apiFetch<void>(`/materials/${id}`, { method: 'DELETE' }),
 }
 
-/** What the file picker accepts. */
-export const ACCEPT = '.pdf,.docx,.pptx,.txt,.md,application/pdf,text/plain'
+/** What the file picker accepts: documents, and photos. */
+export const ACCEPT = '.pdf,.docx,.pptx,.txt,.md,application/pdf,text/plain,image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
+
+/** A photo, from the camera or the library — the phone offers both. */
+export const PHOTO_ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
 
 /** "2.4 MB · 12 pages" */
 export function sizeLine(m: Material): string {
+  if (m.kind === 'image') return 'Photo'
   const mb = m.size_bytes / 1_048_576
   const size = mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.max(1, Math.round(m.size_bytes / 1024))} KB`
   const one = m.unit.replace(/s$/, '')

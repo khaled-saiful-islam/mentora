@@ -83,7 +83,7 @@ export function MaterialPicker({
                     onClick={() => toggle(m)}
                     className={cn('flex w-full items-center gap-3 rounded-2xl border-2 p-3 text-left transition-colors', on ? 'border-primary bg-primary/5' : 'border-border hover:border-hover-border')}
                   >
-                    <MaterialIcon kind={m.kind} />
+                    <MaterialIcon kind={m.kind} thumbnail={m.thumbnail} />
                     <span className="min-w-0 flex-1">
                       <span className="block break-words font-bold leading-snug">{m.title}</span>
                       <span className="block text-xs font-bold text-muted-foreground">{sizeLine(m)}</span>

@@ -10,8 +10,9 @@ from pydantic import BaseModel, Field
 
 from app.api.deps import CurrentUser, SessionDep, SettingsDep, limit_upload, require_capability
 from app.db.models.material import Material
-from app.services.document_extract import classify
+from app.services.document_extract import UnsupportedDocument, classify
 from app.services.material_service import MaterialService
+from app.vision.registry import build_image_reader
 
 router = APIRouter(
     prefix="/materials",
@@ -41,7 +42,7 @@ async def index(
 async def upload(
     user: CurrentUser, session: SessionDep, settings: SettingsDep, file: UploadFile = File(...)
 ) -> dict[str, Any]:
-    material = await MaterialService(session, settings).upload(
+    material = await MaterialService(session, settings, build_image_reader(settings)).upload(
         user.id,
         filename=file.filename or "file",
         data=await file.read(),
@@ -74,7 +75,8 @@ def _out(material: Material) -> dict[str, Any]:
         "id": str(material.id),
         "title": material.title,
         "filename": material.filename,
-        "kind": classify(filename=material.filename, media_type=material.media_type),
+        "kind": "image" if material.unit == "image" else _kind(material),
+        "thumbnail": material.thumbnail,
         "size_bytes": material.size_bytes,
         "unit": material.unit,
         "unit_count": material.unit_count,
@@ -82,3 +84,10 @@ def _out(material: Material) -> dict[str, Any]:
         "created_at": material.created_at.isoformat(),
         "updated_at": material.updated_at.isoformat(),
     }
+
+
+def _kind(material: Material) -> str:
+    try:
+        return classify(filename=material.filename, media_type=material.media_type)
+    except UnsupportedDocument:
+        return "text"

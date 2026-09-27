@@ -34,11 +34,9 @@ class OpenAICompatibleImageReader(ImageReader):
         self._model = model
         self._timeout = timeout
         self._max_tokens = max_tokens
-        self.info = VisionInfo(
-            name="openai-compatible", model=model, base_url=self._base_url
-        )
+        self.info = VisionInfo(name="openai-compatible", model=model, base_url=self._base_url)
 
-    async def read(self, data: bytes, *, media_type: str) -> str:
+    async def read(self, data: bytes, *, media_type: str, prompt: str = TRANSCRIBE_PROMPT) -> str:
         payload = {
             "model": self._model,
             "messages": [
@@ -46,7 +44,7 @@ class OpenAICompatibleImageReader(ImageReader):
                     "role": "user",
                     "content": [
                         {"type": "image_url", "image_url": {"url": _data_uri(data, media_type)}},
-                        {"type": "text", "text": TRANSCRIBE_PROMPT},
+                        {"type": "text", "text": prompt},
                     ],
                 }
             ],
@@ -74,9 +72,7 @@ class OpenAICompatibleImageReader(ImageReader):
             ) from exc
         except httpx.HTTPError as exc:
             logger.warning("vision transport error: %s", exc)
-            raise VisionError(
-                "Could not reach the vision model. Check VISION_BASE_URL."
-            ) from exc
+            raise VisionError("Could not reach the vision model. Check VISION_BASE_URL.") from exc
 
         choice = (body.get("choices") or [{}])[0]
         text = (choice.get("message") or {}).get("content") or ""

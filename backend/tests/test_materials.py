@@ -141,3 +141,70 @@ async def test_a_set_cannot_be_made_from_someone_else_s_file(client, teacher, ac
             json={"kind": "quiz", "topic": "Photosynthesis", "material_ids": [made.json()["id"]]},
         )
     assert refused.status_code == 404
+
+
+# --- photos -------------------------------------------------------------------------
+
+
+class _Eyes:
+    """A vision model that sees a leaf, and remembers what it was asked."""
+
+    info = None
+
+    def __init__(self) -> None:
+        self.prompts: list[str] = []
+
+    async def read(self, data: bytes, *, media_type: str, prompt: str = "") -> str:
+        self.prompts.append(prompt)
+        return (
+            "LEAF\nWhat it shows: A green leaf with its veins, stalk and tip labelled. It is wet."
+        )
+
+
+def _photo() -> bytes:
+    import io
+
+    from PIL import Image
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (64, 48), "green").save(buffer, format="JPEG")
+    return buffer.getvalue()
+
+
+async def test_a_photo_is_read_for_its_words_and_what_it_shows(session, teacher) -> None:
+    from app.vision.base import LESSON_PROMPT
+
+    eyes = _Eyes()
+    service = MaterialService(session, _settings(), eyes)
+    material = await service.upload(
+        teacher.id, filename="IMG_2031.jpg", data=_photo(), media_type="image/jpeg"
+    )
+    assert eyes.prompts == [LESSON_PROMPT]
+    assert material.unit == "image"
+    assert "What it shows:" in material.text
+    assert material.title == "A green leaf with its veins, stalk and tip labelled"
+    assert (material.thumbnail or "").startswith("data:image/jpeg;base64,")
+    named = await service.upload(
+        teacher.id, filename="Leaf diagram.png", data=_photo(), media_type="image/png"
+    )
+    assert named.title == "Leaf diagram"
+    from app.services.material_service import photo_title
+
+    long = "What it shows: A tall tree with many branches and a nest of birds in it."
+    assert photo_title("IMG_9.jpg", long) == "A tall tree with many branches and a nest…"
+
+
+async def test_a_photo_needs_a_vision_model(session, teacher) -> None:
+    with pytest.raises(ValidationError, match="vision model"):
+        await MaterialService(session, _settings()).upload(
+            teacher.id, filename="IMG_1.jpg", data=_photo(), media_type="image/jpeg"
+        )
+
+
+async def test_a_photo_lists_as_a_photo(client, session, teacher) -> None:
+    await MaterialService(session, _settings(), _Eyes()).upload(
+        teacher.id, filename="IMG_7.jpg", data=_photo(), media_type="image/jpeg"
+    )
+    async with client(teacher) as c:
+        [listed] = (await c.get("/api/materials")).json()["items"]
+    assert listed["kind"] == "image" and listed["thumbnail"].startswith("data:image/jpeg")

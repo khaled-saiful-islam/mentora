@@ -15,7 +15,7 @@ import { learningApi, type LearningKindName, type SetSummary } from './api'
 import { LOOKS } from './kinds'
 import { LEARN_SCENES } from './scenes'
 import type { Material } from '@/features/materials/api'
-import { MaterialIcon } from '@/features/materials/MaterialBits'
+import { MaterialIcon, PhotoButton } from '@/features/materials/MaterialBits'
 import { MaterialPicker } from '@/features/materials/MaterialPicker'
 import { can } from '@/lib/user'
 
@@ -175,7 +175,18 @@ export function CreateSheet({
         </Field>
 
         {can(user, 'keep_materials') && (
-          <FromMaterials materials={materials} web={web} onWeb={setWeb} onPick={() => setPicking(true)} onRemove={(id) => setMaterials((all) => all.filter((m) => m.id !== id))} />
+          <FromMaterials
+            materials={materials}
+            web={web}
+            onWeb={setWeb}
+            onPick={() => setPicking(true)}
+            onPhoto={(photo) => {
+              setMaterials((all) => [...all, photo].slice(-10))
+              // Nothing typed yet: what the photo shows is a fine start.
+              setTopic((now) => now.trim() || photo.title.replace(/…$/, ''))
+            }}
+            onRemove={(id) => setMaterials((all) => all.filter((m) => m.id !== id))}
+          />
         )}
 
         <fieldset className="grid gap-x-4 gap-y-4 rounded-3xl bg-muted/50 p-4 sm:grid-cols-2">
@@ -252,29 +263,39 @@ function FromMaterials({
   web,
   onWeb,
   onPick,
+  onPhoto,
   onRemove,
 }: {
   materials: Material[]
   web: boolean
   onWeb: (web: boolean) => void
   onPick: () => void
+  onPhoto: (photo: Material) => void
   onRemove: (id: string) => void
 }) {
   if (materials.length === 0) {
     return (
-      <button
-        type="button"
-        onClick={onPick}
-        className="flex w-full items-center gap-3 rounded-3xl border-2 border-dashed border-border p-3 text-left transition-colors hover:border-primary"
-      >
-        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
-          <FolderOpen weight="duotone" className="size-6" aria-hidden />
-        </span>
-        <span className="min-w-0">
-          <span className="block font-bold">Use my materials</span>
-          <span className="block text-sm text-muted-foreground">Make it from your worksheets, chapters or notes.</span>
-        </span>
-      </button>
+      <div className="@container">
+        <div className="grid gap-2 @md:grid-cols-2">
+          <button
+            type="button"
+            onClick={onPick}
+            className="flex w-full items-center gap-3 rounded-3xl border-2 border-dashed border-border p-3 text-left transition-colors hover:border-primary"
+          >
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+              <FolderOpen weight="duotone" className="size-6" aria-hidden />
+            </span>
+            <span className="min-w-0">
+              <span className="block font-bold">Use my materials</span>
+              <span className="block text-sm text-muted-foreground">Your worksheets, chapters or notes.</span>
+            </span>
+          </button>
+          <div className="flex w-full flex-col justify-center gap-2 rounded-3xl border-2 border-dashed border-border p-3">
+            <span className="text-sm text-muted-foreground">A textbook page, the whiteboard, a leaf — make it from a photo.</span>
+            <PhotoButton onAdded={onPhoto} className="self-start" />
+          </div>
+        </div>
+      </div>
     )
   }
   return (
@@ -282,7 +303,7 @@ function FromMaterials({
       <ul className="flex flex-wrap gap-2">
         {materials.map((m) => (
           <li key={m.id} className="flex max-w-full items-center gap-2 rounded-full bg-surface py-1 pr-1 pl-1 shadow-sm">
-            <MaterialIcon kind={m.kind} className="size-7 rounded-full [&_svg]:size-4" />
+            <MaterialIcon kind={m.kind} thumbnail={m.thumbnail} className="size-7 rounded-full [&_svg]:size-4" />
             <span className="min-w-0 break-words text-sm font-bold">{m.title}</span>
             <button type="button" onClick={() => onRemove(m.id)} aria-label={`Don't use ${m.title}`} className="grid size-6 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-hover">
               <X weight="bold" className="size-3.5" />
@@ -293,6 +314,9 @@ function FromMaterials({
           <button type="button" onClick={onPick} className="rounded-full px-3 py-1.5 text-sm font-bold text-primary hover:bg-primary/10">
             + Change
           </button>
+        </li>
+        <li>
+          <PhotoButton onAdded={onPhoto} label="Add a photo" className="py-1.5 text-sm" />
         </li>
       </ul>
       <label className="flex items-center gap-2 text-sm font-semibold">

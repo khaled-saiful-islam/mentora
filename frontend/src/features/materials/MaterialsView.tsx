@@ -39,7 +39,7 @@ export function MaterialsView() {
             </div>
           ) : items.length === 0 ? (
             <Card className="p-6 text-muted-foreground">
-              {q ? 'Nothing in your files matches that.' : 'No files yet. Add the worksheets, chapters and notes you teach from — then make quizzes, flashcards, study guides and live lessons from them.'}
+              {q ? 'Nothing in your files matches that.' : 'No files yet. Add the worksheets, chapters and notes you teach from — or a photo of a page, the whiteboard or a thing to learn about — then make quizzes, flashcards, study guides and live lessons from them.'}
             </Card>
           ) : (
             <motion.ul className={cn('grid gap-4', items.length > 1 && 'sm:grid-cols-2')} variants={stagger(0.05)} initial="hidden" animate="shown">
@@ -95,7 +95,7 @@ function MaterialCard({ material, onChanged }: { material: Material; onChanged: 
   return (
     <motion.li variants={rise} layout className="flex flex-col gap-3 rounded-3xl border border-border bg-surface p-4 shadow-sm">
       <div className="flex items-start gap-3">
-        <MaterialIcon kind={material.kind} />
+        <MaterialIcon kind={material.kind} thumbnail={material.thumbnail} className={material.thumbnail ? 'size-16' : undefined} />
         <div className="min-w-0 flex-1">
           {renaming ? (
             <form onSubmit={rename} className="flex gap-2">

@@ -35,8 +35,9 @@ class ImageReader(Protocol):
 
     info: VisionInfo
 
-    async def read(self, data: bytes, *, media_type: str) -> str:
-        """Return everything readable in the image.
+    async def read(self, data: bytes, *, media_type: str, prompt: str = ...) -> str:
+        """Return everything readable in the image — or, with `prompt`, what
+        that prompt asks for (`LESSON_PROMPT` for a photo to teach from).
 
         Raises `VisionError` with a message worth showing when it cannot.
         """
@@ -59,4 +60,18 @@ TRANSCRIBE_PROMPT = (
     "Then, on a final line beginning 'Depicts: ', describe what the image shows "
     "in one sentence. "
     "Return only the content — no commentary, no preamble."
+)
+
+# A photo a teacher or parent took to make a quiz, flashcards or a study guide
+# from: a textbook page, a worksheet, a whiteboard — or a leaf, a model volcano,
+# a map. The words come first, exactly; then what it shows, in enough detail
+# to teach from, because for a photo of a thing the words are not the lesson.
+LESSON_PROMPT = (
+    "A teacher or parent took this photo to make a lesson, quiz or flashcards from. "
+    "First, transcribe every word of text in it exactly, keeping its structure: "
+    "headings, lists, tables with their headers, and labels next to what they label. "
+    "Then write a line 'What it shows:' and describe what the photo shows in detail, "
+    "in plain sentences a teacher could teach from — the objects or living things, "
+    "their parts and labels, what is happening, and any numbers and units. "
+    "Return only this content — no commentary, no preamble."
 )

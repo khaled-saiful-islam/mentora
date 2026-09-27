@@ -33,6 +33,8 @@ class Material(Base):
     unit: Mapped[str] = mapped_column(String(16), nullable=False)
     unit_count: Mapped[int] = mapped_column(Integer, nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
+    # A small JPEG data URI of a photo, for its card. Empty for documents.
+    thumbnail: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
 

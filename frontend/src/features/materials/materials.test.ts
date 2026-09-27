@@ -12,6 +12,7 @@ describe('a material at a glance', () => {
     expect(sizeLine(file({}))).toBe('2.4 MB · 12 pages')
     expect(sizeLine(file({ size_bytes: 3000, unit: 'slides', unit_count: 1 }))).toBe('3 KB · 1 slide')
     expect(sizeLine(file({ size_bytes: 3000, unit: 'line', unit_count: 5 }))).toBe('3 KB · 5 lines')
+    expect(sizeLine(file({ size_bytes: 900_000, kind: 'image', unit: 'image', unit_count: 1 }))).toBe('Photo')
   })
 
   it('wears its file type, and a plain look for anything else', () => {

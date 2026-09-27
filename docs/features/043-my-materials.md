@@ -26,6 +26,20 @@ made from again and again (PLAN.md §21).
 - Rename and remove are on each card. Removing a file keeps everything
   already made from it.
 
+### Photos (2026-09-27)
+
+- **Take or upload a photo** from the Create sheet (*From a photo*), the
+  materials picker, or *My materials*. On a phone the button offers the camera
+  and the library. A textbook page, a worksheet, the whiteboard, a leaf or a
+  model volcano all become a material.
+- The vision model reads it with `LESSON_PROMPT` (`vision/base.py`): every word
+  exactly, then *"What it shows:"* in enough detail to teach from.
+- A photo keeps a small thumbnail for its card and chip. A camera name
+  (`IMG_2031.jpg`) becomes a title from what the photo shows.
+- In the Create sheet a photo is chosen at once, and fills the topic when it is
+  still empty. Then it is made from like any other material, with or without
+  the web.
+
 ## How it works
 
 - Table `materials` (migration `d7f3b1c8e924`): owner, title, filename, media
@@ -79,8 +93,11 @@ POST   /api/live-sessions/{id}/documents/from-material   {material_id}
 
 ## Known limits
 
-- **Scanned PDFs are refused.** There is no OCR. A photo inside a PDF or Word
-  file is not read either.
+- **Scanned PDFs are refused.** A scanned page can be uploaded as a photo
+  instead. A photo inside a PDF or Word file is not read.
+- **Photos need a vision model** (`VISION_MODEL`). Without one they are refused
+  with a message saying so. The photo is read once, at upload; the text is
+  what is kept, along with a small thumbnail — not the original.
 - **Excerpts are chosen by keyword scoring**, as for chat attachments. A topic
   worded differently from the file ("habitats" against a chapter on
   "ecosystems") may get the file's opening instead of its best part.

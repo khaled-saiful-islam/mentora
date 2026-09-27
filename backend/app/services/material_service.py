@@ -1,7 +1,10 @@
 """A teacher's own teaching material, kept to make from (PLAN.md §21).
 
 A file is read once, at upload, into text (`document_extract`, as chat and
-live lessons already do), and kept with its title and size. Making a set
+live lessons already do), and kept with its title and size. A photo — a
+textbook page, a whiteboard, a leaf — is read the same way by the vision model,
+asked for its words and then what it shows (`LESSON_PROMPT`), and keeps a small
+thumbnail for its card. Making a set
 from materials reads the parts of each file that bear on the topic
 (`document_excerpts`), within a budget shared between the chosen files. They
 become the set's first sources, cited as the teacher's own.
@@ -11,6 +14,8 @@ Ownership is the lookup: a material that is not yours is not found.
 
 from __future__ import annotations
 
+import logging
+import re
 from collections.abc import Sequence
 from pathlib import PurePath
 from uuid import UUID
@@ -24,12 +29,17 @@ from app.db.models.material import Material
 from app.learning.research import Source
 from app.services.document_excerpts import select_excerpts
 from app.services.document_extract import (
+    ExtractedText,
     UnreadableDocument,
     UnsupportedDocument,
     classify,
     extract,
 )
 from app.services.document_service import human_size
+from app.services.image_prep import UnreadableImage, prepare, thumbnail
+from app.vision.base import LESSON_PROMPT, ImageReader, VisionError
+
+logger = logging.getLogger(__name__)
 
 TITLE_CHARS = 200
 # Each material's excerpt gets at least this much of the budget.
@@ -37,9 +47,13 @@ MIN_SHARE = 800
 
 
 class MaterialService:
-    def __init__(self, session: AsyncSession, settings: Settings) -> None:
+    def __init__(
+        self, session: AsyncSession, settings: Settings, reader: ImageReader | None = None
+    ) -> None:
         self._session = session
         self._settings = settings
+        # None: no vision model, so a photo cannot be read and is refused.
+        self._reader = reader
 
     async def upload(
         self, owner_id: UUID, *, filename: str, data: bytes, media_type: str
@@ -57,10 +71,12 @@ class MaterialService:
                 f"Your library holds {self._settings.materials_per_owner} files. "
                 "Remove one you no longer use to add another."
             )
+        photo = _is_photo(name, media_type)
         try:
-            if classify(filename=name, media_type=media_type) == "image":
-                raise ValidationError("Upload the text: a PDF, Word, PowerPoint or text file.")
-            extracted = extract(data, filename=name, media_type=media_type)
+            if photo:
+                extracted, picture = await self._read_photo(data, name), thumbnail(data)
+            else:
+                extracted, picture = extract(data, filename=name, media_type=media_type), None
         except (UnsupportedDocument, UnreadableDocument) as exc:
             raise ValidationError(str(exc)) from exc
         if not extracted.text.strip():
@@ -70,7 +86,8 @@ class MaterialService:
             )
         material = Material(
             owner_id=owner_id,
-            title=title_from(name),
+            title=photo_title(name, extracted.text) if photo else title_from(name),
+            thumbnail=picture,
             filename=name,
             media_type=media_type[:120],
             size_bytes=len(data),
@@ -81,6 +98,29 @@ class MaterialService:
         self._session.add(material)
         await self._session.flush()
         return material
+
+    async def _read_photo(self, data: bytes, name: str) -> ExtractedText:
+        """The photo's words and what it shows, from the vision model."""
+        if self._reader is None:
+            raise ValidationError(
+                "Photos need a vision model, and none is set up. "
+                "Upload a PDF, Word, PowerPoint or text file instead."
+            )
+        try:
+            pixels, media_type = prepare(
+                data,
+                max_pixels=self._settings.vision_max_pixels,
+                jpeg_quality=self._settings.vision_jpeg_quality,
+            )
+            text = await self._reader.read(pixels, media_type=media_type, prompt=LESSON_PROMPT)
+        except UnreadableImage as exc:
+            raise ValidationError(str(exc)) from exc
+        except VisionError as exc:
+            raise ValidationError(f"{name} could not be read: {exc}") from exc
+        except Exception as exc:  # noqa: BLE001 — an unexpected shape is still a refusal
+            logger.exception("vision call failed for %s", name)
+            raise ValidationError(f"{name} could not be read. Try a clearer photo.") from exc
+        return ExtractedText(text=text.strip(), unit="image", count=1)
 
     async def list(self, owner_id: UUID, *, q: str | None = None) -> list[Material]:
         query = select(Material).where(Material.owner_id == owner_id)
@@ -159,6 +199,37 @@ class MaterialService:
             await self._session.scalar(select(func.count()).where(Material.owner_id == owner_id))
             or 0
         )
+
+
+def _is_photo(filename: str, media_type: str) -> bool:
+    try:
+        return classify(filename=filename, media_type=media_type, images=True) == "image"
+    except UnsupportedDocument:
+        return False
+
+
+PHOTO_TITLE_WORDS = 10
+_TRAILING = frozenset({"a", "an", "and", "the", "of", "with", "its", "to", "in", "on", "or"})
+
+# What a phone or camera calls a photo — never a title anyone chose.
+_CAMERA_NAME = re.compile(r"^(img|dsc|dscn|pxl|photo|image|screenshot|scan|whatsapp)[\W_\d]*", re.I)
+
+
+def photo_title(filename: str, text: str) -> str:
+    """A photo's own name when someone gave it one; otherwise what it shows."""
+    named = title_from(filename)
+    if not _CAMERA_NAME.match(PurePath(filename).stem) and not named.replace(" ", "").isdigit():
+        return named
+    shows = text.split("What it shows:", 1)[-1] if "What it shows:" in text else text
+    first = re.split(r"(?<=[.!?])\s", " ".join(shows.split()), maxsplit=1)[0].rstrip(".!?")
+    words = first.split()
+    if len(words) <= PHOTO_TITLE_WORDS:
+        return first or "Photo"
+    kept = words[:PHOTO_TITLE_WORDS]
+    # Never end on a word that leaves the reader hanging: "…stalk and…".
+    while len(kept) > 1 and kept[-1].lower().strip(",;") in _TRAILING:
+        kept.pop()
+    return " ".join(kept).rstrip(",;") + "…"
 
 
 def title_from(filename: str) -> str:
