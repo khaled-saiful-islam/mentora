@@ -17,7 +17,7 @@ import type { Attempt, Finish } from './api'
 import { PlayBackendProvider } from './backend'
 import { FinishScreen } from './FinishScreen'
 import { LEVELS, levelForGrade, PlayLevelProvider, type PlayLevel } from './level'
-import { BuddyCorner } from './PlayPage'
+import { BuddyCorner, BuddyDock } from './BuddyDock'
 import { PLAYERS } from './players'
 import { previewAttempt, PreviewGrader } from './preview'
 import { Review } from './Review'
@@ -71,10 +71,10 @@ function Preview({ set }: { set: SetDetail }) {
         </div>
 
         {step.name === 'playing' && (
-          <>
+          <BuddyDock>
             <Player key={round} attempt={attempt} buddy={buddy} exitTo={back} onFinished={() => setStep({ name: 'finished', finish: grader.finish(attempt) })} />
             <BuddyCorner buddy={user?.buddy} handle={buddy} />
-          </>
+          </BuddyDock>
         )}
         {step.name === 'finished' && (
           <FinishScreen

@@ -28,6 +28,19 @@ export type Mood =
   | 'shy'
   // The same, with one eye let through: the password is being shown.
   | 'peek'
+  // A nod: "you've got this".
+  | 'nod'
+  // An arm up towards the question: "look here".
+  | 'point'
+  // Arms right up, tall and long: a break, or waking up.
+  | 'stretch'
+  | 'clap'
+  // Side to side, a hop each way.
+  | 'hop'
+  // A giggly wriggle.
+  | 'wiggle'
+  // Small excited bounces on the spot.
+  | 'bounce'
 
 /** The parts of a rig that move. Every rig wires its own drawing to these,
  *  so one choreography animates five very different bodies. */

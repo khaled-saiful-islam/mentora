@@ -85,3 +85,9 @@ export function usePreferences(): PrefsState {
   if (!context) throw new Error('usePreferences must be used inside <PreferencesProvider>')
   return context
 }
+
+/** Whether sound is on. Off outside the provider, so a buddy drawn on a page
+ *  with nobody signed in (or in a test) is simply quiet. */
+export function useSoundOn(): boolean {
+  return useContext(PrefsContext)?.prefs.sound ?? false
+}

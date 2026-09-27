@@ -35,7 +35,9 @@ _STAFF_DEFAULT = Preferences(text_scale=100, font_style="classic", motion="syste
 _DEFAULTS: dict[Role, Preferences] = {
     Role.ADMIN: _STAFF_DEFAULT,
     Role.TEACHER: _STAFF_DEFAULT,
-    Role.STUDENT: Preferences(text_scale=115, font_style="playful", motion="system", sound=False),
+    # Sound on for students: their buddy talks and cheers. Staff and parents
+    # start quiet; anyone can switch it from the game or in Settings.
+    Role.STUDENT: Preferences(text_scale=115, font_style="playful", motion="system", sound=True),
 }
 
 _ALLOWED: dict[str, tuple[Any, ...]] = {

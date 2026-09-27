@@ -125,7 +125,7 @@ export function useGaze(
 
 // --- moods -----------------------------------------------------------------
 
-const ANTICS: readonly Mood[] = ['listen', 'happy', 'listen', 'wave', 'yawn', 'trick']
+const ANTICS: readonly Mood[] = ['listen', 'happy', 'wave', 'yawn', 'trick', 'stretch', 'wiggle', 'hop', 'nod', 'bounce']
 const ACTIVITY = ['pointerdown', 'keydown', 'pointermove', 'scroll'] as const
 
 export interface BuddyMood {

@@ -218,6 +218,71 @@ export const MOVES: Record<Mood, Dance> = {
     tail: { rotate: [0, 14, 0], transition: loop(0.9) },
     extra: { rotate: 10 },
   },
+  nod: {
+    head: { y: [null, 6, 0, 6, 0], scaleY: [null, 0.95, 1, 0.95, 1], transition: once(0.9) },
+    body: { scaleY: [null, 0.98, 1, 0.98, 1], transition: once(0.9) },
+    ...ears([null, -8, 0, -8, 0], once(0.9)),
+    tail: { rotate: [null, 12, -6, 0], transition: once(0.9) },
+  },
+  // Held while it lasts: an arm up towards the question, head tipped to it.
+  point: {
+    body: { rotate: -3, y: [null, -5, 0], transition: once(0.5) },
+    head: { rotate: -8 },
+    armL: { rotate: 112 },
+    armR: { rotate: -10 },
+    earL: { rotate: -10 },
+    earR: { rotate: 6 },
+    tail: { rotate: [0, 12, 0], transition: loop(1.1) },
+    extra: { rotate: [0, 8, 0, -8, 0], transition: loop(1.4) },
+  },
+  stretch: {
+    body: {
+      scaleY: [null, 1.12, 1.12, 0.96, 1],
+      scaleX: [null, 0.94, 0.94, 1.03, 1],
+      rotate: [null, -6, 6, 0, 0],
+      transition: once(2.2, { times: [0, 0.3, 0.65, 0.85, 1] }),
+    },
+    head: { rotate: [null, -5, 5, 0], transition: once(2.2) },
+    ...arms([null, 170, 170, 0], once(2.2, { times: [0, 0.3, 0.75, 1] })),
+    ...ears([null, -12, -12, 0], once(2.2)),
+    shadow: { scaleX: [null, 0.94, 0.94, 1], transition: once(2.2) },
+  },
+  clap: {
+    body: { y: [null, -6, 0, -6, 0], transition: once(1.3) },
+    head: { rotate: [null, -3, 3, -3, 0], transition: once(1.3) },
+    ...arms([null, 70, 38, 70, 38, 70, 38, 0], once(1.3)),
+    ...ears([null, -10, 0, -10, 0], once(1.3)),
+    tail: { rotate: [null, 22, -12, 22, 0], transition: once(1.2) },
+  },
+  hop: {
+    body: {
+      x: [null, -14, -14, 14, 14, 0],
+      y: [null, -20, 0, -20, 0, 0],
+      scaleY: [null, 1.06, 0.92, 1.06, 0.92, 1],
+      transition: once(1.2, { times: [0, 0.2, 0.4, 0.6, 0.8, 1] }),
+    },
+    head: { rotate: [null, -6, -6, 6, 6, 0], transition: once(1.2) },
+    ...arms([null, 40, 10, 40, 10, 0], once(1.2)),
+    tail: { rotate: [null, -20, 20, -20, 0], transition: once(1.2) },
+    shadow: { x: [null, -14, -14, 14, 14, 0], scaleX: [null, 0.7, 1, 0.7, 1, 1], transition: once(1.2, { times: [0, 0.2, 0.4, 0.6, 0.8, 1] }) },
+  },
+  wiggle: {
+    body: { rotate: [null, 6, -6, 6, -6, 0], x: [null, 3, -3, 3, -3, 0], transition: once(0.9) },
+    head: { rotate: [null, -5, 5, -5, 0], transition: once(0.9) },
+    ...ears([null, 14, -8, 14, 0], once(0.9)),
+    tail: { rotate: [null, 30, -30, 30, -30, 0], transition: once(0.8) },
+    extra: { rotate: [null, 18, -18, 0], transition: once(0.9) },
+  },
+  bounce: {
+    body: {
+      y: [null, -10, 0, -8, 0, -5, 0],
+      scaleY: [null, 1.05, 0.93, 1.04, 0.95, 1.02, 1],
+      transition: once(1.1),
+    },
+    ...arms([null, 30, 10, 30, 10, 0], once(1.1)),
+    ...ears([null, -10, 0, -10, 0], once(1.1)),
+    shadow: { scaleX: [null, 0.82, 1, 0.86, 1, 0.92, 1], transition: once(1.1) },
+  },
 }
 
 /** How long a mood plays when it is a reaction rather than the screen's mood. */
@@ -236,6 +301,13 @@ export const HOLD_MS: Record<Mood, number> = {
   yawn: 2100,
   shy: 1800,
   peek: 1800,
+  nod: 1000,
+  point: 2600,
+  stretch: 2300,
+  clap: 1400,
+  hop: 1300,
+  wiggle: 1000,
+  bounce: 1200,
 }
 
 /** The same move for the other side of the body: turns and sideways

@@ -16,6 +16,15 @@ export interface Voice {
   knew: string[]
   notYet: string[]
   finish: { great: string[]; good: string[]; keep: string[] }
+  /** When a child has been on one question a while: take your time. */
+  nudge: string[]
+  halfway: string[]
+  /** As the last question or card appears. */
+  last: string[]
+  /** Right, straight after a miss. */
+  comeback: string[]
+  /** Two misses in a row: a kind word before a strategy tip. */
+  tough: string[]
   /** For five quick taps. */
   secret: string
   sleepy: string
@@ -35,6 +44,11 @@ export const VOICES: Record<BuddyKey, Voice> = {
       good: ['Nice work! You\'re getting sharper!', 'Clever stuff! A little more practice and you\'ll zoom.'],
       keep: ['Every try makes you cleverer!', 'Tricky one! Practice will make it easy.'],
     },
+    nudge: ['Take your time. Clever kancil think first!', 'Read it once more, slowly. You can do it!', 'No rush! Sang Kancil always thinks it through.'],
+    halfway: ['Halfway there! Zip zip!', 'Half done already. So quick!'],
+    last: ['Last one! Make it clever!', 'Final one. Let\'s zip through it!'],
+    comeback: ['See? You bounced right back!', 'Zip! Back on track!'],
+    tough: ['Tricky ones, huh? Here\'s a kancil trick:', 'Two sneaky ones! Let\'s try a trick:'],
     secret: 'You found my secret dance! Shh!',
     sleepy: 'Zzz... five more minutes...',
   },
@@ -51,6 +65,11 @@ export const VOICES: Record<BuddyKey, Voice> = {
       good: ['Solid run! Upgrading your skills...', 'Nice! A few more practice runs to max out.'],
       keep: ['Every run makes you stronger!', 'Learning in progress... keep going!'],
     },
+    nudge: ['Processing... take all the time you need!', 'Scan the question again, slowly. Beep!', 'No hurry. Good answers load slowly!'],
+    halfway: ['50% complete! Beep boop!', 'Halfway! Battery still full!'],
+    last: ['Final question detected. You\'ve got this!', 'Last one! Engage brain power!'],
+    comeback: ['Reboot successful! Nice one!', 'Back online! Ding!'],
+    tough: ['Tricky data! Try this trick:', 'Two bugs in a row? Here\'s a fix:'],
     secret: 'Secret dance mode unlocked! Beep bop boop!',
     sleepy: 'Low power mode... zzz...',
   },
@@ -67,6 +86,11 @@ export const VOICES: Record<BuddyKey, Voice> = {
       good: ['Well done! Your wisdom is growing.', 'Lovely work. A little practice and you\'ll soar.'],
       keep: ['Every owl starts as an owlet. You are growing!', 'A tricky one. Well done for finishing!'],
     },
+    nudge: ['Take your time. Wise owls think slowly.', 'Read it once more. What is it really asking?', 'Hoo, no hurry at all.'],
+    halfway: ['Halfway there. Well done so far!', 'Half the way! Keep going, wise one.'],
+    last: ['The last one. Think it through!', 'Final question. You\'re nearly there!'],
+    comeback: ['There you go! Wise indeed.', 'Hoo! Right back on track.'],
+    tough: ['Tricky ones happen. Here\'s an owl trick:', 'Hoo, two tough ones. Try this:'],
     secret: 'Oh my! You found my secret dance!',
     sleepy: 'Owls sleep in the day... zzz...',
   },
@@ -83,6 +107,11 @@ export const VOICES: Record<BuddyKey, Voice> = {
       good: ['Great flying! Almost a full treasure pile!', 'Nice! A bit more practice and you\'ll soar.'],
       keep: ['Baby dragons grow a little every day. So do you!', 'You finished! That takes courage.'],
     },
+    nudge: ['Take a big breath, like a baby dragon. Puff!', 'Read it once more. Slowly does it!', 'No rush. Dragons are patient!'],
+    halfway: ['Halfway there! Puff puff!', 'Half your treasure found!'],
+    last: ['Last one! Make it sparkle!', 'Final one. Fire up!'],
+    comeback: ['Puff! Right back on track!', 'Sparkle! You bounced back!'],
+    tough: ['Sneaky ones! Here\'s a dragon trick:', 'Two tricky ones. Try this:'],
     secret: 'You found the secret dragon dance!',
     sleepy: 'So cosy... zzz...',
   },
@@ -99,6 +128,11 @@ export const VOICES: Record<BuddyKey, Voice> = {
       good: ['Strong work! Keep training, champ!', 'Nice! A little more practice and you\'ll be unstoppable.'],
       keep: ['Brave learners keep going. Rawr!', 'You finished. That was brave!'],
     },
+    nudge: ['Take your time. Tigers wait before they pounce!', 'Read it once more, slowly. Rawr!', 'No rush, champ. Think it through.'],
+    halfway: ['Halfway there! Rawr!', 'Half done! Stay strong!'],
+    last: ['Last one! Pounce on it!', 'Final one, champ. You\'ve got this!'],
+    comeback: ['That\'s the tiger spirit! Back on track!', 'Rawr! What a comeback!'],
+    tough: ['Tough ones? Tigers keep going. Try this:', 'Two tricky ones. Here\'s a tiger trick:'],
     secret: 'You found my secret tiger dance!',
     sleepy: 'Big cats nap a lot... zzz...',
   },

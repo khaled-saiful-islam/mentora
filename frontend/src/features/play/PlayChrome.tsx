@@ -4,10 +4,12 @@
  * own middle.
  */
 import { AnimatePresence, motion } from 'motion/react'
-import { Fire, X } from '@phosphor-icons/react'
+import { Fire, SpeakerHigh, SpeakerSlash, X } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { TextSizeControl } from '@/components/ui/TextSizeControl'
 import { lookOfKind } from '@/features/learning/kinds'
+import { usePreferences } from '@/lib/prefs'
+import { playSound } from '@/lib/sound'
 import { cn } from '@/lib/utils'
 import { spring } from '@/motion'
 import type { PlayKind } from './api'
@@ -126,8 +128,37 @@ export function PlayHeader({
         </div>
         {play.points && points !== undefined && <PointsChip points={points} />}
         <StreakFlame streak={streak} />
+        <SoundToggle />
         <TextSizeControl compact className="shrink-0" />
       </div>
     </header>
+  )
+}
+
+/** Sound on or off, right in the game — the buddy's voice and the blips.
+ *  Turning it on plays a blip at once, which is also what lets the browser
+ *  play sound at all. */
+export function SoundToggle() {
+  const { prefs, setPreference } = usePreferences()
+  const on = prefs.sound
+  const label = on ? 'Sound is on. Turn it off' : 'Sound is off. Turn it on'
+  return (
+    <motion.button
+      type="button"
+      whileTap={{ scale: 0.88 }}
+      onClick={() => {
+        void setPreference({ sound: !on })
+        if (!on) playSound('tap')
+      }}
+      aria-pressed={on}
+      aria-label={label}
+      title={label}
+      className={cn(
+        'grid size-10 shrink-0 place-items-center rounded-full transition-colors hover:bg-hover',
+        on ? 'text-primary' : 'text-muted-foreground',
+      )}
+    >
+      {on ? <SpeakerHigh weight="fill" className="size-5" aria-hidden /> : <SpeakerSlash weight="bold" className="size-5" aria-hidden />}
+    </motion.button>
   )
 }

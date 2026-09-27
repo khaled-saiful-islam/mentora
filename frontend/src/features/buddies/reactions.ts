@@ -17,12 +17,24 @@ export type Cue =
   | 'finishGreat'
   | 'finishGood'
   | 'finishKeep'
+  // While playing, to help (`features/play/coach.ts`).
+  | 'nudge'
+  | 'halfway'
+  | 'last'
+  | 'comeback'
+  | 'tough'
 
 export interface CueContext {
   name?: string
   streak?: number
   seed?: number
+  /** A way to learn, said after a kind word (`tough`). */
+  strategy?: string
+  /** "Read it to me" is on screen, so a nudge can mention it. */
+  readAloud?: boolean
 }
+
+export const READ_ALOUD_NUDGE = 'Want to hear it? Tap "Read it to me"!'
 
 export interface Performance {
   mood: Mood
@@ -62,5 +74,15 @@ export function performanceFor(cue: Cue, buddy: BuddyKey, context: CueContext = 
       return { mood: 'cheer', line: pick(voice.finish.good, seed) }
     case 'finishKeep':
       return { mood: 'wave', line: pick(voice.finish.keep, seed) }
+    case 'nudge':
+      return { mood: 'point', line: pick(context.readAloud ? [...voice.nudge, READ_ALOUD_NUDGE] : voice.nudge, seed) }
+    case 'halfway':
+      return { mood: 'bounce', line: pick(voice.halfway, seed) }
+    case 'last':
+      return { mood: 'clap', line: pick(voice.last, seed) }
+    case 'comeback':
+      return { mood: 'hop', line: pick(voice.comeback, seed), burst: ['star', 6, 'body'] }
+    case 'tough':
+      return { mood: 'nod', line: [pick(voice.tough, seed), context.strategy].filter(Boolean).join(' ') }
   }
 }

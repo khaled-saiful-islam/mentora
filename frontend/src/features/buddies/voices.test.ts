@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BUDDIES } from './profiles'
-import { performanceFor, STREAK_EVERY } from './reactions'
+import { performanceFor, READ_ALOUD_NUDGE, STREAK_EVERY } from './reactions'
 import { greeting, TIPS, tipFor } from './tips'
 import { BUDDY_KEYS } from './types'
 import { pick, VOICES } from './voices'
@@ -10,7 +10,7 @@ describe('every buddy', () => {
     expect(BUDDIES[key].name).toBeTruthy()
     expect(BUDDIES[key].Rig).toBeTypeOf('function')
     const voice = VOICES[key]
-    for (const lines of [voice.hello, voice.tap, voice.correct, voice.wrong, voice.streak, voice.knew, voice.notYet, voice.finish.great, voice.finish.good, voice.finish.keep]) {
+    for (const lines of [voice.hello, voice.tap, voice.correct, voice.wrong, voice.streak, voice.knew, voice.notYet, voice.finish.great, voice.finish.good, voice.finish.keep, voice.nudge, voice.halfway, voice.last, voice.comeback, voice.tough]) {
       expect(lines.length).toBeGreaterThan(0)
     }
     expect(voice.streak.every((line) => line.includes('{n}'))).toBe(true)
@@ -29,7 +29,37 @@ describe('every buddy', () => {
   })
 })
 
+describe('coaching lines', () => {
+  it('never mention a question, a choice or an answer — only how to learn', () => {
+    for (const key of BUDDY_KEYS) {
+      const { nudge, halfway, last, comeback, tough } = VOICES[key]
+      for (const line of [...nudge, ...halfway, ...last, ...comeback, ...tough]) {
+        expect(line).not.toMatch(/\b(answer is|the answer|correct answer|choose|pick [A-D])\b/i)
+      }
+    }
+  })
+})
+
 describe('performanceFor', () => {
+  it('coaches: a nudge points at the question, and can mention reading it aloud', () => {
+    const nudge = performanceFor('nudge', 'kiko', { readAloud: true, seed: 0.999 })
+    expect(nudge.mood).toBe('point')
+    expect(nudge.line).toBe(READ_ALOUD_NUDGE)
+    expect(VOICES.kiko.nudge).toContain(performanceFor('nudge', 'kiko', { seed: 0.999 }).line)
+  })
+
+  it('bounces back after a miss, and adds a way to think after two', () => {
+    expect(performanceFor('comeback', 'momo').mood).toBe('hop')
+    const tough = performanceFor('tough', 'ollie', { strategy: 'Read every choice before you pick.', seed: 0 })
+    expect(tough.mood).toBe('nod')
+    expect(tough.line).toBe(`${VOICES.ollie.tough[0]} Read every choice before you pick.`)
+  })
+
+  it('marks halfway and the last one', () => {
+    expect(performanceFor('halfway', 'bolt').mood).toBe('bounce')
+    expect(performanceFor('last', 'rimau').mood).toBe('clap')
+  })
+
   it('cheers a right answer and celebrates every third in a row', () => {
     expect(performanceFor('correct', 'bolt', { streak: 1 }).mood).toBe('cheer')
     const streak = performanceFor('correct', 'bolt', { streak: STREAK_EVERY * 2 })

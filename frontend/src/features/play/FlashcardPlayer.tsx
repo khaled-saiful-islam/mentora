@@ -19,6 +19,8 @@ import { celebrate, spring, useCalmMotion } from '@/motion'
 import type { CardItem, Played } from './api'
 import { usePlayBackend } from './backend'
 import { POINTS_EACH, usePlayLook, type PlayLook } from './level'
+import { BuddySpot } from './BuddyDock'
+import { useCoach } from './coach'
 import { PlayHeader } from './PlayChrome'
 import { PlayBackdrop, PointsBurst, QuestionPicture, ReadAloudButton } from './PlayFun'
 import { useItemPictures, usePictureFor, type ReadyPicture } from './pictures'
@@ -52,6 +54,7 @@ export function FlashcardPlayer({ attempt, buddy, exitTo, onFinished }: PlayerPr
   const deck = phase === 'second' ? again : cards
   const card = deck[index]
   const picture = usePictureFor(pictures, card?.id)
+  useCoach(buddy, { index, total: deck.length, waiting: Boolean(card) && !flipped && phase !== 'between', readAloud: look.readAloud })
   const points = Object.values(played).filter((p) => p.knew === true).length * POINTS_EACH
 
   useEffect(() => {
@@ -143,6 +146,7 @@ export function FlashcardPlayer({ attempt, buddy, exitTo, onFinished }: PlayerPr
             </>
           )
         )}
+        <BuddySpot />
       </main>
     </div>
   )

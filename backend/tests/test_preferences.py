@@ -26,8 +26,11 @@ def test_students_start_bigger_and_more_playful_than_teachers() -> None:
     assert teacher.text_scale == 100
 
 
-def test_sound_is_off_until_someone_turns_it_on() -> None:
-    assert effective_preferences(Role.STUDENT, {}).sound is False
+def test_sound_is_on_for_students_and_off_for_everyone_else() -> None:
+    assert effective_preferences(Role.STUDENT, {}).sound is True
+    assert effective_preferences(Role.TEACHER, {}).sound is False
+    assert effective_preferences(Role.PARENT, {}).sound is False
+    assert effective_preferences(Role.STUDENT, {"sound": False}).sound is False
 
 
 def test_motion_follows_the_system_by_default() -> None:

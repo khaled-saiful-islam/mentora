@@ -11,12 +11,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Alert, Button, ButtonLink, Skeleton } from '@/components/ui'
 import { errorMessage } from '@/features/auth/errors'
-import { Buddy, tipFor, type BuddyHandle } from '@/features/buddies'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { tipFor, type BuddyHandle } from '@/features/buddies'
 import { useAuth } from '@/lib/auth'
 import { firstName } from '@/lib/user'
 import { Page } from '@/motion'
 import { playApi, type Attempt, type Finish } from './api'
+import { BuddyCorner, BuddyDock } from './BuddyDock'
 import { FinishScreen } from './FinishScreen'
 import { levelFor, PlayLevelProvider } from './level'
 import { PLAYERS } from './players'
@@ -129,27 +129,12 @@ export default function PlayPage({ source }: { source: PlaySource }) {
 
     const Player = PLAYERS[step.attempt.kind]
     return (
-      <>
+      <BuddyDock>
         <Player key={step.attempt.id} attempt={step.attempt} buddy={buddy} exitTo={exitTo} onFinished={() => void finish(step.attempt)} />
         <BuddyCorner buddy={user?.buddy} handle={buddy} />
-      </>
+      </BuddyDock>
     )
   }
-}
-
-/** The buddy keeping you company: small in a corner, above everything. */
-export function BuddyCorner({ buddy, handle }: { buddy: string | null | undefined; handle: React.RefObject<BuddyHandle> }) {
-  const wide = useMediaQuery('(min-width: 768px)')
-  return (
-    <motion.div
-      initial={{ y: 140, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 160, damping: 16, delay: 0.3 }}
-      className="pointer-events-none fixed right-2 bottom-2 z-50 md:right-6 md:bottom-4 [&_button]:pointer-events-auto"
-    >
-      <Buddy key={wide ? 'wide' : 'narrow'} ref={handle} buddy={buddy} size={wide ? 136 : 84} bubble="above-left" />
-    </motion.div>
-  )
 }
 
 function Loading({ finishing }: { finishing: boolean }) {

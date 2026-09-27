@@ -26,6 +26,7 @@ import { useSound } from '@/lib/sound'
 import { spring, useCalmMotion } from '@/motion'
 import type { Attempt, GuidePage, Played } from './api'
 import { usePlayBackend } from './backend'
+import { BuddySpot } from './BuddyDock'
 import { PlayHeader } from './PlayChrome'
 import type { PlayerProps } from './players'
 import { playedById, resumeAt, segments, skillLabel } from './session'
@@ -187,6 +188,7 @@ export function GuidePlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps)
             )}
           </motion.div>
         </AnimatePresence>
+        <BuddySpot />
       </main>
     </div>
   )

@@ -5,7 +5,7 @@
  * asks for moments (a wobble at a wrong password, a celebration on the way
  * in). The crew itself only draws; this is the one place those wishes meet.
  */
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { MotionGlobalConfig } from 'motion'
 import { pick, type BuddyHandle } from '@/features/buddies'
 import { celebrate as confetti, useCalmMotion } from '@/motion'
@@ -38,9 +38,13 @@ export function CrewProvider({ children }: { children: React.ReactNode }) {
   const handles = useRef<(BuddyHandle | null)[]>([])
   const calm = useCalmMotion()
 
+  // Every staggered reaction, so leaving the page cancels what is still to come.
+  const timers = useRef<number[]>([])
+  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), [])
+
   const each = useCallback((act: (handle: BuddyHandle, index: number) => void, gap: number) => {
     handles.current.forEach((handle, index) => {
-      if (handle) window.setTimeout(() => act(handle, index), index * gap)
+      if (handle) timers.current.push(window.setTimeout(() => act(handle, index), index * gap))
     })
   }, [])
 

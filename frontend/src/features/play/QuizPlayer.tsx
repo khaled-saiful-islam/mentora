@@ -23,6 +23,8 @@ import { celebrate, spring, useCalmMotion, wobble } from '@/motion'
 import type { Played, QuizItem } from './api'
 import { usePlayBackend } from './backend'
 import { pick, POINTS_EACH, usePlayLook, type PlayLook } from './level'
+import { BuddySpot } from './BuddyDock'
+import { useAnswerCoach, useCoach } from './coach'
 import { PlayHeader } from './PlayChrome'
 import { PlayBackdrop, PointsBurst, QuestionPicture, ReadAloudButton, SparkleBurst } from './PlayFun'
 import { useItemPictures, usePictureFor } from './pictures'
@@ -72,6 +74,8 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
   const item = items[index]
   const picture = usePictureFor(pictures, item?.id)
   const answer = item ? played[item.id] : undefined
+  const coachAnswer = useAnswerCoach()
+  useCoach(buddy, { index, total: items.length, waiting: Boolean(item) && !answer, readAloud: look.readAloud })
   const points = Object.values(played).filter((p) => p.correct === true).length * POINTS_EACH
 
   useEffect(() => {
@@ -106,13 +110,16 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
   function react(result: Played, streakNow: number) {
     if (result.correct === true) {
       sound(streakNow >= 3 && streakNow % 3 === 0 ? 'streak' : 'correct')
-      buddy.current?.cue('correct', { streak: streakNow })
+      // Back on track after a miss gets its own cheer.
+      buddy.current?.cue(coachAnswer(true, streakNow).cue, { streak: streakNow })
       if (streakNow >= 3 && streakNow % 3 === 0) celebrate({ calm, power: 0.6, origin: { x: 0.5, y: 0.7 } })
       else if (look.cheerEveryRight) celebrate({ calm, power: 0.35, origin: { x: 0.5, y: 0.75 } })
       if (look.points) setBurst((n) => n + 1)
     } else if (result.correct === false) {
       sound('wrong')
-      buddy.current?.cue('wrong')
+      // Two in a row: a kind word and a way to think about it.
+      const reply = coachAnswer(false, streakNow)
+      buddy.current?.cue(reply.cue, { strategy: reply.strategy })
     } else {
       buddy.current?.play('happy')
     }
@@ -166,6 +173,7 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
             <Options item={item} answer={answer} instant={instant} disabled={sending} look={look} onChoose={(n) => void choose(n)} />
           </motion.section>
         </AnimatePresence>
+        <BuddySpot />
       </main>
       <AnimatePresence>
         {answer && instant && (

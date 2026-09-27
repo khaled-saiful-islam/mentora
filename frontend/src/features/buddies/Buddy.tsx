@@ -10,6 +10,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
 import { useCalmMotion } from '@/motion'
+import { useSoundOn } from '@/lib/prefs'
 import { cn } from '@/lib/utils'
 import { choreograph } from './choreography'
 import { useBlink, useBuddyMood, useGaze, useSpeech } from './hooks'
@@ -17,6 +18,7 @@ import { MOUTH_FOR } from './parts'
 import { Particles, useParticles, type ParticleKind } from './particles'
 import { profileOf, type Anchor, type BuddyProfile } from './profiles'
 import { performanceFor, type Cue, type CueContext } from './reactions'
+import { babble, MOOD_SOUND, playBuddySound } from './sounds'
 import { SpeechBubble, type BubbleSide } from './SpeechBubble'
 import type { Mood } from './types'
 import { pick, VOICES } from './voices'
@@ -53,6 +55,9 @@ const BURSTS: Partial<Record<Mood, [ParticleKind, number, Anchor]>> = {
   oops: ['sweat', 1, 'side'],
   wave: ['heart', 2, 'side'],
   celebrate: ['confetti', 18, 'top'],
+  clap: ['sparkle', 4, 'body'],
+  bounce: ['sparkle', 3, 'body'],
+  hop: ['star', 3, 'body'],
 }
 
 const AMBIENT: Partial<Record<Mood, [ParticleKind, number, Anchor, number]>> = {
@@ -66,6 +71,9 @@ const FIXED_GAZE: Partial<Record<Mood, { x: number; y: number }>> = {
   think: { x: -0.6, y: -0.85 },
   sleepy: { x: 0, y: 0.3 },
   yawn: { x: 0, y: -0.2 },
+  // Up and over, at the question it is pointing to.
+  point: { x: -0.8, y: -0.7 },
+  stretch: { x: 0, y: -0.5 },
 }
 
 const SECRET_TAPS = 5
@@ -79,12 +87,14 @@ export const Buddy = forwardRef<BuddyHandle, BuddyProps>(function Buddy(
   const calm = useCalmMotion()
   const lite = size < LITE_BELOW
   const svg = useRef<SVGSVGElement>(null)
+  const box = useRef<HTMLDivElement>(null)
   const { mood, play } = useBuddyMood(base, { lively: lively && !lite, calm })
   const blinking = useBlink(true)
   const gaze = useGaze(svg, { track: track && !lite && !calm, fixed: FIXED_GAZE[mood] ?? null })
   const field = useParticles(!calm && !lite)
   const { emit } = field
   const speech = useSpeech()
+  const soundOn = useSoundOn() && !lite
   const moves = useMemo(() => choreograph(mood, profile.signature, calm), [mood, profile, calm])
   const mouth = profile.mouths[mood] ?? MOUTH_FOR[mood]
 
@@ -95,30 +105,43 @@ export const Buddy = forwardRef<BuddyHandle, BuddyProps>(function Buddy(
 
   useMoodEffects(mood, profile, burst)
 
+  // Talking, heard as a babble in the buddy's own pitch when sound is on.
+  const say = useCallback(
+    (line: string, ms?: number, after = 0) => {
+      speech.say(line, ms)
+      if (soundOn) babble(profile.key, line, after)
+    },
+    [speech.say, soundOn, profile.key],
+  )
+
   const trick = useCallback(
     (speak = true) => {
       play('trick')
-      if (speak) speech.say(pick(VOICES[profile.key].tap))
+      if (soundOn) playBuddySound(profile.key, 'trill')
+      if (speak) say(pick(VOICES[profile.key].tap), undefined, 0.45)
       const { kind, count, from, delayMs } = profile.trickBurst
       window.setTimeout(() => burst(kind, count, from), delayMs)
     },
-    [play, speech.say, burst, profile],
+    [play, say, burst, profile, soundOn],
   )
 
   const handle = useMemo<BuddyHandle>(
     () => ({
       play,
-      say: speech.say,
+      say: (line, ms) => say(line, ms),
       burst,
       trick,
       cue: (cue, context) => {
         const act = performanceFor(cue, profile.key, context)
         play(act.mood)
-        if (act.line) speech.say(act.line)
+        const sound = MOOD_SOUND[act.mood]
+        // After the game's own chime, so the two don't land on top of each other.
+        if (soundOn && sound) playBuddySound(profile.key, sound, 0.18)
+        if (act.line) say(act.line, undefined, sound ? 0.6 : 0)
         if (act.burst) burst(...act.burst)
       },
     }),
-    [play, speech.say, burst, trick, profile.key],
+    [play, say, burst, trick, profile.key, soundOn],
   )
   useImperativeHandle(ref, () => handle, [handle])
 
@@ -129,7 +152,8 @@ export const Buddy = forwardRef<BuddyHandle, BuddyProps>(function Buddy(
     if (taps.current.length >= SECRET_TAPS) {
       taps.current = []
       play('dance', 3800)
-      speech.say(VOICES[profile.key].secret)
+      if (soundOn) playBuddySound(profile.key, 'yay')
+      say(VOICES[profile.key].secret, undefined, 0.5)
       return
     }
     trick()
@@ -153,8 +177,8 @@ export const Buddy = forwardRef<BuddyHandle, BuddyProps>(function Buddy(
   )
 
   return (
-    <div className={cn('relative inline-block shrink-0', className)} style={{ width: size, height: size }}>
-      <AnimatePresence>{!lite && speech.line && <SpeechBubble text={speech.line} side={bubble} />}</AnimatePresence>
+    <div ref={box} className={cn('relative inline-block shrink-0', className)} style={{ width: size, height: size }}>
+      <AnimatePresence>{!lite && speech.line && <SpeechBubble key={speech.line} text={speech.line} side={bubble} anchor={box} />}</AnimatePresence>
       {interactive ? (
         <motion.button
           type="button"

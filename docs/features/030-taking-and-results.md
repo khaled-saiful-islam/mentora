@@ -93,8 +93,9 @@
   - a group filter
 
   It is linked from each row of a class's Shared tab.
-- **Sound** is synthesised by WebAudio (`lib/sound.ts`) and plays only when
-  the student has sound turned on.
+- **Sound** is synthesised by WebAudio (`lib/sound.ts`, and each buddy's own
+  in `buddies/sounds.ts`). It plays only when sound is on, which is the
+  default for students. A speaker button in the game's header switches it.
 - **`make demo`** seeds a class to try all this with: a demo teacher, three
   students who have already played, and three shared sets with real content.
   `make demo join=<username>` adds your own student to it. It refuses to run
