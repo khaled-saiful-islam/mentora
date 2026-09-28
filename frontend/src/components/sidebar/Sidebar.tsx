@@ -4,6 +4,8 @@ import { useEffect } from 'react'
 import { Button, Spinner } from '@/components/ui'
 import { Confirm } from '@/components/ui/Confirm'
 import { cn } from '@/lib/utils'
+import { useSignOut } from '@/components/SignOutConfirm'
+import { iconForConversation } from './conversationIcon'
 import { useAuth } from '@/lib/auth'
 import { nameOf } from '@/lib/user'
 import { Avatar } from '@/components/ui/Avatar'
@@ -64,7 +66,8 @@ export function Sidebar({
   onRename: (id: string, title: string) => void
   onDelete: (id: string) => void
 }) {
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
+  const signOut = useSignOut()
   const groups = groupByRecency(conversations)
   // Held here rather than in the row, so the dialog is not inside the thing it
   // is about to remove.
@@ -111,7 +114,7 @@ export function Sidebar({
           onUnfold={() => setFolded(false)}
           onNew={onNew}
           admin={!!user?.is_admin}
-          onSignOut={signOut}
+          onSignOut={signOut.ask}
         />
       )}
 
@@ -203,12 +206,13 @@ export function Sidebar({
           <Link to="/settings" aria-label="Settings" title="Settings" className="grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-hover hover:text-foreground">
             <GearSix weight="bold" className="size-5" aria-hidden />
           </Link>
-          <button type="button" onClick={signOut} aria-label="Sign out" title="Sign out" className="grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-hover hover:text-foreground">
+          <button type="button" onClick={signOut.ask} aria-label="Sign out" title="Sign out" className="grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-hover hover:text-foreground">
             <SignOut weight="bold" className="size-5" aria-hidden />
           </button>
         </div>
       </div>
       </aside>
+      {signOut.dialog}
 
       {/* Deleting a chat takes the messages, the files and anything made in it
           with it, and there is no undo. Naming it is the point: a dialog that
@@ -289,19 +293,23 @@ function ConversationRow({
     )
   }
 
+  const icon = iconForConversation(conversation.title)
   return (
     <li className="group/row relative">
       <button
         type="button"
         onClick={() => onSelect(conversation.id)}
         className={cn(
-          'flex w-full items-center rounded-xl px-3 py-2 text-left text-sm transition-colors',
+          'flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm transition-colors',
           active
             ? 'bg-grape-100 font-bold text-grape-800 dark:bg-grape-800/40 dark:text-grape-100'
             : 'font-semibold text-sidebar-foreground hover:bg-hover',
         )}
       >
-        <span className="break-words pr-6">{conversation.title}</span>
+        <span className={cn('grid size-7 shrink-0 place-items-center rounded-lg', icon.tone)} aria-hidden>
+          <icon.Icon weight="duotone" className="size-4" />
+        </span>
+        <span className="min-w-0 break-words pr-6">{conversation.title}</span>
       </button>
 
       <button

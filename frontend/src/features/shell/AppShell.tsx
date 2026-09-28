@@ -3,6 +3,7 @@ import { motion } from 'motion/react'
 import { SignOut } from '@phosphor-icons/react'
 import { Wordmark } from '@/brand/Logo'
 import { Avatar } from '@/components/ui/Avatar'
+import { useSignOut } from '@/components/SignOutConfirm'
 import { Bell } from '@/features/notifications/Bell'
 import { Tour } from '@/features/onboarding/Tour'
 import { WorkTray } from '@/features/work/WorkTray'
@@ -18,7 +19,8 @@ import { navFor } from './nav'
  * person always in the corner.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
+  const signOut = useSignOut()
   const { pathname } = useLocation()
   const items = navFor(user)
 
@@ -65,7 +67,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
             <button
               type="button"
-              onClick={() => void signOut()}
+              onClick={signOut.ask}
               aria-label="Sign out"
               title="Sign out"
               className="grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-hover hover:text-foreground"
@@ -91,6 +93,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <TabBar pathname={pathname} />
       <Tour />
+      {signOut.dialog}
     </div>
   )
 }
