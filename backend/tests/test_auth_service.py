@@ -145,10 +145,11 @@ async def test_a_student_signs_up_with_name_grade_username_and_password(service)
     assert user.display_name == "Adam"
 
 
-async def test_a_student_needs_a_real_grade(service) -> None:
+@pytest.mark.parametrize("grade", ["grade_7", "lower_6", "upper_6"])
+async def test_a_student_signs_up_in_a_primary_or_secondary_year(service, grade) -> None:
     with pytest.raises(ValidationError, match="grade"):
         await service.sign_up_student(
-            name="Adam", grade_level="grade_7", username="adam", password="hunter2hunter2"
+            name="Adam", grade_level=grade, username="adam", password="hunter2hunter2"
         )
 
 

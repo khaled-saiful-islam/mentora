@@ -41,6 +41,17 @@ def is_grade(code: str) -> bool:
     return code in _BY_CODE
 
 
+# What a student can pick when they sign themselves up: primary and secondary
+# school. Sixth Form stays a grade (an admin can set it, a set can be for it),
+# but it is not offered at sign-up.
+SIGNUP_STAGES: tuple[str, ...] = ("Primary", "Secondary")
+
+
+def is_signup_grade(code: str) -> bool:
+    grade = _BY_CODE.get(code)
+    return grade is not None and grade.stage in SIGNUP_STAGES
+
+
 def grade_for(code: str | None) -> Grade | None:
     return _BY_CODE.get(code or "")
 

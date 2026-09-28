@@ -18,6 +18,8 @@ import { errorMessage } from './errors'
 
 type Step = 'name' | 'grade' | 'username' | 'password'
 const STEPS: readonly Step[] = ['name', 'grade', 'username', 'password']
+/** School years a student can sign themselves up in; the server holds the same list. */
+const SIGNUP_STAGES = ['Primary', 'Secondary'] as const
 const STONES: readonly Stone[] = [
   { label: 'Name', Icon: Smiley },
   { label: 'Year', Icon: GraduationCap },
@@ -251,7 +253,7 @@ function StepBody({
     case 'grade':
       return (
         <Question title={`Nice to meet you, ${first}! Which year or form are you in?`}>
-          <GradePicker value={draft.grade} onChange={(grade) => set({ grade })} />
+          <GradePicker value={draft.grade} onChange={(grade) => set({ grade })} stages={SIGNUP_STAGES} />
         </Question>
       )
     case 'username':

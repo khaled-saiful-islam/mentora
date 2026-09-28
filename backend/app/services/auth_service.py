@@ -14,7 +14,7 @@ from uuid import UUID
 
 from app.core.buddies import BUDDIES, is_buddy
 from app.core.errors import AuthError, ConflictError, NotFoundError, ValidationError
-from app.core.grades import is_grade
+from app.core.grades import is_signup_grade
 from app.core.roles import Role
 from app.core.security import (
     MAX_PASSWORD_BYTES,
@@ -127,7 +127,7 @@ class AuthService:
         """Students have no email: a name, a grade, a username, a password."""
         name = normalise_name(name)
         username = normalise_username(username)
-        if not is_grade(grade_level):
+        if not is_signup_grade(grade_level):
             raise ValidationError("Pick your grade from the list.")
         validate_password(password)
         if await self._users.get_by_username(username):

@@ -43,7 +43,10 @@ What each role may do is decided in one place,
 - **Admin routes** are admin-only, with the gate on the router itself.
 
 The grade scale is Malaysian: Year 1–6, Form 1–5, Lower Six, Upper Six
-(`app/core/grades.py`), served in picker order by `/api/config`.
+(`app/core/grades.py`), served in picker order by `/api/config`. A student
+signing themselves up picks from primary and secondary only
+(`SIGNUP_STAGES`, checked on the server too); Sixth Form stays a grade an
+admin can set and a set can be written for.
 
 Each person has **display preferences** — text size, font style, motion and
 sound — plus a **buddy** (the companion a student picks) and an onboarding flag.

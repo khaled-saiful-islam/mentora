@@ -10,15 +10,20 @@ const STAGE_TONES: Record<string, string> = {
   'Pre-university': 'data-[on=true]:bg-sky-700 data-[on=true]:text-white data-[on=true]:border-sky-700',
 }
 
-/** Big, friendly grade chips grouped by stage — Year, Form, Sixth Form. */
+/** Big, friendly grade chips grouped by stage — Year, Form, Sixth Form.
+ *  `stages` limits which stages are offered (a student signing up picks
+ *  from primary and secondary only). */
 export function GradePicker({
   value,
   onChange,
+  stages,
 }: {
   value: string
   onChange: (code: string) => void
+  stages?: readonly string[]
 }) {
-  const { groups, loading } = useGrades()
+  const { groups: all, loading } = useGrades()
+  const groups = stages ? all.filter((group) => stages.includes(group.stage)) : all
 
   if (loading) {
     return (
