@@ -9,6 +9,10 @@ taught, and how well.
   from the class's subject and grade, following KSSR/KSSM where the model
   knows it. *Write my own* starts blank. Every area and topic can be renamed,
   added or removed.
+- **What counts as taught:** a quiz, deck or study guide once it is **shared
+  with the class**, and a live lesson once it is **scheduled**. A set that is
+  only made, in the Library, isn't on the map yet. The page says so under the
+  headline.
 - **The map.** Topics run down the side and the months across. There is a dot
   wherever a quiz, flashcard deck, study guide or live lesson was taught, and a
   hollow dot for a live lesson still to come. The current month is lit. Each
@@ -45,11 +49,24 @@ taught, and how well.
 - **Sorting is done once.**
   - When the map is opened, anything not yet sorted goes to the model in
     batches of 30 (`coverage.sort`), judged by meaning, not shared words.
+  - The model answers two easy questions per item, not one hard one: the
+    **closest** topic (there always is one), and whether it is from the
+    **same subject** at all. Only work from another subject goes outside the
+    syllabus. Asked instead whether each item "fits" a topic, the model filed
+    *Living Things*, *Scientific Skills* and *The water cycle* nowhere, and
+    which ones changed with the wording.
+  - The reply is read loosely: an id in brackets or in capitals, or the
+    topic's title, still counts (`topic_lookup`).
   - Each placement is stored, so the map never moves under the teacher's feet
     and the next look costs no model call.
-  - Items the model could not place stay unsorted and are tried again next
-    time.
-  - Removing a topic deletes its links, so its lessons are sorted again.
+  - Items the model could not place — including one it gave a topic that
+    isn't on the syllabus — stay unsorted and are tried again next time.
+  - Saving the syllabus (an edit or a new draft) deletes the links to topics
+    that went away, and the links of everything that sat outside it, so
+    both are sorted again. That is what makes *"edit the syllabus to give them a
+    home"* work.
+  - Migration `e2b8f5a1c603` cleared the outside links the first prompt had
+    left, so they were sorted again with the second.
 - **The pieces** (`services/coverage/`):
   - `syllabus.py` cleans any syllabus (a draft or an edit) and keeps ids that
     are well-formed and unique.

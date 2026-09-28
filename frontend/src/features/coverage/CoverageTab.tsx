@@ -131,6 +131,10 @@ function Header({ data, onPlan, onEdit, onShare, planning }: { data: Coverage; o
           <Chip tone="bg-muted text-foreground">{s.items} {s.items === 1 ? 'thing' : 'things'} taught</Chip>
           {s.planned > 0 && <Chip tone={TOPIC_LOOKS.planned.pill}>{s.planned} live coming up</Chip>}
         </motion.div>
+        {/* A set only counts once the class has it: making one is not teaching it. */}
+        <p className="mt-2 text-sm text-muted-foreground">
+          Quizzes, flashcards and study guides count once they're shared with this class; live lessons once they're scheduled.
+        </p>
       </div>
       <div className="flex flex-wrap gap-2">
         <Button onClick={onPlan} loading={planning}>

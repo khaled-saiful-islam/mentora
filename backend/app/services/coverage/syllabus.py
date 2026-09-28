@@ -8,6 +8,7 @@ and never raises: nonsense becomes nothing, and too much is cut to size.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from typing import Any
 
 MAX_AREAS = 12
@@ -36,6 +37,20 @@ def areas_from(raw: Any) -> list[dict[str, Any]]:
 
 def topic_ids(areas: list[dict[str, Any]]) -> set[str]:
     return {t["id"] for a in areas for t in a["topics"]}
+
+
+def topic_lookup(areas: list[dict[str, Any]]) -> Callable[[Any], str | None]:
+    """A topic's id from what a model wrote for it: the id, however it was
+    wrapped ("[a2t1]", "A2T1 "), or the topic's own title. None if it is not
+    on this syllabus."""
+    by_id = {t["id"].lower(): t["id"] for a in areas for t in a["topics"]}
+    by_title = {" ".join(t["title"].lower().split()): t["id"] for a in areas for t in a["topics"]}
+
+    def find(said: Any) -> str | None:
+        text = " ".join(str(said).strip().strip("[]()").lower().split())
+        return by_id.get(text) or by_title.get(text)
+
+    return find
 
 
 def outline(areas: list[dict[str, Any]]) -> str:

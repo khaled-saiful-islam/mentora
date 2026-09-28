@@ -24,12 +24,23 @@ def draft(subject: str, grade: Grade | None, class_name: str) -> tuple[str, str]
 
 
 def sort(outline: str, items: list[str]) -> tuple[str, str]:
+    # Two easy questions rather than one hard one. Asked whether each thing
+    # "fits" a topic, a model filed "Living Things", "Scientific Skills" and
+    # "The water cycle" nowhere — and which ones changed with the wording. The
+    # closest topic always exists, and "is this the same subject?" is plain.
     system = (
         "You sort what a class was taught onto its syllabus. For each numbered thing "
-        "taught, choose the ONE topic id it mainly teaches. Use null when it fits no "
-        "topic. Judge by meaning, not shared words: 'How plants make food' belongs to "
-        "a photosynthesis topic. Reply with JSON: "
-        '{"links": [{"item": 1, "topic": "a2t1"}, {"item": 2, "topic": null}]}'
+        "taught, give the id of the ONE topic closest to what it teaches, exactly as "
+        "written inside the brackets but without them (for example a2t1). There is "
+        "always a closest topic: judge by meaning, not shared words — 'How plants make "
+        "food' is closest to a photosynthesis or plants topic, 'Scientific skills' to "
+        "science process skills, 'The water cycle' to changes of state or matter, and "
+        "something named after a whole area to the topic in it that fits best. Then say "
+        "whether it is from this class's subject at all: same_subject is false only for "
+        "work from another subject entirely, such as a maths quiz on a science "
+        "syllabus. Reply with JSON only: "
+        '{"links": [{"item": 1, "closest": "a2t1", "same_subject": true}, '
+        '{"item": 2, "closest": "a1t3", "same_subject": false}]}'
     )
     listed = "\n".join(f"{n}. {text}" for n, text in enumerate(items, start=1))
     user = f"SYLLABUS (id, area — topic):\n{outline}\n\nTAUGHT:\n{listed}"

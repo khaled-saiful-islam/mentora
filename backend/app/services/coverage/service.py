@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import Clock, utc_now
@@ -25,7 +25,7 @@ from app.db.models.user import User
 from app.learning.model import JsonModel
 from app.services.coverage import prompts
 from app.services.coverage.matrix import Taught, build, months_for
-from app.services.coverage.syllabus import areas_from, outline, topic_ids
+from app.services.coverage.syllabus import areas_from, outline, topic_ids, topic_lookup
 
 logger = logging.getLogger(__name__)
 
@@ -84,12 +84,16 @@ class CoverageService:
             row = ClassSyllabus(class_id=class_id)
             self._session.add(row)
         row.areas, row.made_by = areas, made_by
-        # A topic that went away takes its sorting with it; those are sorted again.
+        # A topic that went away takes its sorting with it, and whatever sat
+        # outside the old syllabus may have a home in this one: both are sorted
+        # again on the next look.
         await self._session.execute(
             delete(CoverageLink).where(
                 CoverageLink.class_id == class_id,
-                CoverageLink.topic_id.is_not(None),
-                CoverageLink.topic_id.not_in(topic_ids(areas) or {""}),
+                or_(
+                    CoverageLink.topic_id.is_(None),
+                    CoverageLink.topic_id.not_in(topic_ids(areas) or {""}),
+                ),
             )
         )
         await self._session.flush()
@@ -270,20 +274,30 @@ class CoverageService:
         system, user = prompts.sort(outline(areas), [i.describe() for i in items])
         try:
             reply = await self._model.ask(  # type: ignore[union-attr]
-                "coverage.sort", system, user, temperature=0.0, max_tokens=60 * len(items) + 100
+                "coverage.sort", system, user, temperature=0.0, max_tokens=90 * len(items) + 100
             )
         except Exception:  # noqa: BLE001 — unsorted things wait for the next look
             logger.warning("coverage sort failed", exc_info=True)
             return {}
-        known = topic_ids(areas)
+        topic_of = topic_lookup(areas)
         placed: dict[tuple[str, UUID], str | None] = {}
         for link in reply.get("links") or []:
             if not isinstance(link, dict) or not isinstance(link.get("item"), int):
                 continue
             n = link["item"] - 1
-            if 0 <= n < len(items):
-                topic = link.get("topic")
-                placed[items[n].key] = topic if topic in known else None
+            if not 0 <= n < len(items):
+                continue
+            if link.get("same_subject") is False:
+                # From another subject: taught, but outside this syllabus.
+                placed[items[n].key] = None
+                continue
+            said = link.get("closest", link.get("topic"))
+            if said is None and "topic" in link:
+                placed[items[n].key] = None
+            elif said is not None and (topic := topic_of(said)) is not None:
+                placed[items[n].key] = topic
+            # No topic, or one not on the syllabus: left out, so the item is
+            # tried again rather than filed outside by a slip.
         return placed
 
     async def _mastery(

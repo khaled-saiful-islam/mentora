@@ -187,6 +187,108 @@ async def test_removing_a_topic_sends_what_was_on_it_back_to_be_sorted(
     assert left is None
 
 
+@pytest.mark.parametrize("said", ["a1t2", "[a1t2]", " A1T2 ", "Animals", "animals"])
+async def test_a_topic_is_understood_however_the_model_writes_it(
+    session, teacher, student, said
+) -> None:
+    assignment = await shared(session, teacher, [student])
+    room = await _classroom(session, assignment)
+    service = CoverageService(
+        session, model=_model(**{"coverage.sort": _sort_everything_into(said)})
+    )
+    await service.draft(room)
+    shaped = await service.coverage(room)
+    animals = shaped["areas"][0]["topics"][1]
+    assert [i["title"] for i in animals["items"]] == [assignment.title]
+
+
+async def test_a_topic_not_on_the_syllabus_is_tried_again_not_filed_outside(
+    session, teacher, student
+) -> None:
+    assignment = await shared(session, teacher, [student])
+    room = await _classroom(session, assignment)
+    model = _model(**{"coverage.sort": _sort_everything_into("a9t9")})
+    service = CoverageService(session, model=model)
+    await service.draft(room)
+    shaped = await service.coverage(room)
+    assert shaped["outside"] == []
+    assert [i["title"] for i in shaped["unsorted"]] == [assignment.title]
+    model.asked.clear()
+    await service.coverage(room)
+    assert "coverage.sort" in model.asked
+
+
+@pytest.mark.parametrize(
+    ("link", "where"),
+    [
+        ({"closest": "a1t2", "same_subject": True}, "Animals"),
+        ({"closest": "[a2t1]", "same_subject": True}, "Light"),
+        ({"closest": "a1t2", "same_subject": False}, "outside"),
+        ({"closest": "a9t9", "same_subject": True}, "unsorted"),
+        ({"same_subject": True}, "unsorted"),
+    ],
+)
+async def test_the_closest_topic_is_used_unless_it_is_another_subject(
+    session, teacher, student, link, where
+) -> None:
+    assignment = await shared(session, teacher, [student])
+    room = await _classroom(session, assignment)
+    model = _model(**{"coverage.sort": {"links": [{"item": 1, **link}]}})
+    service = CoverageService(session, model=model)
+    await service.draft(room)
+    shaped = await service.coverage(room)
+    topics = {t["title"]: t for a in shaped["areas"] for t in a["topics"]}
+    if where in topics:
+        assert [i["title"] for i in topics[where]["items"]] == [assignment.title]
+    else:
+        assert [i["title"] for i in shaped[where]] == [assignment.title]
+
+
+async def test_the_prompt_says_something_broad_still_has_a_best_topic(
+    session, teacher, student
+) -> None:
+    assignment = await shared(session, teacher, [student])
+    room = await _classroom(session, assignment)
+    seen: dict[str, str] = {}
+
+    def answer(system: str, user: str) -> dict:
+        seen["system"], seen["user"] = system, user
+        return {"links": [{"item": 1, "topic": "a1t1"}]}
+
+    service = CoverageService(session, model=_model(**{"coverage.sort": answer}))
+    await service.draft(room)
+    await service.coverage(room)
+    assert "There is always a closest topic" in seen["system"]
+    assert "same_subject is false only for work from another subject" in seen["system"]
+
+
+async def test_editing_the_syllabus_gives_what_sat_outside_another_chance(
+    session, teacher, student
+) -> None:
+    assignment = await shared(session, teacher, [student])
+    room = await _classroom(session, assignment)
+    model = _model(**{"coverage.sort": _sort_everything_into(None)})
+    service = CoverageService(session, model=model)
+    await service.draft(room)
+    assert [i["title"] for i in (await service.coverage(room))["outside"]] == [assignment.title]
+
+    await service.save(
+        room,
+        [
+            {"id": "a1", "title": "Living things", "topics": [{"id": "a1t1", "title": "Plants"}]},
+            {
+                "id": "a3",
+                "title": "Science skills",
+                "topics": [{"id": "a3t1", "title": "Observing"}],
+            },
+        ],
+    )
+    model._answers["coverage.sort"] = _sort_everything_into("a3t1")  # noqa: SLF001
+    shaped = await service.coverage(room)
+    assert shaped["outside"] == []
+    assert [i["title"] for i in shaped["areas"][1]["topics"][0]["items"]] == [assignment.title]
+
+
 async def test_the_plan_keeps_only_real_topics_and_known_kinds(session, teacher, student) -> None:
     assignment = await shared(session, teacher, [student])
     room = await _classroom(session, assignment)
