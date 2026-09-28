@@ -7,7 +7,7 @@
  * The youngest (`level.ts`) get bright cards with big words, a star path,
  * confetti for every one they knew and "read it to me"; Year 4–6 win points.
  */
-import { AnimatePresence, motion, useMotionValue, useTransform, type PanInfo } from 'motion/react'
+import { AnimatePresence, motion, useMotionValue, useTransform, type PanInfo, type Transition } from 'motion/react'
 import { ArrowCounterClockwise, ArrowsClockwise, Check, Lightbulb, Smiley, SmileyMeh } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 import { Button, Chip } from '@/components/ui'
@@ -169,6 +169,21 @@ function Deck({ left, children }: { left: number; children: React.ReactNode }) {
   )
 }
 
+/** How a card turns: slow enough to follow, lifted in the middle. */
+export const FLIP: Record<'plain' | 'bright', Transition> = {
+  plain: {
+    rotateY: { duration: 0.7, ease: [0.45, 0, 0.2, 1] },
+    y: { duration: 0.7, ease: 'easeInOut', times: [0, 0.45, 1] },
+    scale: { duration: 0.7, ease: 'easeInOut', times: [0, 0.45, 1] },
+  },
+  // Overshoots a touch past flat and settles back: a bounce on landing.
+  bright: {
+    rotateY: { duration: 0.85, ease: [0.34, 1.35, 0.64, 1] },
+    y: { duration: 0.85, ease: 'easeInOut', times: [0, 0.4, 1] },
+    scale: { duration: 0.85, ease: 'easeInOut', times: [0, 0.4, 1] },
+  },
+}
+
 function Flashcard({
   card,
   picture,
@@ -187,6 +202,7 @@ function Flashcard({
   onSwipe: (knew: boolean) => void
 }) {
   const bright = look.tiles === 'bright'
+  const calm = useCalmMotion()
   const [hint, setHint] = useState(false)
   const x = useMotionValue(0)
   const tilt = useTransform(x, [-200, 200], [-12, 12])
@@ -221,9 +237,12 @@ function Flashcard({
         onClick={onFlip}
         aria-label={flipped ? 'Show the front' : 'Flip the card'}
         className="relative block size-full cursor-pointer rounded-[2rem] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40 [transform-style:preserve-3d]"
-        animate={{ rotateY: flipped ? 180 : 0 }}
-        // The youngest get a flip with a little bounce at the end.
-        transition={bright ? spring.bouncy : { type: 'spring', stiffness: 260, damping: 24 }}
+        // A card picked up, turned over and set down: it lifts a little as it
+        // turns, so the flip reads as a real card rather than a snap. The
+        // youngest get a small bounce as it lands. Calm motion just turns it.
+        initial={false}
+        animate={calm ? { rotateY: flipped ? 180 : 0 } : { rotateY: flipped ? 180 : 0, y: [0, -14, 0], scale: [1, 1.04, 1] }}
+        transition={calm ? { duration: 0.25 } : FLIP[bright ? 'bright' : 'plain']}
       >
         <Face side="front" bright={bright} quest={look.tiles === 'quest'}>
           {/* With a picture, the label steps aside and the word is a size
