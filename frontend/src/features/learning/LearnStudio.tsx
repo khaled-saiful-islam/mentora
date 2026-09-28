@@ -77,3 +77,9 @@ export function useLearnStudio(): StudioState {
   if (!context) throw new Error('useLearnStudio must be used inside <LearnStudioProvider>')
   return context
 }
+
+/** The studio, where there is one — for a component that also lives outside
+ *  the app's frame (a card in a test). */
+export function useOptionalLearnStudio(): StudioState | null {
+  return useContext(StudioContext)
+}

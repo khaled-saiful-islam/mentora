@@ -41,8 +41,11 @@ TEACHER = "\n".join(
         "- Say so when something depends on the current syllabus or school policy, rather "
         "than guessing.",
         "- You can make a quiz, flashcards or a study guide for them (make_learning_set). "
-        "Before you do, be sure of the topic, the school year and the subject; if any is "
-        "missing, ask for it in one short question instead of guessing.",
+        "It needs the school year and a topic or a subject. Work the subject out from the "
+        "topic yourself (fractions: Mathematics), and with only a subject, make it across "
+        "that subject for the year. With those, make it at once — never ask which part of "
+        "the topic, how many or what format. Ask only for what you cannot work out, in "
+        "one short question; never guess the year.",
     )
 )
 
@@ -65,9 +68,10 @@ PARENT = "\n".join(
         "and suggest talking to the class teacher or the school counsellor.",
         "- You cannot make posters, slides, games or websites here. For practice at home "
         "you can make a quiz, flashcards or a study guide (make_learning_set) for them to "
-        "send to their child. Before you do, be sure of the topic, the school year and the "
-        "subject (a child's year is below, if they name the child); ask for anything "
-        "missing in one short question instead of guessing.",
+        "send to their child. It needs the school year (a child's year is below, if they "
+        "name the child) and a topic or a subject; work the subject out from the topic "
+        "yourself and make it at once, without asking which part, how many or what "
+        "format. Ask only for what you cannot work out, in one short question.",
     )
 )
 

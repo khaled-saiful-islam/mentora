@@ -77,16 +77,41 @@ async def test_with_everything_it_starts_the_set_and_hands_back_a_card() -> None
     ("given", "asks"),
     [
         ({"kind": "quiz", "topic": "fractions", "subject": "Maths"}, "the school year"),
-        ({"kind": "quiz", "topic": "fractions", "year": "Year 4"}, "the subject"),
-        ({"kind": "quiz", "subject": "Maths", "year": "Year 4"}, "the topic"),
+        ({"kind": "quiz", "year": "Year 4"}, "what it is about"),
         ({"topic": "fractions", "subject": "Maths", "year": "Year 4"}, "what to make"),
     ],
 )
-async def test_without_the_topic_year_or_subject_it_says_what_to_ask(given, asks) -> None:
+async def test_without_the_year_or_what_it_is_about_it_says_what_to_ask(given, asks) -> None:
     maker = _Maker()
     with pytest.raises(ToolUnavailable, match=asks):
         await MakeLearningSetTool(maker).run(**given)
     assert maker.drafts == []
+
+
+async def test_a_topic_and_a_year_are_enough() -> None:
+    maker = _Maker()
+    [result] = await MakeLearningSetTool(maker).run(kind="quiz", topic="fractions", year="Year 3")
+    [draft] = maker.drafts
+    assert (draft.topic, draft.subject, draft.grade_level) == ("fractions", None, "year_3")
+    assert result.snippet == "Quiz · Year 3"
+
+
+async def test_a_subject_and_a_year_make_it_across_the_subject() -> None:
+    maker = _Maker()
+    await MakeLearningSetTool(maker).run(kind="flashcard", subject="Science", year="Year 2")
+    [draft] = maker.drafts
+    assert (draft.topic, draft.subject, draft.grade_level) == (
+        "Science for Year 2",
+        "Science",
+        "year_2",
+    )
+
+
+def test_the_model_is_told_to_work_the_subject_out_rather_than_ask() -> None:
+    tool = MakeLearningSetTool(_Maker())
+    assert tool.parameters["required"] == ["kind", "year"]
+    assert "fractions → Mathematics" in tool.description
+    assert "leave the topic out" in tool.description
 
 
 async def test_a_year_it_does_not_know_is_asked_about_not_guessed() -> None:

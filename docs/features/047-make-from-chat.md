@@ -7,20 +7,34 @@ the conversation.
 
 ## What it does
 
-- **It asks before it makes.** A set needs four things: what to make, the
-  topic, the school year and the subject. If any is missing, the chat asks for
-  just those, in one short question, and makes nothing yet:
+- **It works out what it can, and asks only for the rest.** A set needs what
+  to make, the school year, and what it is about: a topic, a subject, or
+  both.
+  - A topic with no subject: the chat works the subject out
+    (*"a quiz about fractions, year 3"* → Mathematics) and makes it.
+  - A subject with no topic (*"flashcards for year 5 science"*): it makes a
+    set across that subject for the year, *"Science for Year 5"*.
+  - It never asks which part of the topic, how many, or in what format. The
+    maker picks a sensible spread for the year.
+  - It asks, in one short question, only for what it can't work out: what to
+    make, the year, or what it is about. It never guesses a year.
 
-  > *Make me a quiz on fractions*
-  > — What year or form is this for? What subject should it be under?
-  > *Year 4, Mathematics*
+  > *Make me a quiz*
+  > — Which year is it for, and what should it be about?
+  > *Fractions, Year 4*
   > — *(starts it)*
 
-- **A card follows the build.** *"Making it — about a minute"*, with a moving
-  bar, then *"Ready — 10 questions"* with **Preview** (play it as a student)
-  and **Open** (the editor). A failed build says so and opens to try again. A
-  set deleted since says *"No longer in your Library."* The card is still
-  there after a reload.
+- **A card follows the build**, in its kind's colours (quiz orange,
+  flashcards teal, study guide blue), like the Library's cards.
+  - While it is being made: *"Making it — about a minute"* with a moving bar,
+    and **Watch it being made**. That opens the Library with the live
+    creation panel showing each stage as it happens.
+  - Once ready: *"Ready — 10 questions"* with **Preview** (play it as a
+    student), **Share** (teachers: straight to a class, the same dialog as
+    the editor's), and **Open** (the editor).
+  - A failed build says so and opens to try again. A set deleted since says
+    *"No longer in your Library."* The card is still there after a
+    reload.
 - **Everything else is as if it came from Make.** It is in the Library, the
   work tray shows it coming, and the bell rings when it is ready. A teacher's
   set is for sharing with a class; a parent's is for sending home.

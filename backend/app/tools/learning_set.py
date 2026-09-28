@@ -63,11 +63,16 @@ class MakeLearningSetTool:
     description = (
         "Make a quiz, a deck of flashcards or a study guide with Mentora's own maker "
         "(the same one as Library → Make). It is saved to the person's Library and "
-        "takes about a minute. Call it only when you know all four: what to make, the "
-        "topic, the school year (Year 1-6 or Form 1-5) and the subject. If any of them "
-        "is missing or unclear, do not call it yet: ask the person for exactly what is "
-        "missing, in one short, friendly question. Never guess a year or a subject. "
-        "Never write the questions or cards out in the chat yourself."
+        "takes about a minute. It needs what to make, the school year (Year 1-6 or Form "
+        "1-5), and what it is about: a topic, a subject, or both. Work out what you can "
+        "yourself instead of asking: given a topic but no subject, give the subject it "
+        "belongs to (fractions → Mathematics, the water cycle → Science); given a "
+        "subject but no topic, leave the topic out and it covers that subject for the "
+        "year. Once you have those, call it straight away: do not ask which part of the "
+        "topic, how many, how hard, or in what format — it picks a sensible spread and "
+        "count for the year by itself. Ask only for what you cannot work out — what to "
+        "make, the year, or what it is about — in one short, friendly question. Never "
+        "guess a year. Never write the questions or cards out in the chat yourself."
     )
     parameters: dict[str, Any] = {
         "type": "object",
@@ -77,8 +82,16 @@ class MakeLearningSetTool:
                 "enum": list(KINDS),
                 "description": "What to make: a quiz, flashcards, or a study guide.",
             },
-            "topic": {"type": "string", "description": "What it is about, as the person put it."},
-            "subject": {"type": "string", "description": "The school subject, e.g. Science."},
+            "topic": {
+                "type": "string",
+                "description": "What it is about, as the person put it. Leave out if only "
+                "a subject was given.",
+            },
+            "subject": {
+                "type": "string",
+                "description": "The school subject, e.g. Science — worked out from the "
+                "topic when the person did not say.",
+            },
             "year": {
                 "type": "string",
                 "description": "The school year it is for, e.g. 'Year 4' or 'Form 2'.",
@@ -92,7 +105,7 @@ class MakeLearningSetTool:
                 "description": "Its language as a code (en, ms, ta, zh, bn), if not English.",
             },
         },
-        "required": ["kind", "topic", "subject", "year"],
+        "required": ["kind", "year"],
     }
     presentation = ToolPresentation(
         running="Starting it", done="Started", noun="set", failed="Could not start it"
@@ -109,15 +122,16 @@ class MakeLearningSetTool:
         except MentoraError as exc:
             raise ToolUnavailable(exc.message) from exc
         what = KINDS[started.kind]
+        about = ", ".join(x for x in (grade.label, draft.subject) if x)
         return [
             ToolResult(
                 tool=self.name,
                 title=started.title,
                 url=f"/library/{started.set_id}",
-                snippet=f"{what.capitalize()} · {grade.label} · {draft.subject}",
+                snippet=" · ".join(x for x in (what.capitalize(), grade.label, draft.subject) if x),
                 excerpt=(
-                    f'Started making the {what} "{started.title}" ({grade.label}, '
-                    f"{draft.subject}). It will be ready in about a minute; it is shown as a "
+                    f'Started making the {what} "{started.title}" ({about}). It will be '
+                    "ready in about a minute; it is shown as a "
                     "card in this chat, it goes into the Library, and the bell rings when it "
                     "is ready. Tell the person that in a sentence or two. Do not write the "
                     "questions or cards yourself, and do not cite this."
@@ -134,9 +148,8 @@ class MakeLearningSetTool:
             name
             for name, value in (
                 ("what to make (a quiz, flashcards or a study guide)", kind),
-                ("the topic", len(topic) >= 2),
                 ("the school year", year),
-                ("the subject", subject),
+                ("what it is about (a topic or a subject)", len(topic) >= 2 or subject),
             )
             if not value
         ]
@@ -154,8 +167,9 @@ class MakeLearningSetTool:
         language = _text(given.get("language"), 8).lower() or "en"
         draft = GenerationDraft(
             kind=kind,
-            topic=topic,
-            subject=subject,
+            # Only a subject: the set covers that subject for the year.
+            topic=topic if len(topic) >= 2 else f"{subject} for {grade.label}",
+            subject=subject or None,
             grade_level=grade.code,
             count=count if isinstance(count, int) and 1 <= count <= 50 else None,
             language=language if language in self._languages else "en",
