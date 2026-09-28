@@ -4,9 +4,7 @@
  * reaches the server, so nothing is saved, counted or seen by anyone.
  */
 import type { FlashcardItem, QuizItem as KeyedQuiz, SetDetail } from '@/features/learning/api'
-import { apiFetch } from '@/lib/api'
 import { spokenQuery, type AnswerBody, type PlayBackend, type Spoken } from './backend'
-import type { ItemPictures } from './pictures'
 import type { Attempt, CardItem, Finish, Played, QuizItem, SkillScore } from './api'
 import { starsFor } from './session'
 
@@ -66,9 +64,6 @@ export class PreviewGrader implements PlayBackend {
     }
     return { played, streak: this.streak, answered: this.played.size, total: this.set.items.length }
   }
-
-  /** What a Year 1–3 child would see beside each question. */
-  pictures = () => apiFetch<ItemPictures>(`/learning-sets/${this.set.id}/pictures`)
 
   /** What a student would hear, from the set as it is saved. */
   speech = (_attemptId: string, spoken: Spoken) => `/api/learning-sets/${this.set.id}/speech?${spokenQuery(spoken)}`

@@ -9,7 +9,6 @@
  */
 import { useMotionValue } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { GuidePicture } from '@/features/learning/api'
 import type { Spoken } from '../Captions'
 import { offsetFrom, type Sample } from './clock'
 import { roomApi, roomEvents, type ClipEvent, type Joined, type RoomEvent, type RoomPhase, type RosterEntry, type RoomState } from './api'
@@ -37,7 +36,6 @@ export function useRoom(id: string) {
   const [line, setLine] = useState<Spoken | null>(null)
   const [speaking, setSpeaking] = useState(false)
   const [show, setShow] = useState<string | null>(null)
-  const [image, setImage] = useState<GuidePicture | null>(null)
   const [progress, setProgress] = useState<{ step: number; steps: number }>({ step: 0, steps: 0 })
   const [segment, setSegment] = useState(-1)
   const [hands, setHands] = useState<{ student_id: string; name: string }[]>([])
@@ -78,7 +76,6 @@ export function useRoom(id: string) {
         if (fresh) setSaid((all) => [...all.slice(-200), { id: `${clip.seq}`, speaker: 'tutor', text: clip.text }])
         if (clip.lane === 'lesson') {
           if (clip.show !== undefined) setShow(clip.show ?? null)
-          if (clip.image !== undefined) setImage(clip.image ?? null)
           if (clip.steps) setProgress({ step: (clip.step ?? 0) + 1, steps: clip.steps })
           if (clip.segment !== undefined) setSegment(clip.segment)
         }
@@ -167,7 +164,6 @@ export function useRoom(id: string) {
   function restore(state: RoomState) {
     if (state.phase) setPhase(state.phase)
     if (state.show !== undefined) setShow(state.show ?? null)
-    if (state.image !== undefined) setImage(state.image ?? null)
     if (state.hands) setHands(state.hands.queue)
     if (state.called?.student_id) setCalled({ student_id: state.called.student_id, name: state.called.name ?? '' })
     if (state.checkin) setCheckin(state.checkin)
@@ -277,7 +273,7 @@ export function useRoom(id: string) {
   )
 
   return {
-    joined, error, phase, roster, line, speaking, show, image, progress, segment, hands, called, mine, myQuestion, left,
+    joined, error, phase, roster, line, speaking, show, progress, segment, hands, called, mine, myQuestion, left,
     checkin, answered, choice, result, quiz, said, soundOn, removed, level, serverNow,
     enableSound, raiseHand, lowerHand, ask, choose,
   }

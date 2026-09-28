@@ -32,9 +32,7 @@
   - Then the group's answers are shown as bars, and Astra says the right answer and why.
 - **The end:** a celebration. Then *Take the quiz* appears, for a quiz made from the lesson, the teacher's files and the questions the group asked, and shared with the group. Afterwards the room shows **My notes**: the key points of each part and the whole lesson as it was said.
 
-**Pictures** (Phase 5): each part may carry a picture, shown on the stage while it is taught.
-- The planner asks for an `image_query` per segment and finds the picture with SafeSearch, https only. It uses the same path as study guides (`Researcher.pictures`, `picture_from`).
-- The teacher sees it in the review and can remove it.
+**No pictures.** A live lesson is Astra's voice and what is on the screen: the key point or worked example of each beat. Pictures are for study guides only (migration `a1c6e3f8b420` dropped the part picture).
 
 **Report a problem** (Phase 5): a student can report something in the lesson.
 - The report goes to the admins' safety queue (`moderation_events`, kind `report`).

@@ -181,39 +181,18 @@ def test_slides_carrying_a_dtd_are_refused_not_expanded() -> None:
         extract(buffer.getvalue(), filename="x.pptx", media_type="application/octet-stream")
 
 
-async def test_each_part_that_asks_for_a_picture_gets_a_safe_one() -> None:
-    from app.tools.base import ToolResult
+async def test_a_lesson_part_carries_no_picture() -> None:
+    """Pictures are for study guides only: a live lesson is Astra's voice and
+    what is on the screen, nothing searched for."""
+    from app.live import plan_prompts
 
-    class PictureSearch(FakeSearch):
-        async def search_images(self, query, *, limit=6):
-            return [
-                ToolResult(
-                    tool="image_search",
-                    title="A leaf",
-                    url="https://example.org/leaf",
-                    snippet="Example",
-                    rank=1,
-                    thumbnail_url="https://example.org/t.png",
-                    image_url="https://example.org/leaf.png",
-                )
-            ]
-
-    def part(system, user):
-        from tests.live_fakes import part_answer
-
-        made = part_answer(system, user)
-        for segment in made["segments"]:
-            segment["image_query"] = "leaf close up"
-        return made
-
+    assert "image_query" not in plan_prompts.SEGMENT_SHAPE
+    assert "image_query" not in plan_prompts.part_system()
     notes = Document("notes.txt", "Photosynthesis is how plants make food from light. " * 80)
-    planner, _ = _planner(
-        answers(**{"live.part": part, "live.repair": part}), search=PictureSearch(GOOD_RESULTS)
-    )
+    planner, _ = _planner(answers())
     events = await _run(planner, PlanInput(settings=settings(), documents=(notes,)))
     first = next(e for e in events if isinstance(e, PartWritten)).segments[0]
-    assert first.image["image"] == "https://example.org/leaf.png"
-    assert first.as_dict()["image"]["page"] == "https://example.org/leaf"
+    assert "image" not in first.as_dict()
 
 
 def test_a_quick_check_is_open_longer_for_young_readers() -> None:
@@ -237,3 +216,33 @@ def test_a_quick_check_too_long_for_its_time_is_sent_back() -> None:
         check_problems({"question": "Which?", "options": ["A", "B"], "answer": 0}, CHECK_UPPER)
         == []
     )
+
+
+def _part_prompt(lesson, index: int) -> str:
+    from app.core.grades import grade_for
+    from app.live.plan_prompts import part_user
+
+    return part_user(
+        lesson, grade_for(lesson.grade_level), index=index, segments=1, students=[],
+        sources="", seconds=90,
+    )  # fmt: skip
+
+
+def test_astra_opens_like_a_teacher_introducing_herself_and_the_lesson() -> None:
+    lesson = settings()
+    first = _part_prompt(lesson, 0)
+    assert "I'm Astra, and I'll be teaching you today" in first
+    assert "what we will learn today" in first
+    assert all(part in first for part in lesson.breakdown)
+    assert '"Ask Astra" button' in first
+    assert "I'm Astra" not in _part_prompt(lesson, 1)
+
+
+def test_the_last_part_closes_warmly_and_tells_them_about_the_quiz() -> None:
+    lesson = settings()
+    last = _part_prompt(lesson, len(lesson.breakdown) - 1)
+    assert "thank the group" in last and "recap the whole lesson" in last
+    assert "short quiz waiting" in last
+    no_quiz = lesson.model_copy(update={"quiz": lesson.quiz.model_copy(update={"enabled": False})})
+    assert "short quiz waiting" not in _part_prompt(no_quiz, len(lesson.breakdown) - 1)
+    assert "cheerful goodbye" in _part_prompt(no_quiz, len(lesson.breakdown) - 1)

@@ -14,7 +14,9 @@ Each part has:
 - **A picture** from a SafeSearch image search, credited to its page. The
   teacher can swap it for one of the others the search found, or take it out.
   - Each candidate is **looked at before it is kept**, and only a clear,
-    child-safe picture of that section's idea stays.
+    child-safe picture of that section's idea stays: it must score 8 out of 10
+    for showing that idea (`GUIDE_KEEP_AT`), stricter than anywhere else,
+    since guides are the only place with pictures.
   - A section with nothing to see (a rule, a definition) asks for no picture.
   - A section with no good picture gets none, not a wrong one.
 - **Words to know**, dotted in the text. Tapping one shows its meaning and the

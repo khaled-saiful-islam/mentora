@@ -120,7 +120,6 @@ export default function RoomPage({ teacherView = false }: { teacherView?: boolea
             beat={ended ? (session?.segments_total ?? session?.parts ?? 0) : room.segment}
             quiet={ended}
             show={room.show}
-            image={ended ? null : room.image}
             line={room.line}
             now={room.serverNow}
             speaking={room.speaking}

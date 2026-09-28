@@ -16,6 +16,17 @@
    - *Approve & record the voice*: every sentence, plus Astra's lines to each student by name, is recorded once, with a progress bar.
    - *Put it on the schedule* or *Start now*, *Move it*, or *Cancel the lesson*.
 
+**How Astra opens and closes** (`plan_prompts.part_user`):
+- **The first part** opens like a kind teacher's first minute. She greets the
+  group, introduces herself (*"I'm Astra, and I'll be teaching you today"*),
+  says what they will learn, naming the parts, and invites questions: press
+  *Ask Astra* at any time, and she answers at the next pause. Then the story
+  or question that draws them in.
+- **The last part** closes warmly after its check. She thanks the group,
+  recaps the lesson in two or three points and praises their effort. When
+  the lesson has a quiz, she tells them there's a short one waiting, that it
+  helps them remember, and to give it their best. Then a cheerful goodbye.
+
 **Students** (*Schedule* in the menu):
 - The next lesson is an **Up next** card on Home, with a live countdown. Ten minutes before the start its button becomes a glowing *Join the lesson*.
 - **My schedule** (`/schedule`) lists lessons by day, then past ones.
@@ -59,12 +70,9 @@
 
 ## Pictures
 
-A segment can ask for a picture (`image_query`) when seeing something helps.
-The prompt says to ask only then, and never for a person by name. The
-planner searches (SafeSearch, https only), and `JudgedPictures`
-(`app/learning/picture_check.py`) looks at each candidate. Only a clear,
-child-safe picture of that part's idea is shown; when none fits, the part
-has no picture. See `PICTURE_CHECK_MODEL` in `.env.example`.
+None. A lesson is spoken, with a key point or worked example on the screen
+for each beat. Pictures are for study guides only, where each one is looked
+at before it is kept (`JudgedPictures`, at the guide's higher bar of 8/10).
 
 ## Known limits
 

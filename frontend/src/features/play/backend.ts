@@ -4,14 +4,11 @@
  * itself, which marks them from the answer key it already has and keeps
  * nothing. The players never know which.
  *
- * It also says where "Read it to me" gets each clip, and where the pictures
- * beside the questions come from: the student's attempt, or the set being
- * previewed.
+ * It also says where "Read it to me" gets each clip: the student's attempt,
+ * or the set being previewed.
  */
 import { createContext, useContext } from 'react'
-import { apiFetch } from '@/lib/api'
 import { playApi, type AnswerResult } from './api'
-import type { ItemPictures } from './pictures'
 
 export interface AnswerBody {
   item_id: string
@@ -33,14 +30,11 @@ export interface PlayBackend {
   answer: (attemptId: string, body: AnswerBody) => Promise<AnswerResult>
   /** The address of one clip in the tutor's voice. */
   speech: (attemptId: string, spoken: Spoken) => string
-  /** The pictures beside the questions, found so far. */
-  pictures: (attemptId: string) => Promise<ItemPictures>
 }
 
 const server: PlayBackend = {
   answer: playApi.answer,
   speech: (attemptId, spoken) => `/api/me/attempts/${attemptId}/speech?${spokenQuery(spoken)}`,
-  pictures: (attemptId) => apiFetch<ItemPictures>(`/me/attempts/${attemptId}/pictures`),
 }
 
 const BackendContext = createContext<PlayBackend>(server)

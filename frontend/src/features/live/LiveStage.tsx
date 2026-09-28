@@ -12,8 +12,6 @@ import type { Mood } from '@/features/buddies/types'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
 import { spring, useCalmMotion } from '@/motion'
-import { PictureFrame } from '@/features/guide/PictureFrame'
-import type { GuidePicture } from '@/features/learning/api'
 import { Captions, type Spoken } from './Captions'
 import { TUTOR_NAME, TutorAvatar } from './TutorAvatar'
 
@@ -24,7 +22,6 @@ export interface StageProps {
   beat: number
   show: string | null
   /** The part's picture, on screen while it is taught. */
-  image?: GuidePicture | null
   line: Spoken | null
   now: () => number
   speaking: boolean
@@ -39,7 +36,7 @@ export interface StageProps {
   children?: React.ReactNode
 }
 
-export function LiveStage({ beats, beat, show, image, line, now, speaking, level, mood, status, hand, quiet, className, children }: StageProps) {
+export function LiveStage({ beats, beat, show, line, now, speaking, level, mood, status, hand, quiet, className, children }: StageProps) {
   const calm = useCalmMotion()
   const roomy = useMediaQuery('(min-width: 640px)')
   const stars = useMemo(() => STARS, [])
@@ -95,20 +92,6 @@ export function LiveStage({ beats, beat, show, image, line, now, speaking, level
         </div>
 
         <div className="min-h-[9rem] min-w-0 space-y-3">
-          <AnimatePresence mode="wait">
-            {image && (
-              <motion.div
-                key={image.image}
-                initial={calm ? { opacity: 0 } : { opacity: 0, scale: 0.94, rotate: 1.5 }}
-                animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                exit={{ opacity: 0 }}
-                transition={spring.gentle}
-                className="overflow-hidden rounded-3xl border border-white/20 shadow-lg"
-              >
-                <PictureFrame picture={image} alt={show ?? image.title} className="aspect-[16/9]" />
-              </motion.div>
-            )}
-          </AnimatePresence>
           <AnimatePresence mode="wait">
             {show ? (
               <motion.div

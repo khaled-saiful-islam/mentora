@@ -17,15 +17,13 @@ import json
 import logging
 import re
 from collections.abc import AsyncIterator, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Any
 
 from app.core.grades import Grade, grade_for
 from app.learning import prompts as learning_prompts
 from app.learning.model import JsonModel
-from app.learning.picture_check import JudgedPictures, PictureCheck, WordsPictureCheck
 from app.learning.research import Researcher, Source
-from app.learning.study_guide import picture_from
 from app.live import plan_prompts as prompts
 from app.live.beats import Beat, beats_from, spoken_seconds
 from app.live.settings import (
@@ -84,8 +82,6 @@ class PlannedSegment:
     key_points: tuple[str, ...]
     checkin: dict[str, Any] | None
     target_seconds: int
-    image_query: str | None = None
-    image: dict[str, Any] | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -96,7 +92,6 @@ class PlannedSegment:
             "key_points": list(self.key_points),
             "checkin": self.checkin,
             "target_seconds": self.target_seconds,
-            "image": self.image,
         }
 
 
@@ -115,16 +110,9 @@ PlanEvent = Stage | PartWritten
 
 
 class LessonPlanner:
-    def __init__(
-        self,
-        model: JsonModel,
-        researcher: Researcher | None,
-        *,
-        picture_check: PictureCheck | None = None,
-    ) -> None:
+    def __init__(self, model: JsonModel, researcher: Researcher | None) -> None:
         self._model = model
         self._researcher = researcher
-        self._picture_check = picture_check or WordsPictureCheck()
 
     async def breakdown(
         self, *, subject: str, topic: str, grade_level: str, difficulty: str, notes: str = ""
@@ -271,36 +259,7 @@ class LessonPlanner:
                 max_tokens=PART_TOKENS * count,
             )
             segments = _segments(repaired, index, subtopic, seconds) or segments
-        return tuple(await self._illustrate(segments, settings.topic, grade))
-
-    async def _illustrate(
-        self, segments: list[PlannedSegment], topic: str, grade: Grade | None
-    ) -> list[PlannedSegment]:
-        """A picture for each segment that asked for one — found with SafeSearch,
-        https only, like a study guide's, and looked at before it is kept
-        (`learning/picture_check.py`). None fits, none shown."""
-        if self._researcher is None or not self._researcher.available:
-            return segments
-        pictures = JudgedPictures(
-            self._researcher,
-            self._picture_check,
-            topic=topic,
-            grade=grade.label if grade else None,
-        )
-
-        async def one(segment: PlannedSegment) -> PlannedSegment:
-            if not segment.image_query:
-                return segment
-            try:
-                found = await pictures.pictures(f"{segment.image_query} {topic}"[:140], limit=1)
-            except Exception:  # noqa: BLE001 — a lesson without a picture is still a lesson
-                return segment
-            chosen = next(
-                (picture_from(p.as_dict()) for p in found if picture_from(p.as_dict())), None
-            )
-            return replace(segment, image=chosen)
-
-        return list(await asyncio.gather(*(one(s) for s in segments)))
+        return tuple(segments)
 
     async def _problems(
         self,
@@ -354,7 +313,6 @@ def _segments(
                 )[:5],
                 checkin=checkin_from(entry.get("checkin")),
                 target_seconds=seconds,
-                image_query=_words(entry.get("image_query"), 80) or None,
             )
         )
     return out

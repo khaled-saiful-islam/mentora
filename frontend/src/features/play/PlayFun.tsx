@@ -1,15 +1,12 @@
 /**
  * The extras the younger looks add to a game (`level.ts`): shapes drifting
  * behind it, a path of stars for progress, points that pop, a button that
- * reads the words aloud, and a photo of what the question is about. Each one
- * is only drawn by the look that wants it.
+ * reads the words aloud. Each one is only drawn by the look that wants it.
  */
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
-import { Camera, Circle, Diamond, RocketLaunch, Sparkle, SpeakerHigh, SpeakerSlash, Star, Triangle } from '@phosphor-icons/react'
+import { Circle, Diamond, RocketLaunch, Sparkle, SpeakerHigh, SpeakerSlash, Star, Triangle } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
-import { spring, useCalmMotion } from '@/motion'
-import type { ReadyPicture } from './pictures'
+import { spring } from '@/motion'
 import type { Line, PlayVoice } from './usePlayVoice'
 import type { Segment } from './session'
 
@@ -184,67 +181,5 @@ export function ReadAloudButton({ voice, id, lines, className }: { voice: PlayVo
       {reading ? <SpeakerSlash weight="fill" className="size-5" aria-hidden /> : <SpeakerHigh weight="fill" className="size-5" aria-hidden />}
       {reading ? 'Stop' : 'Read it to me'}
     </motion.button>
-  )
-}
-
-/** A photo of what the question or card is about, popped in like a sticker.
- *  Its frame keeps its size while the photo loads, so nothing moves; a photo
- *  that will not load falls back to the search's small copy, and then steps
- *  aside. On a card it is inside the card's own button, so its credit is not
- *  a link. */
-export function QuestionPicture({ picture, on = 'question' }: { picture: ReadyPicture; on?: 'question' | 'card' }) {
-  const calm = useCalmMotion()
-  const [src, setSrc] = useState(picture.image || picture.thumbnail)
-  const [loaded, setLoaded] = useState(false)
-  if (!src) return null
-
-  function fallBack() {
-    setSrc(src !== picture.thumbnail ? picture.thumbnail : '')
-  }
-
-  return (
-    <motion.figure
-      initial={calm ? { opacity: 0 } : { opacity: 0, scale: 0.6, rotate: -6 }}
-      animate={{ opacity: 1, scale: 1, rotate: 0 }}
-      transition={calm ? { duration: 0.3 } : spring.bouncy}
-      className={cn('mx-auto flex max-w-full flex-col items-center', on === 'question' ? 'mt-4' : 'mt-1')}
-    >
-      <span
-        className={cn(
-          'block max-w-full overflow-hidden rounded-2xl border-4 border-white bg-muted shadow-lg dark:border-surface',
-          on === 'question' ? 'h-40 w-60 sm:h-48 sm:w-72' : 'h-24 w-36 sm:h-28 sm:w-44',
-          !loaded && 'animate-pulse',
-        )}
-      >
-        <motion.img
-          key={src}
-          src={src}
-          alt={picture.alt}
-          // Many image hosts turn away requests that say where they came from.
-          referrerPolicy="no-referrer"
-          onLoad={() => setLoaded(true)}
-          onError={fallBack}
-          className="size-full object-cover"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: loaded ? 1 : 0 }}
-          transition={{ duration: 0.35 }}
-        />
-      </span>
-      {picture.source && (
-        <figcaption className="mt-1.5 inline-flex max-w-full items-center gap-1 text-xs text-muted-foreground">
-          <Camera weight="bold" className="size-3.5 shrink-0" aria-hidden />
-          <span className="break-all">
-            Picture:{' '}
-            {on === 'question' && picture.page ? (
-              <a href={picture.page} target="_blank" rel="noreferrer noopener" className="font-bold hover:underline">
-                {picture.source}
-              </a>
-            ) : (
-              <span className="font-bold">{picture.source}</span>
-            )}
-          </span>
-        </figcaption>
-      )}
-    </motion.figure>
   )
 }

@@ -36,6 +36,9 @@ logger = logging.getLogger(__name__)
 
 # Out of 10: "clearly shows this idea". Below it, the picture is left out.
 KEEP_AT = 7
+# A study guide's picture teaches: it must show the section's idea itself, not
+# just the topic around it.
+GUIDE_KEEP_AT = 8
 # Candidates looked at per picture wanted, beyond the ones asked for.
 EXTRA_CANDIDATES = 2
 # Vision calls in flight at once, per lesson or set.
@@ -86,11 +89,13 @@ class JudgedPictures:
         *,
         topic: str,
         grade: str | None,
+        keep_at: int = KEEP_AT,
     ) -> None:
         self._source = source
         self._check = check
         self._topic = topic
         self._grade = grade
+        self._keep_at = keep_at
         self._gate = asyncio.Semaphore(CONCURRENCY)
 
     @property
@@ -105,7 +110,7 @@ class JudgedPictures:
         kept = [
             (v.helps, i, p)
             for i, (p, v) in enumerate(zip(found, verdicts, strict=True))
-            if v and v.keep
+            if v and v.safe and v.helps >= self._keep_at
         ]
         kept.sort(key=lambda row: (-row[0], row[1]))
         logger.info("pictures for %r: kept %d of %d", query[:60], len(kept), len(found))
@@ -134,7 +139,8 @@ class WordsPictureCheck:
         said = _words(f"{picture.title} {picture.source}")
         shared = wanted & said
         enough = bool(shared) and len(shared) >= max(1, len(wanted) // 2)
-        return Verdict(helps=KEEP_AT if enough else 0, safe=True, shows=picture.title)
+        # Yes or no, nothing between: a match is as sure as this check gets.
+        return Verdict(helps=10 if enough else 0, safe=True, shows=picture.title)
 
 
 class VisionPictureCheck:

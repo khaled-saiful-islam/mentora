@@ -19,9 +19,7 @@ size control everywhere they read, and animation that respects reduced motion.
 
 **Three looks, picked from the student's year.**
 - **Year 1–3** get bright bobbing tiles, a star path, confetti for every right
-  answer, big playful words, a photo beside a question when one fits (and
-  never one that gives the answer away), and *Read it to me* in Astra's warm
-  voice.
+  answer, big playful words, and *Read it to me* in Astra's warm voice.
 - **Year 4–6** play a quest: a map grid, a rocket riding the progress bar,
   points on each right answer and a rank at the end.
 - **Form 1–5** get the clean, focused look.
@@ -176,8 +174,8 @@ See [`docs/features/042-parents.md`](docs/features/042-parents.md).
   only teachers and parents make sets.
 - **Three looks by year.** Quizzes and flashcards play differently for Year
   1–3, Year 4–6 and the Forms, picked from the student's year. Teachers and
-  parents preview a set in its year's look. Year 1–3 get checked photos beside questions and
-  *Read it to me* in the tutor's voice.
+  parents preview a set in its year's look. Year 1–3 get *Read it to me* in
+  the tutor's voice.
 - **Results and skills.** Per-student, per-question and per-skill results,
   a score spread, and a student's own strengths and next steps.
 - **Coverage and reports home.** A syllabus map per class and private

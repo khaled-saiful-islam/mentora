@@ -13,8 +13,7 @@ SEGMENT_SHAPE = (
     '{"title": "a short title", "key_points": ["under 12 words", "…"], '
     '"beats": [{"say": "…", "show": "…" or null, "pause": "short|breath|think"}], '
     '"checkin": {"question": "…", "options": ["…", "…", "…", "…"], "answer": 0, '
-    '"explanation": "one sentence"} or null, '
-    '"image_query": "a picture search for this segment, 3 to 6 words, or null"}'
+    '"explanation": "one sentence"} or null}'
 )
 
 
@@ -59,12 +58,6 @@ one small idea. After each beat there is a pause:
 Each beat can put something on the screen ("show"): a key point in under 12 words, a \
 tiny worked example, or null. The screen supports what you say; never read it out.
 
-A segment can ask for a picture ("image_query"): 3 to 6 words naming a real thing or \
-diagram the room should look at while you talk ("leaf cross section diagram", "Mount \
-Kinabalu"). Ask only when seeing it helps them understand. Use null for an idea with \
-nothing to see (a rule, a definition, a feeling), and never ask for a person by name. \
-Every picture is checked before it is shown; one that does not fit is dropped.
-
 Ground every fact in the SOURCES given. The teacher's own files (ids starting with D) \
 come first: teach what they teach, in their words and examples where you can. Web \
 sources (ids starting with W) only fill gaps. Never invent a fact the sources do not \
@@ -94,15 +87,28 @@ def part_user(
     before = f'The part before was "{parts[index - 1]}".' if index > 0 else ""
     after = f'The next part is "{parts[index + 1]}".' if index + 1 < len(parts) else ""
     opening = (
-        "This is the very FIRST part: open with a warm hello to the group, say you are "
-        "Astra and what today's lesson is about, then begin the story or question that "
-        "draws them in."
+        "This is the very FIRST part. Open like a kind teacher on the first minute of a "
+        "class, in its own first beats: greet the group warmly; introduce yourself — "
+        "\"I'm Astra, and I'll be teaching you today\"; say in a sentence or two what "
+        f"we will learn today, naming the parts in plain words ({', '.join(parts)}); "
+        "and tell them that if they have a question at any time, they can press the "
+        '"Ask Astra" button and ask you — you will answer it at the next pause. Only '
+        "then begin the story or question that draws them in."
         if index == 0
         else f"Pick up gently from the part before. {before}"
     )
+    quiz = (
+        "Then, like a real teacher, tell them there is a short quiz waiting for them "
+        "after the lesson, that it will help them remember what they learned today, and "
+        "to give it their best — no pressure, just practice. "
+        if settings.quiz.enabled
+        else ""
+    )
     closing = (
-        "This is the LAST part: after its check, end with a short, warm recap of the "
-        "whole lesson and a goodbye."
+        "This is the LAST part. After its check, close the lesson warmly, in its own "
+        "final beats: thank the group for listening and for their questions; recap the "
+        "whole lesson in two or three short points; praise their effort. "
+        f"{quiz}End with a cheerful goodbye."
         if index + 1 == len(parts)
         else f"End by pointing, in one sentence, to what comes next. {after}"
     )

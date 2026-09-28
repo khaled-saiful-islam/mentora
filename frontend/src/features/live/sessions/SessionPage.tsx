@@ -186,10 +186,6 @@ export default function SessionPage() {
                       setSegment(await sessionsApi.editSegment(live.id, segment.id, patch))
                       void detail.reload()
                     }}
-                    onRemoveImage={async () => {
-                      setSegment(await sessionsApi.editSegment(live.id, segment.id, { remove_image: true }))
-                      void detail.reload()
-                    }}
                     onRewrite={async (instruction) => {
                       try {
                         setSegment(await sessionsApi.rewriteSegment(live.id, segment.id, instruction))

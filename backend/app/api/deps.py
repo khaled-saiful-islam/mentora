@@ -19,7 +19,6 @@ from app.context.persona import ChildBrief, persona_for
 from app.context.registry import build_contributors
 from app.core.config import Settings, get_settings
 from app.core.errors import AuthError, ForbiddenError
-from app.core.grades import grade_for
 from app.core.roles import Role
 from app.core.security import decode_access_token
 from app.db.models.user import User
@@ -30,12 +29,9 @@ from app.guards.registry import build_guards
 from app.learning.factory import (
     build_generator,
     build_model,
-    build_picture_check,
     build_researcher,
 )
-from app.learning.item_pictures import ItemPictureFinder, SpoilerCheck
 from app.learning.model import Meter
-from app.learning.picture_check import JudgedPictures, VisionPictureCheck
 from app.learning.registry import build_learning_kinds
 from app.live.answering import Answerer
 from app.live.audio import AudioCache, Narrator
@@ -53,7 +49,6 @@ from app.services.auth_service import AuthService
 from app.services.cancellation import registry as cancellation_registry
 from app.services.chat_service import ChatService, TurnSettings
 from app.services.generation_service import GenerationService
-from app.services.item_picture_service import Filler, PictureFiller
 from app.services.live_plan_service import LivePlanService
 from app.services.live_quiz_service import LiveQuizService
 from app.services.live_room import rooms as live_rooms
@@ -396,35 +391,6 @@ def get_narrator() -> Narrator:
 NarratorDep = Annotated[Narrator, Depends(get_narrator)]
 
 
-@lru_cache
-def _picture_filler() -> PictureFiller | None:
-    # One per process, so a set is looked through once however many children
-    # open it. Only with a search to find pictures and a model to look at
-    # them: a picture beside a question has to be one somebody checked.
-    settings = get_settings()
-    if not (settings.search_enabled and settings.picture_check_model.strip()):
-        return None
-    researcher = build_researcher(settings)
-    check = build_picture_check(settings)
-    spoilers = SpoilerCheck(check) if isinstance(check, VisionPictureCheck) else None
-
-    def finder(topic: str, grade_level: str | None) -> ItemPictureFinder:
-        grade = grade_for(grade_level)
-        pictures = JudgedPictures(
-            researcher, check, topic=topic, grade=grade.label if grade else None
-        )
-        return ItemPictureFinder(build_model(settings, Meter()), pictures, spoilers)
-
-    return PictureFiller(finder)
-
-
-def get_picture_filler() -> Filler | None:
-    return _picture_filler()
-
-
-PictureFillerDep = Annotated[Filler | None, Depends(get_picture_filler)]
-
-
 def get_transcriber(settings: SettingsDep) -> Transcriber:
     return build_transcriber(settings)
 
@@ -452,9 +418,7 @@ def get_live_plan_service(settings: SettingsDep) -> LivePlanService:
         settings=settings,
         session_maker=session_scope,
         planner_factory=lambda meter: LessonPlanner(
-            build_model(settings, meter),
-            build_researcher(settings),
-            picture_check=build_picture_check(settings),
+            build_model(settings, meter), build_researcher(settings)
         ),
         narrator=_narrator(),
     )

@@ -68,7 +68,6 @@ class SegmentEdit(BaseModel):
     )
     checkin: CheckinEdit | None = None
     remove_checkin: bool = False
-    remove_image: bool = False
 
 
 class RewriteSegment(BaseModel):
@@ -129,7 +128,6 @@ def segment_out(segment: LiveSegment) -> dict[str, Any]:
         "beats": segment.beats,
         "key_points": segment.key_points,
         "checkin": segment.checkin,
-        "image": segment.image,
         "target_seconds": segment.target_seconds,
         "status": segment.status,
     }

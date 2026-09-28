@@ -27,7 +27,12 @@ from app.learning import prompts
 from app.learning.base import Item, LearningKind, Skill
 from app.learning.enrich import Enriching, Finishing
 from app.learning.model import GenerationUnavailable, JsonModel, Meter
-from app.learning.picture_check import JudgedPictures, PictureCheck, WordsPictureCheck
+from app.learning.picture_check import (
+    GUIDE_KEEP_AT,
+    JudgedPictures,
+    PictureCheck,
+    WordsPictureCheck,
+)
 from app.learning.research import Researcher, Source, listing
 from app.moderation.base import Decision
 from app.moderation.rules import InputRules
@@ -488,12 +493,14 @@ class LearningGenerator:
     # --- helpers -------------------------------------------------------------
 
     def _pictures(self, topic: str, grade: Grade | None) -> JudgedPictures:
-        """Pictures that were looked at before anyone sees them."""
+        """Pictures that were looked at before anyone sees them — held to the
+        study guide's higher bar, since only a guide has pictures."""
         return JudgedPictures(
             self._researcher,
             self._picture_check,
             topic=topic,
             grade=grade.label if grade else None,
+            keep_at=GUIDE_KEEP_AT,
         )
 
     def _clean(
