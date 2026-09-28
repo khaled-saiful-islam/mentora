@@ -2,7 +2,7 @@
 
 Quizzes and flashcards play differently for young children, older primary
 pupils and secondary students. A teacher or parent can play any quiz or deck
-before sharing it, in each look.
+before sharing it, in the look its year gets.
 
 ## What it does
 
@@ -30,9 +30,12 @@ the set's year (`grade_level` on the attempt) decides. Anything else — a
 Form, Lower or Upper Six, or no year at all — gets the focused look.
 
 **Preview** (`/library/:id/try`, the *Preview* button in the editor):
-- A banner says *"Preview — this is how a student sees it. Nothing is saved."*
-- It has the three looks to switch between (starting at the set's year),
-  *Start over* and *Back to editing*.
+- A banner says *"Preview — this is how a Year 4 student sees it. Nothing is
+  saved."*, naming the set's year.
+- The look is the one the set's year gets (`levelForGrade`), exactly as a
+  student in that year would see it. There is no switch between looks: the
+  year decides.
+- *Start over* and *Back to editing*.
 - The real quiz or flashcard player runs with instant feedback, then the real
   finish screen and the answer-by-answer review. *Try again* starts fresh.
 - For teachers and parents alike. A study guide keeps its reading preview

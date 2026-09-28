@@ -34,7 +34,7 @@
   `STUDENT_PRACTICE_PER_DAY` only matters if `make_practice_sets` is turned
   back on.
 - **Preview as a student**: a quiz or flashcards plays in the real players,
-  in each of the three looks, before it is shared (`044-play-looks.md`).
+  in the look its year gets, before it is shared (`044-play-looks.md`).
 
 ## How it works
 

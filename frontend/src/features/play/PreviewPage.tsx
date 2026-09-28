@@ -7,7 +7,6 @@ import { ArrowClockwise, ArrowLeft, Eye } from '@phosphor-icons/react'
 import { useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { Alert, Button, Skeleton } from '@/components/ui'
-import { Segmented } from '@/components/ui/Segmented'
 import type { BuddyHandle } from '@/features/buddies'
 import { learningApi, type SetDetail } from '@/features/learning/api'
 import { useResource } from '@/hooks/useResource'
@@ -16,7 +15,7 @@ import { Page } from '@/motion'
 import type { Attempt, Finish } from './api'
 import { PlayBackendProvider } from './backend'
 import { FinishScreen } from './FinishScreen'
-import { LEVELS, levelForGrade, PlayLevelProvider, type PlayLevel } from './level'
+import { levelForGrade, PlayLevelProvider } from './level'
 import { BuddyCorner, BuddyDock } from './BuddyDock'
 import { PLAYERS } from './players'
 import { previewAttempt, PreviewGrader } from './preview'
@@ -38,7 +37,8 @@ type Step = { name: 'playing' } | { name: 'finished'; finish: Finish } | { name:
 
 function Preview({ set }: { set: SetDetail }) {
   const { user } = useAuth()
-  const [level, setLevel] = useState<PlayLevel>(() => levelForGrade(set.grade_level))
+  // The look follows the set's own year, as it will for a student in it.
+  const level = levelForGrade(set.grade_level)
   const [round, setRound] = useState(0)
   const [step, setStep] = useState<Step>({ name: 'playing' })
   const buddy = useRef<BuddyHandle>(null)
@@ -56,9 +56,10 @@ function Preview({ set }: { set: SetDetail }) {
           <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5">
             <p className="inline-flex min-w-[min(100%,14rem)] flex-1 items-center gap-2 text-sm font-bold">
               <Eye weight="fill" className="size-4 shrink-0 text-sun-600 dark:text-sun-300" aria-hidden />
-              Preview — this is how a student sees it. Nothing is saved.
+              <span className="break-words">
+                Preview — this is how {set.grade_label ? `a ${set.grade_label} student` : 'a student'} sees it. Nothing is saved.
+              </span>
             </p>
-            <Segmented label="How it looks" value={level} onChange={setLevel} options={LEVELS.map((l) => ({ value: l.key, label: l.label }))} />
             <div className="flex flex-wrap items-center gap-2">
               <Button variant="ghost" size="sm" onClick={again}>
                 <ArrowClockwise weight="bold" className="size-4" aria-hidden /> Start over
