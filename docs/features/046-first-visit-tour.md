@@ -23,10 +23,13 @@ for teachers and one for parents.
   Each step says where the thing lives, in a small *📍 Home* tag.
 - **Only what the account can do.** A step whose capability is off (live
   lessons, chat, family sets) is left out.
-- **Animated.** The window pops in, and each step slides in from the
-  direction you're going. The picture floats: a big icon with drifting dots,
-  or, for a student, their own buddy waving on the first step and
-  celebrating on the last. Confetti comes at *Let's go!*. Calm motion keeps
+- **Animated, without flicker.** The window pops in. Each step's words
+  slide and fade in while the last step's fade out. All the steps' words
+  sit in one grid cell, so the window is as tall as the longest step and
+  never jumps. Sideways overflow is clipped, so no scrollbar flickers in. The
+  picture's colour cross-dissolves, and its icon pops in over the last. The
+  picture floats: a big icon with drifting dots, or, for a student, their own
+  buddy waving on the first step and celebrating on the last. Confetti comes at *Let's go!*. Calm motion keeps
   the words and drops the movement.
 - **Easy to leave.** *Skip* on the first step, *Back* after that, the close
   button, Escape, or a tap outside. Tab stays inside while it is open, and
