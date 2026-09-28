@@ -16,16 +16,21 @@ from app.artifacts.registry import build_kinds
 from app.core.config import Settings, get_settings
 from app.tools.artifact import CreateArtifactTool, EditArtifactTool
 from app.tools.base import Tool
+from app.tools.learning_set import MakeLearningSetTool, SetMaker
 from app.tools.page_reader import PageReader
 from app.tools.serpapi import SerpApiSearch
 from app.tools.web_search import ImageSearchTool, WebSearchTool
 
 
-def build_tools(settings: Settings | None = None, *, studio: bool = True) -> dict[str, Tool]:
+def build_tools(
+    settings: Settings | None = None, *, studio: bool = True, maker: SetMaker | None = None
+) -> dict[str, Tool]:
     """Keyed by name, so a selection step can look one up without a scan.
 
     `studio` is whether this turn may make posters, slides, games, websites
-    and apps. Without it the artifact tools are not built at all.
+    and apps. Without it the artifact tools are not built at all. `maker` is
+    how this person's quizzes, flashcards and study guides get made; someone
+    who cannot make sets has none, and so no tool for it.
     """
     settings = settings or get_settings()
     tools: list[Tool] = []
@@ -57,5 +62,8 @@ def build_tools(settings: Settings | None = None, *, studio: bool = True) -> dic
         # Offered only on a turn that has one open. `_tools_to_offer` decides
         # that, so the model is never shown a way to change nothing.
         tools.append(EditArtifactTool(kinds))
+
+    if maker is not None:
+        tools.append(MakeLearningSetTool(maker, languages=settings.supported_language_list))
 
     return {tool.name: tool for tool in tools}

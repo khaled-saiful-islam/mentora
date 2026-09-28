@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mergeSources, mergeTool } from './chat-events'
+import { isMade, mergeSources, mergeTool } from './chat-events'
 import type { ToolActivity } from './chat-types'
 describe('mergeSources', () => {
   const source = (rank: number) => ({
@@ -28,6 +28,19 @@ describe('mergeSources', () => {
 
   it('starts from nothing', () => {
     expect(mergeSources(undefined, [source(1)]).map((s) => s.rank)).toEqual([1])
+  })
+
+  it('keeps two things made in one answer, which carry no citation number', () => {
+    const made = (id: string) => ({ rank: 0, title: id, url: `/library/${id}`, snippet: 'Quiz' })
+    const merged = mergeSources([made('a'), source(1)], [made('b')])
+    expect(merged.filter(isMade).map((s) => s.url)).toEqual(['/library/a', '/library/b'])
+    expect(merged.filter((s) => !isMade(s)).map((s) => s.rank)).toEqual([1])
+  })
+
+  it('tells a thing made here from a page on the web', () => {
+    expect(isMade({ url: '/library/abc' })).toBe(true)
+    expect(isMade({ url: 'https://e.test/1' })).toBe(false)
+    expect(isMade({ url: '//evil.test/x' })).toBe(false)
   })
 })
 

@@ -80,7 +80,7 @@ as a handout** with an answer key. See
 A teacher plans a lesson in four steps (who, what, how, after) and Mentora
 writes it part by part. The teacher listens to every part in Astra's voice,
 edits or rewrites what they want, and approves it. Then it goes on the
-group's schedule.
+schedule of the whole class, or of the one group it is for.
 
 - **Everyone hears the same sentence at the same time**, with the words
   lighting up, the key idea on screen and a star per part.
@@ -108,7 +108,7 @@ and [`docs/features/038-live-room.md`](docs/features/038-live-room.md).
 | ![The quiz editor: questions, answers, explanations, skills and difficulty](docs/screenshots/quiz-editor.png) | ![A class page with its students, requests, groups, shared work and invite link](docs/screenshots/class.png) |
 | **Generate, then edit.** Every question, answer, explanation, skill and difficulty is editable, and every set is versioned. | **Classes, groups and invites.** Students join with a link or a code; the teacher lets them in. |
 | ![Previewing a quiz in the Year 1–3 look: bright tiles, a star path and Read it to me](docs/screenshots/preview-year-1-3.png) | ![The notification panel with news from the class](docs/screenshots/notifications.png) |
-| **Preview as a student.** Play a quiz or flashcards before sharing, in each of the three looks. Nothing is saved. | **Live notifications** — join requests answerable in place, and news with a sense of fun. |
+| **Preview as a student.** Play a quiz or flashcards before sharing, in the look its year gets. Nothing is saved. | **Live notifications** — join requests answerable in place, and news with a sense of fun. |
 
 - **My materials.** Upload the worksheets, chapters and notes you teach from
   once (PDF, Word, PowerPoint or text), or **take a photo** of a page or the
@@ -118,6 +118,9 @@ and [`docs/features/038-live-room.md`](docs/features/038-live-room.md).
   has covered, month by month and topic by topic, with the class's score on
   each. It can draft the syllabus, suggest a plan for the rest of the year,
   and send a progress report home as a private link.
+- **Make it by asking.** In the chat, *"Make me a quiz on fractions for Year 4
+  maths"* starts the quiz, and a card in the chat follows it until it's ready.
+  If the topic, year or subject is missing, the chat asks first.
 - **Made for you.** When a student finds a shared quiz hard, Mentora makes
   them a short practice set on exactly the skills they missed.
 - **Work in the background.** Making a set or recording a lesson carries on
@@ -173,7 +176,7 @@ See [`docs/features/042-parents.md`](docs/features/042-parents.md).
   only teachers and parents make sets.
 - **Three looks by year.** Quizzes and flashcards play differently for Year
   1–3, Year 4–6 and the Forms, picked from the student's year. Teachers and
-  parents preview all three. Year 1–3 get checked photos beside questions and
+  parents preview a set in its year's look. Year 1–3 get checked photos beside questions and
   *Read it to me* in the tutor's voice.
 - **Results and skills.** Per-student, per-question and per-skill results,
   a score spread, and a student's own strengths and next steps.

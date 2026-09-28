@@ -176,6 +176,9 @@ class TurnState:
     language: str | None = None
     tool_results: tuple[ToolResult, ...] = ()
     image_results: tuple[ToolResult, ...] = ()
+    # Things a tool made in the app (a quiz being built), kept with the answer
+    # so the card comes back on reload, but never cited.
+    made_results: tuple[ToolResult, ...] = ()
     prompt: tuple[ChatMessage, ...] = ()
     chunks: list[str] = field(default_factory=list)
     usage: Usage | None = None
@@ -237,7 +240,7 @@ class TurnState:
 
     @property
     def citations(self) -> tuple[ToolResult, ...]:
-        return (*self.tool_results, *self.image_results)
+        return (*self.tool_results, *self.image_results, *self.made_results)
 
 
 def _parse_arguments(raw: str) -> dict[str, object] | None:
@@ -706,6 +709,15 @@ class ChatService:
         if not found:
             if sink is not None:
                 sink.append("The search returned no usable results.")
+            return
+
+        if all(result.is_made for result in found):
+            # Not a source: a card in the answer, and a note to the model of
+            # what happened, in the tool's own words.
+            state.made_results = (*state.made_results, *found)
+            yield SourcesEvent(sources=found)
+            if sink is not None:
+                sink.append("\n".join(result.excerpt or result.title for result in found))
             return
 
         if any(result.is_image for result in found):

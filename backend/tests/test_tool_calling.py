@@ -86,9 +86,7 @@ def _usage_event(tokens: int):
     from app.providers.base import UsageEvent
 
     return UsageEvent(
-        usage=Usage(
-            prompt_tokens=tokens, completion_tokens=tokens, source=UsageSource.PROVIDER
-        )
+        usage=Usage(prompt_tokens=tokens, completion_tokens=tokens, source=UsageSource.PROVIDER)
     )
 
 
@@ -232,7 +230,7 @@ async def test_tools_are_offered_with_their_schema(session, db_user, registry) -
 
 
 async def test_search_mode_always_requires_a_tool(session, db_user, registry) -> None:
-    """"Always" has to mean always, not "consider it"."""
+    """ "Always" has to mean always, not "consider it"."""
     provider = ScriptedProvider([[call("lookup", "x")], "ok"])
     service = build_service(
         session, provider, registry, tools={"lookup": LookupTool()}, tool_calling=True
@@ -247,9 +245,7 @@ async def test_search_mode_always_requires_a_tool(session, db_user, registry) ->
 async def test_search_mode_off_offers_no_searching(session, db_user, registry) -> None:
     provider = ScriptedProvider(["ok"])
     tool = LookupTool()
-    service = build_service(
-        session, provider, registry, tools={"lookup": tool}, tool_calling=True
-    )
+    service = build_service(session, provider, registry, tools={"lookup": tool}, tool_calling=True)
     await run(service, db_user, mode="off")
 
     assert provider.requests[0].tools == ()
@@ -265,9 +261,7 @@ async def test_search_off_leaves_everything_else_alone(session, db_user, registr
 
     provider = ScriptedProvider([[call("weather", "KL")], "ok"])
     tool = WeatherTool()
-    service = build_service(
-        session, provider, registry, tools={"weather": tool}, tool_calling=True
-    )
+    service = build_service(session, provider, registry, tools={"weather": tool}, tool_calling=True)
     await run(service, db_user, mode="off")
 
     assert [t["function"]["name"] for t in provider.requests[0].tools] == ["weather"]
@@ -303,15 +297,11 @@ async def test_results_reach_the_model_as_a_tool_message_not_twice(
 
     tool_messages = [m for m in provider.requests[1].messages if m.role is Role.TOOL]
     assert len(tool_messages) == 1
-    systems = "\n".join(
-        m.content for m in provider.requests[1].messages if m.role is Role.SYSTEM
-    )
+    systems = "\n".join(m.content for m in provider.requests[1].messages if m.role is Role.SYSTEM)
     assert "https://example.test" not in systems
 
 
-async def test_two_rounds_of_tools_renumber_their_citations(
-    session, db_user, registry
-) -> None:
+async def test_two_rounds_of_tools_renumber_their_citations(session, db_user, registry) -> None:
     """Both searches come back numbered from 1, and a duplicate [2] would mean
     two different pages in one answer."""
     provider = ScriptedProvider(
@@ -344,9 +334,7 @@ async def test_the_loop_stops_at_its_cap(session, db_user, registry) -> None:
     """Otherwise a model that always calls a tool never answers."""
     tool = LookupTool()
     provider = ScriptedProvider([[call("lookup", f"q{i}", id=f"c{i}")] for i in range(10)])
-    service = build_service(
-        session, provider, registry, tools={"lookup": tool}, tool_calling=True
-    )
+    service = build_service(session, provider, registry, tools={"lookup": tool}, tool_calling=True)
     await run(service, db_user)
 
     # Three rounds of tools, then a pass with none offered so it has to reply.
@@ -376,9 +364,7 @@ async def test_malformed_arguments_are_answered_so_the_model_can_retry(
         [[ToolCall(id="c1", name="lookup", arguments="{not json")], "recovered"]
     )
     tool = LookupTool()
-    service = build_service(
-        session, provider, registry, tools={"lookup": tool}, tool_calling=True
-    )
+    service = build_service(session, provider, registry, tools={"lookup": tool}, tool_calling=True)
     events = await run(service, db_user)
 
     assert tool.calls == []
@@ -390,9 +376,7 @@ async def test_malformed_arguments_are_answered_so_the_model_can_retry(
 async def test_an_argumentless_call_is_answered(session, db_user, registry) -> None:
     provider = ScriptedProvider([[ToolCall(id="c1", name="lookup", arguments="{}")], "ok"])
     tool = LookupTool()
-    service = build_service(
-        session, provider, registry, tools={"lookup": tool}, tool_calling=True
-    )
+    service = build_service(session, provider, registry, tools={"lookup": tool}, tool_calling=True)
     await run(service, db_user)
 
     assert tool.calls == []
@@ -407,24 +391,18 @@ async def test_two_calls_in_one_round_both_run(session, db_user, registry) -> No
     provider = ScriptedProvider(
         [[call("lookup", "first", id="a"), call("lookup", "second", id="b")], "both done"]
     )
-    service = build_service(
-        session, provider, registry, tools={"lookup": tool}, tool_calling=True
-    )
+    service = build_service(session, provider, registry, tools={"lookup": tool}, tool_calling=True)
     await run(service, db_user)
 
     assert tool.calls == ["first", "second"]
-    answered = [
-        m.tool_call_id for m in provider.requests[1].messages if m.role is Role.TOOL
-    ]
+    answered = [m.tool_call_id for m in provider.requests[1].messages if m.role is Role.TOOL]
     assert answered == ["a", "b"]
 
 
 # --- falling back ------------------------------------------------------
 
 
-async def test_a_provider_that_cannot_do_tools_still_searches(
-    session, db_user, registry
-) -> None:
+async def test_a_provider_that_cannot_do_tools_still_searches(session, db_user, registry) -> None:
     """A local build with no function calling should lose the model's choice,
     not the tool."""
     tool = LookupTool()
@@ -439,9 +417,7 @@ async def test_a_provider_that_cannot_do_tools_still_searches(
     assert provider.received.tools == ()
 
 
-async def test_tool_calling_disabled_uses_the_pattern_path(
-    session, db_user, registry
-) -> None:
+async def test_tool_calling_disabled_uses_the_pattern_path(session, db_user, registry) -> None:
     tool = LookupTool()
     provider = FakeProvider(["answered"])
     service = build_service(
@@ -458,9 +434,7 @@ async def test_no_tools_at_all_is_a_single_pass(session, db_user, registry) -> N
     events = await run(service, db_user)
 
     assert len(provider.requests) == 1
-    assert "just an answer" in "".join(
-        e.text for e in events if isinstance(e, DeltaEvent)
-    )
+    assert "just an answer" in "".join(e.text for e in events if isinstance(e, DeltaEvent))
 
 
 @pytest.mark.parametrize("finish", [FinishReason.TOOL_CALLS])
@@ -468,3 +442,39 @@ def test_tool_calls_is_a_finish_reason(finish) -> None:
     """So a turn that ended by asking for a tool is distinguishable from one
     that ended by answering."""
     assert str(finish) == "tool_calls"
+
+
+class _MakerTool(Tool):
+    """A tool that makes something in the app rather than finding a page."""
+
+    name = "maker"
+    description = "Make a thing."
+    parameters = text_parameter("query", "What to make")
+    presentation = ToolPresentation(running="Making", done="Made", noun="thing")
+
+    async def run(self, **kwargs: Any) -> Sequence[Any]:
+        from app.providers.base import ToolResult
+
+        return [
+            ToolResult(
+                tool=self.name,
+                title="Fractions quiz",
+                url="/library/abc",
+                snippet="Quiz · Year 4 · Maths",
+                excerpt="Started making the quiz. Tell the person. Do not cite this.",
+            )
+        ]
+
+
+async def test_something_made_is_a_card_not_a_source_to_cite(session, db_user, registry) -> None:
+    provider = ScriptedProvider([[call("maker", "fractions")], "Started!"])
+    service = build_service(
+        session, provider, registry, tools={"maker": _MakerTool()}, tool_calling=True
+    )
+    events = await run(service, db_user)
+
+    [sources] = [e for e in events if isinstance(e, SourcesEvent)]
+    assert [s.url for s in sources.sources] == ["/library/abc"]
+    [told] = [m.content for m in provider.requests[1].messages if m.role is Role.TOOL]
+    assert told == "Started making the quiz. Tell the person. Do not cite this."
+    assert "Web search results" not in told

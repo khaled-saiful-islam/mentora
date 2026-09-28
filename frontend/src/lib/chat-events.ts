@@ -139,13 +139,21 @@ export function mergeTool(
  * server numbers the second batch after the first, and replacing left `[3]`
  * pointing at nothing while `[8]` pointed at a list of five.
  */
+/** Something the turn made in the app (a quiz being built), not a page to
+ *  cite: its address is a path here. The same rule as the server's `is_made`. */
+export function isMade(source: Pick<Source, 'url'>): boolean {
+  return source.url.startsWith('/') && !source.url.startsWith('//')
+}
+
 export function mergeSources(
   existing: Source[] | undefined,
   next: Source[],
 ): Source[] {
-  const byRank = new Map((existing ?? []).map((source) => [source.rank, source]))
-  for (const source of next) byRank.set(source.rank, source)
-  return [...byRank.values()].sort((a, b) => a.rank - b.rank)
+  // Made things carry no citation number, so they are kept by address.
+  const key = (source: Source) => (isMade(source) ? `made:${source.url}` : `rank:${source.rank}`)
+  const byKey = new Map((existing ?? []).map((source) => [key(source), source]))
+  for (const source of next) byKey.set(key(source), source)
+  return [...byKey.values()].sort((a, b) => a.rank - b.rank)
 }
 
 /** Add this turn's usage to the conversation running total. */

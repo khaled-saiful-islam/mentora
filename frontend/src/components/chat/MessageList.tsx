@@ -6,12 +6,14 @@ import { ArtifactCard } from '@/components/artifacts/ArtifactCard'
 import { BuddyAvatar, profileOf } from '@/features/buddies'
 import type { ChatMessage, Rating } from '@/hooks/useChat'
 import { useAuth } from '@/lib/auth'
+import { isMade } from '@/lib/chat-events'
 import { can } from '@/lib/user'
 import { cn } from '@/lib/utils'
 import { spring } from '@/motion'
 import { MessageAttachments } from './Attachments'
 import { GuardBanner } from './GuardBanner'
 import { ImageGrid } from './ImageGrid'
+import { MadeSetCard } from './MadeSetCard'
 import { Markdown } from './Markdown'
 import { MessageActions } from './MessageActions'
 import { Sources } from './Sources'
@@ -132,6 +134,9 @@ function MessageRow({
   }
 
   const waiting = message.streaming && message.content.length === 0
+  // A set the chat started making is a card, not a citation.
+  const made = (message.sources ?? []).filter(isMade)
+  const cited = (message.sources ?? []).filter((source) => !isMade(source))
   return (
     <motion.div className="group/message flex gap-3" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={spring.gentle}>
       <Speaker className="mt-0.5" />
@@ -144,15 +149,19 @@ function MessageRow({
           <ArtifactCard key={artifact.id} artifact={artifact} active={openArtifact === artifact.id} onOpen={() => onOpenArtifact?.(artifact.id)} />
         ))}
 
+        {made.map((source) => (
+          <MadeSetCard key={source.url} source={source} />
+        ))}
+
         {waiting ? (
           <Working />
         ) : (
           <div className={cn('min-w-0', message.streaming && 'streaming-caret')}>
-            <Markdown content={message.content} sources={message.sources ?? []} />
+            <Markdown content={message.content} sources={cited} />
           </div>
         )}
 
-        {message.sources && message.sources.length > 0 && <Sources sources={message.sources} />}
+        {cited.length > 0 && <Sources sources={cited} />}
         {message.finish_reason === 'stopped' && <p className="mt-2 text-sm text-muted-foreground">Stopped by you.</p>}
         {message.error && (
           <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-destructive">

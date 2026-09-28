@@ -60,6 +60,7 @@ from app.services.live_room import rooms as live_rooms
 from app.services.live_runtime import LiveRuntime
 from app.services.quota import TokenQuota
 from app.services.rate_limit import Limit, RateLimiter
+from app.services.set_builds import ChatSetMaker
 from app.tools.registry import build_tools
 
 logger = logging.getLogger(__name__)
@@ -242,7 +243,15 @@ def get_chat_service(
     prompt can talk the model into making a poster: the tool it would call
     does not exist on that turn. It is also the only turn that is screened.
     """
-    studio = capabilities_for(user.role).studio_artifacts
+    caps = capabilities_for(user.role)
+    studio = caps.studio_artifacts
+    # Quizzes, flashcards and study guides from the chat, for whoever can make
+    # them (a teacher to share, a parent to send home).
+    maker = (
+        ChatSetMaker(user.id, get_generation_service(settings), settings, session_scope)
+        if caps.share_learning_sets or caps.make_family_sets
+        else None
+    )
     provider = build_provider(settings)
     persona = persona_for(
         user.role, grade_level=user.grade_level, buddy=user.buddy, children=children
@@ -254,7 +263,7 @@ def get_chat_service(
             settings, memories=memories, persona=persona
         ),
         cancellation=cancellation_registry,
-        tools=build_tools(settings, studio=studio),
+        tools=build_tools(settings, studio=studio, maker=maker),
         guards=build_guards(settings),
         gate=build_gate(settings, role=user.role, grade_level=user.grade_level, provider=provider),
         settings=TurnSettings(

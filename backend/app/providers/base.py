@@ -218,6 +218,13 @@ class ToolResult:
     def is_image(self) -> bool:
         return bool(self.thumbnail_url or self.image_url)
 
+    @property
+    def is_made(self) -> bool:
+        """Something this turn made in the app — its own page here, not a
+        source to cite. Told apart by shape, like a picture: the address is a
+        path in the app (`/library/…`), not a web page."""
+        return self.url.startswith("/") and not self.url.startswith("//")
+
 
 @dataclass(frozen=True, slots=True)
 class TokenBudget:
