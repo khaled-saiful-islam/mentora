@@ -31,6 +31,8 @@ import { Page, pop, rise, stagger } from '@/motion'
 interface Teaching {
   pending: number
   live_now: number
+  /** Sets made (or being made), shared or not. */
+  made: number
   classes: { id: string; name: string; subject: string | null; grade_label: string | null; theme: string; students: number; pending: number }[]
   recent: {
     id: string
@@ -342,11 +344,13 @@ function GettingStarted({ data }: { data: Teaching }) {
   const hasClass = data.classes.length > 0
   const hasStudents = data.classes.some((c) => c.students > 0)
   const shared = data.recent.length > 0
+  // Made is made: a quiz from the chat or the Library counts before it is shared.
+  const made = data.made > 0 || shared
   const steps = [
     { done: hasClass, label: 'Make your first class', detail: 'Give it a name and a colour.', action: <ButtonLink to="/classes?new=1" size="sm">Make a class</ButtonLink> },
     { done: hasStudents, label: 'Invite your students', detail: 'Share a code, a link or a QR code.', action: first ? <ButtonLink to={`/classes/${first.id}/invite`} size="sm" variant="outline">Invite</ButtonLink> : null },
-    { done: shared, label: 'Make a quiz or flashcards', detail: 'From real sources, in about a minute.', action: <button type="button" onClick={() => studio.create('quiz')} className="text-sm font-bold text-primary hover:underline">Make a quiz</button> },
-    { done: shared, label: 'Share it with the class', detail: 'Then watch the results come in live.', action: <ButtonLink to="/library" size="sm" variant="outline">Your library</ButtonLink> },
+    { done: made, label: 'Make a quiz or flashcards', detail: 'From real sources, in about a minute.', action: <button type="button" onClick={() => studio.create('quiz')} className="text-sm font-bold text-primary hover:underline">Make a quiz</button> },
+    { done: shared, label: 'Share it with the class', detail: 'Then watch the results come in live.', action: <ButtonLink to="/library" size="sm" variant={made ? 'primary' : 'outline'}>Your library</ButtonLink> },
   ]
   return (
     <section className="mt-8 rounded-3xl border-2 border-dashed border-border p-6">

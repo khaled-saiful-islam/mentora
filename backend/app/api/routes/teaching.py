@@ -21,6 +21,7 @@ async def overview(user: CurrentUser, session: SessionDep) -> dict[str, object]:
     return {
         "pending": home.pending,
         "live_now": home.live_now,
+        "made": home.made,
         "classes": [
             {
                 "id": c.classroom.id,

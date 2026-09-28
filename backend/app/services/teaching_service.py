@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.attempt import Attempt, AttemptAnswer
 from app.db.models.classroom import Classroom
-from app.db.models.learning import Assignment
+from app.db.models.learning import Assignment, LearningSet
 from app.events.bus import EventBus
 from app.services.assignment_service import AssignmentService
 from app.services.class_service import ClassService, ClassSummary
@@ -40,6 +40,9 @@ class TeachingHome:
     pending: int
     recent: list[RecentShare]
     live_now: int
+    # Sets they have made (or are making), shared or not — a quiz made from the
+    # chat and not shared yet is still made.
+    made: int = 0
 
 
 class TeachingService:
@@ -53,7 +56,20 @@ class TeachingService:
             pending=sum(c.pending for c in classes),
             recent=await self._recent(teacher_id),
             live_now=await self._live_now(teacher_id),
+            made=await self._made(teacher_id),
         )
+
+    async def _made(self, teacher_id: UUID) -> int:
+        found = await self._session.scalar(
+            select(func.count())
+            .select_from(LearningSet)
+            .where(
+                LearningSet.owner_id == teacher_id,
+                LearningSet.status.in_(("generating", "ready")),
+                LearningSet.archived_at.is_(None),
+            )
+        )
+        return int(found or 0)
 
     async def _recent(self, teacher_id: UUID) -> list[RecentShare]:
         rows = await self._session.execute(

@@ -58,3 +58,19 @@ async def test_a_teacher_sees_only_their_own(session, teacher, student, account)
     other = await account("teacher", "Cikgu Lain")
     home = await TeachingService(session).overview(other.id)
     assert home.recent == [] and home.classes == [] and home.pending == 0
+
+
+async def test_a_set_made_counts_as_made_before_it_is_shared(session, account) -> None:
+    from tests.play_helpers import ready_set
+
+    teacher = await account("teacher")
+    assert (await TeachingService(session).overview(teacher.id)).made == 0
+    await ready_set(session, teacher)
+    archived = await ready_set(session, teacher)
+    from datetime import UTC, datetime
+
+    archived.archived_at = datetime.now(UTC)
+    await session.flush()
+    home = await TeachingService(session).overview(teacher.id)
+    assert home.made == 1
+    assert home.recent == []
