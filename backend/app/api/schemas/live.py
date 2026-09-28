@@ -19,7 +19,8 @@ class CreateSession(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     class_id: UUID
-    group_id: UUID
+    # None: the whole class.
+    group_id: UUID | None = None
     settings: SessionSettings
     template_id: UUID | None = None
 
@@ -102,7 +103,7 @@ def session_summary(view: SessionView) -> dict[str, Any]:
         "failure": live.failure,
         "class_id": str(live.class_id),
         "class_name": view.class_name,
-        "group_id": str(live.group_id),
+        "group_id": str(live.group_id) if live.group_id else None,
         "group_name": view.group_name,
         "students": view.students,
         "parts": view.segments,

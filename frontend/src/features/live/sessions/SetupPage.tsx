@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils'
 import { Page, rise, spring } from '@/motion'
 import { getVoices } from '../api'
 import { DEFAULT_SETTINGS, sessionsApi, type SessionSettings, type Template } from './api'
-import { AfterStep, HowStep, WhatStep, WhoStep } from './SetupFields'
+import { AfterStep, HowStep, WhatStep, WhoStep, WHOLE_CLASS } from './SetupFields'
 
 const STEPS = [
   { label: 'Who', Icon: UsersThree },
@@ -64,7 +64,7 @@ export default function SetupPage() {
         .then((s) => {
           setSettings({ ...DEFAULT_SETTINGS, ...s.settings })
           setClassId(s.class_id)
-          setGroupId(s.group_id)
+          setGroupId(s.group_id ?? WHOLE_CLASS)
         })
         .catch((e) => setError(e instanceof Error ? e.message : 'That session could not be opened.'))
     }
@@ -93,7 +93,7 @@ export default function SetupPage() {
       if (saveAs?.trim()) await sessionsApi.saveTemplate(saveAs.trim(), final)
       const made = id
         ? await sessionsApi.update(id, final)
-        : await sessionsApi.create({ class_id: classId, group_id: groupId, settings: final, template_id: templateId })
+        : await sessionsApi.create({ class_id: classId, group_id: groupId === WHOLE_CLASS ? null : groupId, settings: final, template_id: templateId })
       navigate(`/live/${made.id}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'The lesson could not be saved.')

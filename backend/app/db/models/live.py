@@ -51,7 +51,8 @@ class LiveSession(Base):
     id: Mapped[uuid.UUID] = uuid_pk()
     teacher_id: Mapped[uuid.UUID] = _fk("users.id")
     class_id: Mapped[uuid.UUID] = _fk("classes.id")
-    group_id: Mapped[uuid.UUID] = _fk("class_groups.id")
+    # One group of the class, or none: the whole class.
+    group_id: Mapped[uuid.UUID | None] = _fk("class_groups.id", nullable=True)
     template_id: Mapped[uuid.UUID | None] = _fk(
         "live_session_templates.id", ondelete="SET NULL", nullable=True
     )

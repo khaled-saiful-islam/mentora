@@ -70,7 +70,8 @@ export interface SessionSummary {
   failure: string | null
   class_id: string
   class_name: string
-  group_id: string
+  /** Null: for the whole class (`group_name` then says so). */
+  group_id: string | null
   group_name: string
   students: number
   /** How many parts (segments) the lesson has. */
@@ -113,7 +114,7 @@ const json = (body: unknown) => ({ body: JSON.stringify(body) })
 export const sessionsApi = {
   list: () => apiFetch<{ items: SessionSummary[] }>('/live-sessions'),
   get: (id: string) => apiFetch<SessionDetail>(`/live-sessions/${id}`),
-  create: (body: { class_id: string; group_id: string; settings: SessionSettings; template_id?: string | null }) =>
+  create: (body: { class_id: string; group_id: string | null; settings: SessionSettings; template_id?: string | null }) =>
     apiFetch<SessionDetail>('/live-sessions', { method: 'POST', ...json(body) }),
   update: (id: string, settings: SessionSettings) =>
     apiFetch<SessionDetail>(`/live-sessions/${id}`, { method: 'PATCH', ...json({ settings }) }),

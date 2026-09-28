@@ -229,6 +229,35 @@ async def test_scheduling_puts_it_on_the_groups_schedule_only(
     assert notes[0].payload["title"] == "photosynthesis"
 
 
+async def test_a_lesson_for_the_whole_class_reaches_everyone_in_it(
+    live, session, teacher, account
+) -> None:
+    grouped = await account("student", "Aina")
+    ungrouped = await account("student", "Hafiz")
+    stranger = await account("student", "Mei")
+    where = await _room(live, session, teacher, [grouped], others=[ungrouped])
+    made = await _approved(live, teacher, {"class_id": where["class_id"]})
+    assert made["group_id"] is None
+    assert made["group_name"] == "Whole class"
+    assert made["students"] == 2
+    at = (datetime.now(UTC) + timedelta(days=2)).isoformat()
+    async with live(teacher) as c:
+        scheduled = await c.post(f"/api/live-sessions/{made['id']}/schedule", json={"at": at})
+    assert scheduled.status_code == 200, scheduled.text
+
+    for student in (grouped, ungrouped):
+        async with live(student) as c:
+            mine = (await c.get("/api/me/live-sessions")).json()
+        assert [s["id"] for s in mine["upcoming"]] == [made["id"]]
+    async with live(stranger) as c:
+        assert (await c.get("/api/me/live-sessions")).json()["upcoming"] == []
+
+    mine_only = Notification.user_id.in_([grouped.id, ungrouped.id, stranger.id])
+    query = select(Notification).where(Notification.type == "live_scheduled", mine_only)
+    told = {n.user_id for n in (await session.execute(query)).scalars().all()}
+    assert told == {grouped.id, ungrouped.id}
+
+
 async def test_only_an_approved_lesson_can_be_scheduled_and_not_in_the_past(
     live, session, teacher
 ) -> None:

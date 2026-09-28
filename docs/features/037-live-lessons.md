@@ -5,7 +5,7 @@
 **Teachers** (*Live lessons* in the menu, `/live`):
 
 1. **New live lesson** (`/live/new`) is four steps:
-   - **Who:** a class and one of its groups.
+   - **Who:** a class, then the whole class or one of its groups.
    - **What:** subject, topic and school level, then the parts in teaching order. *Suggest parts* asks the model; the teacher edits, reorders, adds or removes them.
    - **How:** approach (storytelling, step by step, question-led, lots of examples, exam-focused), level, length (10–45 min), an optional instruction, how questions are taken (any time or at pauses, and how many per student), and Astra's voice (the warm or the bright female voice).
    - **After:** the quiz afterwards (on/off, number of questions, level, due date), and *save as a template*. Templates appear on the first step next time.
@@ -35,7 +35,10 @@
 - **`services/live_plan_service.py`:** planning and recording run as jobs (`services/jobs.py`), followed on `GET /live-sessions/:id/work/stream`. Each part is saved as it is written. Recording uses `Narrator`, so the preview and the live lesson use the same cached clips. A student's lines are chosen deterministically, per session and name.
 - **`services/live_session_service.py`:**
   - Ownership is a lookup parameter (`owned`, `visible`).
-  - The audience is always worked out *now*: approved class members in the group.
+  - The audience is always worked out *now*: approved class members, those in
+    the group when the lesson is for one (`group_id`), all of them when it is
+    for the whole class (`group_id` null, shown as *Whole class*). The quiz
+    after it is shared the same way.
   - Scheduling publishes `LiveSessionScheduled`; cancelling publishes `LiveSessionCancelled`. Subscribers write the notifications and push the `live` topic.
 
 ## API

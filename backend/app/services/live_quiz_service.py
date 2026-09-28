@@ -97,7 +97,8 @@ class LiveQuizService:
                 set_id,
                 live.class_id,
                 ShareSettings(
-                    group_ids=(live.group_id,),
+                    # The lesson's group, or the whole class it was for.
+                    group_ids=(live.group_id,) if live.group_id else (),
                     feedback_mode="instant",
                     due_at=datetime.fromisoformat(due) if isinstance(due, str) and due else None,
                 ),

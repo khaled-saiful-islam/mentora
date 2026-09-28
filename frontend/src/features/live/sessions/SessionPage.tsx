@@ -423,7 +423,9 @@ function Schedule({
           <p className="text-sm text-muted-foreground">
             {scheduled && live.scheduled_at
               ? `${whenLabel(live.scheduled_at)}. ${live.students} student${live.students === 1 ? ' has' : 's have'} it on their schedule and will be reminded to join.`
-              : `It goes onto ${live.group_name}'s schedule, and each student is told.`}
+              : live.group_id
+                ? `It goes onto ${live.group_name}'s schedule, and each student is told.`
+                : `It goes onto ${live.class_name}'s schedule, and everyone in the class is told.`}
           </p>
         </div>
       </div>

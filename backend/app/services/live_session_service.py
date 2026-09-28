@@ -1,5 +1,5 @@
-"""Live sessions as records: made by a teacher for one group, reviewed, then
-scheduled onto the group's schedule.
+"""Live sessions as records: made by a teacher for one group or a whole
+class, reviewed, then scheduled onto that group's (or class's) schedule.
 
 Ownership and membership are parameters of every lookup (`owned`,
 `visible`), never a check done afterwards. Who a session is for is always
@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import NotFoundError, ValidationError
@@ -51,6 +51,10 @@ MAX_DOCUMENTS = 5
 START_NOW_GRACE = timedelta(minutes=2)
 
 
+# What a lesson for the whole class shows where a group's name would be.
+WHOLE_CLASS = "Whole class"
+
+
 @dataclass(frozen=True, slots=True)
 class SessionView:
     session: LiveSession
@@ -75,12 +79,13 @@ class LiveSessionService:
         teacher: User,
         *,
         class_id: UUID,
-        group_id: UUID,
+        group_id: UUID | None,
         settings: SessionSettings,
         template_id: UUID | None = None,
     ) -> LiveSession:
+        """For one group of the class, or — with no group — the whole class."""
         await self._owned_class(teacher.id, class_id)
-        if await self._groups.in_class(group_id, class_id) is None:
+        if group_id is not None and await self._groups.in_class(group_id, class_id) is None:
             raise ValidationError("That group isn't in this class.")
         live = LiveSession(
             teacher_id=teacher.id,
@@ -124,14 +129,14 @@ class LiveSessionService:
 
     async def view(self, live: LiveSession, *, teacher_name: str | None = None) -> SessionView:
         classroom = await self._session.get(Classroom, live.class_id)
-        group = await self._session.get(ClassGroup, live.group_id)
+        group = await self._session.get(ClassGroup, live.group_id) if live.group_id else None
         segments = await self._session.scalar(
             select(func.count()).select_from(LiveSegment).where(LiveSegment.session_id == live.id)
         )
         return SessionView(
             session=live,
             class_name=classroom.name if classroom else "",
-            group_name=group.name if group else "",
+            group_name=group.name if group else WHOLE_CLASS,
             students=len(await self.audience(live)),
             segments=int(segments or 0),
             teacher_name=teacher_name,
@@ -291,16 +296,17 @@ class LiveSessionService:
         return live
 
     async def audience(self, live: LiveSession) -> list[UUID]:
-        """Approved members of the class who are in the session's group."""
-        query = (
-            select(GroupMember.student_id)
-            .join(
-                ClassMembership,
-                (ClassMembership.student_id == GroupMember.student_id)
-                & (ClassMembership.class_id == live.class_id),
-            )
-            .where(GroupMember.group_id == live.group_id, ClassMembership.status == "approved")
+        """Approved members of the class — those in the session's group, when
+        it is for one."""
+        query = select(ClassMembership.student_id).where(
+            ClassMembership.class_id == live.class_id, ClassMembership.status == "approved"
         )
+        if live.group_id is not None:
+            query = query.join(
+                GroupMember,
+                (GroupMember.student_id == ClassMembership.student_id)
+                & (GroupMember.group_id == live.group_id),
+            )
         return list((await self._session.execute(query)).scalars().unique().all())
 
     # --- a student's schedule -------------------------------------------------
@@ -309,17 +315,23 @@ class LiveSessionService:
         rows = (
             await self._session.execute(
                 select(LiveSession, User.display_name)
-                .join(GroupMember, GroupMember.group_id == LiveSession.group_id)
                 .join(
                     ClassMembership,
                     (ClassMembership.class_id == LiveSession.class_id)
-                    & (ClassMembership.student_id == GroupMember.student_id),
+                    & (ClassMembership.student_id == student_id),
                 )
                 .join(User, User.id == LiveSession.teacher_id)
                 .where(
-                    GroupMember.student_id == student_id,
                     ClassMembership.status == "approved",
                     LiveSession.status.in_(VISIBLE_TO_STUDENTS),
+                    # The whole class's lessons, and their own group's.
+                    or_(
+                        LiveSession.group_id.is_(None),
+                        exists().where(
+                            GroupMember.group_id == LiveSession.group_id,
+                            GroupMember.student_id == student_id,
+                        ),
+                    ),
                 )
                 .order_by(LiveSession.scheduled_at)
                 .limit(200)

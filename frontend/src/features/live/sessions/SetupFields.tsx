@@ -2,7 +2,7 @@
  * The pieces of a live lesson's setup, one step each. Plain controlled
  * inputs: the page holds the settings, each step edits its part of them.
  */
-import { ArrowDown, ArrowUp, Plus, Sparkle, Trash, UsersThree } from '@phosphor-icons/react'
+import { ArrowDown, ArrowUp, Plus, Sparkle, Student, Trash, UsersThree } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useRef, useState } from 'react'
 import { Alert, Button, Field, Input } from '@/components/ui'
@@ -22,6 +22,9 @@ const DIFFICULTIES: { value: Difficulty; label: string }[] = [
   { value: 'advanced', label: 'Advanced' },
 ]
 
+/** The who-step's choice for a lesson for everyone in the class, not a group. */
+export const WHOLE_CLASS = 'class'
+
 export function WhoStep({
   classes,
   groups,
@@ -38,8 +41,9 @@ export function WhoStep({
   onGroup: (id: string) => void
 }) {
   if (classes.length === 0) {
-    return <Alert tone="info">Make a class and a group in it first — a live lesson is for one group.</Alert>
+    return <Alert tone="info">Make a class first — a live lesson is for a whole class or one of its groups.</Alert>
   }
+  const room = classes.find((c) => c.id === classId)
   return (
     <div className="space-y-6">
       <div>
@@ -57,13 +61,16 @@ export function WhoStep({
       </div>
       {classId && (
         <div>
-          <h3 className="mb-3 font-bold">Which group?</h3>
+          <h3 className="mb-3 font-bold">Who is it for?</h3>
           {groups === null ? (
             <p className="text-muted-foreground">Loading the groups…</p>
-          ) : groups.length === 0 ? (
-            <Alert tone="info">This class has no groups yet. Make one on the class page, then come back.</Alert>
           ) : (
-            <div role="radiogroup" aria-label="Group" className="flex flex-wrap gap-2">
+            <div role="radiogroup" aria-label="Who it is for" className="flex flex-wrap gap-2">
+              <Choice on={groupId === WHOLE_CLASS} onClick={() => onGroup(WHOLE_CLASS)} compact>
+                <Student weight="bold" className="size-4 shrink-0" aria-hidden />
+                <span className="break-words font-bold">The whole class</span>
+                {room && <span className="text-sm text-muted-foreground">· {room.students}</span>}
+              </Choice>
               {groups.map((g) => (
                 <Choice key={g.id} on={g.id === groupId} onClick={() => onGroup(g.id)} compact>
                   <UsersThree weight="bold" className="size-4 shrink-0" aria-hidden />
