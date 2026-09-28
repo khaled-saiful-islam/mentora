@@ -33,6 +33,19 @@
   or one a student made before this changed. These can never be shared.
   `STUDENT_PRACTICE_PER_DAY` only matters if `make_practice_sets` is turned
   back on.
+- **Pitched for the year** (`learning/pitch.py`). Every writing stage is told
+  what a child in that year can manage:
+  - how long a sentence can be and which words to use
+  - how many steps of reasoning
+  - which numbers they've met (KSSR/KSSM ranges: up to 100 in Year 1, 10 000
+    in Year 3, and so on)
+  - what *easy*, *medium* and *hard* mean there, never beyond the year's
+    syllabus, with a gentler mix for the youngest
+
+  The check after writing rejects anything too hard for the year (for
+  example *"too hard for Year 3: two-step problem with numbers above
+  10 000"*) or far too easy, and that item is rewritten. Live lessons are
+  told the same.
 - **Preview as a student**: a quiz or flashcards plays in the real players,
   in the look its year gets, before it is shared (`044-play-looks.md`).
 

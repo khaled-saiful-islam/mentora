@@ -5,6 +5,7 @@ sources, and a rewrite when the teacher asks for one."""
 from __future__ import annotations
 
 from app.core.grades import Grade
+from app.learning.pitch import pitch
 from app.live.prompts import TUTOR_VOICE
 from app.live.settings import APPROACHES, DIFFICULTY_RULES, SessionSettings, check_size
 
@@ -21,7 +22,11 @@ NO_SOURCES = "None — teach only what you are sure of."
 
 
 def _who(grade: Grade | None) -> str:
-    return f"{grade.label} students, about {grade.age} years old" if grade else "school students"
+    who = f"{grade.label} students, about {grade.age} years old" if grade else "school students"
+    # How to pitch it rides along with who it is for, so every stage that says
+    # who the lesson is for also says how hard to make it (`learning/pitch.py`).
+    rules = pitch(grade)
+    return f"{who}\n{rules}" if rules else who
 
 
 def breakdown(
