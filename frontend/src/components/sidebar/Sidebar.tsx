@@ -115,26 +115,13 @@ export function Sidebar({
         />
       )}
 
-      <div className={cn('flex items-center justify-between px-4 pt-4', folded && 'md:hidden')}>
-        <Link to="/" aria-label="Mentora home">
+      {/* The logo with the sidebar's own button; below it New chat, wide
+          enough for its words, with the tray and the bell beside it. Nothing
+          on the top row can grow into the logo. */}
+      <div className={cn('flex items-center gap-1 px-3 pt-4', folded && 'md:hidden')}>
+        <Link to="/" aria-label="Mentora home" className="mr-auto min-w-0 pl-1">
           <Wordmark tile />
         </Link>
-      </div>
-      <div className={cn('flex items-center gap-1 p-3', folded && 'md:hidden')}>
-        <button
-          type="button"
-          onClick={onNew}
-          className={cn(
-            'flex w-full items-center gap-2 rounded-2xl bg-primary px-4 py-2.5 font-bold text-primary-foreground shadow-press',
-            'transition-[transform,box-shadow,filter] hover:brightness-110 active:translate-y-0.5 active:shadow-none',
-          )}
-        >
-          <NotePencil weight="bold" className="size-5" aria-hidden />
-          New chat
-        </button>
-
-        <WorkTray align="left" />
-        <Bell />
         <Button
           variant="ghost"
           size="icon"
@@ -145,16 +132,24 @@ export function Sidebar({
         >
           <SidebarSimple weight="bold" className="size-4" aria-hidden />
         </Button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          aria-label="Close menu"
-          className="md:hidden"
-        >
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close menu" className="shrink-0 md:hidden">
           <X weight="bold" className="size-4" aria-hidden />
         </Button>
+      </div>
+      <div className={cn('flex items-center gap-1 p-3', folded && 'md:hidden')}>
+        <button
+          type="button"
+          onClick={onNew}
+          className={cn(
+            'flex min-w-[9rem] flex-1 items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-2.5 font-bold whitespace-nowrap text-primary-foreground shadow-press',
+            'transition-[transform,box-shadow,filter] hover:brightness-110 active:translate-y-0.5 active:shadow-none',
+          )}
+        >
+          <NotePencil weight="bold" className="size-5 shrink-0" aria-hidden />
+          New chat
+        </button>
+        <WorkTray align="left" />
+        <Bell />
       </div>
 
       <PlacesNav folded={folded} />
