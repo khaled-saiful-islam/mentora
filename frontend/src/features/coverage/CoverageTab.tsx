@@ -11,6 +11,8 @@ import { errorMessage } from '@/features/auth/errors'
 import { useResource } from '@/hooks/useResource'
 import { cn } from '@/lib/utils'
 import { pop, rise, stagger, useCalmMotion } from '@/motion'
+import { learningApi, type SetDetail } from '@/features/learning/api'
+import { ShareDialog as ShareSetDialog } from '@/features/learning/ShareDialog'
 import { coverageApi, type Coverage, type PlanStep, type SyllabusArea } from './api'
 import { KIND_DOTS, TOPIC_LOOKS } from './looks'
 import { Matrix } from './Matrix'
@@ -71,6 +73,7 @@ export function CoverageTab({ classId, subject }: { classId: string; subject: st
         <>
           <Header data={data} onPlan={() => void planRest()} onEdit={() => setEditing(true)} onShare={() => setSharing(true)} planning={plan?.busy ?? false} />
           {plan && <PlanPanel steps={plan.steps} busy={plan.busy} classId={classId} subject={subject} onClose={() => setPlan(null)} />}
+          <ReadyToShare data={data} onShared={() => void coverage.reload()} />
           <Legend />
           <Matrix areas={data.areas} months={data.months} now={data.now} />
           <Aside data={data} />
@@ -130,10 +133,11 @@ function Header({ data, onPlan, onEdit, onShare, planning }: { data: Coverage; o
           <Chip tone="bg-muted text-foreground">{s.mastery === null ? 'No scores yet' : `Class score ${Math.round(s.mastery)}%`}</Chip>
           <Chip tone="bg-muted text-foreground">{s.items} {s.items === 1 ? 'thing' : 'things'} taught</Chip>
           {s.planned > 0 && <Chip tone={TOPIC_LOOKS.planned.pill}>{s.planned} live coming up</Chip>}
+          {s.ready > 0 && <Chip tone={TOPIC_LOOKS.planned.pill}>{s.ready} ready to share</Chip>}
         </motion.div>
-        {/* A set only counts once the class has it: making one is not teaching it. */}
+        {/* A set only counts as taught once the class has it: making one is not teaching it. */}
         <p className="mt-2 text-sm text-muted-foreground">
-          Quizzes, flashcards and study guides count once they're shared with this class; live lessons once they're scheduled.
+          What you make for this class's year shows as ready to share (a hollow dot) and counts as taught once it's shared; live lessons once they're scheduled.
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -196,7 +200,7 @@ function Legend() {
         </span>
       ))}
       <span className="inline-flex items-center gap-1.5">
-        <span className="size-3 rounded-full border-2 border-kind-live-vivid" aria-hidden /> Coming up
+        <span className="size-3 rounded-full border-2 border-kind-live-vivid" aria-hidden /> Coming up, or ready to share
       </span>
     </div>
   )
@@ -220,6 +224,59 @@ function Aside({ data }: { data: Coverage }) {
           </li>
         ))}
       </ul>
+    </motion.section>
+  )
+}
+
+/** Sets made for this class's year and not shared yet, on their topics:
+ *  one tap from being taught. */
+function ReadyToShare({ data, onShared }: { data: Coverage; onShared: () => void }) {
+  const [opening, setOpening] = useState<string | null>(null)
+  const [sharing, setSharing] = useState<SetDetail | null>(null)
+  const { toast } = useToast()
+  const ready = data.areas.flatMap((area) => area.topics.flatMap((topic) => topic.items.filter((item) => item.source === 'set').map((item) => ({ item, topic: topic.title }))))
+  if (ready.length === 0) return null
+
+  async function share(id: string) {
+    setOpening(id)
+    try {
+      setSharing(await learningApi.get(id))
+    } catch (e) {
+      toast('That set could not be opened', { tone: 'error', body: errorMessage(e) })
+    } finally {
+      setOpening(null)
+    }
+  }
+
+  return (
+    <motion.section variants={rise} initial="hidden" animate="shown" className="rounded-3xl border-2 border-dashed border-kind-live-vivid/40 p-5">
+      <h3 className="font-display text-lg font-semibold">Ready to share</h3>
+      <p className="text-sm text-muted-foreground">You've made these for this year. Share one and its topic counts as taught.</p>
+      <ul className="mt-3 space-y-2">
+        {ready.map(({ item, topic }) => (
+          <li key={item.id} className="flex flex-wrap items-center gap-3 rounded-2xl bg-surface p-3 shadow-sm">
+            <span className={cn('size-3 shrink-0 rounded-full border-2 bg-surface', KIND_DOTS[item.kind].hollow)} aria-hidden />
+            <div className="min-w-[10rem] flex-1">
+              <p className="break-words font-bold">{item.title}</p>
+              <p className="break-words text-sm text-muted-foreground">{KIND_DOTS[item.kind].label} · {topic}</p>
+            </div>
+            <Button size="sm" onClick={() => void share(item.id)} loading={opening === item.id}>
+              {opening !== item.id && <ShareNetwork weight="bold" className="size-4" aria-hidden />}
+              Share
+            </Button>
+          </li>
+        ))}
+      </ul>
+      {sharing && (
+        <ShareSetDialog
+          open
+          set={sharing}
+          onClose={() => {
+            setSharing(null)
+            onShared()
+          }}
+        />
+      )}
     </motion.section>
   )
 }

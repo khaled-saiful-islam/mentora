@@ -62,7 +62,7 @@ async def coverage(
     """The map. Anything taught since the last look is sorted onto the
     syllabus first, once, and remembered."""
     classroom = await _class(session, user, class_id)
-    return await _service(session, settings).coverage(classroom)
+    return await _service(session, settings).coverage(classroom, ready=True)
 
 
 @router.put("/syllabus")

@@ -10,9 +10,15 @@ taught, and how well.
   knows it. *Write my own* starts blank. Every area and topic can be renamed,
   added or removed.
 - **What counts as taught:** a quiz, deck or study guide once it is **shared
-  with the class**, and a live lesson once it is **scheduled**. A set that is
-  only made, in the Library, isn't on the map yet. The page says so under the
-  headline.
+  with the class**, and a live lesson once it is **scheduled**.
+- **Ready to share.** A set the teacher has made for the class's year and not
+  shared with it yet is on the map too, as a hollow dot on its topic. It
+  counts as *planned*, not taught, and the header says *"2 ready to share"*.
+  A **Ready to share** list under the header has a **Share** button for each
+  one. Share it and it counts as taught, keeping the topic it was already
+  sorted onto. A set the sorter says is from another subject (a maths quiz
+  and a science class of the same year) stays off that class's map. Parents'
+  reports and a student's view never show unshared sets.
 - **The map.** Topics run down the side and the months across. There is a dot
   wherever a quiz, flashcard deck, study guide or live lesson was taught, and a
   hollow dot for a live lesson still to come. The current month is lit. Each

@@ -49,7 +49,7 @@ class CoverageLink(Base):
 
     id: Mapped[uuid.UUID] = uuid_pk()
     class_id: Mapped[uuid.UUID] = _fk("classes.id")
-    # "assignment" or "live".
+    # "assignment", "live", or "set" (made, not shared with the class yet).
     kind: Mapped[str] = mapped_column(String(16), nullable=False)
     item_id: Mapped[uuid.UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
     topic_id: Mapped[str | None] = mapped_column(String(16))
@@ -57,7 +57,7 @@ class CoverageLink(Base):
 
     __table_args__ = (
         UniqueConstraint("class_id", "kind", "item_id", name="uq_coverage_link_item"),
-        CheckConstraint("kind IN ('assignment', 'live')", name="ck_coverage_link_kind"),
+        CheckConstraint("kind IN ('assignment', 'live', 'set')", name="ck_coverage_link_kind"),
     )
 
 

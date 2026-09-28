@@ -16,7 +16,8 @@ export interface SyllabusArea {
 }
 
 export interface TaughtItem {
-  source: 'assignment' | 'live'
+  /** `set`: made for this class's year, not shared with it yet. */
+  source: 'assignment' | 'live' | 'set'
   id: string
   kind: TaughtKind
   title: string
@@ -50,6 +51,8 @@ export interface CoverageSummary {
   mastery: number | null
   items: number
   planned: number
+  /** Sets made for the class's year, on the map, not shared yet. */
+  ready: number
 }
 
 export interface Coverage {

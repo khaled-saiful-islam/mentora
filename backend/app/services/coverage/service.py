@@ -102,13 +102,22 @@ class CoverageService:
     # --- the map --------------------------------------------------------------
 
     async def coverage(
-        self, classroom: Classroom, *, student_id: UUID | None = None, sort: bool = True
+        self,
+        classroom: Classroom,
+        *,
+        student_id: UUID | None = None,
+        sort: bool = True,
+        ready: bool = False,
     ) -> dict[str, Any]:
         """The map for a class, or for one student in it. `sort` lets a model
-        place what is new — never from a public page."""
+        place what is new — never from a public page. `ready` adds the sets the
+        teacher has made for the class's year but not shared yet — for the
+        teacher's own view only, never a report."""
         row = await self.syllabus(classroom.id)
         areas = row.areas if row else []
         items = await self._taught(classroom.id)
+        if ready:
+            items += await self._ready(classroom)
         links = await self._links(classroom.id, items, areas, sort=sort)
         mastery = await self._mastery(links, student_id)
         months = months_for(items, classroom.created_at, self._clock())
@@ -123,7 +132,7 @@ class CoverageService:
         """What to teach next, suggested from where the class is."""
         if self._model is None:
             raise ValidationError("Planning needs a model, and none is set up.")
-        shaped = await self.coverage(classroom)
+        shaped = await self.coverage(classroom, ready=True)
         topics = {t["id"]: (a, t) for a in shaped["areas"] for t in a["topics"]}
         if not topics:
             raise ValidationError("Add a syllabus first, then Mentora can plan the rest.")
@@ -223,7 +232,9 @@ class CoverageService:
             .where(Assignment.class_id == class_id)
         )
         items = [
-            Taught("assignment", a.id, a.kind, a.title, topic or a.title, a.created_at)
+            Taught(
+                "assignment", a.id, a.kind, a.title, topic or a.title, a.created_at, set_id=a.set_id
+            )
             for a, topic in rows.all()
         ]
         lives = await self._session.scalars(
@@ -239,6 +250,27 @@ class CoverageService:
             )
         return items
 
+    async def _ready(self, classroom: Classroom) -> list[Taught]:
+        """Sets the teacher made for this class's year, ready, and not shared
+        with it yet: on the map as planned, so making one shows up at once."""
+        if not classroom.grade_level:
+            return []
+        shared_here = select(Assignment.set_id).where(Assignment.class_id == classroom.id)
+        found = await self._session.scalars(
+            select(LearningSet).where(
+                LearningSet.owner_id == classroom.teacher_id,
+                LearningSet.grade_level == classroom.grade_level,
+                LearningSet.status == "ready",
+                LearningSet.purpose == "assign",
+                LearningSet.archived_at.is_(None),
+                LearningSet.id.not_in(shared_here),
+            )
+        )
+        return [
+            Taught("set", s.id, s.kind, s.title, s.topic or s.title, s.created_at, planned=True)
+            for s in found.all()
+        ]
+
     async def _links(
         self, class_id: UUID, items: list[Taught], areas: list[dict[str, Any]], *, sort: bool
     ) -> dict[tuple[str, UUID], str | None]:
@@ -246,6 +278,16 @@ class CoverageService:
             select(CoverageLink).where(CoverageLink.class_id == class_id)
         )
         links = {(r.kind, r.item_id): r.topic_id for r in rows.all()}
+        # A set sorted while it waited keeps its topic once it is shared.
+        for item in items:
+            placed = links.get(("set", item.set_id)) if item.set_id else None
+            if item.key not in links and placed is not None:
+                links[item.key] = placed
+                self._session.add(
+                    CoverageLink(
+                        class_id=class_id, kind=item.source, item_id=item.id, topic_id=placed
+                    )
+                )
         missing = [i for i in items if i.key not in links]
         if not (sort and missing and areas and self._model is not None):
             return links

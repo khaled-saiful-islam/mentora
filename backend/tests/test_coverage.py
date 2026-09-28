@@ -21,7 +21,7 @@ from app.services.coverage.service import CoverageService
 from app.services.coverage.syllabus import areas_from
 from app.services.play_service import PlayService
 from tests.learning_fakes import FakeModel
-from tests.play_helpers import right_choice, shared
+from tests.play_helpers import ready_set, right_choice, shared
 
 AREAS = [
     {"title": "Living things", "topics": ["Plants", "Animals"]},
@@ -287,6 +287,77 @@ async def test_editing_the_syllabus_gives_what_sat_outside_another_chance(
     shaped = await service.coverage(room)
     assert shaped["outside"] == []
     assert [i["title"] for i in shaped["areas"][1]["topics"][0]["items"]] == [assignment.title]
+
+
+async def _unshared(session, teacher, room, *, grade="year_4", title="Leaf quiz"):
+    learning_set = await ready_set(session, teacher)
+    learning_set.grade_level, learning_set.title = grade, title
+    room.grade_level = "year_4"
+    await session.flush()
+    return learning_set
+
+
+async def test_a_set_made_for_the_class_s_year_shows_as_ready_to_share(
+    session, teacher, student
+) -> None:
+    assignment = await shared(session, teacher, [student])
+    room = await _classroom(session, assignment)
+    await _unshared(session, teacher, room)
+    await _unshared(session, teacher, room, grade="form_2", title="Other year")
+    model = _model(**{"coverage.sort": _sort_everything_into("a1t2")})
+    service = CoverageService(session, model=model)
+    await service.draft(room)
+    shaped = await service.coverage(room, ready=True)
+    animals = shaped["areas"][0]["topics"][1]
+    ready = [i for i in animals["items"] if i["source"] == "set"]
+    assert [i["title"] for i in ready] == ["Leaf quiz"]
+    assert ready[0]["planned"] is True
+    assert shaped["summary"]["ready"] == 1 and shaped["summary"]["planned"] == 0
+    # A report home, and a student's view, never show what is not shared.
+    report = await service.coverage(room, sort=False)
+    assert all(
+        i["source"] != "set" for a in report["areas"] for t in a["topics"] for i in t["items"]
+    )
+
+
+async def test_a_set_keeps_its_topic_once_it_is_shared(session, teacher, student) -> None:
+    from app.events.registry import build_bus as bus
+    from app.services.assignment_service import AssignmentService, ShareSettings
+
+    assignment = await shared(session, teacher, [student])
+    room = await _classroom(session, assignment)
+    waiting = await _unshared(session, teacher, room)
+    model = _model(**{"coverage.sort": _sort_everything_into("a2t1")})
+    service = CoverageService(session, model=model)
+    await service.draft(room)
+    await service.coverage(room, ready=True)
+    await AssignmentService(session, bus()).share(teacher, waiting.id, room.id, ShareSettings())
+    model.asked.clear()
+    shaped = await service.coverage(room, ready=True)
+    light = shaped["areas"][1]["topics"][0]
+    assert [(i["source"], i["title"]) for i in light["items"] if i["title"] == "Leaf quiz"] == [
+        ("assignment", "Leaf quiz")
+    ]
+    assert "coverage.sort" not in model.asked
+
+
+async def test_a_set_from_another_subject_stays_off_this_class_s_map(
+    session, teacher, student
+) -> None:
+    assignment = await shared(session, teacher, [student])
+    room = await _classroom(session, assignment)
+    await _unshared(session, teacher, room)
+    model = _model(**{"coverage.sort": {"links": [
+        {"item": 1, "closest": "a1t1", "same_subject": True},
+        {"item": 2, "closest": "a1t1", "same_subject": False},
+    ]}})  # fmt: skip
+    service = CoverageService(session, model=model)
+    await service.draft(room)
+    shaped = await service.coverage(room, ready=True)
+    assert all(
+        i["title"] != "Leaf quiz" for a in shaped["areas"] for t in a["topics"] for i in t["items"]
+    )
+    assert shaped["outside"] == []
 
 
 async def test_the_plan_keeps_only_real_topics_and_known_kinds(session, teacher, student) -> None:

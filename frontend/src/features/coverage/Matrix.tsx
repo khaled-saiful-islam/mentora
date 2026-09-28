@@ -134,7 +134,7 @@ function Dot({ item, delay }: { item: TaughtItem; delay: number }) {
   const calm = useCalmMotion()
   const kind = KIND_DOTS[item.kind]
   const when = new Date(item.when).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
-  const label = `${kind.label}: ${item.title}, ${item.planned ? 'planned for' : ''} ${when}`.replace(/\s+/g, ' ')
+  const label = (item.source === 'set' ? `${kind.label}: ${item.title}, made ${when}, ready to share` : `${kind.label}: ${item.title}, ${item.planned ? 'planned for' : ''} ${when}`).replace(/\s+/g, ' ')
   return (
     <motion.span
       role="img"

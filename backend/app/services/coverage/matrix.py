@@ -21,15 +21,24 @@ LOW_BELOW = 50.0
 
 @dataclass(frozen=True, slots=True)
 class Taught:
-    """One thing the class was taught, or a live lesson on its way."""
+    """One thing the class was taught, a live lesson on its way, or a set its
+    teacher has made for the class's year and not shared yet ("set")."""
 
-    source: str  # "assignment" or "live"
+    source: str  # "assignment", "live" or "set"
     id: UUID
     kind: str  # "quiz", "flashcard", "study_guide" or "live"
     title: str
     topic: str
     when: datetime
     planned: bool = False
+    # The set an assignment shares, so a set sorted while it waited to be
+    # shared keeps its topic once it is.
+    set_id: UUID | None = None
+
+    @property
+    def ready(self) -> bool:
+        """Made, not shared with the class yet."""
+        return self.source == "set"
 
     @property
     def key(self) -> tuple[str, UUID]:
@@ -99,7 +108,9 @@ def build(
             unsorted.append(item)
         elif links[item.key] in known:
             by_topic.setdefault(str(links[item.key]), []).append(item)
-        else:
+        elif not item.ready:
+            # A set waiting to be shared that fits no topic is for another
+            # class (another subject), not "taught outside the syllabus".
             outside.append(item)
     shaped = [_area(area, by_topic, mastery) for area in areas]
     return {
@@ -159,5 +170,6 @@ def _summary(areas: list[dict[str, Any]], items: list[Taught]) -> dict[str, Any]
         "needs_work": sum(1 for t in topics if t["status"] == "needs_work"),
         "mastery": round(sum(scores) / len(scores), 1) if scores else None,
         "items": sum(1 for i in items if not i.planned),
-        "planned": sum(1 for i in items if i.planned),
+        "planned": sum(1 for i in items if i.planned and not i.ready),
+        "ready": sum(1 for t in topics for i in t["items"] if i["source"] == "set"),
     }
