@@ -162,7 +162,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               disabled={!canSend}
               aria-label="Send message"
               className={cn(
-                'grid size-11 shrink-0 place-items-center rounded-full transition-[background-color,transform,box-shadow]',
+                'grid size-11 shrink-0 place-items-center rounded-full transition-[background-color,translate,transform,box-shadow]',
                 canSend
                   ? 'bg-primary text-primary-foreground shadow-press hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none'
                   : 'bg-muted text-muted-foreground',

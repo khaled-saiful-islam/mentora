@@ -8,6 +8,30 @@
     border-color: hsl(var(--border));
   }
 
+  /* Every hover in the app eases in rather than snapping: anything a person
+     can point at shifts its colour, shadow and position smoothly. A class that
+     sets its own transition still wins; reduced motion (below) makes all of
+     it instant. */
+  a,
+  button,
+  summary,
+  select,
+  input,
+  textarea,
+  label,
+  [role="button"],
+  [role="radio"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"] {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke,
+      box-shadow, opacity, transform, translate, scale, filter;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
   }

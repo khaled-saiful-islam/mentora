@@ -50,7 +50,7 @@ export default function SignUpChooser() {
 
 const CARD = cn(
   'group relative flex min-h-36 overflow-hidden rounded-[1.75rem] p-5 shadow-press',
-  'transition-[transform,box-shadow] duration-200 hover:-translate-y-1 hover:shadow-xl active:translate-y-0',
+  'transition-[translate,transform,box-shadow] duration-200 hover:-translate-y-1 hover:shadow-xl active:translate-y-0',
   'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40',
 )
 

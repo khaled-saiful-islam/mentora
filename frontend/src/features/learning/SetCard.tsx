@@ -37,7 +37,7 @@ export function SetCard({ set, onWatch, onRetry, onSend }: { set: SetSummary; on
       </div>
     </>
   )
-  const frame = 'group block overflow-hidden rounded-[1.5rem] border border-border bg-surface text-left shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-1 hover:shadow-lg'
+  const frame = 'group block overflow-hidden rounded-[1.5rem] border border-border bg-surface text-left shadow-sm transition-[translate,transform,box-shadow] duration-200 hover:-translate-y-1 hover:shadow-lg'
   return (
     <motion.li variants={rise} layout>
       {making ? (

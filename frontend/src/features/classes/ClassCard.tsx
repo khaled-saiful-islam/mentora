@@ -26,7 +26,7 @@ export function ClassCard({ room, wide = false }: { room: ClassRoom; wide?: bool
       className={cn(
         // A container: given a whole row, the card lays itself out in two
         // columns — the class on the left, how it is going on the right.
-        '@container group relative flex flex-col overflow-hidden rounded-[1.75rem] border border-border bg-surface shadow-sm transition-[transform,box-shadow] duration-200 focus-within:ring-4 focus-within:ring-ring/40 hover:-translate-y-1 hover:shadow-lg',
+        '@container group relative flex flex-col overflow-hidden rounded-[1.75rem] border border-border bg-surface shadow-sm transition-[translate,transform,box-shadow] duration-200 focus-within:ring-4 focus-within:ring-ring/40 hover:-translate-y-1 hover:shadow-lg',
         wide && 'lg:col-span-2',
       )}
     >

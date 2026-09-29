@@ -113,7 +113,7 @@ function ActionButton({
       aria-label={label}
       aria-pressed={active}
       className={cn(
-        'grid size-8 place-items-center rounded-full transition-[background-color,color,transform] active:scale-90',
+        'grid size-8 place-items-center rounded-full transition-[background-color,color,translate,transform] active:scale-90',
         active ? 'bg-grape-100 text-primary dark:bg-grape-800/40' : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >

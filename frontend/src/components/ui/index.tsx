@@ -45,8 +45,11 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 export function buttonClass(variant: ButtonVariant = 'primary', size: ButtonSize = 'md', className?: string): string {
   return cn(
     'inline-flex select-none items-center justify-center whitespace-nowrap rounded-full font-bold',
-    'transition-[transform,box-shadow,filter,background-color,border-color] duration-150',
-    'active:translate-y-[2px] disabled:pointer-events-none disabled:opacity-50',
+    // Lifts a touch on hover, its icon grows a little, and it presses down on a
+    // tap — every change eased, never snapped.
+    'transition-[translate,transform,box-shadow,filter,background-color,border-color,color] duration-200 ease-out',
+    'hover:-translate-y-0.5 active:translate-y-[2px] disabled:pointer-events-none disabled:opacity-50',
+    '[&_svg]:transition-transform [&_svg]:duration-200 hover:[&_svg]:scale-110',
     BUTTON_VARIANTS[variant],
     BUTTON_SIZES[size],
     className,

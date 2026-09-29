@@ -145,7 +145,7 @@ export function Sidebar({
           onClick={onNew}
           className={cn(
             'flex min-w-[9rem] flex-1 items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-2.5 font-bold whitespace-nowrap text-primary-foreground shadow-press',
-            'transition-[transform,box-shadow,filter] hover:brightness-110 active:translate-y-0.5 active:shadow-none',
+            'transition-[translate,transform,box-shadow,filter] hover:brightness-110 active:translate-y-0.5 active:shadow-none',
           )}
         >
           <NotePencil weight="bold" className="size-5 shrink-0" aria-hidden />
