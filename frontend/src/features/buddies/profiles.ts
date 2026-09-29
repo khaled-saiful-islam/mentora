@@ -31,6 +31,8 @@ export interface BuddyProfile {
   trickBurst: { kind: ParticleKind; count: number; from: Anchor; delayMs: number }
   /** The head, as a viewBox — for an avatar in a list. */
   face: string
+  /** How it fidgets when nothing is happening — its own habits. */
+  antics: readonly Mood[]
 }
 
 const PUFF = once(1.4, { times: [0, 0.3, 0.45, 0.85, 1] })
@@ -50,6 +52,7 @@ export const BUDDIES: Record<BuddyKey, BuddyProfile> = {
     anchors: { top: [100, 30], side: [138, 58], mouth: [100, 110], body: [100, 140] },
     trickBurst: { kind: 'leaf', count: 5, from: 'top', delayMs: 350 },
     face: '42 16 116 116',
+    antics: ['lookaround', 'hop', 'wiggle', 'trick', 'twirl', 'nod', 'listen'],
   },
   tompok: {
     key: 'tompok',
@@ -80,6 +83,7 @@ export const BUDDIES: Record<BuddyKey, BuddyProfile> = {
     anchors: { top: [100, 30], side: [142, 58], mouth: [100, 110], body: [100, 142] },
     trickBurst: { kind: 'paw', count: 6, from: 'body', delayMs: 250 },
     face: '40 16 120 120',
+    antics: ['stretch', 'lookaround', 'wiggle', 'yawn', 'twirl', 'giggle', 'listen'],
   },
   ollie: {
     key: 'ollie',
@@ -102,6 +106,7 @@ export const BUDDIES: Record<BuddyKey, BuddyProfile> = {
     anchors: { top: [100, 22], side: [142, 56], mouth: [100, 108], body: [100, 140] },
     trickBurst: { kind: 'feather', count: 6, from: 'body', delayMs: 200 },
     face: '38 18 124 124',
+    antics: ['nod', 'think', 'lookaround', 'wave', 'hug', 'stretch', 'listen'],
   },
   momo: {
     key: 'momo',
@@ -124,6 +129,7 @@ export const BUDDIES: Record<BuddyKey, BuddyProfile> = {
     anchors: { top: [100, 28], side: [140, 56], mouth: [112, 112], body: [100, 142] },
     trickBurst: { kind: 'flame', count: 7, from: 'mouth', delayMs: 500 },
     face: '36 18 128 128',
+    antics: ['bounce', 'giggle', 'twirl', 'dance', 'hug', 'wiggle', 'happy'],
   },
   rimau: {
     key: 'rimau',
@@ -150,6 +156,7 @@ export const BUDDIES: Record<BuddyKey, BuddyProfile> = {
     anchors: { top: [100, 34], side: [144, 60], mouth: [100, 112], body: [100, 142] },
     trickBurst: { kind: 'ring', count: 3, from: 'mouth', delayMs: 380 },
     face: '40 18 120 120',
+    antics: ['flex', 'starjump', 'hop', 'bounce', 'lookaround', 'trick', 'happy'],
   },
 }
 

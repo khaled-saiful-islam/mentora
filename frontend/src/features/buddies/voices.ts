@@ -25,6 +25,10 @@ export interface Voice {
   comeback: string[]
   /** Two misses in a row: a kind word before a strategy tip. */
   tough: string[]
+  /** Things it knows and loves to share, said now and then on the home page. */
+  facts: string[]
+  /** Its own way of saying "you can do it". */
+  cheers: string[]
   /** For five quick taps. */
   secret: string
   sleepy: string
@@ -49,6 +53,8 @@ export const VOICES: Record<BuddyKey, Voice> = {
     last: ['Last one! Make it clever!', 'Final one. Let\'s zip through it!'],
     comeback: ['See? You bounced right back!', 'Zip! Back on track!'],
     tough: ['Tricky ones, huh? Here\'s a kancil trick:', 'Two sneaky ones! Let\'s try a trick:'],
+    facts: ['Did you know? Kancil are only about as tall as a school ruler!', 'Sang Kancil tricked the crocodiles to cross the river. Brains beat muscles!', 'Kancil are shy and come out at night to find leaves and fruit.', 'Kancil live in the forests of Malaysia — just like me!', 'A clever trick: say a new word out loud three times to remember it.'],
+    cheers: ["Quick thinking wins the day. You've got this!", 'Clever minds keep trying. Zip zip!', 'Every question makes you a little cleverer!'],
     secret: 'You found my secret dance! Shh!',
     sleepy: 'Zzz... five more minutes...',
   },
@@ -70,6 +76,8 @@ export const VOICES: Record<BuddyKey, Voice> = {
     last: ['Last one! Pounce on it!', 'Final one — land it on your paws!'],
     comeback: ['Right back on your paws!', 'Purr! What a comeback!'],
     tough: ["Tricky ones, huh? Here's a cat trick:", 'Two sneaky ones. Try this:'],
+    facts: ['Did you know? Cats spend about a third of their day grooming. So clean!', 'A cat can jump up to six times its own height. Boing!', 'Cats purr when they are happy — and sometimes to feel better.', "My whiskers help me feel if I fit through a gap. Handy, right?", 'Cats in Malaysia are often called Oyen, Comel or Tompok — like me!'],
+    cheers: ['Curious learners go far. Purr!', "Take it one paw at a time — you're doing great!", "I'm cheering you on, tail up!"],
     secret: 'You found my secret kitty dance!',
     sleepy: 'Cat nap time... zzz...',
   },
@@ -91,6 +99,8 @@ export const VOICES: Record<BuddyKey, Voice> = {
     last: ['The last one. Think it through!', 'Final question. You\'re nearly there!'],
     comeback: ['There you go! Wise indeed.', 'Hoo! Right back on track.'],
     tough: ['Tricky ones happen. Here\'s an owl trick:', 'Hoo, two tough ones. Try this:'],
+    facts: ['Did you know? Owls can turn their heads almost all the way around!', "An owl's feathers are so soft it flies without a sound.", 'Owls cannot move their eyes, so they move their heads instead.', 'A group of owls is called a parliament. How wise!', 'Wise tip: explain what you learned to someone else. It sticks better.'],
+    cheers: ['Slow and thoughtful is still fast enough. Hoo!', 'Every question you ask makes you wiser.', "I'm proud of how you keep going."],
     secret: 'Oh my! You found my secret dance!',
     sleepy: 'Owls sleep in the day... zzz...',
   },
@@ -112,6 +122,8 @@ export const VOICES: Record<BuddyKey, Voice> = {
     last: ['Last one! Make it sparkle!', 'Final one. Fire up!'],
     comeback: ['Puff! Right back on track!', 'Sparkle! You bounced back!'],
     tough: ['Sneaky ones! Here\'s a dragon trick:', 'Two tricky ones. Try this:'],
+    facts: ["Did you know? My flames come out as sparkles, so they're safe for hugs!", 'Dragons in stories love treasure. My treasure is facts!', 'Baby dragons practise flying a little every day — like you practise learning.', 'Some real lizards, called flying dragons, glide between trees in Malaysia!', 'Sparkly tip: take a short break, then try again. Your brain loves it.'],
+    cheers: ["You're on fire today — the sparkly kind!", 'Little by little, like a baby dragon learning to fly.', 'Puff puff! You can do it!'],
     secret: 'You found the secret dragon dance!',
     sleepy: 'So cosy... zzz...',
   },
@@ -133,6 +145,8 @@ export const VOICES: Record<BuddyKey, Voice> = {
     last: ['Last one! Pounce on it!', 'Final one, champ. You\'ve got this!'],
     comeback: ['That\'s the tiger spirit! Back on track!', 'Rawr! What a comeback!'],
     tough: ['Tough ones? Tigers keep going. Try this:', 'Two tricky ones. Here\'s a tiger trick:'],
+    facts: ['Did you know? The Malayan tiger is on our national coat of arms!', 'No two tigers have the same stripes — like fingerprints!', 'Tigers love water and are great swimmers.', 'A tiger can hear sounds too low for people to hear.', 'Brave tip: start with the hardest question when your brain is fresh.'],
+    cheers: ["Be brave — you're stronger than you think. Rawr!", 'Tigers never give up, and neither do you!', "Let's pounce on today's learning, champ!"],
     secret: 'You found my secret tiger dance!',
     sleepy: 'Big cats nap a lot... zzz...',
   },

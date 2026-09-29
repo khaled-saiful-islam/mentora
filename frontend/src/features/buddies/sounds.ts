@@ -71,6 +71,11 @@ export const MOOD_SOUND: Partial<Record<Mood, BuddySound>> = {
   bounce: 'trill',
   dance: 'trill',
   trick: 'trill',
+  twirl: 'trill',
+  starjump: 'yay',
+  hug: 'hello',
+  flex: 'yay',
+  giggle: 'trill',
 }
 
 /** How many syllables a line babbles: about one a word, two to nine. */

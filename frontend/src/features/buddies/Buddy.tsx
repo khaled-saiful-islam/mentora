@@ -58,6 +58,10 @@ const BURSTS: Partial<Record<Mood, [ParticleKind, number, Anchor]>> = {
   clap: ['sparkle', 4, 'body'],
   bounce: ['sparkle', 3, 'body'],
   hop: ['star', 3, 'body'],
+  starjump: ['star', 6, 'top'],
+  hug: ['heart', 3, 'side'],
+  flex: ['sparkle', 4, 'top'],
+  giggle: ['sparkle', 2, 'mouth'],
 }
 
 const AMBIENT: Partial<Record<Mood, [ParticleKind, number, Anchor, number]>> = {
@@ -88,7 +92,7 @@ export const Buddy = forwardRef<BuddyHandle, BuddyProps>(function Buddy(
   const lite = size < LITE_BELOW
   const svg = useRef<SVGSVGElement>(null)
   const box = useRef<HTMLDivElement>(null)
-  const { mood, play } = useBuddyMood(base, { lively: lively && !lite, calm })
+  const { mood, play } = useBuddyMood(base, { lively: lively && !lite, calm, antics: profile.antics })
   const blinking = useBlink(true)
   const gaze = useGaze(svg, { track: track && !lite && !calm, fixed: FIXED_GAZE[mood] ?? null })
   const field = useParticles(!calm && !lite)

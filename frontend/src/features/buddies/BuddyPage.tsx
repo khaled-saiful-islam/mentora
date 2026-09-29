@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Confetti, HandWaving, Lightbulb, Moon, MusicNotes, Sparkle } from '@phosphor-icons/react'
+import { ArrowsClockwise, Barbell, Confetti, HandWaving, Heart, Lightbulb, Moon, MusicNotes, Question, Smiley, Sparkle, Star } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui'
 import { useToast } from '@/components/ui/Toast'
@@ -28,6 +28,12 @@ const ACTIONS: Action[] = [
   { label: 'Cheer', Icon: Confetti, run: (b, k) => (b.play('celebrate', 3000), b.say(pick(VOICES[k].finish.great))) },
   { label: 'Think', Icon: Lightbulb, run: (b) => b.play('think', 3000) },
   { label: 'Nap', Icon: Moon, run: (b, k) => (b.play('sleepy', 4500), b.say(VOICES[k].sleepy)) },
+  { label: 'Twirl', Icon: ArrowsClockwise, run: (b) => b.play('twirl') },
+  { label: 'Star jump', Icon: Star, run: (b) => b.play('starjump') },
+  { label: 'Hug', Icon: Heart, run: (b, k) => (b.play('hug'), b.say(pick(VOICES[k].cheers))) },
+  { label: 'Flex', Icon: Barbell, run: (b) => b.play('flex') },
+  { label: 'Giggle', Icon: Smiley, run: (b) => b.play('giggle') },
+  { label: 'Fun fact', Icon: Question, run: (b, k) => (b.play('think'), b.say(pick(VOICES[k].facts))) },
 ]
 
 /** Meet your buddy, play with them, or choose another. */

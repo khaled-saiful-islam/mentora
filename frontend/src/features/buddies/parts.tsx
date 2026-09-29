@@ -63,6 +63,12 @@ export const MOUTH_FOR: Record<Mood, MouthShape> = {
   hop: 'grin',
   wiggle: 'grin',
   bounce: 'grin',
+  twirl: 'grin',
+  starjump: 'grin',
+  hug: 'smile',
+  flex: 'grin',
+  lookaround: 'smile',
+  giggle: 'grin',
 }
 
 const OPEN: ReadonlySet<MouthShape> = new Set(['grin', 'roar', 'yawn'])

@@ -125,7 +125,8 @@ export function useGaze(
 
 // --- moods -----------------------------------------------------------------
 
-const ANTICS: readonly Mood[] = ['listen', 'happy', 'wave', 'yawn', 'trick', 'stretch', 'wiggle', 'hop', 'nod', 'bounce']
+/** Fidgets for a buddy without its own (`BuddyProfile.antics`). */
+export const ANTICS: readonly Mood[] = ['listen', 'happy', 'wave', 'yawn', 'trick', 'stretch', 'wiggle', 'hop', 'nod', 'bounce']
 const ACTIVITY = ['pointerdown', 'keydown', 'pointermove', 'scroll'] as const
 
 export interface BuddyMood {
@@ -140,7 +141,12 @@ export interface BuddyMood {
  */
 export function useBuddyMood(
   base: Mood,
-  { lively, calm, sleepAfterMs = 45_000 }: { lively: boolean; calm: boolean; sleepAfterMs?: number },
+  {
+    lively,
+    calm,
+    sleepAfterMs = 45_000,
+    antics = ANTICS,
+  }: { lively: boolean; calm: boolean; sleepAfterMs?: number; antics?: readonly Mood[] },
 ): BuddyMood {
   const [moment, setMoment] = useState<Mood | null>(null)
   const [dozing, setDozing] = useState(false)
@@ -161,11 +167,11 @@ export function useBuddyMood(
   useEffect(() => {
     if (!lively || calm || moment || dozing || base !== 'idle') return
     const wait = window.setTimeout(
-      () => play(ANTICS[Math.floor(Math.random() * ANTICS.length)]),
+      () => play(antics[Math.floor(Math.random() * antics.length)]),
       between(7000, 14000),
     )
     return () => window.clearTimeout(wait)
-  }, [lively, calm, moment, dozing, base, play])
+  }, [lively, calm, moment, dozing, base, play, antics])
 
   // Nodding off when nobody is about, and waking with a start.
   useEffect(() => {

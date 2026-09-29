@@ -24,8 +24,16 @@ Five companions keep a student company:
   - breathes, and blinks at random
   - follows the pointer with its eyes, and glances around when there is none
   - leans its head after its gaze
-  - fidgets when nothing is happening (a head tilt, a yawn, a wave, a
-    stretch, a wiggle, a hop, a nod, a bounce, its trick)
+  - fidgets when nothing is happening, **in its own way**
+    (`BuddyProfile.antics`):
+    - Kiko looks around, hops and peeks.
+    - Tompok stretches, yawns and twirls.
+    - Ollie nods, thinks and hugs.
+    - Momo bounces, giggles and dances.
+    - Rimau flexes and star-jumps.
+  - has 25 moves: the six newest are twirl, star jump, hug, flex, look
+    around and giggle, and all of them are on the *My buddy* page, with a
+    *Fun fact* button
   - nods off after 45 seconds alone, and wakes with a start
 - **They react to play.**
   - Right answer: a cheer and stars.
@@ -55,6 +63,18 @@ Five companions keep a student company:
   | Rimau | roar, with shockwave rings |
 
   Five quick taps unlock a secret dance.
+- **They keep a student company on Home** (`chatter.ts`). After the hello and
+  the tip, the buddy says something every half a minute or so, and moves as it
+  talks. The lines rotate:
+  - **the child's own day**, first: what is waiting (*"You've got 'The
+    Water Cycle' waiting — shall we start it together?"*), practice made for
+    them, their streak, their badges, a skill to practise, a strength
+  - **a fun fact of its own** (each buddy has five)
+  - **a cheer** in its own voice
+  - **a study tip**
+
+  It says at most eight lines a visit and nothing while the tab is hidden. It
+  never talks about a question's content.
 - **They talk.** Speech bubbles say words one at a time, in each buddy's own
   voice (`voices.ts`). A bubble is drawn over the whole page next to its
   buddy (`bubblePlace.ts`), so no card that clips its contents and no screen

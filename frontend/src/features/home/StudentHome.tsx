@@ -10,7 +10,7 @@ import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Alert, ButtonLink, Skeleton } from '@/components/ui'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { Buddy, BuddyStage, greeting, tipFor, type BuddyHandle } from '@/features/buddies'
+import { Buddy, BuddyStage, greeting, tipFor, useBuddyChatter, type BuddyHandle } from '@/features/buddies'
 import { EmptyArt } from '@/features/classes/EmptyArt'
 import { useNotifications } from '@/features/notifications/NotificationsProvider'
 import { playApi, type Home } from '@/features/play/api'
@@ -49,6 +49,23 @@ export default function StudentHome() {
     return () => (window.clearTimeout(hello), window.clearTimeout(tip))
     // `data` is read when ready first turns true; refreshes must not re-greet.
   }, [ready])
+
+  // After hello and the tip, the buddy keeps them company: what is waiting, a
+  // streak, a fact of its own, a cheer — now and then, a handful a visit.
+  useBuddyChatter(
+    buddy,
+    user?.buddy,
+    data
+      ? {
+          todo: data.todo.map((t) => t.title),
+          streak: data.streak,
+          badges: data.badges,
+          practise: data.practise.map((s) => s.label),
+          strengths: data.strengths.map((s) => s.label),
+          madeForYou: (data.made_for_you ?? []).length,
+        }
+      : null,
+  )
 
   return (
     // A container: beside the sidebar the column is narrower than the window,

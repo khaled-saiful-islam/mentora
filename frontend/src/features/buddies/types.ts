@@ -41,6 +41,18 @@ export type Mood =
   | 'wiggle'
   // Small excited bounces on the spot.
   | 'bounce'
+  // Turns right round, with a little hop.
+  | 'twirl'
+  // Arms and legs out, up in the air.
+  | 'starjump'
+  // Arms round itself, hearts.
+  | 'hug'
+  // Arms up, strong.
+  | 'flex'
+  // A look one way, then the other.
+  | 'lookaround'
+  // A shaky little laugh.
+  | 'giggle'
 
 /** The parts of a rig that move. Every rig wires its own drawing to these,
  *  so one choreography animates five very different bodies. */

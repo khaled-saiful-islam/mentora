@@ -1,6 +1,7 @@
 export { Buddy, type BuddyHandle, type BuddyProps } from './Buddy'
 export { BuddyAvatar } from './BuddyAvatar'
 export { BuddyStage } from './BuddyStage'
+export { useBuddyChatter, type ChatterContext } from './chatter'
 export { BUDDIES, profileOf, type BuddyProfile } from './profiles'
 export { type Cue } from './reactions'
 export { greeting, tipFor, type TipPlace } from './tips'
