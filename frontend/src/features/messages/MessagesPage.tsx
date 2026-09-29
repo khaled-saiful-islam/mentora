@@ -36,6 +36,8 @@ export default function MessagesPage() {
   useLive(['messages'], () => void inbox.reload())
   const threads = inbox.data?.threads ?? []
   const contacts = inbox.data?.contacts ?? []
+  const waiting = inbox.data?.waiting ?? []
+  const canStart = contacts.length > 0 || waiting.length > 0
 
   return (
     <Page className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-8">
@@ -48,7 +50,7 @@ export default function MessagesPage() {
               : "Talk with your students' families about how they're doing, and what would help at home."}
           </p>
         </div>
-        {contacts.length > 0 && (
+        {canStart && (
           <Button onClick={() => setStarting(true)}>
             <NotePencil weight="bold" className="size-5" aria-hidden /> New message
           </Button>
@@ -65,7 +67,7 @@ export default function MessagesPage() {
               <Skeleton className="h-16 rounded-2xl" />
             </div>
           ) : threads.length === 0 ? (
-            <NoThreads parent={parent} canStart={contacts.length > 0} onStart={() => setStarting(true)} />
+            <NoThreads parent={parent} canWrite={contacts.length > 0} canAsk={waiting.length > 0} onStart={() => setStarting(true)} />
           ) : (
             <ThreadList threads={threads} activeId={threadId} />
           )}
@@ -82,7 +84,7 @@ export default function MessagesPage() {
         </Card>
       </div>
 
-      {starting && <NewConversation contacts={contacts} onClose={() => setStarting(false)} />}
+      {starting && <NewConversation contacts={contacts} waiting={waiting} onClose={() => setStarting(false)} />}
     </Page>
   )
 }
@@ -128,7 +130,7 @@ export function previewOf(thread: Thread): string {
   return last.body.length <= PREVIEW_MAX ? `${last.mine ? 'You: ' : ''}${last.body}` : `${who} sent a longer message`
 }
 
-function NoThreads({ parent, canStart, onStart }: { parent: boolean; canStart: boolean; onStart: () => void }) {
+function NoThreads({ parent, canWrite, canAsk, onStart }: { parent: boolean; canWrite: boolean; canAsk: boolean; onStart: () => void }) {
   return (
     <EmptyState
       className="py-10"
@@ -139,13 +141,21 @@ function NoThreads({ parent, canStart, onStart }: { parent: boolean; canStart: b
       }
       title="No messages yet"
       body={
-        canStart
+        canWrite
           ? 'Start a conversation — it stays between the two of you.'
           : parent
             ? 'Once your child is in a class, you can write to their teacher here.'
-            : "When a student's family connects to them, you can write to the family here."
+            : canAsk
+              ? "None of your students' families are connected yet. Ask a student to send a parent their invitation, then write to the family here."
+              : "When a student's family connects to them, you can write to the family here."
       }
-      action={canStart && <Button variant="outline" onClick={onStart}>New message</Button>}
+      action={
+        (canWrite || canAsk) && (
+          <Button variant="outline" onClick={onStart}>
+            {canWrite ? 'New message' : 'See who to ask'}
+          </Button>
+        )
+      }
     />
   )
 }

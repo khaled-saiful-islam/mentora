@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from app.db.models.parent_teacher import ParentTeacherMessage
 from app.services.parent_teacher.contacts import Contact
+from app.services.parent_teacher.invites import Unconnected
 from app.services.parent_teacher.service import MAX_BODY, MessagePage, ThreadView
 
 
@@ -73,9 +74,29 @@ class ThreadResponse(BaseModel):
         )
 
 
+class WaitingResponse(BaseModel):
+    """A teacher's student with no family connected yet."""
+
+    student_id: UUID
+    student_name: str
+    class_ids: list[UUID]
+    class_names: list[str]
+
+    @classmethod
+    def of(cls, student: Unconnected) -> WaitingResponse:
+        return cls(
+            student_id=student.student_id,
+            student_name=student.student_name,
+            class_ids=list(student.class_ids),
+            class_names=list(student.class_names),
+        )
+
+
 class InboxResponse(BaseModel):
     threads: list[ThreadResponse]
     contacts: list[ContactResponse]
+    # For a teacher: students whose family could be asked to connect.
+    waiting: list[WaitingResponse] = []
     unread: int
 
 
@@ -100,3 +121,12 @@ class SendRequest(BaseModel):
 
 class UnreadMessagesResponse(BaseModel):
     unread: int
+
+
+class AskFamilyRequest(BaseModel):
+    student_id: UUID
+
+
+class AskFamilyResponse(BaseModel):
+    # False when this teacher already asked this student today.
+    sent: bool

@@ -245,3 +245,61 @@ async def test_both_sides_hear_a_message_live(session, family, teacher, student)
     pushed = {(user_id, m.get("topic")) for user_id, m in pending}
     assert (teacher.id, "messages") in pushed and (mum.id, "messages") in pushed
     assert hub is not None
+
+
+# --- families not connected yet ---------------------------------------------
+
+
+async def test_a_teacher_sees_who_has_no_family_yet(session, account, family, teacher, student):
+    from app.services.parent_teacher.invites import unconnected
+
+    mum, _ = family
+    lone = await account("student", "Hana")
+    await class_with(session, teacher, [lone])
+    waiting = await unconnected(session, teacher)
+    assert [w.student_name for w in waiting] == ["Hana"]
+    assert await unconnected(session, mum) == []
+
+
+async def test_asking_a_student_to_connect_rings_once_a_day(session, account, teacher) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from app.services.parent_teacher.invites import ask_family
+
+    lone = await account("student", "Hana")
+    await class_with(session, teacher, [lone])
+    assert await ask_family(session, teacher, lone.id) is True
+    assert await ask_family(session, teacher, lone.id) is False
+    [note] = (
+        await session.scalars(
+            select(Notification).where(
+                Notification.user_id == lone.id, Notification.type == Kind.FAMILY_ASKED.value
+            )
+        )
+    ).all()
+    assert note.payload == {"teacher_name": "Cikgu Aisyah", "class_name": "5 Bestari"}
+    tomorrow = datetime.now(UTC) + timedelta(days=1, minutes=1)
+    assert await ask_family(session, teacher, lone.id, now=tomorrow) is True
+
+
+async def test_only_a_waiting_student_can_be_asked(session, account, family, teacher, student):
+    from app.services.parent_teacher.invites import ask_family
+
+    mum, _ = family
+    with pytest.raises(NotFoundError):  # Adam's mum is already connected
+        await ask_family(session, teacher, student.id)
+    stranger = await account("student", "Zul")
+    with pytest.raises(NotFoundError):  # not in this teacher's classes
+        await ask_family(session, teacher, stranger.id)
+    with pytest.raises(NotFoundError):  # a parent has no one to ask
+        await ask_family(session, mum, student.id)
+
+
+async def test_the_inbox_lists_who_to_ask(client, session, account, teacher) -> None:
+    lone = await account("student", "Hana")
+    await class_with(session, teacher, [lone])
+    async with client(teacher) as as_teacher:
+        inbox = (await as_teacher.get("/api/messages")).json()
+        assert [w["student_name"] for w in inbox["waiting"]] == ["Hana"]
+        asked = await as_teacher.post("/api/messages/ask-family", json={"student_id": str(lone.id)})
+        assert asked.json() == {"sent": True}

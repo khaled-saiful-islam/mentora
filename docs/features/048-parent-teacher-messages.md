@@ -37,6 +37,19 @@ browsers. What one sends appears for the other without a reload.
   - On a teacher's class, under **Students**: a message icon beside each
     student whose family is connected. With two parents connected, it asks
     which one.
+- **A student with no family connected yet.**
+  - A teacher can only write to a parent the child has linked, and only the
+    child can start that link (`042-parents.md`).
+  - So *New message* has a **No family connected yet** section listing those
+    students, each with *Ask to connect*. The same action is the person-plus
+    icon beside the student under **Students**.
+  - Asking rings the student's bell (`family_asked`): *"Cikgu Demo would
+    love to meet your family!"*, with *Invite my family* opening their
+    invitation in Settings.
+  - Asking again the same day says *"You already asked … today"* and rings
+    nothing.
+  - A teacher with no conversations and no connected families sees that
+    explained on the Messages page, with *See who to ask*.
 - **The conversation.**
   - Messages are grouped by day (*Today*, *Yesterday*, then the date).
   - Enter sends and Shift+Enter starts a new line.
@@ -54,6 +67,12 @@ browsers. What one sends appears for the other without a reload.
     *"Nora sent you a message about Aina"*. Further messages grow that one
     note (*"3 new messages from Nora about Aina"*) until the conversation is
     read. Opening the conversation reads the note too.
+- **One browser, one account.** The session is one cookie per browser, so
+  signing in as someone else in one tab changes every tab. Each sign-in,
+  sign-up and sign-out is announced to the other tabs (`lib/sessionSync.ts`).
+  A tab showing a different account starts over at `/` as whoever is signed
+  in now. A tab you come back to also checks with the server. So a teacher's
+  tab can never go on showing the teacher while sending as the parent.
 - **Layout.** Below `lg`, one pane shows at a time: the list, or the
   conversation with a back arrow. From `lg` up, the two sit side by side.
   The app's own sidebar leaves too little room for two panes at `md`.
@@ -111,6 +130,10 @@ browsers. What one sends appears for the other without a reload.
   | `GET /api/messages/threads/{id}/messages?before=` | A page of messages |
   | `POST /api/messages/threads/{id}/messages` | `{body}`: sends, rate limited |
   | `POST /api/messages/threads/{id}/read` | Reads it; returns the unread total |
+  | `POST /api/messages/ask-family` | `{student_id}`: asks a student to connect a parent; `{sent: false}` if already asked today |
+
+  The inbox also carries `waiting` for a teacher: their students with no
+  family linked (`services/parent_teacher/invites.py`).
 
 ## Configuration
 
@@ -133,6 +156,10 @@ The frontend mirrors it in `features/messages/api.ts`.
   text.
 
 ## Known limits
+
+- **To try both sides at once, use two browsers** (or a private window for
+  one). Two tabs in one browser share one account. The other tab now follows
+  a sign-in, but it cannot be a second person.
 
 - **A conversation closes when its link ends.** A child who leaves the
   class, an archived class, or a parent who disconnects hides the

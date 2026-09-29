@@ -168,3 +168,47 @@ describe('a conversation', () => {
     expect(sent).toEqual(['Thank you!'])
   })
 })
+
+describe('a family not connected yet', () => {
+  it('asks the student to send their invitation, in the bell', () => {
+    const note = {
+      id: 'n2',
+      type: 'family_asked',
+      payload: { teacher_name: 'Cikgu Demo', class_name: '4 Cerdik' },
+      count: 1,
+      read: false,
+      created_at: '2026-09-29T08:00:00Z',
+      updated_at: '2026-09-29T08:00:00Z',
+    }
+    expect(kindOf(note).title(note)).toBe('Cikgu Demo would like to talk with your family')
+    expect(kindOf(note).href?.(note)).toBe('/settings')
+    expect(actionOf(note)).toBe('Invite my family')
+  })
+
+  it('shows a teacher who to ask, and asks', async () => {
+    const asked: string[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async (path: string, init?: RequestInit) => {
+        if (path === '/api/messages/ask-family') {
+          asked.push(String(init?.body))
+          return new Response(JSON.stringify({ sent: true }), { status: 200 })
+        }
+        return new Response('{}', { status: 200 })
+      }),
+    )
+    const { NewConversation } = await import('./NewConversation')
+    render(
+      <ToastProvider>
+        <MemoryRouter>
+          <NewConversation contacts={[]} waiting={[{ student_id: 's9', student_name: 'Rahma', class_ids: ['c3'], class_names: ['Grade 3 - Math'] }]} onClose={() => undefined} />
+        </MemoryRouter>
+      </ToastProvider>,
+    )
+    expect(screen.getByText("None of your students' families are connected yet.")).toBeInTheDocument()
+    expect(screen.getByText('Grade 3 - Math')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Ask to connect' }))
+    await waitFor(() => expect(asked).toEqual([JSON.stringify({ student_id: 's9' })]))
+    expect(await screen.findByText('Asked Rahma to connect a parent')).toBeInTheDocument()
+  })
+})

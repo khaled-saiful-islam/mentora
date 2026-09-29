@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import type { StudentClass } from '@/features/classes/api'
 import { EmptyArt } from '@/features/classes/EmptyArt'
 import { Report } from '@/features/coverage/ReportPage'
-import { MessageButton, useContacts } from '@/features/messages/MessageButton'
+import { MessageButton, usePeople } from '@/features/messages/MessageButton'
 import type { Contact } from '@/features/messages/api'
 import { useResource } from '@/hooks/useResource'
 import { useAuth } from '@/lib/auth'
@@ -20,7 +20,7 @@ import { useChildResource } from './useChild'
 
 export function ClassesTab({ childId, first }: { childId: string; first: string }) {
   const classes = useChildResource(childId, 'classes', () => familyApi.classes(childId))
-  const contacts = useContacts(useAuth().user)
+  const { contacts } = usePeople(useAuth().user)
   if (classes.error) return <Alert>{classes.error}</Alert>
   if (!classes.data) return <Skeleton className="h-48 rounded-[1.75rem]" />
   const rooms = classes.data.items

@@ -7,8 +7,9 @@
  * injected script.
  */
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError, apiFetch } from './api'
+import { announceSession, isSomeoneElse, onSessionChange, startOver } from './sessionSync'
 import type { User } from './user'
 
 export type { User } from './user'
@@ -83,6 +84,7 @@ const AuthContext = createContext<AuthState | null>(null)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  useFollowOtherTabs(user?.id ?? null, loading)
 
   useEffect(() => {
     apiFetch<User>('/auth/me')
@@ -104,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
     await settle(before)
     setUser(account)
+    announceSession(account.id)
   }, [])
 
   const signUpTeacher = useCallback(async (details: TeacherSignUp, before?: BeforeEntering) => {
@@ -113,6 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
     await settle(before)
     setUser(account)
+    announceSession(account.id)
   }, [])
 
   const signUpStudent = useCallback(async (details: StudentSignUp, before?: BeforeEntering) => {
@@ -123,6 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { join = null, ...account } = created
     await settle(before)
     setUser(account)
+    announceSession(account.id)
     return join
   }, [])
 
@@ -134,6 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { connect = null, ...account } = created
     await settle(before)
     setUser(account)
+    announceSession(account.id)
     return connect
   }, [])
 
@@ -143,6 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       // Whatever the server said, this browser is signed out.
       setUser(null)
+      announceSession(null)
     }
   }, [])
 
@@ -152,6 +159,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+/**
+ * Keep this tab honest about who it is (`sessionSync.ts`): another tab's
+ * sign-in or sign-out, or a different account found on coming back, starts
+ * this one over rather than letting it act for the wrong person.
+ */
+function useFollowOtherTabs(userId: string | null, loading: boolean): void {
+  const shown = useRef(userId)
+  shown.current = userId
+  useEffect(() => {
+    if (loading) return
+    const stop = onSessionChange((now) => {
+      if (isSomeoneElse(shown.current, now)) startOver()
+    })
+    const onShow = () => {
+      if (document.visibilityState !== 'visible') return
+      apiFetch<User>('/auth/me').then(
+        (now) => isSomeoneElse(shown.current, now.id) && startOver(),
+        (error: unknown) => {
+          // Signed out elsewhere: a signed-in page must not stay up.
+          if (error instanceof ApiError && error.status === 401 && shown.current !== null) startOver()
+        },
+      )
+    }
+    document.addEventListener('visibilitychange', onShow)
+    return () => {
+      stop()
+      document.removeEventListener('visibilitychange', onShow)
+    }
+  }, [loading])
 }
 
 export function useAuth(): AuthState {

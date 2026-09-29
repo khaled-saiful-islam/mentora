@@ -13,6 +13,8 @@ from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import CurrentUser, SessionDep, limit_messages, require_capability
 from app.api.schemas.messages import (
+    AskFamilyRequest,
+    AskFamilyResponse,
     ContactResponse,
     InboxResponse,
     MessagePageResponse,
@@ -21,7 +23,9 @@ from app.api.schemas.messages import (
     SendRequest,
     ThreadResponse,
     UnreadMessagesResponse,
+    WaitingResponse,
 )
+from app.services.parent_teacher.invites import ask_family, unconnected
 from app.services.parent_teacher.service import ParentTeacherService
 
 router = APIRouter(
@@ -33,14 +37,24 @@ router = APIRouter(
 
 @router.get("", response_model=InboxResponse)
 async def inbox(user: CurrentUser, session: SessionDep) -> InboxResponse:
-    """The conversations, and everyone this person may start one with."""
+    """The conversations, everyone this person may start one with, and — for
+    a teacher — the students whose family has not connected yet."""
     talk = ParentTeacherService(session)
     threads = await talk.threads(user)
     return InboxResponse(
         threads=[ThreadResponse.of(view, user.id) for view in threads],
         contacts=[ContactResponse.of(c) for c in await talk.contacts(user)],
+        waiting=[WaitingResponse.of(s) for s in await unconnected(session, user)],
         unread=sum(view.unread for view in threads),
     )
+
+
+@router.post(
+    "/ask-family", response_model=AskFamilyResponse, dependencies=[Depends(limit_messages)]
+)
+async def ask(body: AskFamilyRequest, user: CurrentUser, session: SessionDep) -> AskFamilyResponse:
+    """A teacher asking a student to connect a parent (`invites.py`)."""
+    return AskFamilyResponse(sent=await ask_family(session, user, body.student_id))
 
 
 @router.get("/unread", response_model=UnreadMessagesResponse)

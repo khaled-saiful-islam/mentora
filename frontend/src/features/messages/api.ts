@@ -33,9 +33,19 @@ export interface Thread {
   last_message_at: string | null
 }
 
+/** A teacher's student whose family has not connected yet. */
+export interface Waiting {
+  student_id: string
+  student_name: string
+  class_ids: string[]
+  class_names: string[]
+}
+
 export interface Inbox {
   threads: Thread[]
   contacts: Contact[]
+  /** For a teacher: who could be asked to connect a parent. */
+  waiting?: Waiting[]
   unread: number
 }
 
@@ -58,6 +68,9 @@ export const messagesApi = {
   send: (id: string, body: string) =>
     apiFetch<Message>(`/messages/threads/${id}/messages`, { method: 'POST', body: JSON.stringify({ body }) }),
   read: (id: string) => apiFetch<{ unread: number }>(`/messages/threads/${id}/read`, { method: 'POST' }),
+  /** A teacher asking a student to connect a parent; false if already asked today. */
+  askFamily: (studentId: string) =>
+    apiFetch<{ sent: boolean }>('/messages/ask-family', { method: 'POST', body: JSON.stringify({ student_id: studentId }) }),
 }
 
 /** "Cikgu Demo · 4 Cerdik" for a parent; "Nora (Mum) · about Aina" for a teacher. */

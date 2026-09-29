@@ -278,6 +278,20 @@ export const KINDS: Record<string, KindView> = {
     flourish: 'ring',
     mood: 'point',
   },
+  family_asked: {
+    Icon: HeartStraight,
+    tile: 'bg-kind-family-vivid/15 text-kind-family',
+    title: (n) => `${text(n, 'teacher_name')} would like to talk with your family`,
+    headlines: (n) => [
+      `${text(n, 'teacher_name')} would love to meet your family!`,
+      `Invite your family so ${text(n, 'teacher_name')} can say hello`,
+    ],
+    body: () => 'Send a parent your invitation from My family. They can follow along and talk with your teacher.',
+    href: () => '/settings',
+    action: 'Invite my family',
+    flourish: 'knock',
+    mood: 'wave',
+  },
   parent_teacher_message: {
     Icon: ChatCircleText,
     tile: 'bg-grape-100 text-grape-700 dark:bg-grape-700/30 dark:text-grape-100',
