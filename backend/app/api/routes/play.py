@@ -37,6 +37,7 @@ from app.services.attempt_service import AttemptService
 from app.services.auto_practice import AutoPracticeService
 from app.services.badge_service import BadgeService
 from app.services.child_view_service import ChildViewService
+from app.services.coverage_nudges import CoverageNudges, keep_up_dict
 from app.services.family_share_service import FamilyShareService
 from app.services.play_service import PlayService
 from app.services.read_aloud import ReadAloudService
@@ -75,6 +76,8 @@ async def home(user: CurrentUser, session: SessionDep) -> dict[str, object]:
         "made_for_you": [
             made_for_you_row(m) for m in await AutoPracticeService(session).made_for(user.id)
         ],
+        # Class work not finished yet, by class, with the topic the class is on.
+        "keep_up": [keep_up_dict(k) for k in await CoverageNudges(session).for_student(user)],
     }
 
 

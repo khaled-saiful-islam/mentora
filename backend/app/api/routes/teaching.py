@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.deps import CurrentUser, SessionDep, require_capability
 from app.core.grades import grade_label
+from app.services.coverage_nudges import CoverageNudges, as_dict
 from app.services.teaching_service import TeachingService
 
 router = APIRouter(
@@ -18,7 +19,10 @@ router = APIRouter(
 @router.get("")
 async def overview(user: CurrentUser, session: SessionDep) -> dict[str, object]:
     home = await TeachingService(session).overview(user.id)
+    nudges = await CoverageNudges(session).for_teacher(user.id)
     return {
+        # Keep each class on its syllabus: what to teach next.
+        "coverage": [as_dict(n) for n in nudges],
         "pending": home.pending,
         "live_now": home.live_now,
         "made": home.made,

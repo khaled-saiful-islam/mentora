@@ -299,6 +299,10 @@ class Settings(BaseSettings):
     # this ships) is never announced — a flood of stale alerts helps no one.
     due_watcher_enabled: bool = True
     due_watcher_seconds: float = 60.0
+    # Coverage nudges (services/coverage_nudges.py): how often to look for a
+    # teacher's next topics and a student's unfinished class work.
+    coverage_nudges_enabled: bool = True
+    coverage_nudge_seconds: int = 3600
     overdue_look_back_hours: int = 48
 
     # ---- My materials (§21) ------------------------------------------------

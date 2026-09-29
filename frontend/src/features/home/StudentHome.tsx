@@ -67,6 +67,10 @@ export default function StudentHome() {
       : null,
   )
 
+  // What the class is on, for each piece of class work (its coverage map).
+  const keepUp = data?.keep_up ?? []
+  const topicOf = new Map(keepUp.flatMap((k) => k.items.filter((i) => i.topic).map((i) => [i.assignment_id, i.topic as string] as const)))
+
   return (
     // A container: beside the sidebar the column is narrower than the window,
     // so cards go two across by the column's width, not the screen's.
@@ -119,9 +123,14 @@ export default function StudentHome() {
         ) : (
           <motion.ul className="mt-4 grid gap-4 @xl:grid-cols-2" variants={stagger(0.07)} initial="hidden" animate="shown">
             {data.todo.map((todo) => (
-              <TodoCard key={todo.assignment_id} todo={todo} />
+              <TodoCard key={todo.assignment_id} todo={todo} topic={topicOf.get(todo.assignment_id)} />
             ))}
           </motion.ul>
+        )}
+        {keepUp.length > 0 && (
+          <p className="mt-3 text-sm font-bold text-muted-foreground">
+            {keepUp.map((k) => `${k.items.length} to finish for ${k.name}`).join(' · ')} — keep up with your class!
+          </p>
         )}
       </section>
 

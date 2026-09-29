@@ -29,5 +29,9 @@ class Kind(StrEnum):
     # Something made in the background is ready, or could not be made.
     WORK_DONE = "work_done"
     WORK_FAILED = "work_failed"
+    # The coverage map keeping a class on track: a teacher's next topics, and
+    # a student's unfinished class work.
+    COVERAGE_NUDGE = "coverage_nudge"
+    KEEP_UP = "keep_up"
     # For admins: a student may be at risk, and a person should look.
     SAFETY_ALERT = "safety_alert"

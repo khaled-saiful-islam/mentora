@@ -18,14 +18,21 @@ const ACTION: Record<Todo['status'], string> = {
 
 /** One thing a teacher shared: what it is, where from, when it is due, and
  *  a big button to get going. */
-export function TodoCard({ todo, showClass = true }: { todo: Todo; showClass?: boolean }) {
+export function TodoCard({ todo, showClass = true, topic }: { todo: Todo; showClass?: boolean; topic?: string | null }) {
   const room = lookOf(todo.class_theme)
-  const origin = showClass ? (
-    <Chip className={room.soft}>
-      <span className={cn('size-2 rounded-full', room.dot)} />
-      {todo.class_name}
-    </Chip>
-  ) : null
+  const origin =
+    showClass || topic ? (
+      <>
+        {showClass && (
+          <Chip className={room.soft}>
+            <span className={cn('size-2 rounded-full', room.dot)} />
+            {todo.class_name}
+          </Chip>
+        )}
+        {/* The topic the class is on, from its coverage map. */}
+        {topic && <Chip className="bg-sky-100 text-sky-700 dark:bg-sky-700/25 dark:text-sky-100">Your class is learning {topic}</Chip>}
+      </>
+    ) : null
   return <WorkCard todo={todo} to={`/play/${todo.assignment_id}`} origin={origin} />
 }
 

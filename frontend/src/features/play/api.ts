@@ -193,6 +193,14 @@ export interface Home {
   practise: SkillInsight[]
   strengths: SkillInsight[]
   made_for_you?: MadeForYou[]
+  /** Unfinished class work by class, with the topic the class is on. */
+  keep_up?: KeepUp[]
+}
+
+export interface KeepUp {
+  class_id: string
+  name: string
+  items: { assignment_id: string; title: string; kind: string; topic: string | null; due_at: string | null }[]
 }
 
 export interface HistoryRow {

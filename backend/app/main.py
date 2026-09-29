@@ -63,10 +63,11 @@ async def lifespan(app: FastAPI):
     _check_deployment_safety()
     live_clock = _start_live_clock()
     due_watcher = _start_due_watcher()
+    coverage_watcher = _start_coverage_watcher()
 
     yield
 
-    for task in (live_clock, due_watcher):
+    for task in (live_clock, due_watcher, coverage_watcher):
         if task is not None:
             task.cancel()
     from app.api.deps import live_runtime
@@ -116,6 +117,19 @@ def _start_due_watcher():
 
     watcher = DueWatcher(settings=settings, bus=build_bus, session_maker=session_scope)
     return asyncio.create_task(watcher.run(), name="due-watcher")
+
+
+def _start_coverage_watcher():
+    """Teachers hear what to teach next, students what to finish."""
+    if not settings.coverage_nudges_enabled:
+        return None
+    import asyncio
+
+    from app.db.session import session_scope
+    from app.services.coverage_nudges import CoverageWatcher
+
+    watcher = CoverageWatcher(settings=settings, session_maker=session_scope)
+    return asyncio.create_task(watcher.run(), name="coverage-watcher")
 
 
 def _check_deployment_safety() -> None:

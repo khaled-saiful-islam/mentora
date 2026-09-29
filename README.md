@@ -115,10 +115,13 @@ and [`docs/features/038-live-room.md`](docs/features/038-live-room.md).
 - **The coverage map.** It shows how much of the year's syllabus each class
   has covered, month by month and topic by topic, with the class's score on
   each. It can draft the syllabus, suggest a plan for the rest of the year,
-  and send a progress report home as a private link.
+  and send a progress report home as a private link. Then it keeps nudging:
+  the teacher sees the next topics to teach, and each student sees the class
+  work they still have to finish.
 - **Make it by asking.** In the chat, *"Make me a quiz on fractions for Year 4
   maths"* starts the quiz, and a card in the chat follows it until it's ready.
-  If the topic, year or subject is missing, the chat asks first.
+  It works out the subject from the topic, and asks only for what it cannot
+  guess (usually the year).
 - **Made for you.** When a student finds a shared quiz hard, Mentora makes
   them a short practice set on exactly the skills they missed.
 - **Work in the background.** Making a set or recording a lesson carries on

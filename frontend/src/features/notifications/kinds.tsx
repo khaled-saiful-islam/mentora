@@ -20,9 +20,11 @@ import {
   Confetti,
   Heartbeat,
   HeartStraight,
+  MapTrifold,
   MagicWand,
   Medal,
   PaperPlaneTilt,
+  Target,
   Trophy,
   UserPlus,
   WarningCircle,
@@ -57,6 +59,13 @@ export interface KindView {
 }
 
 const text = (n: Notification, key: string): string => String(n.payload[key] ?? '')
+
+/** A short list said aloud: "Plants, Animals and Light". */
+const listOf = (value: unknown): string => {
+  const items = Array.isArray(value) ? value.map(String).filter(Boolean) : []
+  if (items.length <= 1) return items[0] ?? 'the next topic'
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
+}
 
 /** When a live lesson is, the way the schedule says it. */
 function when(n: Notification): string {
@@ -253,6 +262,36 @@ export const KINDS: Record<string, KindView> = {
     action: 'Start',
     flourish: 'plane',
     mood: 'cheer',
+  },
+  coverage_nudge: {
+    Icon: MapTrifold,
+    tile: 'bg-sky-100 text-sky-700 dark:bg-sky-700/30 dark:text-sky-100',
+    title: (n) => `${text(n, 'class_name')}: next up, ${listOf(n.payload.next)}`,
+    headlines: (n) => [
+      `${text(n, 'class_name')} is ${text(n, 'taught')} of ${text(n, 'topics')} topics in — next up: ${listOf(n.payload.next)}`,
+      `Keep ${text(n, 'class_name')} on track: ${listOf(n.payload.next)} ${Array.isArray(n.payload.next) && n.payload.next.length === 1 ? 'is' : 'are'} still to teach`,
+    ],
+    body: (n) => (Number(n.payload.ready) > 0 ? `You've already made ${text(n, 'ready')} ready to share.` : 'Make a quiz, flashcards or a study guide for the next one.'),
+    href: (n) => `/classes/${text(n, 'class_id')}/coverage`,
+    action: 'Open the map',
+    flourish: 'ring',
+    mood: 'point',
+  },
+  keep_up: {
+    Icon: Target,
+    tile: 'bg-mint-100 text-mint-700 dark:bg-mint-700/30 dark:text-mint-100',
+    title: (n) => `Finish ${text(n, 'title')} for ${text(n, 'class_name')}`,
+    headlines: (n) => [
+      Number(n.payload.count) > 1
+        ? `${text(n, 'count')} things to finish for ${text(n, 'class_name')} — start with ${text(n, 'title')}!`
+        : `${text(n, 'title')} is waiting for you in ${text(n, 'class_name')}`,
+      `Keep up with ${text(n, 'class_name')}: ${text(n, 'title')} is ready when you are`,
+    ],
+    body: (n) => (n.payload.topic ? `Your class is learning ${text(n, 'topic')}.` : null),
+    href: (n) => (n.payload.assignment_id ? `/play/${text(n, 'assignment_id')}` : '/'),
+    action: "Let's go",
+    flourish: 'plane',
+    mood: 'bounce',
   },
   child_overdue: {
     Icon: Alarm,

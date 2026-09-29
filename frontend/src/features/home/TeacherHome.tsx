@@ -18,6 +18,7 @@ import { lookOfKind } from '@/features/learning/kinds'
 import { sessionsApi } from '@/features/live/sessions/api'
 import { whenLabel } from '@/features/live/sessions/when'
 import { useLearnStudio } from '@/features/learning/LearnStudio'
+import { OnTrack, type ClassNudge } from './OnTrack'
 import { useResource } from '@/hooks/useResource'
 import { apiFetch } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
@@ -29,6 +30,8 @@ import { cn } from '@/lib/utils'
 import { Page, pop, rise, stagger } from '@/motion'
 
 interface Teaching {
+  /** Each class with a syllabus: what to teach next. */
+  coverage?: ClassNudge[]
   pending: number
   live_now: number
   /** Sets made (or being made), shared or not. */
@@ -89,6 +92,7 @@ export default function TeacherHome() {
           {!setUp(data) && <GettingStarted data={data} />}
           <Glance data={data} />
           {data.recent.length > 0 && <Recent data={data} />}
+          <OnTrack classes={data.coverage ?? []} />
           <Classes data={data} />
         </>
       )}

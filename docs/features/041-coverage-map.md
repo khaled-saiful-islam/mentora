@@ -43,6 +43,19 @@ taught, and how well.
   - **The whole class**: what has been covered and when, with no names and no
     one's scores.
   - **One student**: their own score on each topic, for their family.
+- **It keeps the class moving through the syllabus.** Once a class has one:
+  - **The teacher's home** has *Keep your classes on track*: how many topics
+    are taught, the next three not taught yet (each with Quiz, Flashcards and
+    Guide buttons that open the Create sheet on that topic), a *Revisit* chip
+    for up to two topics the class scored low on, and how many ready sets are
+    waiting to be shared.
+  - **The student's home** shows, on each unfinished piece of class work, the
+    topic it covers (*Your class is learning Plants*), and a line under the
+    list: *3 to finish for 4 Cerdik — keep up with your class!*
+  - **The bell**: a teacher hears the next topics once a week per class
+    (`coverage_nudge`, opens the map); a student hears about work shared at
+    least two days ago and still not done, every three days per class
+    (`keep_up`, opens the first piece).
 
 ## How it works
 
@@ -87,11 +100,27 @@ taught, and how well.
     students.
   - A stopped link answers exactly like one that never existed.
   - It never calls a model.
+- **Nudges** (`services/coverage_nudges.py`):
+  - `CoverageNudges` reads the map with `sort=False`, so a nudge never costs
+    a model call; anything unplaced is placed the next time the teacher opens
+    the map.
+  - The teacher's overview (`GET /api/me/teaching`) carries `coverage`; the
+    student's home (`GET /api/me/home`) carries `keep_up`, grouped by class,
+    soonest due first.
+  - `CoverageWatcher` runs from the app's lifespan, like the due watcher. A
+    nudge is skipped when the same kind about the same class already reached
+    that person inside its window (7 days for a teacher, 3 for a student),
+    judged from `notifications` itself, so a restart never repeats one.
 
 ## Configuration
 
 None beyond the model the learning sets already use. Drafting and planning
 count against `RATE_LIMIT_GENERATE_PER_MINUTE` and the token allowance.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `COVERAGE_NUDGES_ENABLED` | `true` | Whether the bell nudges at all. The home cards show either way. |
+| `COVERAGE_NUDGE_SECONDS` | `3600` | How often the watcher looks. |
 
 ## Extending it
 
@@ -111,3 +140,10 @@ count against `RATE_LIMIT_GENERATE_PER_MINUTE` and the token allowance.
 - **Scores need quizzes.** Flashcards, study guides and live lessons count as
   taught, but only quiz attempts give a score.
 - **Suggestions are not saved.** Planning again asks the model again.
+- **Nudges follow the syllabus order.** "Next" is the first untaught topics
+  as the syllabus lists them, not a date plan; a teacher who teaches out of
+  order sees an earlier topic keep coming back until it is taught.
+- **The windows are fixed** (a week, three days, two days' wait) in
+  `coverage_nudges.py`, not settings.
+- **A student's topic shows only for work the map has placed**, so it can be
+  missing until the teacher opens the map once.
