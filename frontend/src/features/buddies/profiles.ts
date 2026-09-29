@@ -7,11 +7,11 @@ import type { ComponentType } from 'react'
 import { arms, loop, once, type Signature } from './choreography'
 import type { MouthShape } from './parts'
 import type { ParticleKind } from './particles'
-import { BoltRig } from './rigs/Bolt'
 import { KikoRig } from './rigs/Kiko'
 import { MomoRig } from './rigs/Momo'
 import { OllieRig } from './rigs/Ollie'
 import { RimauRig } from './rigs/Rimau'
+import { TompokRig } from './rigs/Tompok'
 import type { BuddyKey, Mood, Point, RigProps } from './types'
 
 export type Anchor = 'top' | 'side' | 'mouth' | 'body'
@@ -51,33 +51,35 @@ export const BUDDIES: Record<BuddyKey, BuddyProfile> = {
     trickBurst: { kind: 'leaf', count: 5, from: 'top', delayMs: 350 },
     face: '42 16 116 116',
   },
-  bolt: {
-    key: 'bolt',
-    name: 'Bolt',
-    species: 'robot',
-    tagline: 'A hovering robot who beeps with joy at every right answer.',
-    trick: 'Top spin',
-    Rig: BoltRig,
+  tompok: {
+    key: 'tompok',
+    name: 'Tompok',
+    species: 'cat',
+    tagline: 'A curious kampung cat with a patch over one eye and a bell that jingles.',
+    trick: 'Tail chase',
+    Rig: TompokRig,
     signature: {
+      // A cat's tail is never still, and the bell sways with her breathing.
       idle: {
-        body: { y: [0, -5, 0], transition: loop(2.4) },
-        shadow: { scaleX: [1, 0.84, 1], transition: loop(2.4) },
+        tail: { rotate: [0, 12, -4, 10, 0], transition: loop(3.2) },
+        extra: { rotate: [0, 6, 0, -6, 0], transition: loop(2.4) },
       },
-      sleepy: { body: { y: 7 }, shadow: { scaleX: 1.08 } },
+      // Round and round after her own tail: turned about, twice, with a hop.
       trick: {
         spin: NO_SPIN,
         body: {
-          scaleX: [null, 0.1, -1, 0.1, 1, 0.1, -1, 0.1, 1],
-          y: [null, -20, -24, -24, -24, -24, -24, -20, 0],
-          transition: once(1.3),
+          scaleX: [null, 0.15, -1, 0.15, 1, 0.15, -1, 0.15, 1],
+          y: [null, -8, -12, -8, -12, -8, -12, -6, 0],
+          transition: once(1.4),
         },
-        extra: { rotate: [null, 25, -25, 25, 0], transition: once(1.3) },
+        tail: { rotate: [null, 40, -30, 40, -30, 0], transition: once(1.4) },
+        extra: { rotate: [null, 30, -30, 30, 0], transition: once(1.4) },
       },
     },
-    mouths: { trick: 'o' },
-    anchors: { top: [100, 22], side: [142, 54], mouth: [100, 98], body: [100, 142] },
-    trickBurst: { kind: 'bolt', count: 8, from: 'top', delayMs: 150 },
-    face: '40 14 120 120',
+    mouths: { trick: 'grin' },
+    anchors: { top: [100, 30], side: [142, 58], mouth: [100, 110], body: [100, 142] },
+    trickBurst: { kind: 'paw', count: 6, from: 'body', delayMs: 250 },
+    face: '40 16 120 120',
   },
   ollie: {
     key: 'ollie',

@@ -21,7 +21,7 @@ export type ParticleKind =
   | 'confetti'
   | 'flame'
   | 'ring'
-  | 'bolt'
+  | 'paw'
   | 'leaf'
   | 'feather'
   | 'smoke'
@@ -52,14 +52,14 @@ function flight(kind: ParticleKind, i: number, n: number): Flight {
   switch (kind) {
     case 'sparkle':
     case 'star':
-    case 'bolt': {
-      const reach = kind === 'bolt' ? between(24, 38) : between(40, 70)
+    case 'paw': {
+      const reach = kind === 'paw' ? between(30, 50) : between(40, 70)
       return {
         x: [0, Math.cos(angle) * reach],
         y: [0, Math.sin(angle) * reach],
         rotate: between(-90, 90),
         scale: between(0.8, 1.3),
-        life: kind === 'bolt' ? 0.5 : 0.9,
+        life: kind === 'paw' ? 1.1 : 0.9,
         delay: i * 0.03,
       }
     }
@@ -136,8 +136,16 @@ function Shape({ kind, tint }: { kind: ParticleKind; tint: number }) {
       return <path d="M0 -7 Q6 0 4 4 Q0 8 -4 4 Q-6 0 0 -7 Z" fill={paint('momo-flame')} />
     case 'ring':
       return <circle r={9} fill="none" stroke="hsl(var(--star))" strokeWidth={2.4} />
-    case 'bolt':
-      return <path d="M1 -7 L-4 1 L0 1 L-1 7 L4 -1 L0 -1 Z" fill={paint('bolt-bulb')} />
+    case 'paw':
+      return (
+        <g fill={paint('tompok-deep')}>
+          <ellipse cx={0} cy={2.5} rx={3.6} ry={3} />
+          <circle cx={-3.6} cy={-2.4} r={1.5} />
+          <circle cx={-1.2} cy={-4.4} r={1.5} />
+          <circle cx={1.4} cy={-4.4} r={1.5} />
+          <circle cx={3.8} cy={-2.4} r={1.5} />
+        </g>
+      )
     case 'leaf':
       return <path d="M-6 0 Q0 -6 6 0 Q0 6 -6 0 Z" fill={paint('kiko-leaf')} />
     case 'feather':

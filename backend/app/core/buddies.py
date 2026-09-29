@@ -7,7 +7,7 @@ so a stored buddy is always one the browser can draw.
 
 from __future__ import annotations
 
-BUDDIES: tuple[str, ...] = ("kiko", "bolt", "ollie", "momo", "rimau")
+BUDDIES: tuple[str, ...] = ("kiko", "tompok", "ollie", "momo", "rimau")
 
 
 def is_buddy(name: str) -> bool:

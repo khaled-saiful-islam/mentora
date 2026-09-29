@@ -34,9 +34,9 @@ makes from the bits they found tricky. They don't make sets themselves.
 | ![Flashcards: a card flipped to its back, with Knew it and Not yet](docs/screenshots/flashcards.png) | ![A live leaderboard podium with each student's buddy](docs/screenshots/leaderboard.png) |
 | **Flashcards that flip.** Cards you did not know come back for a second round. | **Live leaderboards** for every quiz — first tries only, ties share a place. |
 
-![Five study buddies: Kiko the kancil, Bolt the robot, Ollie the owl, Momo the baby dragon and Rimau the tiger cub](docs/screenshots/buddies.png)
+![Five study buddies: Kiko the kancil, Tompok the cat, Ollie the owl, Momo the baby dragon and Rimau the tiger cub](docs/screenshots/buddies.png)
 
-**Five study buddies** — Kiko, Bolt, Ollie, Momo and Rimau — each with their
+**Five study buddies** — Kiko, Tompok, Ollie, Momo and Rimau — each with their
 own voice, moves, tricks and sounds (a babble in their own pitch under every
 speech bubble). They greet, cheer right answers, comfort wrong ones, and
 coach: halfway and last-one cheers, a nudge when a child is stuck, and a way

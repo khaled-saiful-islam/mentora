@@ -56,13 +56,13 @@ describe('performanceFor', () => {
   })
 
   it('marks halfway and the last one', () => {
-    expect(performanceFor('halfway', 'bolt').mood).toBe('bounce')
+    expect(performanceFor('halfway', 'tompok').mood).toBe('bounce')
     expect(performanceFor('last', 'rimau').mood).toBe('clap')
   })
 
   it('cheers a right answer and celebrates every third in a row', () => {
-    expect(performanceFor('correct', 'bolt', { streak: 1 }).mood).toBe('cheer')
-    const streak = performanceFor('correct', 'bolt', { streak: STREAK_EVERY * 2 })
+    expect(performanceFor('correct', 'tompok', { streak: 1 }).mood).toBe('cheer')
+    const streak = performanceFor('correct', 'tompok', { streak: STREAK_EVERY * 2 })
     expect(streak.mood).toBe('celebrate')
     expect(streak.line).toContain(String(STREAK_EVERY * 2))
     expect(streak.burst?.[0]).toBe('star')

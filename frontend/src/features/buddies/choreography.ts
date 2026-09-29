@@ -3,7 +3,7 @@
  *
  * A rig is a drawing wired to named joints (`types.ts`); this decides what
  * those joints do. Every buddy shares the table, and a buddy's `signature`
- * overrides the moods it does its own way (Bolt hovers instead of breathing,
+ * overrides the moods it does its own way (Tompok's tail never stops swaying,
  * Ollie flutters for its trick).
  *
  * Two rules keep moods from fighting each other:

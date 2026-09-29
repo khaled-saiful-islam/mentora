@@ -18,7 +18,7 @@ export function Frame({
   moves: Moves
   /** Where the body pivots — its feet. */
   feet?: number
-  /** Where the shadow falls, if not right under the feet (Bolt hovers). */
+  /** Where the shadow falls, if not right under the feet (for a buddy that hovers). */
   ground?: number
   middle?: number
   shadow?: number

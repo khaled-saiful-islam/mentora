@@ -27,7 +27,7 @@ interface Tone {
 
 export const TONES: Record<BuddyKey, Tone> = {
   kiko: { base: 760, wave: 'triangle', spread: 0.35, step: 0.075, loud: 0.12 },
-  bolt: { base: 540, wave: 'square', spread: 0.5, step: 0.09, loud: 0.05 },
+  tompok: { base: 680, wave: 'sine', spread: 0.45, step: 0.11, loud: 0.14 },
   ollie: { base: 340, wave: 'sine', spread: 0.2, step: 0.13, loud: 0.16 },
   momo: { base: 620, wave: 'sine', spread: 0.3, step: 0.085, loud: 0.14 },
   rimau: { base: 250, wave: 'sawtooth', spread: 0.25, step: 0.1, loud: 0.05 },

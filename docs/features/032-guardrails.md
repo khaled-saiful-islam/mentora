@@ -37,7 +37,7 @@
     rather than being refused outright.
 - **The assistant knows who it is talking to** (the persona, at prompt order
   110).
-  - **For a student**, it is their buddy (Kiko, Bolt…). It knows their Year or
+  - **For a student**, it is their buddy (Kiko, Tompok…). It knows their Year or
     Form and roughly their age. It guides them through homework rather than
     handing over answers. It never asks for personal details, and it points to
     a trusted adult when the student seems upset.

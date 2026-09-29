@@ -7,7 +7,7 @@ Five companions keep a student company:
 | Buddy | Species |
 |---|---|
 | Kiko | kancil |
-| Bolt | robot |
+| Tompok | cat (a grey kampung cat with a patch over one eye, a red collar and a gold bell) |
 | Ollie | owl |
 | Momo | baby dragon |
 | Rimau | Malayan tiger cub |
@@ -49,7 +49,7 @@ Five companions keep a student company:
   | Buddy | Trick |
   |---|---|
   | Kiko | backflip, with falling leaves |
-  | Bolt | top-spin, with sparks from its antenna |
+  | Tompok | chases her own tail, leaving paw prints |
   | Ollie | wing flutter, with drifting feathers |
   | Momo | puff of flame, which comes out as sparks |
   | Rimau | roar, with shockwave rings |
@@ -68,7 +68,7 @@ Five companions keep a student company:
   - a soft *aww* for a miss
   - a two-note hello
   - a babble under every bubble, about a syllable a word, in the buddy's own
-    pitch (Kiko quick and high, Bolt beeping, Ollie a low hoot, Momo soft,
+    pitch (Kiko quick and high, Tompok mewing, Ollie a low hoot, Momo soft,
     Rimau gruff)
 
   A buddy is quiet while it fidgets or sleeps. No sound plays until the
@@ -125,7 +125,7 @@ features/buddies/
   - A momentary mood starts from wherever the joint already is (`null` as its
     first keyframe), so interruptions never jump.
   - A buddy's `signature` replaces the moods it does its own way. For
-    example, Bolt hovers where the others breathe.
+    example, Tompok's tail and bell never stop swaying.
 - **Pivots use `originX`/`originY` with `transform-box: view-box`**
   (`paint.pivot`). A plain `transformOrigin` is overwritten by Motion on SVG
   parts, and every joint would then turn about the centre of the drawing.

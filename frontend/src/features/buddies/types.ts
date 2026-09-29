@@ -1,9 +1,9 @@
 import type { MotionValue, TargetAndTransition } from 'motion/react'
 import type { MouthShape } from './parts'
 
-export type BuddyKey = 'kiko' | 'bolt' | 'ollie' | 'momo' | 'rimau'
+export type BuddyKey = 'kiko' | 'tompok' | 'ollie' | 'momo' | 'rimau'
 
-export const BUDDY_KEYS: readonly BuddyKey[] = ['kiko', 'bolt', 'ollie', 'momo', 'rimau']
+export const BUDDY_KEYS: readonly BuddyKey[] = ['kiko', 'tompok', 'ollie', 'momo', 'rimau']
 
 export function isBuddyKey(value: unknown): value is BuddyKey {
   return typeof value === 'string' && (BUDDY_KEYS as readonly string[]).includes(value)

@@ -144,12 +144,12 @@
   --buddy-kiko-cream: 36 100% 92%;
   --buddy-kiko-leaf: 128 58% 46%;
 
-  --buddy-bolt: 204 88% 62%;          /* Bolt the robot: sky steel */
-  --buddy-bolt-deep: 212 64% 40%;
-  --buddy-bolt-light: 200 100% 88%;
-  --buddy-bolt-screen: 232 48% 15%;
-  --buddy-bolt-glow: 186 100% 62%;
-  --buddy-bolt-bulb: 44 100% 60%;
+  --buddy-tompok: 216 18% 66%;        /* Tompok the cat: soft kampung grey */
+  --buddy-tompok-deep: 220 20% 38%;
+  --buddy-tompok-cream: 30 60% 97%;
+  --buddy-tompok-pink: 350 80% 80%;
+  --buddy-tompok-collar: 356 76% 56%;
+  --buddy-tompok-bell: 44 100% 58%;
 
   --buddy-ollie: 256 68% 66%;         /* Ollie the owl: grape feathers */
   --buddy-ollie-deep: 256 48% 42%;
@@ -400,7 +400,7 @@
   --color-kind-app-vivid: hsl(var(--kind-app-vivid));
 
   --color-buddy-kiko: hsl(var(--buddy-kiko));
-  --color-buddy-bolt: hsl(var(--buddy-bolt));
+  --color-buddy-tompok: hsl(var(--buddy-tompok));
   --color-buddy-ollie: hsl(var(--buddy-ollie));
   --color-buddy-momo: hsl(var(--buddy-momo));
   --color-buddy-rimau: hsl(var(--buddy-rimau));
