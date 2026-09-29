@@ -127,6 +127,9 @@ and [`docs/features/038-live-room.md`](docs/features/038-live-room.md).
 - **Work in the background.** Making a set or recording a lesson carries on
   while you do something else. A tray beside the bell shows its progress,
   and the bell rings when it is ready.
+- **Messages with families.** Write to the parents of any student in your
+  classes, from **Messages** or the student list. Replies arrive live, and
+  the envelope beside the bell counts what is waiting.
 
 ## For parents
 
@@ -136,7 +139,7 @@ child's 6-letter code.
 
 - **Linked to the child's teachers automatically.** The parent sees the
   child's classes, teachers and schedule. The teacher sees which students
-  have a parent connected. They cannot message each other.
+  have a parent connected, and the two can message each other.
 - **Only the parent can disconnect.** The child is told when a parent
   connects, and sees who is connected.
 - **Everything the child does**, updated live as they work. Each child's
@@ -153,6 +156,10 @@ child's 6-letter code.
 - **A chat of their own**, for helping at home: plain words, practical
   ideas, and it knows their children by name and year and what each is
   practising. It never shows a score or another child. There is no studio.
+- **Messages with the teacher.** Write to each class's teacher about how the
+  child is doing, homework, or anything to clarify. Replies arrive live
+  ([`048`](docs/features/048-parent-teacher-messages.md)). The child never
+  sees these messages.
 
 See [`docs/features/042-parents.md`](docs/features/042-parents.md).
 
@@ -183,6 +190,8 @@ See [`docs/features/042-parents.md`](docs/features/042-parents.md).
   a score spread, and a student's own strengths and next steps.
 - **Coverage and reports home.** A syllabus map per class and private
   progress links for families.
+- **Parent–teacher messages.** Live, one conversation per parent, teacher
+  and child, closed the moment the link ends.
 - **Real time everywhere.** Notifications, progress while a quiz is being
   taken, leaderboards, class lists and join requests update without a reload.
 - **Study buddies, badges and streaks** to keep students coming back.

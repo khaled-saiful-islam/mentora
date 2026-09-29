@@ -4,12 +4,14 @@ import { SignOut } from '@phosphor-icons/react'
 import { Wordmark } from '@/brand/Logo'
 import { Avatar } from '@/components/ui/Avatar'
 import { useSignOut } from '@/components/SignOutConfirm'
+import { MessagesLink } from '@/features/messages/MessagesLink'
+import { useUnreadMessages } from '@/features/messages/unread'
 import { Bell } from '@/features/notifications/Bell'
 import { Tour } from '@/features/onboarding/Tour'
 import { WorkTray } from '@/features/work/WorkTray'
 import { useAuth } from '@/lib/auth'
 import { spring } from '@/motion'
-import { nameOf } from '@/lib/user'
+import { can, nameOf } from '@/lib/user'
 import { cn } from '@/lib/utils'
 import { navFor } from './nav'
 
@@ -23,6 +25,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const signOut = useSignOut()
   const { pathname } = useLocation()
   const items = navFor(user)
+  const unread = useUnreadMessages(user && can(user, 'parent_teacher_messages') ? user.id : null)
 
   return (
     <div className="min-h-dvh bg-background md:grid md:grid-cols-[15.5rem_1fr]">
@@ -52,6 +55,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 )}
                 <item.Icon weight={on ? 'fill' : 'duotone'} className="relative size-6" />
                 <span className="relative">{item.label}</span>
+                {item.key === 'messages' && unread > 0 && (
+                  <span className="relative ml-auto grid min-w-6 place-items-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground" aria-label={`${unread} unread`}>
+                    {unread > 99 ? '99+' : unread}
+                  </span>
+                )}
               </Link>
             )
           })}
@@ -85,6 +93,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
           <div className="ml-auto flex items-center gap-1">
             <WorkTray align="right" />
+            <MessagesLink />
             <Bell align="right" />
           </div>
         </header>

@@ -36,6 +36,7 @@ from app.api.routes import (
     materials,
     me,
     memories,
+    messages,
     notifications,
     play,
     results,
@@ -208,6 +209,7 @@ def create_app() -> FastAPI:
     app.include_router(materials.router, prefix="/api")
     app.include_router(me.router, prefix="/api")
     app.include_router(memories.router, prefix="/api")
+    app.include_router(messages.router, prefix="/api")
     app.include_router(notifications.router, prefix="/api")
     app.include_router(play.router, prefix="/api")
     app.include_router(results.router, prefix="/api")

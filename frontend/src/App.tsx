@@ -38,6 +38,7 @@ import ChildAttemptPage from '@/features/family/child/AttemptReviewPage'
 import ParentSignUp from '@/features/family/ParentSignUp'
 import FamilyInvitePage from '@/features/family/FamilyInvitePage'
 import PlayPage from '@/features/play/PlayPage'
+import MessagesPage from '@/features/messages/MessagesPage'
 import ResultsPage from '@/features/results/ResultsPage'
 import BadgesPage from '@/features/badges/BadgesPage'
 import LeaderboardPage from '@/features/results/LeaderboardPage'
@@ -111,6 +112,8 @@ export default function App() {
           <Route path="/schedule" element={<Shell capability="join_live_sessions"><SchedulePage /></Shell>} />
           <Route path="/room/:id" element={<Shell capability="join_live_sessions"><RoomPage /></Shell>} />
           <Route path="/buddy" element={<Shell><BuddyPage /></Shell>} />
+          <Route path="/messages" element={<Shell capability="parent_teacher_messages"><MessagesPage /></Shell>} />
+          <Route path="/messages/:threadId" element={<Shell capability="parent_teacher_messages"><MessagesPage /></Shell>} />
           <Route path="/profile" element={<Shell><Profile /></Shell>} />
           <Route path="/settings" element={<Shell><Settings /></Shell>} />
           <Route path="/admin" element={<Shell capability="manage_users"><AdminPage /></Shell>} />

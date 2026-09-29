@@ -17,6 +17,7 @@ import {
   Broadcast,
   CalendarStar,
   CalendarX,
+  ChatCircleText,
   Confetti,
   Heartbeat,
   HeartStraight,
@@ -276,6 +277,23 @@ export const KINDS: Record<string, KindView> = {
     action: 'Open the map',
     flourish: 'ring',
     mood: 'point',
+  },
+  parent_teacher_message: {
+    Icon: ChatCircleText,
+    tile: 'bg-grape-100 text-grape-700 dark:bg-grape-700/30 dark:text-grape-100',
+    title: (n) =>
+      n.count > 1
+        ? `${n.count} new messages from ${text(n, 'from_name')} about ${text(n, 'student_name')}`
+        : `${text(n, 'from_name')} wrote about ${text(n, 'student_name')}`,
+    headlines: (n) =>
+      n.count > 1
+        ? [`${n.count} new messages from ${text(n, 'from_name')} about ${text(n, 'student_name')}`]
+        : [`${text(n, 'from_name')} sent you a message about ${text(n, 'student_name')}`, `New message about ${text(n, 'student_name')} from ${text(n, 'from_name')}`],
+    body: (n) => (n.payload.from_side === 'parent' ? `From ${text(n, 'student_name')}'s family.` : `From ${text(n, 'student_name')}'s teacher.`),
+    href: (n) => `/messages/${text(n, 'thread_id')}`,
+    action: 'Reply',
+    flourish: 'knock',
+    mood: 'wave',
   },
   keep_up: {
     Icon: Target,

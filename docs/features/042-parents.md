@@ -38,6 +38,8 @@ is always one missed piece to show.
   *Connect another child* card.
 - **Teachers** see a heart badge beside each student with family connected,
   saying who: *"Siti Aminah (Mum)"*.
+- **The parent and the teacher can message each other** about the child
+  (`048-parent-teacher-messages.md`).
 - **Only the parent can disconnect** (a button on the child's card, with a
   confirmation). The child sees who is connected but cannot remove them.
 

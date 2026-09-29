@@ -3,8 +3,9 @@
 Seeds a demo teacher, a class, three students who have already played, and
 three shared sets with real content — so a fresh install shows a lively home
 page, a leaderboard with people on it, and results worth reading. Aina's mum
-is there too, with work she sent home (`demo_family.py`). Add your own
-student to the class with `make demo join=yourname`.
+is there too, with work she sent home (`demo_family.py`) and a conversation
+with the teacher (`demo_messages.py`). Add your own student to the class
+with `make demo join=yourname`.
 
 Development only: refuses to run when APP_ENV=production. Idempotent — run it
 again and it finds what it made rather than making it twice.
@@ -40,6 +41,7 @@ from app.scripts.demo_content import (
     WATER_SKILLS,
 )
 from app.scripts.demo_family import PARENT_EMAIL, PARENT_PASSWORD, seed_family
+from app.scripts.demo_messages import seed_messages
 from app.services.assignment_service import AssignmentService, ShareSettings
 from app.services.attempt_service import AttemptService
 from app.services.class_service import ClassService
@@ -247,7 +249,8 @@ async def seed_demo(join: list[str]) -> None:
         )
         for student, demo in zip(demo_students, STUDENTS, strict=True):
             await _play(session, student, quiz.id, demo.right)
-        await seed_family(session, demo_students[0])
+        parent = await seed_family(session, demo_students[0])
+        await seed_messages(session, parent, teacher, demo_students[0])
 
     print(f"\nDemo class: {CLASS_NAME}")
     print(f"  teacher   {TEACHER_EMAIL} / {TEACHER_PASSWORD}")

@@ -11,7 +11,9 @@ import { Segmented } from '@/components/ui/Segmented'
 import { useToast } from '@/components/ui/Toast'
 import { PasswordReveal } from '@/features/admin/UserDialogs'
 import { errorMessage } from '@/features/auth/errors'
+import { MessageButton, useContacts } from '@/features/messages/MessageButton'
 import { useResource } from '@/hooks/useResource'
+import { useAuth } from '@/lib/auth'
 import { rise, stagger } from '@/motion'
 import { lookOf } from '@/lib/palette'
 import { cn } from '@/lib/utils'
@@ -46,6 +48,7 @@ export function StudentsTab({ classId, onChange }: { classId: string; onChange: 
   const groups = useResource(`groups:${classId}`, () => classesApi.groups(classId))
   useLive(['members'], (m) => m.class_id === classId && void members.reload())
   const groupsOf = useMemo(() => indexGroups(groups.data?.items ?? []), [groups.data])
+  const contacts = useContacts(useAuth().user)
 
   async function remove(member: Member) {
     setRemoving(null)
@@ -150,6 +153,11 @@ export function StudentsTab({ classId, onChange }: { classId: string; onChange: 
                 </div>
                 {view === 'approved' && (
                   <>
+                    <MessageButton
+                      compact
+                      contacts={contacts.filter((c) => c.student_id === member.student_id && c.class_ids.includes(classId))}
+                      label={`Message ${member.name}'s family`}
+                    />
                     <Button variant="ghost" size="icon" aria-label={`Reset ${member.name}'s password`} title="Reset password" onClick={() => setResetting(member)}>
                       <Key weight="bold" className="size-5" />
                     </Button>

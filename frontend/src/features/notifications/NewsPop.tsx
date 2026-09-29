@@ -39,8 +39,9 @@ export function NewsPop() {
       return
     }
     if (!latestArrival || QUIET_ON.some((p) => pathname.startsWith(p))) return
-    // Finished while you were watching it: you saw it happen, so it is read.
-    if (onScreen(latestArrival)) {
+    // Finished while you were watching it, or a message in the conversation
+    // you have open: you saw it happen, so it is read.
+    if (onScreen(latestArrival, pathname)) {
       void markRead(latestArrival.id)
       return
     }
@@ -239,7 +240,8 @@ function Knocks() {
 }
 
 /** News about work you have open right now — its panel or its page. */
-function onScreen(note: Notification): boolean {
+function onScreen(note: Notification, pathname: string): boolean {
+  if (note.type === 'parent_teacher_message') return pathname === `/messages/${String(note.payload.thread_id)}`
   const id = note.payload.work_id
   return note.type.startsWith('work_') && typeof id === 'string' && isShowing(id)
 }

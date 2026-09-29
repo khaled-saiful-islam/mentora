@@ -43,6 +43,7 @@ from app.db.models.material import Material
 from app.db.models.memory import Memory
 from app.db.models.moderation import ModerationEvent
 from app.db.models.notification import Notification
+from app.db.models.parent_teacher import ParentTeacherMessage, ParentTeacherThread
 from app.db.models.rate_limit import RateLimitHit
 from app.db.models.share import ConversationShare
 from app.db.models.source import MessageSource
@@ -90,6 +91,8 @@ __all__ = [
     "MessageFeedback",
     "MessageSource",
     "Notification",
+    "ParentTeacherMessage",
+    "ParentTeacherThread",
     "RateLimitHit",
     "StudentBadge",
     "User",

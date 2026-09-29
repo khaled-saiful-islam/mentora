@@ -3,7 +3,7 @@
  * the phone tab bar and the chat sidebar, so a page added for a role is one
  * line here. `show` reads the same capabilities the API enforces.
  */
-import { Books, Broadcast, CalendarStar, ChatsCircle, ChartLineUp, GearSix, House, Medal, ShieldStar, Smiley, Sparkle, Barbell, UsersThree, type Icon } from '@phosphor-icons/react'
+import { Books, Broadcast, CalendarStar, ChatsCircle, ChartLineUp, EnvelopeSimple, GearSix, House, Medal, ShieldStar, Smiley, Sparkle, Barbell, UsersThree, type Icon } from '@phosphor-icons/react'
 import { can, type User } from '@/lib/user'
 
 export interface NavItem {
@@ -97,6 +97,17 @@ export const NAV: NavItem[] = [
     // The chat without the studio: parents now (§20.6), students later.
     show: (u) => can(u, 'use_chat') && !can(u, 'studio_artifacts'),
     matches: chatPaths,
+  },
+  {
+    // A parent and their child's teachers (048). Not in the phone's tab bar:
+    // the envelope in the header is on every screen.
+    key: 'messages',
+    to: '/messages',
+    label: 'Messages',
+    Icon: EnvelopeSimple,
+    show: (u) => can(u, 'parent_teacher_messages'),
+    matches: under('/messages'),
+    tab: false,
   },
   {
     key: 'results',

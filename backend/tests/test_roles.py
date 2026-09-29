@@ -159,6 +159,14 @@ EXPECTED: dict[str, dict[Role, bool]] = {
         Role.STUDENT: False,
         Role.PARENT: True,
     },
+    # 048: a parent and their child's teachers write to each other; a child
+    # never sees it.
+    "parent_teacher_messages": {
+        Role.ADMIN: True,
+        Role.TEACHER: True,
+        Role.STUDENT: False,
+        Role.PARENT: True,
+    },
 }
 
 

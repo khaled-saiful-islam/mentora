@@ -45,6 +45,8 @@ export interface Capabilities {
   make_family_sets: boolean
   /** A library of one's own files to make material from. */
   keep_materials: boolean
+  /** A parent and their child's teachers writing to each other. */
+  parent_teacher_messages: boolean
 }
 
 export interface User {

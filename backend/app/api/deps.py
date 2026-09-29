@@ -157,6 +157,7 @@ _CAPABILITY_REFUSALS: dict[str, str] = {
     "make_family_sets": "Sending work home is for parents.",
     "see_children": "This is for a child's parents.",
     "keep_materials": "My materials are for teachers and parents.",
+    "parent_teacher_messages": "Messages are between parents and teachers.",
     "moderate": "This needs an administrator account.",
     "manage_users": "This needs an administrator account.",
 }
@@ -321,6 +322,12 @@ async def limit_chat(session: SessionDep, settings: SettingsDep, user: CurrentUs
         "chat", str(user.id), Limit(settings.rate_limit_chat_per_minute)
     )
     await TokenQuota(session).check(user.id, user.daily_token_limit)
+
+
+async def limit_messages(session: SessionDep, settings: SettingsDep, user: CurrentUser) -> None:
+    await RateLimiter(session, enabled=settings.rate_limit_enabled).check(
+        "messages", str(user.id), Limit(settings.rate_limit_messages_per_minute)
+    )
 
 
 async def limit_upload(session: SessionDep, settings: SettingsDep, user: CurrentUser) -> None:

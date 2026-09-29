@@ -54,6 +54,9 @@ class Capabilities:
     make_family_sets: bool = False
     # A library of one's own files to make material from (§21).
     keep_materials: bool = False
+    # A parent and their child's teachers writing to each other about the
+    # child (`048-parent-teacher-messages.md`). Never a student.
+    parent_teacher_messages: bool = False
 
     def as_dict(self) -> dict[str, bool]:
         return {field.name: getattr(self, field.name) for field in fields(self)}
@@ -68,6 +71,7 @@ _TEACHING = {
     "share_conversations": True,
     "see_usage": True,
     "keep_materials": True,
+    "parent_teacher_messages": True,
 }
 
 _BY_ROLE: dict[Role, Capabilities] = {
@@ -88,7 +92,11 @@ _BY_ROLE: dict[Role, Capabilities] = {
     # makes material to send home, and has the chat as an adult — with no
     # studio (§20.6).
     Role.PARENT: Capabilities(
-        use_chat=True, see_children=True, make_family_sets=True, keep_materials=True
+        use_chat=True,
+        see_children=True,
+        make_family_sets=True,
+        keep_materials=True,
+        parent_teacher_messages=True,
     ),
 }
 

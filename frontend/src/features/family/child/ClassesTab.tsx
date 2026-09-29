@@ -8,7 +8,10 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import type { StudentClass } from '@/features/classes/api'
 import { EmptyArt } from '@/features/classes/EmptyArt'
 import { Report } from '@/features/coverage/ReportPage'
+import { MessageButton, useContacts } from '@/features/messages/MessageButton'
+import type { Contact } from '@/features/messages/api'
 import { useResource } from '@/hooks/useResource'
+import { useAuth } from '@/lib/auth'
 import { lookOf } from '@/lib/palette'
 import { cn } from '@/lib/utils'
 import { rise, stagger } from '@/motion'
@@ -17,6 +20,7 @@ import { useChildResource } from './useChild'
 
 export function ClassesTab({ childId, first }: { childId: string; first: string }) {
   const classes = useChildResource(childId, 'classes', () => familyApi.classes(childId))
+  const contacts = useContacts(useAuth().user)
   if (classes.error) return <Alert>{classes.error}</Alert>
   if (!classes.data) return <Skeleton className="h-48 rounded-[1.75rem]" />
   const rooms = classes.data.items
@@ -32,13 +36,18 @@ export function ClassesTab({ childId, first }: { childId: string; first: string 
   return (
     <motion.ul className="space-y-4" variants={stagger(0.06)} initial="hidden" animate="shown">
       {rooms.map((room) => (
-        <ClassRow key={room.class_id} childId={childId} room={room} />
+        <ClassRow
+          key={room.class_id}
+          childId={childId}
+          room={room}
+          teachers={contacts.filter((c) => c.student_id === childId && c.class_ids.includes(room.class_id))}
+        />
       ))}
     </motion.ul>
   )
 }
 
-function ClassRow({ childId, room }: { childId: string; room: StudentClass }) {
+function ClassRow({ childId, room, teachers }: { childId: string; room: StudentClass; teachers: Contact[] }) {
   const [open, setOpen] = useState(false)
   const look = lookOf(room.theme)
   return (
@@ -51,6 +60,7 @@ function ClassRow({ childId, room }: { childId: string; room: StudentClass }) {
           <p className="break-words font-display text-xl font-semibold leading-snug">{room.class_name}</p>
           <p className="text-sm text-muted-foreground">{[room.subject, `with ${room.teacher_name}`].filter(Boolean).join(' · ')}</p>
         </div>
+        <MessageButton contacts={teachers} label={`Message ${room.teacher_name}`} />
         <Button variant="outline" size="sm" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           {open ? 'Hide what they cover' : 'What the class covers'}
           <motion.span animate={{ rotate: open ? 180 : 0 }} className="inline-flex">

@@ -33,5 +33,8 @@ class Kind(StrEnum):
     # a student's unfinished class work.
     COVERAGE_NUDGE = "coverage_nudge"
     KEEP_UP = "keep_up"
+    # A parent and their child's teacher writing to each other; one note a
+    # thread, grown by each new message until the thread is read.
+    PARENT_TEACHER_MESSAGE = "parent_teacher_message"
     # For admins: a student may be at risk, and a person should look.
     SAFETY_ALERT = "safety_alert"

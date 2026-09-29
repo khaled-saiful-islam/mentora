@@ -111,6 +111,9 @@ class Settings(BaseSettings):
     # Invite lookups and joins, per address: a class code is short, so guessing
     # them has to be slow.
     rate_limit_invite_per_minute: int = 30
+    # Messages between a parent and a teacher, per sender. A conversation,
+    # not a broadcast: generous for typing, too slow for a script.
+    rate_limit_messages_per_minute: int = 30
     # nginx appends the real peer to any X-Forwarded-For the client sent, so the
     # LAST entry is the trustworthy one. Set false when the API is exposed
     # directly: then the header is entirely client-controlled and believing it

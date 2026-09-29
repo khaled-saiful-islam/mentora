@@ -162,6 +162,23 @@ class NotificationService:
             push_after_commit(self._session, user_id, _CHANGED)
         return note
 
+    async def mark_group_read(self, user_id: UUID, group_key: str) -> int:
+        """The thing a group is about was opened some other way — a message
+        thread read on its own page — so its news is read too."""
+        now = datetime.now(UTC)
+        result = await self._session.execute(
+            update(Notification)
+            .where(
+                Notification.user_id == user_id,
+                Notification.group_key == group_key,
+                Notification.read_at.is_(None),
+            )
+            .values(read_at=now, seen_at=func.coalesce(Notification.seen_at, now))
+        )
+        if result.rowcount:
+            push_after_commit(self._session, user_id, _CHANGED)
+        return int(result.rowcount or 0)
+
     async def mark_all_read(self, user_id: UUID) -> int:
         result = await self._session.execute(
             update(Notification)
