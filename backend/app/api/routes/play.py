@@ -36,6 +36,7 @@ from app.events.registry import build_bus
 from app.services.attempt_service import AttemptService
 from app.services.auto_practice import AutoPracticeService
 from app.services.badge_service import BadgeService
+from app.services.buddy_brief import brief_for
 from app.services.child_view_service import ChildViewService
 from app.services.coverage_nudges import CoverageNudges, keep_up_dict
 from app.services.family_share_service import FamilyShareService
@@ -79,6 +80,13 @@ async def home(user: CurrentUser, session: SessionDep) -> dict[str, object]:
         # Class work not finished yet, by class, with the topic the class is on.
         "keep_up": [keep_up_dict(k) for k in await CoverageNudges(session).for_student(user)],
     }
+
+
+@router.get("/buddy")
+async def buddy_brief(user: CurrentUser, session: SessionDep) -> dict[str, object]:
+    """What the student's buddy knows about them, to help on every page:
+    what is waiting, how they are doing, and their next live lesson."""
+    return (await brief_for(session, user)).as_dict()
 
 
 @router.post("/assignments/{assignment_id}/attempts", response_model=AttemptResponse)

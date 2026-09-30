@@ -3,12 +3,14 @@ import { motion } from 'motion/react'
 import { SignOut } from '@phosphor-icons/react'
 import { Wordmark } from '@/brand/Logo'
 import { Avatar } from '@/components/ui/Avatar'
+import { CompanionBuddy, CompanionNote, useCompanion } from '@/features/buddies/BuddyCompanion'
 import { useSignOut } from '@/components/SignOutConfirm'
 import { MessagesLink } from '@/features/messages/MessagesLink'
 import { useUnreadMessages } from '@/features/messages/unread'
 import { Bell } from '@/features/notifications/Bell'
 import { Tour } from '@/features/onboarding/Tour'
 import { WorkTray } from '@/features/work/WorkTray'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useAuth } from '@/lib/auth'
 import { spring } from '@/motion'
 import { can, nameOf } from '@/lib/user'
@@ -26,6 +28,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation()
   const items = navFor(user)
   const unread = useUnreadMessages(user && can(user, 'parent_teacher_messages') ? user.id : null)
+  // A student's buddy goes with them to every page: in the sidebar when it
+  // has room, in the header otherwise — beside the page, never over it.
+  const roomy = useMediaQuery('(min-width: 768px) and (min-height: 780px)')
+  const companion = useCompanion()
 
   return (
     <div className="min-h-dvh bg-background md:grid md:grid-cols-[15.5rem_1fr]">
@@ -64,8 +70,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )
           })}
         </nav>
+        <div className="mt-auto" />
+        {companion && roomy && (
+          <>
+            <CompanionNote companion={companion} slot="side" />
+            <CompanionBuddy companion={companion} slot="side" />
+          </>
+        )}
         {user && (
-          <div className="mt-auto flex items-center gap-2 rounded-2xl bg-surface p-2 shadow-sm">
+          <div className="mt-2 flex items-center gap-2 rounded-2xl bg-surface p-2 shadow-sm">
             <Avatar name={nameOf(user)} seed={user.id} className="size-9" />
             <Link to="/profile" className="min-w-0 flex-1">
               <p className="break-words text-sm font-bold">{nameOf(user)}</p>
@@ -92,11 +105,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Wordmark tile />
           </Link>
           <div className="ml-auto flex items-center gap-1">
+            {companion && !roomy && <CompanionBuddy companion={companion} slot="bar" />}
             <WorkTray align="right" />
             <MessagesLink />
             <Bell align="right" />
           </div>
         </header>
+        {companion && !roomy && <CompanionNote companion={companion} slot="bar" />}
         <div className="flex-1 pb-24 md:pb-10">{children}</div>
       </div>
 

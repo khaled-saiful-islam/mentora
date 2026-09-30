@@ -12,6 +12,8 @@ import { useParams } from 'react-router-dom'
 import { Alert, Button, ButtonLink, Skeleton } from '@/components/ui'
 import { errorMessage } from '@/features/auth/errors'
 import { tipFor, type BuddyHandle } from '@/features/buddies'
+import { useBuddyBrief } from '@/features/buddies/brief'
+import { playTip } from '@/features/buddies/companion'
 import { useAuth } from '@/lib/auth'
 import { firstName } from '@/lib/user'
 import { Page } from '@/motion'
@@ -47,6 +49,10 @@ export default function PlayPage({ source }: { source: PlaySource }) {
   const { user } = useAuth()
   const [step, setStep] = useState<Step>({ name: 'loading' })
   const buddy = useRef<BuddyHandle>(null)
+  // What the buddy knows about this student, for a tip that fits them.
+  const brief = useBuddyBrief(user?.role === 'student')
+  const known = useRef(brief)
+  known.current = brief
 
   const load = useCallback(async (from: PlaySource, key: string) => {
     setStep({ name: 'loading' })
@@ -72,7 +78,8 @@ export default function PlayPage({ source }: { source: PlaySource }) {
     if (!playingId) return
     const place = playingKind === 'flashcard' ? 'flashcard' : playingKind === 'study_guide' ? 'guide' : 'quiz'
     const hello = window.setTimeout(() => buddy.current?.cue('hello', { name: user ? firstName(user) : undefined }), 700)
-    const tip = window.setTimeout(() => buddy.current?.say(tipFor(place)), 4400)
+    const skills = playing?.skills.map((s) => s.label) ?? []
+    const tip = window.setTimeout(() => buddy.current?.say(playTip(playingKind ?? 'quiz', skills, known.current) ?? tipFor(place), 5200), 4400)
     return () => (window.clearTimeout(hello), window.clearTimeout(tip))
     // The user object changes on every preference save; the greeting should not.
   }, [playingId, playingKind])

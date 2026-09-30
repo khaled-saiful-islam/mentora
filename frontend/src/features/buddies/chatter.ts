@@ -25,6 +25,9 @@ export interface ChatterContext {
   strengths: readonly string[]
   /** Practice made for them, waiting. */
   madeForYou: number
+  /** More it knows about them (`companion.homeLines`), read at each turn so
+   *  it can arrive after the page does. */
+  extra?: () => readonly string[]
 }
 
 export interface Chatter {
@@ -42,6 +45,7 @@ function about(ctx: ChatterContext, turn: number): string | null {
     ctx.practise.length > 0 && `A little practice on ${ctx.practise[0]} would make you even stronger.`,
     ctx.badges > 0 && `You've earned ${ctx.badges} ${ctx.badges === 1 ? 'badge' : 'badges'} so far. Which one's next?`,
     ctx.strengths.length > 0 && `You're a star at ${ctx.strengths[0]}. That's something to be proud of!`,
+    ...(ctx.extra?.() ?? []),
   ].filter((line): line is string => Boolean(line))
   return said.length ? said[turn % said.length] : null
 }

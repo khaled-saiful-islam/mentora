@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button, ButtonLink } from '@/components/ui'
 import { BadgeMedal } from '@/features/badges/medals'
 import { Buddy, BuddyStage, type BuddyHandle, type Cue } from '@/features/buddies'
+import { finishTip } from '@/features/buddies/companion'
 import { useAuth } from '@/lib/auth'
 import { useSound } from '@/lib/sound'
 import { cn } from '@/lib/utils'
@@ -62,11 +63,14 @@ export function FinishScreen({
   useEffect(() => {
     sound('finish')
     const cue = window.setTimeout(() => buddy.current?.cue(CUE[verdict]), 500)
+    // Then what to do next: the skill to practise, or a tip for next time.
+    const next = finishTip(attempt.kind, finish.skills, stars)
+    const advice = next ? window.setTimeout(() => buddy.current?.say(next, 6500), 5200) : 0
     if (stars >= look.confettiFrom) {
       window.setTimeout(() => celebrate({ calm, power: (stars === 3 ? 1.3 : 0.8) * look.confettiPower }), 900)
     }
     if (finish.badges.length) window.setTimeout(() => sound('badge'), 2200)
-    return () => window.clearTimeout(cue)
+    return () => (window.clearTimeout(cue), window.clearTimeout(advice))
     // Once, on arrival: a re-render must not replay the fanfare.
   }, [])
 

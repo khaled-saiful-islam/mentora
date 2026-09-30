@@ -98,6 +98,65 @@ Five companions keep a student company:
   is never given a question, so it has nothing it could give away. On the
   home page, a tip can name a skill the student could practise.
 
+### On every page, knowing the student (added 2026-09-30)
+
+A student's buddy goes with them to every page, as the one friend who
+knows how they are doing (`BuddyCompanion.tsx`).
+
+- **Where it stands.** In the sidebar on a screen at least 768 px wide and
+  780 px tall, with *"Momo · tap me for a tip"* under it. On a phone or a
+  short screen it stands small in the header, beside the bell. Home and *My
+  buddy* already have a buddy, so it stays out of those.
+- **Its words never cover the page.** What it says goes in the layout: a
+  note above it in the sidebar, or a strip under the header on a phone that
+  pushes the page down. Each line shows for about nine seconds, and × closes
+  it sooner.
+- **What it knows** (`GET /api/me/buddy`, `services/buddy_brief.py`):
+  - what is waiting, overdue first, then the soonest due;
+  - the streak and the badges;
+  - two strengths and two skills to practise;
+  - the last three scores, and the average of each kind (quiz, flashcards,
+    study guide) over its latest ten tries;
+  - the live lesson happening now, or else the next one.
+
+  It is fetched once and kept fresh by the `assignments`, `progress` and
+  `live` pushes.
+- **What it says, page by page** (`companion.ts`), a line soon after
+  arriving and then every 45 seconds or so, three a page at most:
+
+  | Page | It says |
+  |---|---|
+  | Any page | What is overdue (*"'Fractions' is overdue. Shall we do it now? I'll help!"*), what is due soon (*"…is due today at 3:00 PM"*), the next live lesson, the streak |
+  | Practice | The skill to grow (*"Let's practise 'Water'…"*), and a tip for any kind that has felt hard |
+  | Results | The last score in words, a strength, what to practise, and how each kind has gone |
+  | Badges | How many badges, and the streak |
+  | Schedule | When the next live lesson is, and a live-lesson tip |
+  | A live lesson | One tip, with no sound, since Astra is talking |
+  | Leaderboard | That beating your own best is what counts |
+
+- **Tips for doing better** (`HOW_TO`), for each kind of work:
+  - **Quizzes:** read every answer before choosing, rule out the wrong ones,
+    watch for NOT and ALWAYS.
+  - **Flashcards:** say it out loud before flipping, be honest with *Not
+    yet*.
+  - **Study guides:** *Read it to me*, the dotted words, *Simpler*, the
+    Remember box.
+  - **Live lessons:** a quiet spot with sound on, *Ask Astra*, the key idea
+    on screen, every option in a quick check.
+
+  How a kind has gone decides the words: 85% or more is praised (*"Your
+  quizzes are going brilliantly lately: 91% on average!"*), under 60% gets a
+  tip (*"Quizzes have felt tricky lately. Try this: …"*).
+- **In a quiz, deck or guide**, the tip a few seconds in fits the student:
+  a skill in it that was tricky before (*"This one has 'Water' in it. It was
+  tricky before, so take it slowly"*), one they are strong at, or how that
+  kind has gone. Without any of those it is the usual study tip.
+- **On the finish screen**, after the cheer: the skill to practise next
+  (*"Next, let's practise 'Water'"*), or a tip for next time.
+- **On Home**, its chatter also mentions what is overdue, the next live
+  lesson, and how each kind has gone.
+- **Tapped**, it does its trick and says the next useful line.
+
 ### On the signed-out screens
 
 All five buddies stand on the hills behind sign-in, sign-up and invite pages
@@ -126,7 +185,7 @@ features/buddies/
   choreography.ts   mood → joint animations (pure; tested)
   parts.tsx         Eyes, Mouth (morphing path), Cheeks, Follow, Gloss
   rigs/             one SVG drawing per buddy, wired to named joints
-  particles.tsx     stars, hearts, notes, z's, flames, rings, leaves…
+  particles.tsx     stars, hearts, notes, z's, raindrops, rings, leaves…
   hooks.ts          useBlink, useGaze (one shared pointer listener),
                     useBuddyMood (reactions, fidgets, dozing), useSpeech
   profiles.ts       the registry: name, rig, signature moves, anchors
@@ -136,6 +195,9 @@ features/buddies/
   Buddy.tsx         the living buddy, with an imperative handle
   BuddyAvatar.tsx   a still face for lists
   BuddyStage.tsx    the glowing backdrop
+  brief.ts          what the buddy knows (GET /api/me/buddy), kept fresh
+  companion.ts      what it says on each page, and tips (pure; tested)
+  BuddyCompanion.tsx  the buddy on every student page, and its note
 ```
 
 - **A rig is a drawing wired to joints.** The joints are `spin`, `body`,
@@ -191,6 +253,12 @@ sound.
   student who had picked Momo still has Momo, now an orangutan, with nothing
   to migrate. Their buddy changed without them choosing it.
 
+- **The companion's lines are rules, not a model.** It picks from what it
+  knows with fixed wording. That keeps it safe and free, but it cannot hold
+  a conversation or answer a question.
+- **It knows results, not answers.** The brief has scores and skills, never
+  a question, so it cannot say why a particular answer was wrong.
+- **One line at a time.** A new line replaces the one showing.
 - **A buddy babbles; it doesn't speak words.** Its lines are read on screen,
   with a babble under them. Speaking them in a recorded voice would put a
   second voice beside Astra's *Read it to me*, and would cost a clip per

@@ -40,7 +40,10 @@ makes from the bits they found tricky. They don't make sets themselves.
 own voice, moves, tricks and sounds (a babble in their own pitch under every
 speech bubble). They greet, cheer right answers, comfort wrong ones, and
 coach: halfway and last-one cheers, a nudge when a child is stuck, and a way
-to think after two misses. **My results** is written for a child to read: the
+to think after two misses. The buddy goes with a student to **every page**,
+knowing their progress, schedule, strengths and what needs practice, and
+says the useful part: what is due, the skill to practise, a tip for doing
+better at quizzes, flashcards, study guides and live lessons. **My results** is written for a child to read: the
 buddy's one-line summary, recent scores, and skills sorted into *Got it*,
 *Getting there* and *Let's practise*.
 

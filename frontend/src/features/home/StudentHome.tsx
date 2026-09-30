@@ -11,6 +11,8 @@ import { Link } from 'react-router-dom'
 import { Alert, ButtonLink, Skeleton } from '@/components/ui'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Buddy, BuddyStage, greeting, tipFor, useBuddyChatter, type BuddyHandle } from '@/features/buddies'
+import { useBuddyBrief } from '@/features/buddies/brief'
+import { homeLines } from '@/features/buddies/companion'
 import { EmptyArt } from '@/features/classes/EmptyArt'
 import { useNotifications } from '@/features/notifications/NotificationsProvider'
 import { playApi, type Home } from '@/features/play/api'
@@ -30,6 +32,10 @@ export default function StudentHome() {
   useLive(['assignments', 'classes'], () => void home.reload())
   const buddy = useRef<BuddyHandle>(null)
   const data = home.data
+  // What the buddy knows beyond this page: results by kind, the next lesson.
+  const brief = useBuddyBrief(true)
+  const knows = useRef(brief)
+  knows.current = brief
   // Practice made for them just landed in the bell: show it here too.
   const { latestArrival } = useNotifications()
   useEffect(() => {
@@ -63,6 +69,7 @@ export default function StudentHome() {
           practise: data.practise.map((s) => s.label),
           strengths: data.strengths.map((s) => s.label),
           madeForYou: (data.made_for_you ?? []).length,
+          extra: () => homeLines(knows.current),
         }
       : null,
   )

@@ -43,6 +43,10 @@ export interface BuddyProps {
   /** Fidgets and dozes when left alone. */
   lively?: boolean
   bubble?: BubbleSide
+  /** Speech bubbles even when small, for a buddy whose words are the point. */
+  speaks?: boolean
+  /** No sound at all — while Astra is teaching, say. */
+  hushed?: boolean
   className?: string
 }
 
@@ -84,7 +88,7 @@ const SECRET_TAPS = 5
 const TAP_WINDOW_MS = 1800
 
 export const Buddy = forwardRef<BuddyHandle, BuddyProps>(function Buddy(
-  { buddy, mood: base = 'idle', size = 160, interactive = true, track = true, lively = true, bubble = 'top', className },
+  { buddy, mood: base = 'idle', size = 160, interactive = true, track = true, lively = true, bubble = 'top', speaks, hushed = false, className },
   ref,
 ) {
   const profile = profileOf(buddy)
@@ -98,7 +102,8 @@ export const Buddy = forwardRef<BuddyHandle, BuddyProps>(function Buddy(
   const field = useParticles(!calm && !lite)
   const { emit } = field
   const speech = useSpeech()
-  const soundOn = useSoundOn() && !lite
+  const soundOn = useSoundOn() && !lite && !hushed
+  const talks = speaks ?? !lite
   const moves = useMemo(() => choreograph(mood, profile.signature, calm), [mood, profile, calm])
   const mouth = profile.mouths[mood] ?? MOUTH_FOR[mood]
 
@@ -182,7 +187,7 @@ export const Buddy = forwardRef<BuddyHandle, BuddyProps>(function Buddy(
 
   return (
     <div ref={box} className={cn('relative inline-block shrink-0', className)} style={{ width: size, height: size }}>
-      <AnimatePresence>{!lite && speech.line && <SpeechBubble key={speech.line} text={speech.line} side={bubble} anchor={box} />}</AnimatePresence>
+      <AnimatePresence>{talks && speech.line && <SpeechBubble key={speech.line} text={speech.line} side={bubble} anchor={box} />}</AnimatePresence>
       {interactive ? (
         <motion.button
           type="button"
