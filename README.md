@@ -244,6 +244,20 @@ their sign-ins.
 > **Change `SEED_ADMIN_PASSWORD` and `JWT_SECRET` before deploying anywhere.**
 > The app refuses to start with the shipped defaults when `APP_ENV=production`.
 
+## Production
+
+Mentora is live at **https://mentora.stream**: one AWS Lightsail server in
+Singapore running this same Compose stack, with Cloudflare in front for DNS
+and HTTPS. On the server:
+
+```bash
+scripts/deploy.sh      # back up the database, pull main, rebuild, wait until healthy
+scripts/backup-db.sh   # dump the database now (also runs nightly)
+```
+
+How it is set up, and why, is in
+[`docs/features/049-production-deployment.md`](docs/features/049-production-deployment.md).
+
 ## Configuration
 
 Everything is set in `.env`; [`.env.example`](.env.example) documents every
