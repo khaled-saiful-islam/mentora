@@ -130,6 +130,7 @@ class LiveSummaryService:
                     "joined_at": p.first_joined_at.isoformat() if p else None,
                     "minutes": _minutes(p) if p else 0,
                     "removed": bool(p and p.removed_at),
+                    "left_at": p.left_at.isoformat() if p and p.left_at else None,
                 }
             )
         return rows

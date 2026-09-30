@@ -164,6 +164,8 @@ class LiveParticipant(Base):
     seconds_present: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     # Taken out of the room by the teacher; they cannot come back in.
     removed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # They chose to leave; cleared when they come back in.
+    left_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class LiveHand(Base):

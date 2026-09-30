@@ -34,9 +34,11 @@ export function TeacherPanel({
           <ul className="space-y-1.5">
             {roster.map((r) => (
               <li key={r.id} className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-muted/60">
-                <span aria-hidden className={cn('size-2.5 shrink-0 rounded-full', r.here ? 'bg-mint-400' : 'bg-muted-foreground/30')} />
+                <span aria-hidden className={cn('size-2.5 shrink-0 rounded-full', r.here ? 'bg-mint-400' : r.left ? 'bg-coral-400' : 'bg-muted-foreground/30')} />
                 <span className="min-w-0 flex-1 break-words font-semibold">{r.name}</span>
-                <span className="text-xs text-muted-foreground">{r.here ? 'here' : 'away'}</span>
+                <span className={cn('text-xs', r.left ? 'font-bold text-coral-700 dark:text-coral-100' : 'text-muted-foreground')}>
+                  {r.here ? 'here' : r.left ? 'left the lesson' : 'away'}
+                </span>
                 <button
                   type="button"
                   aria-label={`Remove ${r.name} from the lesson`}

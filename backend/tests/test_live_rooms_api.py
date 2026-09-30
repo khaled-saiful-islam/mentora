@@ -243,6 +243,8 @@ async def test_nothing_a_student_sends_reaches_another_student() -> None:
         "/live-rooms/{session_id}/question",
         "/live-rooms/{session_id}/checkin",
         "/live-rooms/{session_id}/report",
+        # Carries nothing but "they left" — the roster already names who is in.
+        "/live-rooms/{session_id}/leave",
     }
 
 
@@ -319,6 +321,40 @@ async def test_a_removed_student_is_told_and_kept_out(
         assert (await c.post(f"/api/live-rooms/{live.id}/join")).status_code == 404
 
 
+async def test_a_student_who_leaves_is_seen_to_leave_and_may_come_back(
+    room_api, runtime, session, scheduled, teacher
+) -> None:
+    live, kid, _ = scheduled
+    room = await runtime.room(live.id)
+    room.members[kid.id] = Member(kid.id, "Aina", None, "student", connections=1)
+    async with room_api(kid) as c:
+        assert (await c.post(f"/api/live-rooms/{live.id}/join")).status_code == 200
+        gone = await c.post(f"/api/live-rooms/{live.id}/leave")
+    assert gone.status_code == 204, gone.text
+    assert any(e["type"] == "left" and e["name"] == "Aina" for e in room._events)  # noqa: SLF001
+    assert room.roster() == [
+        {"id": str(kid.id), "name": "Aina", "buddy": None, "here": False, "left": True}
+    ]
+    assert kid.id not in room.here()
+    seen = await session.get(LiveParticipant, (live.id, kid.id))
+    await session.refresh(seen)
+    assert seen.left_at is not None
+
+    # Coming back in clears it, on the page and in the room.
+    async with room_api(kid) as c:
+        assert (await c.post(f"/api/live-rooms/{live.id}/join")).status_code == 200
+    await session.refresh(seen)
+    assert seen.left_at is None
+    events = room.follow(Member(kid.id, "Aina", None, "student"), None)
+    await anext(events)
+    assert room.roster()[0]["left"] is False
+    assert room.roster()[0]["here"] is True
+    await events.aclose()
+
+    async with room_api(teacher) as c:
+        assert (await c.post(f"/api/live-rooms/{live.id}/leave")).status_code == 422
+
+
 async def test_notes_are_for_the_group_once_the_lesson_has_ended(
     room_api, session, scheduled
 ) -> None:
@@ -383,6 +419,7 @@ async def test_the_summary_says_who_came_what_they_asked_and_how_checks_went(
             "joined_at": summary["attendance"][0]["joined_at"],
             "minutes": 12.0,
             "removed": False,
+            "left_at": None,
         }
     ]
     assert summary["questions"][0] == {

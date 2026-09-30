@@ -32,6 +32,14 @@
   - Then the group's answers are shown as bars, and Astra says the right answer and why.
 - **The end:** a celebration. Then *Take the quiz* appears, for a quiz made from the lesson, the teacher's files and the questions the group asked, and shared with the group. Afterwards the room shows **My notes**: the key points of each part and the whole lesson as it was said.
 
+- **Leave the lesson** (updated 2026-09-30): at the top of the room, in the
+  lobby and all through the lesson.
+  - It asks once: *"Leave the lesson? Your teacher will see that you left.
+    You can come back in while the lesson is still on."* *Stay* or *Leave*.
+  - Leaving takes their question out of the queue and goes to *My schedule*.
+  - Coming back in (from the schedule, while the lesson is on) is allowed,
+    and clears it.
+
 **No pictures.** A live lesson is Astra's voice and what is on the screen: the key point or worked example of each beat. Pictures are for study guides only (migration `a1c6e3f8b420` dropped the part picture).
 
 **Report a problem** (Phase 5): a student can report something in the lesson.
@@ -44,10 +52,14 @@
 - **Controls:** Pause, Carry on, Skip this part and End the lesson.
 - **Dashboard:**
   - who is here, with a way to take a student out (they are told, and kept out);
+  - who **left the lesson**, apart from who just dropped out: *left the
+    lesson* with a coral dot, against *away*, and a note on screen, *"Aina
+    left the lesson"*;
   - the hand queue, with *dismiss*;
   - the transcript as it is said.
 - **Summary** on the lesson's page once it has ended:
-  - attendance, with join times and minutes;
+  - attendance, with join times and minutes, and *left early at 10:14* for
+    a student who left and did not come back;
   - every question, who asked it and Astra's answer;
   - each quick check, with the right answer and the spread of answers;
   - the quiz average, with a link to its results.
@@ -97,6 +109,7 @@
 | POST | `/live-rooms/:id/question` | Only while called on |
 | POST | `/live-rooms/:id/checkin` | Answer a quick check |
 | POST | `/live-rooms/:id/report` | Report a problem |
+| POST | `/live-rooms/:id/leave` | A student leaves: their hand comes down, `live_participants.left_at` is set (migration `d6b1e4a9c273`), and the room hears `left` `{student_id, name}` and a roster with `left: true`. Joining again clears it. A teacher is refused. |
 | GET | `/live-rooms/:id/notes` | Once ended |
 
 **The teacher:**
@@ -109,7 +122,7 @@
 | POST | `/live-sessions/:id/hands/:sid/dismiss` | Dismiss a hand |
 | GET | `/live-sessions/:id/summary` | The summary |
 
-A test asserts the student routes are exactly `join`, `hand`, `question` and `checkin`: nothing a student sends can reach another student.
+A test asserts the student routes are exactly `join`, `hand`, `question`, `checkin`, `report` and `leave`: nothing a student sends can reach another student. `leave` carries only that they left, and the roster already names who is in.
 
 ## Configuration
 
@@ -121,6 +134,8 @@ A test asserts the student routes are exactly `join`, `hand`, `question` and `ch
 - **Similar questions are not merged.** Each raised hand is taken in turn. Merging ("a couple of you asked…") was optional in the spec and is left for later.
 - **Pictures come from web image search** (SafeSearch, https, blocked hosts dropped), so the teacher should glance at each one in the review. Each can be removed with one tap.
 
+- **Closing the tab is not leaving.** Only *Leave the lesson* says so. A
+  student who closes the tab or loses the connection shows as *away*.
 - **One worker.** The rooms and conductors live in the API process. A restart resumes a running lesson from its last sentence, but the room forgets live-only state (the hand queue, an open check) until it happens again.
 - **Answers are recorded as they stream.** The first spoken word comes about 1–2 s after the thanks line, hidden by that line when the model is warm.
 - **Tamil cannot be heard yet.** ILMU's speech-to-text handles English and Malay, and a spoken Tamil question would come back garbled. Lessons are English-only for now, and a student can always type.

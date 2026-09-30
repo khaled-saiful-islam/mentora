@@ -9,6 +9,8 @@ export interface RosterEntry {
   name: string
   buddy: string | null
   here: boolean
+  /** Left with Leave, rather than dropping out. */
+  left?: boolean
 }
 
 export interface ClipEvent {
@@ -42,6 +44,7 @@ export type RoomEvent =
   | { type: 'quiz'; seq: number; assignment_id: string; title: string }
   | { type: 'error'; seq: number; message: string }
   | { type: 'removed'; seq: number; student_id: string }
+  | { type: 'left'; seq: number; student_id: string; name: string }
 
 export interface RoomState {
   phase?: RoomPhase
@@ -75,6 +78,8 @@ export const roomApi = {
   hand: (id: string, question?: string) =>
     apiFetch<{ id: string; left: number }>(`/live-rooms/${id}/hand`, { method: 'POST', ...json({ question: question ?? null }) }),
   lower: (id: string) => apiFetch<void>(`/live-rooms/${id}/hand`, { method: 'DELETE' }),
+  /** A student leaves; their teacher sees they left. They may come back. */
+  leave: (id: string) => apiFetch<void>(`/live-rooms/${id}/leave`, { method: 'POST' }),
   report: (id: string, text: string) => apiFetch<{ ok: boolean }>(`/live-rooms/${id}/report`, { method: 'POST', ...json({ text }) }),
   ask: (id: string, text: string) => apiFetch<{ ok: boolean }>(`/live-rooms/${id}/question`, { method: 'POST', ...json({ text }) }),
   checkin: (id: string, segment_id: string, choice: number) =>
@@ -98,7 +103,7 @@ export interface Line {
 }
 
 export interface Summary {
-  attendance: { student_id: string; name: string; came: boolean; joined_at: string | null; minutes: number; removed: boolean }[]
+  attendance: { student_id: string; name: string; came: boolean; joined_at: string | null; minutes: number; removed: boolean; left_at?: string | null }[]
   questions: { name: string; status: string; question: string | null; answer: string | null; raised_at: string }[]
   checkins: { question: string; options: string[]; answer: number; counts: number[]; answered: number; right: number }[]
   quiz: { assignment_id: string; completed: number; average: number | null } | null

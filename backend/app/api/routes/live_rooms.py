@@ -204,24 +204,49 @@ async def lower_hand(
     session_id: UUID, user: CurrentUser, session: SessionDep, runtime: LiveRuntimeDep
 ) -> Response:
     live, _ = await _access(session, user, session_id)
-    conductor = runtime.conductor(live.id)
-    if conductor is not None and conductor.lower_hand(user.id):
-        queued = (
-            (
-                await session.execute(
-                    select(LiveHand).where(
-                        LiveHand.session_id == live.id,
-                        LiveHand.student_id == user.id,
-                        LiveHand.status == "queued",
-                    )
+    await _lower(session, runtime, live.id, user.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{session_id}/leave", status_code=status.HTTP_204_NO_CONTENT)
+async def leave(
+    session_id: UUID, user: CurrentUser, session: SessionDep, runtime: LiveRuntimeDep
+) -> Response:
+    """A student leaves the lesson: their hand comes down and their teacher
+    sees they left, not that they dropped out. They can come back while it
+    is on; joining again clears it."""
+    live, role = await _access(session, user, session_id)
+    if role != "student":
+        raise ValidationError("A teacher ends the lesson rather than leaving it.")
+    found = await session.get(LiveParticipant, (live.id, user.id))
+    if found is not None:
+        found.left_at = datetime.now(UTC)
+    await _lower(session, runtime, live.id, user.id)
+    await session.commit()
+    (await runtime.room(live.id)).leave(user.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+async def _lower(db, runtime, session_id: UUID, student_id: UUID) -> None:
+    """Take a student's hand out of the queue, and mark it lowered."""
+    conductor = runtime.conductor(session_id)
+    if conductor is None or not conductor.lower_hand(student_id):
+        return
+    queued = (
+        (
+            await db.execute(
+                select(LiveHand).where(
+                    LiveHand.session_id == session_id,
+                    LiveHand.student_id == student_id,
+                    LiveHand.status == "queued",
                 )
             )
-            .scalars()
-            .all()
         )
-        for hand in queued:
-            hand.status = "lowered"
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+        .scalars()
+        .all()
+    )
+    for hand in queued:
+        hand.status = "lowered"
 
 
 @router.post("/{session_id}/question", status_code=status.HTTP_202_ACCEPTED)
@@ -417,6 +442,7 @@ async def _arrived(db, session_id: UUID, student_id: UUID) -> None:
         )
     else:
         found.last_seen_at = now
+        found.left_at = None
     await db.commit()
 
 

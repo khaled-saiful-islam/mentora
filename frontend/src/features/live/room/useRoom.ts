@@ -52,6 +52,8 @@ export function useRoom(id: string) {
   const [said, setSaid] = useState<Said[]>([])
   const [soundOn, setSoundOn] = useState(false)
   const [removed, setRemoved] = useState(false)
+  // Students who chose to leave, newest last — the teacher is told.
+  const [departures, setDepartures] = useState<{ seq: number; student_id: string; name: string }[]>([])
   const level = useMotionValue(0)
 
   const offset = useRef(0)
@@ -103,6 +105,9 @@ export function useRoom(id: string) {
           break
         case 'roster':
           setRoster(event.roster)
+          break
+        case 'left':
+          setDepartures((all) => (all.some((d) => d.seq === event.seq) ? all : [...all, { seq: event.seq, student_id: event.student_id, name: event.name }]))
           break
         case 'hands':
           setHands(event.queue)
@@ -273,7 +278,7 @@ export function useRoom(id: string) {
   )
 
   return {
-    joined, error, phase, roster, line, speaking, show, progress, segment, hands, called, mine, myQuestion, left,
+    joined, error, phase, roster, line, speaking, show, progress, segment, hands, called, mine, myQuestion, left, departures,
     checkin, answered, choice, result, quiz, said, soundOn, removed, level, serverNow,
     enableSound, raiseHand, lowerHand, ask, choose,
   }

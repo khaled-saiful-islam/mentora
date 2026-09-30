@@ -7,12 +7,13 @@
  * words lighting up as they are said, hands going up, quick checks, and at
  * the end a celebration and the quiz.
  */
-import { ArrowLeft, Clock, FastForward, Flag, Pause, Play, Stop } from '@phosphor-icons/react'
+import { ArrowLeft, Clock, DoorOpen, FastForward, Flag, Pause, Play, Stop } from '@phosphor-icons/react'
 import { motion } from 'motion/react'
-import { Link, useParams } from 'react-router-dom'
-import { useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
 import { Alert, Button, Skeleton } from '@/components/ui'
 import { Dialog } from '@/components/ui/Dialog'
+import { useToast } from '@/components/ui/Toast'
 import type { Mood } from '@/features/buddies/types'
 import { starField } from '@/features/auth/scene/sky'
 import { Page, spring } from '@/motion'
@@ -35,6 +36,7 @@ export default function RoomPage({ teacherView = false }: { teacherView?: boolea
   const session = room.joined?.session
   const student = room.joined?.role === 'student'
   const back = teacherView ? `/live/${id}` : '/schedule'
+  useDepartures(student ? [] : room.departures)
 
   if (!room.joined) {
     return (
@@ -51,13 +53,18 @@ export default function RoomPage({ teacherView = false }: { teacherView?: boolea
   const waiting = !running && status === 'scheduled' && !joinOpen(session?.scheduled_at ?? null, status, now)
   const ended = room.phase === 'ended' || status === 'ended'
   const started = !waiting && !ended && room.phase !== 'lobby'
+  // In the room — the lobby or the lesson — a student can always get out.
+  const canLeave = student && !room.removed && !ended && status !== 'cancelled' && !waiting
 
   return (
     <Page className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-8">
-      <Link to={back} className="mb-4 inline-flex items-center gap-1 text-sm font-bold text-muted-foreground hover:text-foreground">
-        <ArrowLeft weight="bold" className="size-4" aria-hidden />
-        {teacherView ? 'Back to the lesson' : 'My schedule'}
-      </Link>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Link to={back} className="inline-flex items-center gap-1 text-sm font-bold text-muted-foreground hover:text-foreground">
+          <ArrowLeft weight="bold" className="size-4" aria-hidden />
+          {teacherView ? 'Back to the lesson' : 'My schedule'}
+        </Link>
+        {canLeave && <LeaveButton id={id} />}
+      </div>
       {room.error && <Alert className="mb-4">{room.error}</Alert>}
 
       {room.removed ? (
@@ -167,6 +174,62 @@ export default function RoomPage({ teacherView = false }: { teacherView?: boolea
       )}
     </Page>
   )
+}
+
+/** A student leaves the lesson, after saying so once: their teacher sees it. */
+function LeaveButton({ id }: { id: string }) {
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const navigate = useNavigate()
+  const leave = async () => {
+    setBusy(true)
+    try {
+      await roomApi.leave(id)
+    } catch {
+      // Leaving the page still leaves the room: the teacher then sees "away".
+    }
+    navigate('/schedule')
+  }
+  return (
+    <>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        <DoorOpen weight="bold" className="size-4" aria-hidden />
+        Leave the lesson
+      </Button>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Leave the lesson?"
+        description="Your teacher will see that you left. You can come back in while the lesson is still on."
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Stay
+            </Button>
+            <Button variant="danger" loading={busy} onClick={() => void leave()}>
+              <DoorOpen weight="bold" className="size-4" aria-hidden />
+              Leave
+            </Button>
+          </>
+        }
+      >
+        <p className="text-muted-foreground">Your answers so far are saved.</p>
+      </Dialog>
+    </>
+  )
+}
+
+/** For the teacher: a note each time a student leaves, once each. */
+function useDepartures(departures: { seq: number; name: string }[]) {
+  const { toast } = useToast()
+  const told = useRef(new Set<number>())
+  useEffect(() => {
+    for (const d of departures) {
+      if (told.current.has(d.seq)) continue
+      told.current.add(d.seq)
+      toast(`${d.name} left the lesson`, { tone: 'info' })
+    }
+  }, [departures, toast])
 }
 
 function ReportButton({ id }: { id: string }) {

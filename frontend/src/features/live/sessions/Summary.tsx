@@ -40,7 +40,7 @@ export function Summary({ id }: { id: string }) {
                   {a.removed
                     ? 'removed'
                     : a.came && a.joined_at
-                      ? `joined ${new Date(a.joined_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} · ${a.minutes} min`
+                      ? `joined ${clock(a.joined_at)} · ${a.minutes} min${a.left_at ? ` · left early at ${clock(a.left_at)}` : ''}`
                       : "didn't come"}
                 </span>
               </li>
@@ -122,4 +122,8 @@ function Stat({ Icon, value, label }: { Icon: typeof UsersThree; value: string; 
       </div>
     </Card>
   )
+}
+
+function clock(iso: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
 }

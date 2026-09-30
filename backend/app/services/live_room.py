@@ -39,6 +39,9 @@ class Member:
     buddy: str | None
     role: str  # "student" or "teacher"
     connections: int = 0
+    # Said goodbye with Leave, rather than dropping out: the teacher sees
+    # "left" and not "away". Cleared when they come back in.
+    left: bool = False
 
 
 @dataclass
@@ -74,13 +77,23 @@ class Room:
 
     def roster(self) -> list[dict[str, Any]]:
         return [
-            {"id": str(m.id), "name": m.name, "buddy": m.buddy, "here": m.connections > 0}
+            {
+                "id": str(m.id),
+                "name": m.name,
+                "buddy": m.buddy,
+                "here": m.connections > 0 and not m.left,
+                "left": m.left,
+            }
             for m in sorted(self.members.values(), key=lambda m: m.name.lower())
             if m.role == "student"
         ]
 
     def here(self) -> list[UUID]:
-        return [m.id for m in self.members.values() if m.role == "student" and m.connections > 0]
+        return [
+            m.id
+            for m in self.members.values()
+            if m.role == "student" and m.connections > 0 and not m.left
+        ]
 
     async def follow(self, member: Member, since: int | None) -> AsyncIterator[dict[str, Any]]:
         """Events for one connection: what was missed (or a snapshot), then live."""
@@ -88,7 +101,9 @@ class Room:
         self._queues.add(queue)
         known = self.members.setdefault(member.id, member)
         known.connections += 1
-        if known.connections == 1:
+        came_back = known.left
+        known.left = False
+        if known.connections == 1 or came_back:
             self.publish({"type": "roster", "roster": self.roster()})
         try:
             missed = [e for e in self._events if since is not None and e["seq"] > since]
@@ -104,6 +119,17 @@ class Room:
             known.connections = max(0, known.connections - 1)
             if known.connections == 0:
                 self.publish({"type": "roster", "roster": self.roster()})
+
+    def leave(self, member_id: UUID) -> bool:
+        """A student said goodbye. The room hears who, and the roster says
+        "left". False when they were never in the room."""
+        known = self.members.get(member_id)
+        if known is None or known.role != "student":
+            return False
+        known.left = True
+        self.publish({"type": "left", "student_id": str(known.id), "name": known.name})
+        self.publish({"type": "roster", "roster": self.roster()})
+        return True
 
     def _remember(self, event: dict[str, Any]) -> None:
         kind = event.get("type")
