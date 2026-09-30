@@ -46,10 +46,10 @@
   example *"too hard for Year 3: two-step problem with numbers above
   10 000"*) or far too easy, and that item is rewritten. Live lessons are
   told the same.
-- **Preview**: a quiz or flashcards opens on *Look through*, every question
-  one at a time with its answer showing and *Next* to move on, so nothing
-  needs answering. *Play as a student* plays it in the real players, in the
-  look its year gets (`044-play-looks.md`).
+- **Preview**: a quiz or flashcards opens on *See every question*, the
+  student's own screen in the look its year gets, walked through with *Next*
+  and *Back* so nothing needs answering, with *Show answers* to check them.
+  *Answer it as a student* plays it for real (`044-play-looks.md`).
 
 ## How it works
 

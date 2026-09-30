@@ -29,17 +29,22 @@ the set's year (`grade_level` on the attempt) decides. Anything else — a
 Form, Lower or Upper Six, or no year at all — gets the focused look.
 
 **Preview** (`/library/:id/try`, the *Preview* button in the editor) opens
-on **Look through** (`LookThrough.tsx`), for checking a set without playing
-it:
-- Every question one at a time, with the right answer marked and the *Why*
-  under it. A flashcard shows its front, its back and its hint side by side.
-- *Next question* and *Back* walk through; so do the arrow keys, and a row of
-  dots jumps straight to one. Nothing needs answering.
-- The end says *"That's all 6 questions"*, with *From the start*, *Play as a
-  student* and *Back to editing*.
+on **See every question** (`PreviewBrowse.tsx`, updated 2026-09-30):
+- It is the student's own screen, the same question card and tiles
+  (`QuizQuestion`) or the same card that turns over (`Flashcard`), in the
+  look for the set's year, with the buddy. Nothing needs answering.
+- *Next question* and *Back* under it walk through every one; so do the
+  arrow keys. The bar along the top fills as they go.
+- The tiles cannot be pressed, and no answer is sent.
+- **Show answers** (a quiz's) marks the right tile, dims the rest, and shows
+  *Why* under them. It starts off, so the screen is what a student sees.
+  A flashcard shows its back when turned over (*Turn it over*).
+- The end says *"That's all 6 questions"*, with *From the start*, *Answer it
+  as a student* and *Back to editing*.
+- The two ways are buttons that wrap onto two lines on a phone.
 
-**Play as a student**, the switch in the banner, plays it the way a student
-will:
+**Answer it as a student**, the other button in the banner, plays it the way
+a student will:
 - A banner says *"Preview — this is how a Year 4 student sees it. Nothing is
   saved."*, naming the set's year.
 - The look is the one the set's year gets (`levelForGrade`), exactly as a

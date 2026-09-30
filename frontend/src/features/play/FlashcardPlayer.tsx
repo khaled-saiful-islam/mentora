@@ -150,7 +150,7 @@ export function FlashcardPlayer({ attempt, buddy, exitTo, onFinished }: PlayerPr
 }
 
 /** A few cards peeking out underneath, so the pile shows how much is left. */
-function Deck({ left, children }: { left: number; children: React.ReactNode }) {
+export function Deck({ left, children }: { left: number; children: React.ReactNode }) {
   return (
     <div className="relative mt-6 w-full max-w-lg">
       {[2, 1].filter((n) => n <= left).map((n) => (
@@ -181,7 +181,9 @@ export const FLIP: Record<'plain' | 'bright', Transition> = {
   },
 }
 
-function Flashcard({
+/** One card as a student sees it; the player and the preview both show it.
+ *  Without `onSwipe` it only turns over — a preview has nothing to mark. */
+export function Flashcard({
   card,
   flipped,
   leaving,
@@ -194,7 +196,7 @@ function Flashcard({
   leaving: 'knew' | 'notYet' | null
   look: PlayLook
   onFlip: () => void
-  onSwipe: (knew: boolean) => void
+  onSwipe?: (knew: boolean) => void
 }) {
   const bright = look.tiles === 'bright'
   const calm = useCalmMotion()
@@ -205,7 +207,7 @@ function Flashcard({
   const notYetGlow = useTransform(x, [-SWIPE_PX, -20], [1, 0])
 
   function release(_: unknown, info: PanInfo) {
-    if (!flipped) return
+    if (!flipped || !onSwipe) return
     if (info.offset.x > SWIPE_PX) onSwipe(true)
     else if (info.offset.x < -SWIPE_PX) onSwipe(false)
   }
@@ -217,7 +219,7 @@ function Flashcard({
       // Perspective here, on the flipping card's own parent: a transformed
       // ancestor further up flattens 3D, and the flip would read as a squash.
       style={{ x, rotate: tilt, perspective: 1400 }}
-      drag={flipped && !leaving ? 'x' : false}
+      drag={flipped && !leaving && onSwipe ? 'x' : false}
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.9}
       onDragEnd={release}

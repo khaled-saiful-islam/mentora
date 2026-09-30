@@ -20,14 +20,14 @@ import { errorMessage } from '@/features/auth/errors'
 import { useSound } from '@/lib/sound'
 import { cn } from '@/lib/utils'
 import { celebrate, spring, useCalmMotion, wobble } from '@/motion'
-import type { Played, QuizItem } from './api'
+import type { Attempt, Played, QuizItem } from './api'
 import { usePlayBackend } from './backend'
 import { pick, POINTS_EACH, usePlayLook, type PlayLook } from './level'
 import { BuddySpot } from './BuddyDock'
 import { useAnswerCoach, useCoach } from './coach'
 import { PlayHeader } from './PlayChrome'
 import { PlayBackdrop, PointsBurst, ReadAloudButton, SparkleBurst } from './PlayFun'
-import { usePlayVoice, type Line } from './usePlayVoice'
+import { usePlayVoice, type Line, type PlayVoice } from './usePlayVoice'
 import type { PlayerProps } from './players'
 import { playedById, quizItems, resumeAt, segments, skillLabel } from './session'
 
@@ -130,11 +130,6 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
   useKeys(item?.options.length ?? 0, (n) => void choose(n), answer && instant ? next : null)
 
   if (!item) return null
-  // The server says the same words, by the same shape names (`read_aloud.py`).
-  const heard: Line[] = [
-    { spoken: { item: item.id, part: 'question' }, text: item.prompt },
-    ...item.options.map((o, n): Line => ({ spoken: { item: item.id, part: 'option', n }, text: `${MARKERS[n % MARKERS.length].name}: ${o}` })),
-  ]
   return (
     <div className="flex min-h-dvh flex-col">
       <PlayBackdrop kind={look.backdrop} />
@@ -155,18 +150,7 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
             exit={{ opacity: 0, x: -60, rotate: -2, transition: { duration: 0.18 } }}
             transition={spring.gentle}
           >
-            <div className={cn(look.questionCard && 'relative overflow-hidden rounded-3xl border-2 border-border bg-surface p-5 shadow-sm')}>
-              {look.questionCard && <span aria-hidden className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-kind-quiz-vivid via-sun-400 to-mint-400" />}
-              <div className="flex flex-wrap items-center gap-2">
-                <Chip tone="sun" className="text-sm">
-                  Question {index + 1} of {items.length}
-                </Chip>
-                <Chip className="text-sm capitalize">{skillLabel(attempt, item.skill)}</Chip>
-                {look.readAloud && <ReadAloudButton voice={voice} id={item.id} lines={heard} className="ml-auto" />}
-              </div>
-              <h1 className={cn(look.questionCard ? 'mt-3' : 'mt-4', look.question)}>{item.prompt}</h1>
-            </div>
-            <Options item={item} answer={answer} instant={instant} disabled={sending} look={look} onChoose={(n) => void choose(n)} />
+            <QuizQuestion attempt={attempt} item={item} index={index} total={items.length} answer={answer} instant={instant} disabled={sending} voice={voice} onChoose={(n) => void choose(n)} />
           </motion.section>
         </AnimatePresence>
         <BuddySpot />
@@ -177,6 +161,55 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
         )}
       </AnimatePresence>
     </div>
+  )
+}
+
+/**
+ * One question as a student sees it: the card with its number and skill,
+ * and the four tiles. The player and the preview both show it.
+ */
+export function QuizQuestion({
+  attempt,
+  item,
+  index,
+  total,
+  answer,
+  instant,
+  disabled,
+  voice,
+  onChoose,
+}: {
+  attempt: Attempt
+  item: QuizItem
+  index: number
+  total: number
+  answer: Played | undefined
+  instant: boolean
+  disabled: boolean
+  voice: PlayVoice
+  onChoose: (choice: number) => void
+}) {
+  const look = usePlayLook()
+  // The server says the same words, by the same shape names (`read_aloud.py`).
+  const heard: Line[] = [
+    { spoken: { item: item.id, part: 'question' }, text: item.prompt },
+    ...item.options.map((o, n): Line => ({ spoken: { item: item.id, part: 'option', n }, text: `${MARKERS[n % MARKERS.length].name}: ${o}` })),
+  ]
+  return (
+    <>
+      <div className={cn(look.questionCard && 'relative overflow-hidden rounded-3xl border-2 border-border bg-surface p-5 shadow-sm')}>
+        {look.questionCard && <span aria-hidden className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-kind-quiz-vivid via-sun-400 to-mint-400" />}
+        <div className="flex flex-wrap items-center gap-2">
+          <Chip tone="sun" className="text-sm">
+            Question {index + 1} of {total}
+          </Chip>
+          <Chip className="text-sm capitalize">{skillLabel(attempt, item.skill)}</Chip>
+          {look.readAloud && <ReadAloudButton voice={voice} id={item.id} lines={heard} className="ml-auto" />}
+        </div>
+        <h1 className={cn(look.questionCard ? 'mt-3' : 'mt-4', look.question)}>{item.prompt}</h1>
+      </div>
+      <Options item={item} answer={answer} instant={instant} disabled={disabled} look={look} onChoose={onChoose} />
+    </>
   )
 }
 
