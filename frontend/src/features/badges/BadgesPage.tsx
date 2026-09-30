@@ -86,20 +86,23 @@ function UpNext({ badge, earned }: { badge: { badge: string; name: string; hint:
     <motion.li
       variants={pop}
       className={cn(
-        'items-center gap-4 rounded-3xl border-2 border-dashed border-sun-400/60 bg-surface/60 p-4',
+        '@container rounded-3xl border-2 border-dashed border-sun-400/60 bg-surface/60 p-4',
         SPAN_BASE[left(2)],
         SPAN_SM[left(3)],
         SPAN_LG[left(4)],
       )}
     >
-      <motion.span animate={{ rotate: [0, -6, 6, 0] }} transition={{ duration: 3, repeat: Infinity }} className="shrink-0">
-        <BadgeMedal badge={badge.badge} size={64} locked />
-      </motion.span>
-      <span className="min-w-0">
-        <span className="block text-xs font-bold tracking-wide text-sun-600 uppercase dark:text-sun-300">Up next</span>
-        <span className="block font-display text-lg font-semibold">{badge.name}</span>
-        <span className="block text-sm text-muted-foreground">{badge.hint}</span>
-      </span>
+      {/* In one narrow column the words go under the medal; with room, beside it. */}
+      <div className="flex w-full flex-col items-center gap-3 text-center @2xs:flex-row @2xs:gap-4 @2xs:text-left">
+        <motion.span animate={{ rotate: [0, -6, 6, 0] }} transition={{ duration: 3, repeat: Infinity }} className="shrink-0">
+          <BadgeMedal badge={badge.badge} size={64} locked />
+        </motion.span>
+        <span className="min-w-0 break-words">
+          <span className="block text-xs font-bold tracking-wide text-sun-600 uppercase dark:text-sun-300">Up next</span>
+          <span className="block font-display text-lg font-semibold">{badge.name}</span>
+          <span className="block text-sm text-muted-foreground">{badge.hint}</span>
+        </span>
+      </div>
     </motion.li>
   )
 }

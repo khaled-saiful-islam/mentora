@@ -96,7 +96,7 @@ function Row({
   children: React.ReactNode
 }) {
   return (
-    <section className="grid gap-3 sm:grid-cols-[11rem_1fr] sm:items-center">
+    <section className="grid gap-3 lg:grid-cols-[11rem_minmax(0,1fr)] lg:items-center">
       <div className="flex items-center gap-2">
         <Icon weight="duotone" className="size-5 text-primary" />
         <div>
