@@ -63,6 +63,19 @@ squeezed to a few letters a line. Keep these rules so they stay gone:
 - **Empty states are wide, not tall.** `EmptyState` puts its picture beside
   the words from `sm`.
 - **Animation stays.** A tidy-up never removes or pauses existing motion.
+- **A date and time is set with OK** (`components/ui/DateTimeField.tsx`).
+  - The browser's own date-time box has no OK. Its pop-up stays open until
+    you click elsewhere, so nobody could tell when the time was set.
+  - `DateTimeField` opens a calendar and a time (hour, minute, AM or PM)
+    under the field. Nothing changes until **OK**. **Cancel** or Escape
+    keeps the old value, and the × beside a chosen date goes back to none.
+  - A `min` greys out past days, and OK refuses a time that has passed.
+  - It opens in place, under the field, so it is never cut off by a dialog
+    or the screen edge.
+  - It is used for every due date (sharing a set, sending one home, a live
+    lesson's quiz) and for a live lesson's start time.
+  - Its value is local time as `YYYY-MM-DDTHH:mm`, like the input it
+    replaces. `localFromIso` and `localNow` convert.
 
 ## How it works
 
@@ -103,6 +116,8 @@ None. The look is code: edit `theme.css`.
 
 ## Known limits
 
+- **Minutes step by five** in the date-time picker. A value saved on another
+  minute still shows and keeps it, but only fives can be picked.
 - **Arbitrary pixel text sizes do not scale.** `text-[13px]` in older
   components ignores the text-size setting until each screen is restyled.
 - **`lucide-react` is still used by older screens.** Phosphor is the icon set

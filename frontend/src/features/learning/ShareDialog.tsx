@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'motion/react'
 import { Broadcast, Check, Lightning, Trophy, UsersFour, UsersThree } from '@phosphor-icons/react'
 import { Alert, Button, Field, Skeleton } from '@/components/ui'
+import { DateTimeField, localNow } from '@/components/ui/DateTimeField'
 import { Dialog } from '@/components/ui/Dialog'
 import { Segmented } from '@/components/ui/Segmented'
 import { useToast } from '@/components/ui/Toast'
@@ -148,7 +149,7 @@ export function ShareDialog({ open, set, onClose }: { open: boolean; set: SetDet
             </div>
           )}
           <Field label="Due (optional)" htmlFor="share-due">
-            <input id="share-due" type="datetime-local" value={due} min={localNow()} onChange={(e) => setDue(e.target.value)} className="h-12 w-full rounded-2xl border-2 border-input bg-surface px-3 font-semibold focus-visible:border-primary focus-visible:outline-none" />
+            <DateTimeField id="share-due" value={due} min={localNow()} onChange={setDue} placeholder="No due date" />
           </Field>
         </section>
 
@@ -176,9 +177,4 @@ function Toggle({ label, hint, on, onChange, icon }: { label: string; hint?: str
       </button>
     </label>
   )
-}
-
-function localNow(): string {
-  const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60_000)
-  return now.toISOString().slice(0, 16)
 }

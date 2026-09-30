@@ -6,6 +6,7 @@ import { Check, HeartStraight, House } from '@phosphor-icons/react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Alert, Button, ButtonLink, Field, Skeleton } from '@/components/ui'
+import { DateTimeField, localNow } from '@/components/ui/DateTimeField'
 import { Dialog } from '@/components/ui/Dialog'
 import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/features/auth/errors'
@@ -16,13 +17,6 @@ import { celebrate, spring, useCalmMotion } from '@/motion'
 import { familyApi, sendHomeApi, type SentHome } from './api'
 
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
-
-/** Now, as the `min` of a datetime-local input — in local time. */
-function localNow(): string {
-  const now = new Date()
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
-  return now.toISOString().slice(0, 16)
-}
 
 export function SendHomeDialog({ open, set, onClose }: { open: boolean; set: { id: string; title: string }; onClose: () => void }) {
   const children = useResource(open ? 'send-home:children' : null, () => familyApi.children())
@@ -147,14 +141,7 @@ export function SendHomeDialog({ open, set, onClose }: { open: boolean; set: { i
             })}
           </section>
           <Field label="Due (optional)" htmlFor="send-home-due">
-            <input
-              id="send-home-due"
-              type="datetime-local"
-              value={due}
-              min={localNow()}
-              onChange={(e) => setDue(e.target.value)}
-              className="h-12 w-full rounded-2xl border-2 border-input bg-surface px-3 font-semibold focus-visible:border-primary focus-visible:outline-none"
-            />
+            <DateTimeField id="send-home-due" value={due} min={localNow()} onChange={setDue} placeholder="No due date" />
           </Field>
           {chosen.size > 0 && [...chosen].some((id) => already.has(id)) && (
             <p className="text-sm text-muted-foreground">Sending it again gives them your latest changes and the new due date.</p>

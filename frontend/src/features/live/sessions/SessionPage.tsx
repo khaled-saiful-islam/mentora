@@ -20,7 +20,8 @@ import {
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Alert, Button, ButtonLink, Card, Input, Skeleton } from '@/components/ui'
+import { Alert, Button, ButtonLink, Card, Skeleton } from '@/components/ui'
+import { DateTimeField, localNow } from '@/components/ui/DateTimeField'
 import { useResource } from '@/hooks/useResource'
 import { cn } from '@/lib/utils'
 import type { Material } from '@/features/materials/api'
@@ -426,10 +427,12 @@ function Schedule({
         </div>
       </div>
       <div className="mt-4 flex flex-wrap items-end gap-2">
-        <label className="min-w-[min(100%,14rem)] flex-1">
-          <span className="mb-1 block text-sm font-bold">{scheduled ? 'Move it to' : 'Start at'}</span>
-          <Input type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} />
-        </label>
+        <div className="min-w-[min(100%,18rem)] flex-1">
+          <label htmlFor="live-start-at" className="mb-1 block text-sm font-bold">
+            {scheduled ? 'Move it to' : 'Start at'}
+          </label>
+          <DateTimeField id="live-start-at" value={at} min={localNow()} onChange={setAt} clearable={false} />
+        </div>
         <Button onClick={() => void onSchedule(new Date(at).toISOString())} disabled={!at}>
           <CalendarPlus weight="bold" className="size-4" aria-hidden />
           {scheduled ? 'Move it' : 'Put it on the schedule'}

@@ -6,6 +6,7 @@ import { ArrowDown, ArrowUp, Plus, Sparkle, Student, Trash, UsersThree } from '@
 import { AnimatePresence, motion } from 'motion/react'
 import { useRef, useState } from 'react'
 import { Alert, Button, Field, Input } from '@/components/ui'
+import { DateTimeField, localFromIso, localNow } from '@/components/ui/DateTimeField'
 import { Segmented } from '@/components/ui/Segmented'
 import { useGrades } from '@/features/auth/useGrades'
 import type { ClassRoom, Group } from '@/features/classes/api'
@@ -312,7 +313,7 @@ export function AfterStep({
         </span>
       </label>
       {quiz.enabled && (
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Questions" htmlFor="quiz-count">
             <Input id="quiz-count" type="number" min={3} max={20} value={quiz.count} onChange={(e) => patch({ quiz: { ...quiz, count: clamp(Number(e.target.value), 3, 20) } })} />
           </Field>
@@ -325,14 +326,17 @@ export function AfterStep({
               ))}
             </select>
           </Field>
-          <Field label="Due (optional)" htmlFor="quiz-due">
-            <Input
-              id="quiz-due"
-              type="datetime-local"
-              value={quiz.due_at ? quiz.due_at.slice(0, 16) : ''}
-              onChange={(e) => patch({ quiz: { ...quiz, due_at: e.target.value ? new Date(e.target.value).toISOString() : null } })}
-            />
-          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Due (optional)" htmlFor="quiz-due">
+              <DateTimeField
+                id="quiz-due"
+                value={localFromIso(quiz.due_at)}
+                min={localNow()}
+                placeholder="No due date"
+                onChange={(value) => patch({ quiz: { ...quiz, due_at: value ? new Date(value).toISOString() : null } })}
+              />
+            </Field>
+          </div>
         </div>
       )}
       <label className="flex items-start gap-3 rounded-2xl border-2 border-dashed border-border p-4">
