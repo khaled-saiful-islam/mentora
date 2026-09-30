@@ -35,7 +35,7 @@ export interface BuddyProfile {
   antics: readonly Mood[]
 }
 
-const PUFF = once(1.4, { times: [0, 0.3, 0.45, 0.85, 1] })
+const UMBRELLA = once(1.8, { times: [0, 0.2, 0.5, 0.85, 1] })
 const ROAR = once(1.3, { times: [0, 0.2, 0.4, 0.8, 1] })
 const NO_SPIN = { rotate: 0 }
 
@@ -111,25 +111,28 @@ export const BUDDIES: Record<BuddyKey, BuddyProfile> = {
   momo: {
     key: 'momo',
     name: 'Momo',
-    species: 'baby dragon',
-    tagline: 'A baby dragon whose flames come out as sparkles.',
-    trick: 'Puff',
+    species: 'baby orangutan',
+    tagline: 'A cheeky baby orangutan from Borneo, with long arms for big hugs.',
+    trick: 'Leaf umbrella',
     Rig: MomoRig,
     signature: {
-      idle: { extra: { rotate: [0, -10, 0], transition: loop(1.8) } },
+      // The tuft of hair never quite lies down.
+      idle: { extra: { rotate: [0, -8, 0, 6, 0], transition: loop(2.6) } },
+      // Up goes a big leaf, held high while the rain patters down.
       trick: {
         spin: NO_SPIN,
-        head: { rotate: [null, -14, 10, 10, 0], transition: PUFF },
-        body: { scaleY: [null, 1.08, 0.94, 0.96, 1], scaleX: [null, 0.96, 1.05, 1.03, 1], transition: PUFF },
-        ...arms([null, 30, 60, 60, 0], PUFF),
-        extra: { rotate: [null, -30, 5, -30, 0], transition: PUFF },
+        body: { y: [null, -6, 0, -3, 0], transition: UMBRELLA },
+        head: { rotate: [null, -8, -8, 6, 0], transition: UMBRELLA },
+        armR: { rotate: [null, -140, -140, -140, 0], transition: UMBRELLA },
+        armL: { rotate: [null, 20, 10, 20, 0], transition: UMBRELLA },
+        extra: { rotate: [null, -12, 10, -8, 0], transition: UMBRELLA },
       },
     },
-    mouths: { trick: 'roar' },
-    anchors: { top: [100, 28], side: [140, 56], mouth: [112, 112], body: [100, 142] },
-    trickBurst: { kind: 'flame', count: 7, from: 'mouth', delayMs: 500 },
-    face: '36 18 128 128',
-    antics: ['bounce', 'giggle', 'twirl', 'dance', 'hug', 'wiggle', 'happy'],
+    mouths: { trick: 'grin' },
+    anchors: { top: [100, 22], side: [142, 58], mouth: [100, 110], body: [100, 142] },
+    trickBurst: { kind: 'drop', count: 9, from: 'top', delayMs: 300 },
+    face: '42 14 116 116',
+    antics: ['hug', 'stretch', 'lookaround', 'giggle', 'wave', 'bounce', 'think'],
   },
   rimau: {
     key: 'rimau',

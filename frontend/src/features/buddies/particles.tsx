@@ -19,7 +19,7 @@ export type ParticleKind =
   | 'sweat'
   | 'question'
   | 'confetti'
-  | 'flame'
+  | 'drop'
   | 'ring'
   | 'paw'
   | 'leaf'
@@ -82,8 +82,11 @@ function flight(kind: ParticleKind, i: number, n: number): Flight {
         life: between(1.4, 2.2),
         delay: between(0, 0.3),
       }
-    case 'flame':
-      return { x: [0, between(46, 78)], y: [0, between(-16, 12)], rotate: between(-30, 30), scale: between(1, 1.6), life: 0.7, delay: i * 0.05 }
+    case 'drop': {
+      // Rain, pattering down around the leaf umbrella and past it.
+      const x = between(-62, 62)
+      return { x: [x, x + between(-4, 4)], y: [between(-40, -20), between(40, 70)], rotate: 0, scale: between(0.8, 1.2), life: between(0.7, 1), delay: i * 0.09 }
+    }
     case 'ring':
       return { x: [0, 0], y: [0, 0], rotate: 0, scale: 2.6, life: 0.85, delay: i * 0.16 }
     case 'leaf':
@@ -132,8 +135,8 @@ function Shape({ kind, tint }: { kind: ParticleKind; tint: number }) {
       )
     case 'confetti':
       return <rect x={-3} y={-1.8} width={6} height={3.6} rx={1} fill={`hsl(${TINTS[tint % TINTS.length]})`} />
-    case 'flame':
-      return <path d="M0 -7 Q6 0 4 4 Q0 8 -4 4 Q-6 0 0 -7 Z" fill={paint('momo-flame')} />
+    case 'drop':
+      return <path d="M0 -7 Q5 1 3.4 4 Q0 7.5 -3.4 4 Q-5 1 0 -7 Z" fill={paint('momo-drop')} />
     case 'ring':
       return <circle r={9} fill="none" stroke="hsl(var(--star))" strokeWidth={2.4} />
     case 'paw':

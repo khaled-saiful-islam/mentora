@@ -29,7 +29,8 @@ export const TONES: Record<BuddyKey, Tone> = {
   kiko: { base: 760, wave: 'triangle', spread: 0.35, step: 0.075, loud: 0.12 },
   tompok: { base: 680, wave: 'sine', spread: 0.45, step: 0.11, loud: 0.14 },
   ollie: { base: 340, wave: 'sine', spread: 0.2, step: 0.13, loud: 0.16 },
-  momo: { base: 620, wave: 'sine', spread: 0.3, step: 0.085, loud: 0.14 },
+  // A soft, round "ooh-ooh": low-ish, sliding, and warm.
+  momo: { base: 460, wave: 'sine', spread: 0.4, step: 0.1, loud: 0.15 },
   rimau: { base: 250, wave: 'sawtooth', spread: 0.25, step: 0.1, loud: 0.05 },
 }
 

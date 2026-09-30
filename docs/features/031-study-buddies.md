@@ -9,7 +9,7 @@ Five companions keep a student company:
 | Kiko | kancil |
 | Tompok | cat (a grey kampung cat with a patch over one eye, a red collar and a gold bell) |
 | Ollie | owl |
-| Momo | baby dragon |
+| Momo | baby orangutan, from the rainforests of Borneo (updated 2026-09-30: Momo was a baby dragon, and is now a Malaysian animal) |
 | Rimau | Malayan tiger cub |
 
 - **A student picks one on their first visit** (`Welcome.tsx`) and can change
@@ -29,7 +29,7 @@ Five companions keep a student company:
     - Kiko looks around, hops and peeks.
     - Tompok stretches, yawns and twirls.
     - Ollie nods, thinks and hugs.
-    - Momo bounces, giggles and dances.
+    - Momo hugs, stretches and giggles, and the tuft of hair on top never lies down.
     - Rimau flexes and star-jumps.
   - has 25 moves: the six newest are twirl, star jump, hug, flex, look
     around and giggle, and all of them are on the *My buddy* page, with a
@@ -59,7 +59,7 @@ Five companions keep a student company:
   | Kiko | backflip, with falling leaves |
   | Tompok | chases her own tail, leaving paw prints |
   | Ollie | wing flutter, with drifting feathers |
-  | Momo | puff of flame, which comes out as sparks |
+  | Momo | leaf umbrella: a big leaf held up high while rain patters down, the way real orangutans shelter from the rain |
   | Rimau | roar, with shockwave rings |
 
   Five quick taps unlock a secret dance.
@@ -88,7 +88,7 @@ Five companions keep a student company:
   - a soft *aww* for a miss
   - a two-note hello
   - a babble under every bubble, about a syllable a word, in the buddy's own
-    pitch (Kiko quick and high, Tompok mewing, Ollie a low hoot, Momo soft,
+    pitch (Kiko quick and high, Tompok mewing, Ollie a low hoot, Momo a round ooh-ooh,
     Rimau gruff)
 
   A buddy is quiet while it fidgets or sleeps. No sound plays until the
@@ -186,6 +186,10 @@ sound.
   `particles.tsx`.
 
 ## Known limits
+
+- **Momo kept the key `momo`** when the dragon became an orangutan, so a
+  student who had picked Momo still has Momo, now an orangutan, with nothing
+  to migrate. Their buddy changed without them choosing it.
 
 - **A buddy babbles; it doesn't speak words.** Its lines are read on screen,
   with a babble under them. Speaking them in a recorded voice would put a
