@@ -28,7 +28,18 @@ before sharing it, in the look its year gets.
 the set's year (`grade_level` on the attempt) decides. Anything else — a
 Form, Lower or Upper Six, or no year at all — gets the focused look.
 
-**Preview** (`/library/:id/try`, the *Preview* button in the editor):
+**Preview** (`/library/:id/try`, the *Preview* button in the editor) opens
+on **Look through** (`LookThrough.tsx`), for checking a set without playing
+it:
+- Every question one at a time, with the right answer marked and the *Why*
+  under it. A flashcard shows its front, its back and its hint side by side.
+- *Next question* and *Back* walk through; so do the arrow keys, and a row of
+  dots jumps straight to one. Nothing needs answering.
+- The end says *"That's all 6 questions"*, with *From the start*, *Play as a
+  student* and *Back to editing*.
+
+**Play as a student**, the switch in the banner, plays it the way a student
+will:
 - A banner says *"Preview — this is how a Year 4 student sees it. Nothing is
   saved."*, naming the set's year.
 - The look is the one the set's year gets (`levelForGrade`), exactly as a

@@ -1,12 +1,17 @@
 /**
- * A quiz or flashcards as a student will play them — the real players, the
- * real finish screen, in each of the three looks — for the teacher or parent
- * who made them. Answers are marked here and never saved (`preview.ts`).
+ * A quiz or flashcards for the teacher or parent who made them, two ways:
+ *
+ * - **Look through** (first): every question one at a time with its answer
+ *   showing, and Next to move on — nothing to answer (`LookThrough.tsx`).
+ * - **Play as a student**: the real players and the real finish screen, in
+ *   the look for the set's year. Answers are marked here and never saved
+ *   (`preview.ts`).
  */
-import { ArrowClockwise, ArrowLeft, Eye } from '@phosphor-icons/react'
+import { ArrowClockwise, ArrowLeft, Eye, GameController, ListNumbers } from '@phosphor-icons/react'
 import { useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { Alert, Button, Skeleton } from '@/components/ui'
+import { Segmented } from '@/components/ui/Segmented'
 import type { BuddyHandle } from '@/features/buddies'
 import { learningApi, type SetDetail } from '@/features/learning/api'
 import { useResource } from '@/hooks/useResource'
@@ -16,6 +21,7 @@ import type { Attempt, Finish } from './api'
 import { PlayBackendProvider } from './backend'
 import { FinishScreen } from './FinishScreen'
 import { levelForGrade, PlayLevelProvider } from './level'
+import { LookThrough } from './LookThrough'
 import { BuddyCorner, BuddyDock } from './BuddyDock'
 import { PLAYERS } from './players'
 import { previewAttempt, PreviewGrader } from './preview'
@@ -34,12 +40,14 @@ export default function PreviewPage() {
 }
 
 type Step = { name: 'playing' } | { name: 'finished'; finish: Finish } | { name: 'review'; attempt: Attempt }
+type Mode = 'look' | 'play'
 
 function Preview({ set }: { set: SetDetail }) {
   const { user } = useAuth()
   // The look follows the set's own year, as it will for a student in it.
   const level = levelForGrade(set.grade_level)
   const [round, setRound] = useState(0)
+  const [mode, setMode] = useState<Mode>('look')
   const [step, setStep] = useState<Step>({ name: 'playing' })
   const buddy = useRef<BuddyHandle>(null)
   // A fresh attempt and a fresh marker each round, so Start over is clean.
@@ -47,6 +55,7 @@ function Preview({ set }: { set: SetDetail }) {
   const grader = useMemo(() => new PreviewGrader(set), [set, round])
   const back = `/library/${set.id}`
   const again = () => (setRound((r) => r + 1), setStep({ name: 'playing' }))
+  const play = () => (again(), setMode('play'), window.scrollTo({ top: 0 }))
   const Player = PLAYERS[set.kind]
 
   return (
@@ -57,13 +66,26 @@ function Preview({ set }: { set: SetDetail }) {
             <p className="inline-flex min-w-[min(100%,14rem)] flex-1 items-center gap-2 text-sm font-bold">
               <Eye weight="fill" className="size-4 shrink-0 text-sun-600 dark:text-sun-300" aria-hidden />
               <span className="break-words">
-                Preview — this is how {set.grade_label ? `a ${set.grade_label} student` : 'a student'} sees it. Nothing is saved.
+                {mode === 'look'
+                  ? 'Preview — every question with its answer. Nothing to answer, nothing saved.'
+                  : `Preview — this is how ${set.grade_label ? `a ${set.grade_label} student` : 'a student'} sees it. Nothing is saved.`}
               </span>
             </p>
             <div className="flex flex-wrap items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={again}>
-                <ArrowClockwise weight="bold" className="size-4" aria-hidden /> Start over
-              </Button>
+              <Segmented
+                label="How to preview"
+                value={mode}
+                onChange={(m) => (m === 'play' ? play() : setMode('look'))}
+                options={[
+                  { value: 'look', label: 'Look through', icon: <ListNumbers weight="bold" className="size-4" /> },
+                  { value: 'play', label: 'Play as a student', icon: <GameController weight="bold" className="size-4" /> },
+                ]}
+              />
+              {mode === 'play' && (
+                <Button variant="ghost" size="sm" onClick={again}>
+                  <ArrowClockwise weight="bold" className="size-4" aria-hidden /> Start over
+                </Button>
+              )}
               <Link to={back} className="inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground hover:text-foreground">
                 <ArrowLeft weight="bold" className="size-4" aria-hidden /> Back to editing
               </Link>
@@ -71,13 +93,14 @@ function Preview({ set }: { set: SetDetail }) {
           </div>
         </div>
 
-        {step.name === 'playing' && (
+        {mode === 'look' && <LookThrough set={set} onPlay={play} />}
+        {mode === 'play' && step.name === 'playing' && (
           <BuddyDock>
             <Player key={round} attempt={attempt} buddy={buddy} exitTo={back} onFinished={() => setStep({ name: 'finished', finish: grader.finish(attempt) })} />
             <BuddyCorner buddy={user?.buddy} handle={buddy} />
           </BuddyDock>
         )}
-        {step.name === 'finished' && (
+        {mode === 'play' && step.name === 'finished' && (
           <FinishScreen
             finish={step.finish}
             onReview={() => setStep({ name: 'review', attempt: step.finish.attempt })}
@@ -86,7 +109,7 @@ function Preview({ set }: { set: SetDetail }) {
             home={{ to: back, label: 'Back to editing' }}
           />
         )}
-        {step.name === 'review' && (
+        {mode === 'play' && step.name === 'review' && (
           <Page className="mx-auto w-full max-w-3xl px-4 py-8">
             <h1 className="break-words font-display text-3xl font-semibold">{step.attempt.title}</h1>
             <p className="mt-1 text-lg text-muted-foreground">
