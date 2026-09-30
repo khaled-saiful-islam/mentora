@@ -38,6 +38,21 @@ Around the parts:
 - **An ending** — the big ideas, every word to know as a card that flips, and
   a safe **Try this!** activity.
 
+**A student reads the whole guide on one page** (`GuidePlayer.tsx`): the
+cover, then every part in order with its check right under it, then the
+ending. It is the same page the teacher previews, so nothing seems to be
+missing.
+
+- *Start reading* (or *Carry on from part 2*) and the parts on the map
+  scroll to that part. *On to part 3* under an answered check scrolls on.
+- Nothing waits behind a check. A part can be read before the one above it
+  is answered, and the ending lists any check still waiting, with a button
+  to each.
+- The bar at the top follows the part in the middle of the screen.
+- *Finish the guide* shows once every check is answered.
+- The helpers slide in as they scroll into view. They start as soon as their
+  edge shows, so a reader scrolling fast never passes a blank gap.
+
 For teachers:
 
 - **Generate** from the maker (Home → *Make a study guide*, or the chat's
@@ -145,6 +160,11 @@ guide is still written, ungrounded and without pictures, and says so.
   speech synthesis does not exist.
 - **The concept map is laid out, not understood**: parts round the centre,
   two words each. It does not draw links between parts.
+- **A long guide is a long page.** Six parts with pictures is a lot of
+  scrolling on a phone. The top bar and *On to part …* are the way round it.
+- **Old skill labels can end mid-word.** Guides made before labels were cut
+  between words (for example *"…condensation, and p"*) keep what was saved,
+  and skill labels cannot be edited. New guides do not do this.
 - **Reading level is not reported to teachers**, on purpose — see
   `features/guide/level.ts`.
 - **Printing uses the browser's print**, so page breaks and margins follow

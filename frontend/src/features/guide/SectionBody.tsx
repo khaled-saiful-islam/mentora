@@ -113,8 +113,10 @@ export function SectionBody({
   )
 }
 
-/** Animate on scrolling into view — or straight away, when still. */
-function reveal(still: boolean, target: string | TargetAndTransition, amount = 0.5) {
+/** Animate on scrolling into view — or straight away, when still. A small
+ *  `amount`: a card starts coming in as soon as its edge shows, so a reader
+ *  scrolling past never sees a blank gap where it will be. */
+function reveal(still: boolean, target: string | TargetAndTransition, amount = 0.2) {
   return still ? { animate: target } : { whileInView: target, viewport: { once: true, amount } }
 }
 
@@ -122,7 +124,7 @@ function Remember({ points, still }: { points: string[]; still: boolean }) {
   return (
     <section className="mt-7 rounded-[1.75rem] border-2 border-mint-400/40 bg-mint-100/60 p-5 dark:bg-mint-700/15">
       <h2 className="font-display text-lg font-bold text-mint-700 dark:text-mint-100">Remember</h2>
-      <motion.ul className="mt-3 space-y-2.5" variants={stagger(0.12)} initial="hidden" {...reveal(still, 'shown', 0.6)}>
+      <motion.ul className="mt-3 space-y-2.5" variants={stagger(0.12)} initial="hidden" {...reveal(still, 'shown', 0.25)}>
         {points.map((point) => (
           <motion.li key={point} variants={rise} className="flex items-start gap-2.5 text-base md:text-lg">
             <CheckCircle weight="fill" className="mt-0.5 size-6 shrink-0 text-mint-400" aria-hidden />
@@ -173,7 +175,7 @@ function FunFact({ fact, onSeen, still }: { fact: string; onSeen?: () => void; s
   return (
     <motion.aside
       initial={{ opacity: 0, scale: 0.94 }}
-      {...reveal(still, { opacity: 1, scale: 1 }, 0.7)}
+      {...reveal(still, { opacity: 1, scale: 1 }, 0.3)}
       onViewportEnter={onSeen}
       transition={spring.bouncy}
       className="relative mt-5 overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-grape-500 to-grape-700 p-5 text-white shadow-press"

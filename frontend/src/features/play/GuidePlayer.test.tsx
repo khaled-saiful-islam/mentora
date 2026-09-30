@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createRef } from 'react'
 import { MemoryRouter } from 'react-router-dom'
@@ -77,57 +77,61 @@ function mount(attempt: Attempt = GUIDE, onFinished = vi.fn()) {
   return onFinished
 }
 
+const part = (n: number) => within(document.getElementById(`part-${n}`) as HTMLElement)
+
 describe('GuidePlayer', () => {
-  it('opens on the big question and the parts to come', () => {
+  it('opens on the big question, with every part on the same page below it', () => {
     mount()
     expect(screen.getByRole('heading', { name: 'Where does rain come from?' })).toBeInTheDocument()
     expect(screen.getByText('Follow a raindrop.')).toBeInTheDocument()
-    expect(screen.getAllByText('Part 1: rain').length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: /Start reading/ })).toBeInTheDocument()
+    // The whole guide is there to scroll: both parts, their checks, and the end.
+    expect(part(1).getByRole('heading', { name: 'Part 1: rain' })).toBeInTheDocument()
+    expect(part(2).getByRole('heading', { name: 'Part 2: rain' })).toBeInTheDocument()
+    expect(part(2).getByText('Question 2?')).toBeInTheDocument()
+    expect(screen.getByText('Water goes round.')).toBeInTheDocument()
   })
 
-  it('teaches a part at the level chosen, and remembers the choice', async () => {
+  it('teaches at the level chosen, and remembers the choice', async () => {
     mount()
-    await userEvent.click(screen.getByRole('button', { name: /Start reading/ }))
-    expect(await screen.findByRole('heading', { name: 'Part 1: rain' })).toBeInTheDocument()
-    expect(screen.getByText(/rises in part 1/)).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('radio', { name: /Simpler/ }))
-    expect(await screen.findByText('Simple 1.')).toBeInTheDocument()
+    expect(part(1).getByText(/rises in part 1/)).toBeInTheDocument()
+    await userEvent.click(part(1).getByRole('radio', { name: /Simpler/ }))
+    expect(await part(1).findByText('Simple 1.')).toBeInTheDocument()
+    expect(part(2).getByText('Simple 2.')).toBeInTheDocument()
     expect(localStorage.getItem('mentora-reading-level')).toBe('simple')
   })
 
   it('opens a word to know with its meaning and its Malay', async () => {
     mount()
-    await userEvent.click(screen.getByRole('button', { name: /Start reading/ }))
-    await userEvent.click(await screen.findByRole('button', { name: 'vapour' }))
-    expect(screen.getByText('Water as a gas.')).toBeInTheDocument()
-    expect(screen.getByText('wap')).toBeInTheDocument()
+    await userEvent.click(part(1).getByRole('button', { name: 'vapour' }))
+    expect(part(1).getByText('Water as a gas.')).toBeInTheDocument()
+    expect(part(1).getByText('wap')).toBeInTheDocument()
   })
 
-  it('checks each part, explains, and moves on', async () => {
+  it('checks each part where it is, explains, and points on', async () => {
     mount()
-    await userEvent.click(screen.getByRole('button', { name: /Start reading/ }))
-    await userEvent.click(await screen.findByRole('button', { name: /Moon/ }))
-    expect(await screen.findByText(/Not quite/)).toBeInTheDocument()
-    expect(screen.getByText('The Sun heats the water.')).toBeInTheDocument()
+    await userEvent.click(part(1).getByRole('button', { name: /Moon/ }))
+    expect(await part(1).findByText(/Not quite/)).toBeInTheDocument()
+    expect(part(1).getByText('The Sun heats the water.')).toBeInTheDocument()
     expect(sent).toEqual([{ item_id: 'p1', choice: 1, time_ms: expect.any(Number) }])
-    await userEvent.click(screen.getByRole('button', { name: /On to part 2/ }))
-    expect(await screen.findByRole('heading', { name: 'Part 2: rain' })).toBeInTheDocument()
+    expect(part(1).getByRole('button', { name: /On to part 2/ })).toHaveFocus()
+    // Part 2 was never waiting behind part 1.
+    expect(part(2).queryByText(/Not quite/)).not.toBeInTheDocument()
   })
 
-  it('ends with the big ideas and finishes once every check is done', async () => {
+  it('finishes once every check is done', async () => {
     const onFinished = mount({ ...GUIDE, items: [page(1)] })
-    await userEvent.click(screen.getByRole('button', { name: /Start reading/ }))
-    await userEvent.click(await screen.findByRole('button', { name: /Sun/ }))
-    await userEvent.click(await screen.findByRole('button', { name: /See the big ideas/ }))
-    expect(await screen.findByText('Water goes round.')).toBeInTheDocument()
-    expect(screen.getByText('Cloud in a jar')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: /Finish the guide/ }))
+    expect(screen.queryByRole('button', { name: /Finish the guide/ })).not.toBeInTheDocument()
+    expect(screen.getByText('One check is still waiting')).toBeInTheDocument()
+    await userEvent.click(part(1).getByRole('button', { name: /Sun/ }))
+    expect(await screen.findByText('Cloud in a jar')).toBeInTheDocument()
+    await userEvent.click(await screen.findByRole('button', { name: /Finish the guide/ }))
     await waitFor(() => expect(onFinished).toHaveBeenCalled())
   })
 
-  it('carries on where a reader left off', () => {
+  it('carries on where a reader left off, without jumping the page', () => {
     mount({ ...GUIDE, answered: [{ item_id: 'p1', choice: 0, knew: null, correct: true, reveal: null }] })
     expect(screen.getByRole('button', { name: /Carry on from part 2/ })).toBeInTheDocument()
+    expect(part(1).getByRole('button', { name: /On to part 2/ })).not.toHaveFocus()
   })
 })

@@ -314,7 +314,8 @@ class LearningGenerator:
             slug = _slug(raw.get("slug") if isinstance(raw, dict) and raw.get("slug") else label)
             if slug not in {s.slug for s in skills}:
                 skills.append(Skill(slug, label))
-        return tuple(skills[:6]) or (Skill(_slug(plan.topic), plan.topic[:60]),)
+        fallback = Skill(_slug(plan.topic), _words(plan.topic, 60) or plan.topic)
+        return tuple(skills[:6]) or (fallback,)
 
     async def _write(
         self,

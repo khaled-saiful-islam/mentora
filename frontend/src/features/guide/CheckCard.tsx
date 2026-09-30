@@ -24,6 +24,7 @@ export function CheckCard({
   onChoose,
   onNext,
   nextLabel,
+  focusNext = true,
 }: {
   prompt: string
   options: string[]
@@ -32,6 +33,9 @@ export function CheckCard({
   onChoose: (choice: number) => void
   onNext: () => void
   nextLabel: string
+  /** Put the keyboard on the way on once answered — only for the check just
+   *  answered, when a page shows several. */
+  focusNext?: boolean
 }) {
   const answered = result !== null
   return (
@@ -95,7 +99,7 @@ export function CheckCard({
               )}
             </div>
             <div className="mt-4 flex justify-end">
-              <Button size="lg" variant="sun" onClick={onNext} autoFocus>
+              <Button size="lg" variant="sun" onClick={onNext} autoFocus={focusNext}>
                 {nextLabel}
                 <ArrowRight weight="bold" className="size-5" />
               </Button>

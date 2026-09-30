@@ -21,3 +21,8 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
   }
   globalThis.IntersectionObserver = InView as unknown as typeof IntersectionObserver
 }
+
+// Nor scrollIntoView, which a long page uses to jump to a part.
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => undefined
+}
