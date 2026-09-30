@@ -248,12 +248,14 @@ their sign-ins.
 
 Mentora is live at **https://mentora.stream**: one AWS Lightsail server in
 Singapore running this same Compose stack, with Cloudflare in front for DNS
-and HTTPS. On the server:
+and HTTPS. After pushing to `main`:
 
 ```bash
-scripts/deploy.sh      # back up the database, pull main, rebuild, wait until healthy
-scripts/backup-db.sh   # dump the database now (also runs nightly)
+make deploy            # back up the database, pull main, rebuild, wait until healthy
 ```
+
+`make deploy` needs `.env.deploy` (copy `.env.deploy.example`). On the server,
+`scripts/backup-db.sh` dumps the database on demand; it also runs nightly.
 
 How it is set up, and why, is in
 [`docs/features/049-production-deployment.md`](docs/features/049-production-deployment.md).
@@ -286,6 +288,7 @@ make test      backend pytest with coverage, then frontend vitest
 make lint      ruff and tsc
 make migrate   apply pending migrations
 make reset     destroy the database and start clean
+make deploy    ship GitHub main to production
 ```
 
 ## How it is built

@@ -7,7 +7,7 @@ laptop, with Cloudflare in front for DNS, HTTPS and protection.
 ## What it is
 
 ```
-Browser ──https──▶ Cloudflare ──https (origin cert + client cert)──▶ Lightsail 3.0.38.226
+Browser ──https──▶ Cloudflare ──https (origin cert + client cert)──▶ Lightsail (static IP)
                    mentora.stream                                    nginx :443 ─▶ FastAPI ─▶ Postgres
                                                                      (all Docker, one box)
 ```
@@ -31,8 +31,15 @@ Browser ──https──▶ Cloudflare ──https (origin cert + client cert)�
   are `!reset` — no second way in even if the firewall were opened.
 - **Authenticated Origin Pulls:** Cloudflare presents a client certificate on
   every connection and nginx (`ssl_verify_client on`) refuses any connection
-  without it. The firewall alone would still let *another* Cloudflare
-  customer's zone reach this IP.
+  without it. That certificate is shared by every Cloudflare account, so — like
+  the firewall — it proves only that a request came through Cloudflare.
+- **Only our hostnames are served.** Another Cloudflare zone could point its
+  own domain at this IP. A catch-all `default_server` in
+  `deploy/nginx/https.conf` refuses the TLS handshake for any name that is not
+  `mentora.stream` or `www.mentora.stream`, so Mentora cannot be served under
+  someone else's domain.
+- **The IP stays out of the repo.** It is public; the address lives in
+  `.env.deploy` (git ignored) and the owner's private notes.
 - **TLS on both legs.** Visitors get Cloudflare's certificate; Cloudflare
   talks to the server with a **Cloudflare Origin Certificate**
   (`deploy/certs/`, 15 years, server only, never committed). SSL mode is
@@ -66,7 +73,7 @@ client_address`).
 | Minimum TLS | 1.2 | Old protocols off |
 | Authenticated Origin Pulls | on | Cloudflare sends the client certificate nginx requires |
 | Cache rule "Never cache the API" | `/api/*` bypass | Belt and braces: an API answer is never served to someone else |
-| DNS | `A mentora.stream → 3.0.38.226` proxied; `CNAME www → mentora.stream` proxied | |
+| DNS | `A mentora.stream → <server static IP>` proxied; `CNAME www → mentora.stream` proxied | |
 
 ## Configuration
 
@@ -86,8 +93,21 @@ production database starts with that admin only; there is no demo data
 
 ## Operating it
 
+From the laptop, after pushing to GitHub:
+
 ```bash
-ssh -i ~/.ssh/mentora-lightsail ubuntu@3.0.38.226
+make deploy                # checks this checkout is origin/main, then runs scripts/deploy.sh on the server
+```
+
+`make deploy` reads the server from `.env.deploy` (copy `.env.deploy.example`).
+It refuses when the checkout is not `origin/main`, because the server deploys
+what GitHub has — deploying with unpushed commits would ship the old code and
+look like it worked.
+
+On the server:
+
+```bash
+ssh -i ~/.ssh/mentora-lightsail ubuntu@<server static IP>
 cd /opt/mentora
 
 scripts/deploy.sh          # dump the DB, git pull, rebuild, wait until healthy
@@ -114,6 +134,8 @@ commit, deploy — and update the Lightsail firewall's 443 rule to match.
   `pg_restore` into it, point `DATABASE_URL` at it and drop the `db` service.
 - **Automatic deploys:** a GitHub Actions job that SSHes in and runs
   `scripts/deploy.sh` on every push to `main`.
+- **Stricter origin pulls:** upload our own client certificate for zone-level
+  AOP, so the certificate check itself proves the request came from our zone.
 
 ## Known limits
 

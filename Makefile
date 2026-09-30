@@ -19,7 +19,16 @@ ifneq (,$(findstring xterm,$(TERM)))
   RESET := $(shell tput sgr0)
 endif
 
-.PHONY: help up down logs migrate migration test lint reset seed dev ps shell-backend shell-db api-dev
+# Production (docs/features/049-production-deployment.md). The server's address
+# lives in .env.deploy, which git ignores: the repo is public, and the origin
+# is best kept out of it. .env.deploy.example shows the three lines.
+deploy_env = $(shell grep -E '^$(1)=' .env.deploy 2>/dev/null | cut -d= -f2- | grep . || echo $(2))
+DEPLOY_HOST := $(call deploy_env,DEPLOY_HOST,)
+DEPLOY_KEY := $(call deploy_env,DEPLOY_KEY,~/.ssh/mentora-lightsail)
+DEPLOY_DIR := $(call deploy_env,DEPLOY_DIR,/opt/mentora)
+DEPLOY_URL := $(call deploy_env,DEPLOY_URL,https://mentora.stream)
+
+.PHONY: help up down logs migrate migration test lint reset seed dev ps shell-backend shell-db api-dev deploy
 
 help: ## Show this help
 	@echo "$(BOLD)Mentora$(RESET) — where teachers and students learn together"
@@ -112,3 +121,15 @@ shell-backend: ## Shell into the backend container
 
 shell-db: ## psql into the database
 	@$(COMPOSE) exec db psql -U $${POSTGRES_USER:-mentora} -d $${POSTGRES_DB:-mentora}
+
+deploy: ## Ship what is on GitHub main to production (push first)
+	@[ -n "$(DEPLOY_HOST)" ] || { echo "Set DEPLOY_HOST in .env.deploy (see .env.deploy.example)."; exit 1; }
+	@git fetch -q origin main
+	@# The server deploys GitHub's main, so this checks that is what you have here.
+	@[ "$$(git rev-parse HEAD)" = "$$(git rev-parse origin/main)" ] || { \
+	  echo "$(BOLD)Not deploying:$(RESET) this checkout is not origin/main."; \
+	  echo "  Push your commits (or check out main) first — production runs what GitHub has."; exit 1; }
+	@[ -z "$$(git status --porcelain)" ] || echo "$(AMBER)Uncommitted changes here are not part of this deploy.$(RESET)"
+	@echo "$(BOLD)Deploying$(RESET) $$(git log --oneline -1) $(DIM)— the site is down for a minute or two near the end$(RESET)"
+	@ssh -i $(DEPLOY_KEY) -o ConnectTimeout=15 $(DEPLOY_HOST) 'cd $(DEPLOY_DIR) && scripts/deploy.sh'
+	@echo -n "$(DEPLOY_URL)/api/health → " && curl -fsS --max-time 20 $(DEPLOY_URL)/api/health && echo
