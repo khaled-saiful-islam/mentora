@@ -174,7 +174,8 @@ The size limit is enforced in three places and they have to agree:
 | `DOCUMENTS_TOKEN_BUDGET` | `8192` | Tokens of document text per turn, shared across files |
 
 Raising `DOCUMENT_MAX_BYTES` means raising `client_max_body_size` in
-`frontend/nginx.conf` to match — keep the proxy a little above the API limit so
+`frontend/nginx.site.conf` to match — keep the proxy a little above the largest API
+limit (materials, 10 MB) so
 the JSON error comes from the API and reads better. nginx also spells the limit
 out in its own 413 body, because it has no access to the environment; change
 both or the two messages will disagree.

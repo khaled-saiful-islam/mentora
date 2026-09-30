@@ -40,3 +40,8 @@ blob-report/
 
 # Browser automation scratch
 .playwright-mcp/
+
+# Production TLS material (Cloudflare Origin Certificate) — server only
+deploy/certs/
+# Database dumps made by scripts/backup-db.sh
+backups/

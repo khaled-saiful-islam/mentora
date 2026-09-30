@@ -1,0 +1,31 @@
+# Production overlay, used on the server by scripts/deploy.sh:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Only nginx is reachable, and only on 443 (Cloudflare → origin, Full strict).
+# The database and the API stay on the compose network: the base file publishes
+# them for local tools, which in production would be two more doors to guard.
+# Needs Docker Compose 2.24.4+ for !reset / !override.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  db:
+    ports: !reset []
+    logging: *logging
+
+  backend:
+    ports: !reset []
+    logging: *logging
+
+  frontend:
+    ports: !override
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/https.conf:/etc/nginx/conf.d/https.conf:ro
+      - ./deploy/nginx/cloudflare-realip.conf:/etc/nginx/conf.d/cloudflare-realip.conf:ro
+      - ./deploy/certs:/etc/nginx/certs:ro
+    logging: *logging

@@ -39,7 +39,7 @@ that uses the image directly — not only when someone types `make`.
 
 ### The SSE proxy configuration matters
 
-`frontend/nginx.conf` sets `proxy_buffering off` and hour-long read timeouts on
+`frontend/nginx.site.conf` sets `proxy_buffering off` and hour-long read timeouts on
 `/api/`. Without them nginx buffers the whole streamed response and delivers it
 in one lump at the end. The chat still works, but token-by-token streaming
 silently disappears — the kind of bug that is confusing precisely because
