@@ -27,5 +27,6 @@ services:
     volumes:
       - ./deploy/nginx/https.conf:/etc/nginx/conf.d/https.conf:ro
       - ./deploy/nginx/cloudflare-realip.conf:/etc/nginx/conf.d/cloudflare-realip.conf:ro
+      - ./deploy/nginx/cloudflare-origin-pull-ca.pem:/etc/nginx/cloudflare-origin-pull-ca.pem:ro
       - ./deploy/certs:/etc/nginx/certs:ro
     logging: *logging
