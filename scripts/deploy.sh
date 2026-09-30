@@ -28,9 +28,18 @@ else
   echo "deploy: database not running yet (first deploy?) — no pre-deploy dump"
 fi
 
+before="$(git rev-parse HEAD)"
 git pull --ff-only
 # Generous: a first start runs every migration before the healthcheck passes.
 "${compose[@]}" up -d --build --wait --wait-timeout 300
+# nginx's production config is bind-mounted file by file, and git replaces a
+# file rather than editing it, so a running container keeps reading the old
+# copy — and `up` sees nothing to recreate. A restart mounts the new one.
+if ! git diff --quiet "$before" HEAD -- deploy/; then
+  echo "deploy: deploy/ changed — restarting nginx to load it"
+  "${compose[@]}" restart frontend
+  "${compose[@]}" up -d --wait --wait-timeout 60 frontend
+fi
 # Each build leaves the previous images behind; on a 60 GB disk they add up.
 docker image prune -f >/dev/null
 "${compose[@]}" ps
