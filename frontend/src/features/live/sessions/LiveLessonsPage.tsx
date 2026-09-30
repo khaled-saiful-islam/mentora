@@ -1,8 +1,14 @@
 /**
- * A teacher's live lessons: what is coming up, what is being prepared, and
- * what has finished — with the way in to a new one and to the voice lab.
+ * A teacher's live lessons: what is happening now, what is coming up, what
+ * is being prepared, and what has finished — with the way in to a new one
+ * and to the voice lab.
+ *
+ * Each card says where its lesson is (`cardState.ts`). Astra's writing and
+ * recording come from the work board, live, so a card fills its bar as it
+ * goes; when that work ends, the list is fetched again for the new status.
  */
 import { Broadcast, Plus, Waveform } from '@phosphor-icons/react'
+import { useEffect, useRef } from 'react'
 import { motion } from 'motion/react'
 import { Alert, ButtonLink, Skeleton } from '@/components/ui'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -10,17 +16,24 @@ import { useResource } from '@/hooks/useResource'
 import { useLive } from '@/lib/bus'
 import { cn } from '@/lib/utils'
 import { AddTile } from '@/components/ui/AddTile'
+import type { WorkItem } from '@/features/work/api'
+import { useWork } from '@/features/work/WorkProvider'
 import { Page, rise, stagger } from '@/motion'
 import { sessionsApi, type SessionSummary } from './api'
+import { useNow } from '../schedule/SchedulePage'
 import { AstraBadge, SessionCard } from './SessionCard'
 
-const COMING = ['scheduled', 'lobby', 'live']
+const NOW = ['lobby', 'live']
+const COMING = ['scheduled']
 const PREPARING = ['draft', 'planning', 'planned', 'failed', 'recording', 'approved']
 
 export default function LiveLessonsPage() {
   const list = useResource('live-sessions', () => sessionsApi.list())
   useLive(['live'], () => void list.reload())
+  const work = useLessonWork(list.reload)
+  const now = useNow(30_000)
   const items = list.data?.items ?? []
+  const happening = items.filter((s) => NOW.includes(s.status))
   const coming = items
     .filter((s) => COMING.includes(s.status))
     .sort((a, b) => (a.scheduled_at ?? '').localeCompare(b.scheduled_at ?? ''))
@@ -71,20 +84,56 @@ export default function LiveLessonsPage() {
         />
       ) : (
         <div className="space-y-10">
-          <Section title="Coming up" items={coming} add={coming.length > 0} />
-          <Section title="Getting ready" items={preparing} add={coming.length === 0} />
-          <Section title="Finished" items={past} />
+          <Section title="Happening now" items={happening} work={work} now={now} />
+          <Section title="Coming up" items={coming} add={coming.length > 0} work={work} now={now} />
+          <Section title="Getting ready" items={preparing} add={coming.length === 0} work={work} now={now} />
+          <Section title="Finished" items={past} work={work} now={now} />
         </div>
       )}
     </Page>
   )
 }
 
-function Section({ title, items, add = false }: { title: string; items: SessionSummary[]; add?: boolean }) {
+/**
+ * What Astra is making for each lesson, by lesson id. When a piece of it
+ * finishes, the lesson's status has moved on, so the list is fetched again.
+ */
+function useLessonWork(reload: () => unknown): Map<string, WorkItem> {
+  const { items } = useWork()
+  const lessons = items.filter((w) => w.kind === 'live_plan' || w.kind === 'live_recording')
+  const settled = lessons
+    .filter((w) => w.state !== 'running')
+    .map((w) => `${w.id}:${w.finished_at}`)
+    .join()
+  const seen = useRef(settled)
+  useEffect(() => {
+    if (settled === seen.current) return
+    seen.current = settled
+    void reload()
+  }, [settled, reload])
+  return new Map(lessons.filter((w) => w.state === 'running').map((w) => [w.id, w]))
+}
+
+function Section({
+  title,
+  items,
+  add = false,
+  work,
+  now,
+}: {
+  title: string
+  items: SessionSummary[]
+  add?: boolean
+  work: Map<string, WorkItem>
+  now: Date
+}) {
   if (items.length === 0) return null
   return (
     <section>
-      <h2 className="mb-4 font-display text-2xl font-semibold">{title}</h2>
+      <h2 className="mb-4 flex flex-wrap items-baseline gap-2 font-display text-2xl font-semibold">
+        {title}
+        <span className="text-base font-bold text-muted-foreground">{items.length}</span>
+      </h2>
       <motion.ul
         variants={stagger()}
         initial="hidden"
@@ -94,7 +143,7 @@ function Section({ title, items, add = false }: { title: string; items: SessionS
       >
         {items.map((s) => (
           <motion.li key={s.id} variants={rise}>
-            <SessionCard session={s} to={`/live/${s.id}`} />
+            <SessionCard session={s} to={s.status === 'live' || s.status === 'lobby' ? `/live/${s.id}/room` : `/live/${s.id}`} work={work.get(s.id)} now={now} />
           </motion.li>
         ))}
         {add && (

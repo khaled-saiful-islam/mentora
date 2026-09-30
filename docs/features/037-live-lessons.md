@@ -16,6 +16,25 @@
    - *Approve & record the voice*: every sentence, plus Astra's lines to each student by name, is recorded once, with a progress bar.
    - *Put it on the schedule* or *Start now*, *Move it*, or *Cancel the lesson*.
 
+3. **The list** (`/live`) groups lessons as **Happening now** (live, or the
+   room open), **Coming up**, **Getting ready** and **Finished**, each with
+   its count. Each card says where its lesson is at a glance
+   (`sessions/cardState.ts`):
+
+   | Where it is | The card |
+   |---|---|
+   | Astra is writing or recording it | A spinning badge (*Astra is writing it*, *Recording the voice*), what she is on (*Wrote part 2 of 4*), and a bar that fills as she goes. Before the first news, the bar slides. |
+   | Waiting on the teacher | A sun border and a bell: *Ready for you to check* (*Check the lesson*), *Ready to schedule* (*Schedule it*), or *Draft*. |
+   | Happening now | A coral border that pulses, *Live now* with a beating dot, *Astra is teaching · began 7 minutes ago*, and *Go to the room*, which opens the room. |
+   | Room open | A sun border and *Students can come in now*. |
+   | Went wrong | A red border and what went wrong, with *Try again*. |
+   | Scheduled, or finished | *Starts in 3 hours*, or *Taught Sat, 26 Sep*. |
+
+   The writing and recording progress comes from the work board
+   (`039-background-work.md`), live. When that work ends, the list is fetched
+   again for the lesson's new status. Astra's face on the card thinks while
+   she works and waves when the lesson waits for the teacher.
+
 **How Astra opens and closes** (`plan_prompts.part_user`):
 - **The first part** opens like a kind teacher's first minute. She greets the
   group, introduces herself (*"I'm Astra, and I'll be teaching you today"*),
@@ -80,4 +99,7 @@ at before it is kept (`JudgedPictures`, at the guide's higher bar of 8/10).
 - **Editing a part after approval sends the lesson back to review**, and it must be approved again. Unchanged sentences are already cached, so re-recording is quick.
 - **Tokens spent writing a lesson are not counted in the teacher's daily quota yet.** Writing is rate-limited with `RATE_LIMIT_GENERATE_PER_MINUTE`.
 - **A slide deck's pictures are not read**, only its text and speaker notes.
+- **A card's progress needs the work board**, which is in memory. A lesson
+  whose writing was cut off by a server restart stays marked as being
+  written, and its card shows the sliding bar with no progress.
 - **Only one lesson can be written at a time per session.** A second *Write* joins the one already running.

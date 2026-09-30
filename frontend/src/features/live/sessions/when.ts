@@ -26,6 +26,15 @@ export function countdown(iso: string, now: Date = new Date()): string {
   return `in ${days} day${days === 1 ? '' : 's'}`
 }
 
+/** "just now", "5 minutes ago", "2 hours ago": how long since something began. */
+export function sinceLabel(iso: string, now: Date = new Date()): string {
+  const minutes = Math.floor((now.getTime() - new Date(iso).getTime()) / 60000)
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`
+  const hours = Math.floor(minutes / 60)
+  return `${hours} hour${hours === 1 ? '' : 's'} ago`
+}
+
 export function joinOpen(iso: string | null, status: string, now: Date = new Date()): boolean {
   if (status === 'lobby' || status === 'live') return true
   if (status !== 'scheduled' || !iso) return false
