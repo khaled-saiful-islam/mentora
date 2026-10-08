@@ -1,9 +1,11 @@
-"""A quiz's leaderboard: first tries only, ties share a place.
+"""A class leaderboard, for the kinds that have one; ties share a place.
 
-The first completed attempt is what counts, so retakes can improve a score
-but not a place. A student sees the top ten and their own row — never the
-bottom of the list; the teacher sees everyone. When the quiz is closed or
-past due, the podium is final and its medals are awarded, once.
+A quiz ranks first tries: the first completed attempt is what counts, so
+retakes can improve a score but not a place. A game (§23) ranks each player's
+best points instead — it is made to be played again, and beating your best is
+the point. A student sees the top ten and their own row — never the bottom of
+the list; the teacher sees everyone. When the work is closed or past due, the
+podium is final and its medals are awarded, once.
 """
 
 from __future__ import annotations
@@ -17,9 +19,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import NotFoundError
 from app.db.models.attempt import Attempt
-from app.db.models.learning import Assignment
+from app.db.models.learning import Assignment, LearningSet
 from app.db.models.user import User
 from app.events.bus import EventBus
+from app.learning.quiz import BEST_POINTS
+from app.learning.registry import leaderboard_mode
 from app.policies.access import assignment_for_student
 from app.services.badge_service import BadgeService
 
@@ -35,6 +39,8 @@ class Entry:
     percent: float
     duration_ms: int
     you: bool
+    # A game's best points (§23); None on a quiz's board.
+    points: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,6 +68,14 @@ class LeaderboardService:
         return Board(enabled=True, final=final, entries=shown, you=you, total=len(ranked))
 
     async def ranked(self, assignment: Assignment, viewer_id: UUID | None = None) -> list[Entry]:
+        kind = await self._session.scalar(
+            select(LearningSet.kind).where(LearningSet.id == assignment.set_id)
+        )
+        if leaderboard_mode(kind or "") == BEST_POINTS:
+            return await self._by_best_points(assignment, viewer_id)
+        return await self._by_first_try(assignment, viewer_id)
+
+    async def _by_first_try(self, assignment: Assignment, viewer_id: UUID | None) -> list[Entry]:
         rows = await self._session.execute(
             select(Attempt, User)
             .join(User, User.id == Attempt.student_id)
@@ -92,6 +106,37 @@ class LeaderboardService:
             )
         return entries
 
+    async def _by_best_points(self, assignment: Assignment, viewer_id: UUID | None) -> list[Entry]:
+        rows = await self._session.execute(
+            select(Attempt, User)
+            .join(User, User.id == Attempt.student_id)
+            .where(Attempt.assignment_id == assignment.id, Attempt.status == "completed")
+            .order_by(Attempt.points.desc().nulls_last(), Attempt.completed_at)
+        )
+        best: dict[UUID, tuple[Attempt, User]] = {}
+        for attempt, user in rows.all():
+            best.setdefault(user.id, (attempt, user))  # the first row is their best
+        entries: list[Entry] = []
+        previous: int | None = None
+        rank = 0
+        for position, (attempt, user) in enumerate(best.values(), start=1):
+            points = attempt.points or 0
+            if points != previous:
+                rank, previous = position, points
+            entries.append(
+                Entry(
+                    rank=rank,
+                    student_id=user.id,
+                    name=(user.display_name or user.sign_in_name).split()[0],
+                    buddy=user.buddy,
+                    percent=float(attempt.percent),
+                    duration_ms=attempt.duration_ms,
+                    you=user.id == viewer_id,
+                    points=points,
+                )
+            )
+        return entries
+
     async def settle(self, assignment: Assignment, ranked: list[Entry]) -> bool:
         """Award the podium if the quiz is over. True once it is final."""
         over = assignment.closed_at is not None or (
@@ -111,5 +156,5 @@ class LeaderboardService:
             if found is not None and found.teacher_id != viewer.id and not viewer.is_admin:
                 found = None
         if found is None:
-            raise NotFoundError("No such quiz.")
+            raise NotFoundError("No such leaderboard.")
         return found

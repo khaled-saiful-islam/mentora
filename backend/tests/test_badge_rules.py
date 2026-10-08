@@ -78,3 +78,33 @@ def test_the_catalog_names_every_badge_including_the_podium() -> None:
     assert {rule.key for rule in RULES} <= set(CATALOG)
     for info in CATALOG.values():
         assert info.name and info.description and info.hint
+
+
+# --- games (§23) -------------------------------------------------------------------
+
+GAME = replace(BASE, kind="game")
+
+
+def test_finishing_any_game_makes_you_a_game_hero() -> None:
+    assert "game_hero" in earned(replace(GAME, percent=20))
+    assert "game_hero" not in earned(BASE)
+
+
+def test_every_challenge_right_is_three_stars_in_every_chapter() -> None:
+    assert "three_star_star" in earned(replace(GAME, percent=100))
+    assert "three_star_star" not in earned(replace(GAME, percent=95))
+    assert "three_star_star" not in earned(replace(BASE, percent=100))
+
+
+def test_winning_a_game_after_a_hard_first_try_is_never_giving_up() -> None:
+    assert "never_give_up" in earned(replace(GAME, number=2, first_percent=30, percent=85))
+    assert "never_give_up" not in earned(replace(GAME, number=2, first_percent=60, percent=95))
+    assert "never_give_up" not in earned(replace(GAME, number=1, percent=85))
+
+
+def test_a_hot_streak_counts_in_a_game_too() -> None:
+    assert "hot_streak" in earned(replace(GAME, best_streak=5))
+
+
+def test_the_quiz_score_badges_stay_with_quizzes() -> None:
+    assert not {"perfect_score", "star_scorer"} & earned(replace(GAME, percent=100))

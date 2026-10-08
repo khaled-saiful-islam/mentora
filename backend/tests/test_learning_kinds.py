@@ -143,7 +143,7 @@ def test_a_card_shows_both_sides_it_is_self_marked() -> None:
 
 def test_the_registry_has_every_kind() -> None:
     kinds = build_learning_kinds()
-    assert set(kinds) == {"quiz", "flashcard", "study_guide"}
+    assert set(kinds) == {"quiz", "flashcard", "study_guide", "game"}
     for kind in kinds.values():
         assert isinstance(kind, LearningKind)
 

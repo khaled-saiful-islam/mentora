@@ -1134,3 +1134,94 @@ them.
 
 Docs: `044-play-looks.md`, plus notes in `024`, `025`, `029`, `030` and `035`.
 
+
+---
+
+## 23. Play and Learn — story games (approved 2026-10-08)
+
+Teachers and parents make a **game** on any topic; students play it, learn
+the topic while they play, earn points and stars, and replay to beat their
+best.
+
+### 23.0 Your decisions (asked 2026-10-08)
+
+- **Mentora's own engine, AI content.** The AI writes the story, the world,
+  the characters, the narration and the challenges — checked for accuracy and
+  pitched to the year and level like every quiz. Mentora's game engine, built
+  once and polished, turns them into the game. No model-written code runs on a
+  student's device, scores are marked on the server, and a build takes about a
+  minute. The old AI-coded studio "games" stay off (§22.4).
+- **Four styles, plus "Let Mentora decide":** Quest Map, Lane Runner, Bubble
+  Catch, Match & Build.
+- **Leaderboard: opt-in when sharing**, ranking each student's best score.
+
+### 23.1 Making a game (teacher or parent)
+
+1. **Make a game** — teacher home, parent home, Library, chat. Topic,
+   subject, year, **level (Beginner / Intermediate / Advanced)**, language,
+   optional My materials.
+2. **Story** — *Surprise me* (written during the build), *Draft with AI*
+   (a draft in seconds, edited before building) or *Write my own*
+   (safety-checked; the game is built around it).
+3. **Style and world** — the four styles or *Let Mentora decide*; Malaysian
+   worlds: Taman Negara rainforest, Sipadan reef, kampung festival, KL city,
+   space.
+4. **Watch it build** — story → challenges → checking answers → world. It
+   keeps going in the background; the bell says when it is ready.
+5. **Play it first** — the real game, nothing recorded. Edit story lines and
+   challenges; switch style or world instantly, no rebuild.
+6. **Share** — class, group or child. Replays unlimited by default.
+
+### 23.2 Playing (student)
+
+- A game card on their home; full-screen play. Astra narrates the story with
+  subtitles; **the student's own buddy is the sidekick**.
+- Three chapters of challenges, the last one a boss. A wrong answer shows a
+  hint and a short explanation, then the story goes on.
+- **Points** for each right answer, with combo and speed bonuses worked out on
+  the server; **1–3 stars per chapter**; best score kept; *Beat your best!*
+- **Tricky ones** — a calm round of the challenges missed, after the finish.
+- **Sound** — music for each world and effects, made in the browser (no audio
+  files). On for students from the first tap; a mute button.
+- The year looks of §22.3; timers 30 / 20 / 15 s by year band, none on
+  Beginner. Text size, reduced motion, keyboard and touch respected.
+- New badges: **Game Hero** (finish a game), **Three-Star Star** (three stars
+  in every chapter), **Never Give Up** (win after a hard try).
+
+### 23.3 Teachers see
+
+Results per challenge (first try counts, best beside it, as quizzes), stars,
+points and who finished. Topic coverage takes game scores automatically.
+
+### 23.4 How it is built
+
+- **A learning kind, `game`** (`learning/game.py`, one registry line). Its
+  items are challenges (prompt, 2–4 short options, answer, hint, explanation,
+  skill); the story and world are set-level `extras`, written by the finish
+  step. Sharing, attempts, results, coverage, the bell and the work tray come
+  with the kind.
+- **Level** is a column on `learning_sets` (any kind may use it); **points** a
+  column on `attempts`. One migration.
+- `POST /learning-sets/story-draft` drafts a story. The teacher's own story is
+  screened like a topic.
+- **Engine** — `frontend/src/features/game/`: scenes (story, map, challenge,
+  boss, finish), the four styles, drawn worlds with the student's buddy, Web
+  Audio music and effects, full screen. It plugs into `/play/:id` and the
+  preview at `/library/:id/try`.
+
+### 23.5 Phases
+
+1. Backend — kind, level, story, style and world, story draft, points,
+   badges, best-score leaderboard, narration, tests.
+2. Engine — four styles, sound, narration, buddy sidekick.
+3. Make, edit, preview and share; homes, Library, chat.
+4. Docs (`docs/features/050-play-and-learn.md`), README, checks at four
+   widths, full test run. Push and deploy when you say.
+
+### 23.6 Defaults I chose (overturn any)
+
+- Nine challenges by default (six to fifteen), three chapters, easiest first.
+- A wrong answer never ends the game: the score drops, the story goes on.
+- Astra's voice is English only; other languages get subtitles and the
+  browser's voice.
+- Parents' games count toward `PARENT_SETS_PER_DAY`.

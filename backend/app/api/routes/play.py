@@ -3,6 +3,7 @@ everything about how they are doing."""
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Response
@@ -23,6 +24,7 @@ from app.api.schemas.play import (
     BadgesResponse,
     EarnedBadge,
     FinishResponse,
+    HintResponse,
     HomeWorkResponse,
     TodoResponse,
     catalog,
@@ -138,13 +140,35 @@ async def attempt(attempt_id: UUID, user: CurrentUser, session: SessionDep) -> A
 async def answer(
     attempt_id: UUID, body: AnswerRequest, user: CurrentUser, session: SessionDep
 ) -> AnswerResponse:
-    if (body.choice is None) == (body.knew is None):
-        raise ValidationError("Send a choice for a question, or knew for a card.")
-    response = {"choice": body.choice} if body.choice is not None else {"knew": body.knew}
+    given = [body.choice is not None, body.knew is not None, body.timed_out]
+    if sum(given) != 1:
+        raise ValidationError(
+            "Send a choice for a question, knew for a card, or that time ran out."
+        )
+    response: dict[str, Any] = (
+        {"knew": body.knew} if body.knew is not None else {"choice": body.choice}
+    )
     result = await AttemptService(session, bus=build_bus()).answer(
         user.id, attempt_id, body.item_id, response, body.time_ms
     )
     return AnswerResponse.of(result)
+
+
+@router.post("/attempts/{attempt_id}/items/{item_id}/open", status_code=204)
+async def open_item(
+    attempt_id: UUID, item_id: str, user: CurrentUser, session: SessionDep
+) -> Response:
+    """A game's challenge is on screen (§23): its speed bonus is timed from now."""
+    await AttemptService(session).open_item(user.id, attempt_id, item_id[:40])
+    return Response(status_code=204)
+
+
+@router.post("/attempts/{attempt_id}/items/{item_id}/hint", response_model=HintResponse)
+async def hint(
+    attempt_id: UUID, item_id: str, user: CurrentUser, session: SessionDep
+) -> HintResponse:
+    """A game's hint, from the buddy (§23). Asking for it costs a few points."""
+    return HintResponse(hint=await AttemptService(session).hint(user.id, attempt_id, item_id[:40]))
 
 
 @router.get("/attempts/{attempt_id}/speech", dependencies=[Depends(limit_speech)])

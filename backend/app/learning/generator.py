@@ -72,6 +72,11 @@ class GenerationRequest:
     web_too: bool = False
     # What the stage says while the given sources are read.
     sources_note: str = "Reading the sources"
+    # How far into the topic the learner is (`pitch.LEVELS`), when chosen.
+    level: str | None = None
+    # What the maker chose that only this kind understands (a game's story,
+    # style and world), cleaned by the kind's `choices`. Empty for most kinds.
+    choices: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,6 +130,7 @@ class Pictured:
 
 
 REFUSED_TOPIC = "That topic isn't one we can make a set about. Try a school topic!"
+FINISH_LABEL = "Adding pictures and finishing touches"
 
 
 @dataclass(frozen=True, slots=True)
@@ -210,20 +216,38 @@ class LearningGenerator:
             "write", "done", f"Writing {count} {noun}", f"{len(items)} of {count} passed checks"
         )
 
-        extras: dict[str, Any] = {}
+        finished: dict[str, Any] = {"items": _arranged(self._kind, items), "extras": {}}
         if isinstance(self._kind, Enriching):
-            yield Stage("finish", "running", "Adding pictures and finishing touches")
-            items, extras = await self._finish(self._kind, request, plan, items, sources)
-            pictured = sum(1 for item in items if item.get("image"))
-            yield Pictured({item["id"]: item["image"] for item in items if item.get("image")})
-            yield Stage(
-                "finish",
-                "done",
-                "Adding pictures and finishing touches",
-                f"{pictured} of {len(items)} with a picture",
+            async for update in self._finishing(self._kind, request, plan, sources, finished):
+                yield update
+        yield Built(
+            self._result(
+                request,
+                plan,
+                finished["items"],
+                skills,
+                sources,
+                count,
+                started,
+                finished["extras"],
             )
+        )
 
-        yield Built(self._result(request, plan, items, skills, sources, count, started, extras))
+    async def _finishing(
+        self,
+        kind: Enriching,
+        request: GenerationRequest,
+        plan: _Plan,
+        sources: list[Source],
+        finished: dict[str, Any],
+    ) -> AsyncIterator[Update]:
+        """The finish stage, as it goes; what it made lands in `finished`."""
+        label = str(getattr(kind, "finish_label", FINISH_LABEL))
+        yield Stage("finish", "running", label)
+        items, extras = await self._finish(kind, request, plan, finished["items"], sources)
+        finished.update(items=items, extras=extras)
+        yield Pictured({item["id"]: item["image"] for item in items if item.get("image")})
+        yield Stage("finish", "done", label, _finished(self._kind, items, extras))
 
     # --- stages ---------------------------------------------------------------
 
@@ -244,6 +268,8 @@ class LearningGenerator:
             language=request.language,
             items=tuple(items),
             sources=tuple(sources),
+            level=request.level,
+            choices=dict(request.choices),
         )
         pictured, extras = await asyncio.gather(
             kind.illustrate(
@@ -265,10 +291,13 @@ class LearningGenerator:
         # The fast rules first: "how to make a bomb" needs no model to refuse.
         # Refusals only — a teacher's "suicide prevention" topic is the model's
         # call, not a pattern's.
-        screened = InputRules().screen(" ".join(filter(None, [request.subject, request.topic])))
+        story = str(request.choices.get("story") or "")
+        screened = InputRules().screen(
+            " ".join(filter(None, [request.subject, request.topic, story]))
+        )
         if screened.decision is Decision.BLOCK:
             return Refused(REFUSED_TOPIC, rule=screened.rule, category=screened.category.value)
-        system, user = prompts.check_topic(request.subject, request.topic, grade)
+        system, user = prompts.check_topic(request.subject, request.topic, grade, story)
         verdict = await self._model.ask("check", system, user, temperature=0.0, max_tokens=300)
         # An unreadable verdict is not a refusal: the guardrails in front of
         # generation have already had their say.
@@ -360,6 +389,7 @@ class LearningGenerator:
             skills=_skill_lines(skills),
             listing=listing(sources),
             avoid=[self._kind.summary(i) for i in written],
+            level=request.level,
         )
         tokens = _budget(self._kind)[1]
         reply = await self._model.ask("draft", system, user, temperature=0.7, max_tokens=tokens)
@@ -375,24 +405,25 @@ class LearningGenerator:
     ) -> list[Item]:
         if not items:
             return []
-        failed = await self._problems(plan, sources, items)
+        failed = await self._problems(plan, sources, items, request.level)
         passed = [i for i in items if i["id"] not in failed]
         if not failed:
             return passed
         repaired = await self._repair(
             request, plan, skills, sources, [i for i in items if i["id"] in failed], failed
         )
-        still = await self._problems(plan, sources, repaired) if repaired else {}
+        still = await self._problems(plan, sources, repaired, request.level) if repaired else {}
         return passed + [i for i in repaired if i["id"] not in still]
 
     async def _problems(
-        self, plan: _Plan, sources: list[Source], items: list[Item]
+        self, plan: _Plan, sources: list[Source], items: list[Item], level: str | None = None
     ) -> dict[str, str]:
         system, user = prompts.verify(
             topic=plan.topic,
             grade=plan.grade,
             listing=listing(sources),
             items_json=json.dumps(items, ensure_ascii=False),
+            level=level,
         )
         verdict = await self._model.ask("verify", system, user, temperature=0.0, max_tokens=1500)
         results = verdict.get("results")
@@ -423,6 +454,7 @@ class LearningGenerator:
             language=request.language,
             listing=listing(sources),
             problems=described,
+            level=request.level,
         )
         tokens = _budget(self._kind)[1]
         reply = await self._model.ask("repair", system, user, temperature=0.4, max_tokens=tokens)
@@ -437,6 +469,7 @@ class LearningGenerator:
         grade_level: str | None,
         language: str,
         instruction: str,
+        level: str | None = None,
     ) -> Item | None:
         """One replacement item, on a teacher's word — "make it easier"."""
         system, user = prompts.rewrite_one(
@@ -447,6 +480,7 @@ class LearningGenerator:
             skills=_skill_lines(skills),
             item_json=json.dumps(item, ensure_ascii=False),
             instruction=instruction.strip(),
+            level=level,
         )
         tokens = _budget(self._kind)[2]
         reply = await self._model.ask("rewrite", system, user, temperature=0.7, max_tokens=tokens)
@@ -465,6 +499,7 @@ class LearningGenerator:
         grade_level: str | None,
         language: str,
         instruction: str,
+        level: str | None = None,
     ) -> Item | None:
         """One more item on a teacher's word — "a section about evaporation".
         A kind with pictures gets its picture too."""
@@ -477,6 +512,7 @@ class LearningGenerator:
             skills=_skill_lines(skills),
             existing=[self._kind.summary(i) for i in existing],
             instruction=instruction.strip(),
+            level=level,
         )
         tokens = _budget(self._kind)[2]
         reply = await self._model.ask("add", system, user, temperature=0.7, max_tokens=tokens)
@@ -549,6 +585,23 @@ class LearningGenerator:
             build_ms=int((time.monotonic() - started) * 1000),
             extras=extras or {},
         )
+
+
+def _arranged(kind: LearningKind, items: list[Item]) -> list[Item]:
+    """The items in the order the kind plays them — a game's easiest first.
+    A kind that does not say keeps the order they were written in."""
+    arrange = getattr(kind, "arrange", None)
+    return list(arrange(items)) if callable(arrange) else items
+
+
+def _finished(kind: LearningKind, items: list[Item], extras: dict[str, Any]) -> str:
+    """What the finish stage says it did: the kind's own words when it has
+    them, else how many items got a picture."""
+    detail = getattr(kind, "finish_detail", None)
+    if callable(detail):
+        return str(detail(items, extras))
+    pictured = sum(1 for item in items if item.get("image"))
+    return f"{pictured} of {len(items)} with a picture"
 
 
 def _found(sources: list[Source]) -> str:

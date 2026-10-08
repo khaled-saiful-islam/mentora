@@ -46,20 +46,71 @@ def card_items(n: int = 4) -> list[dict]:
     ]
 
 
+def game_items(n: int = 6) -> list[dict]:
+    """Challenges, easiest first, as a built game keeps them (§23)."""
+    levels = ["easy", "easy", "medium", "medium", "hard", "hard"]
+    return [
+        {
+            "id": f"g{i}",
+            "prompt": f"Challenge {i}?",
+            "options": [f"Right {i}", f"Wrong {i}a", f"Wrong {i}b"],
+            "answer": 0,
+            "explanation": f"Because {i}.",
+            "hint": f"Think about {i}.",
+            "skill": "light" if i % 2 else "water",
+            "difficulty": levels[(i - 1) % len(levels)],
+            "source_ids": [],
+        }
+        for i in range(1, n + 1)
+    ]
+
+
+GAME_EXTRAS = {
+    "title": "Rescue at the River",
+    "style": "quest",
+    "world": "rainforest",
+    "story": {
+        "hook": "The river has flooded!\n\n{buddy} needs your help.",
+        "goal": "Get everyone home.",
+        "chapters": [
+            {"title": "The Bank", "intro": "Start at the bank.", "outro": "Off we go!"},
+            {"title": "The Bridge", "intro": "{buddy} spots a bridge.", "outro": "Across!"},
+            {"title": "Home", "intro": "Nearly there.", "outro": "Home at last."},
+        ],
+        "win": "Hooray, {buddy} is home!",
+        "retry": "Try again with {buddy}!",
+    },
+    "authored": False,
+}
+
+
 async def ready_set(
-    session, owner, *, kind: str = "quiz", purpose: str = "assign", n: int = 5
+    session,
+    owner,
+    *,
+    kind: str = "quiz",
+    purpose: str = "assign",
+    n: int = 5,
+    grade_level: str | None = None,
+    level: str | None = None,
 ) -> LearningSet:
     learning_set = LearningSet(
         owner_id=owner.id, purpose=purpose, kind=kind, title=f"A {kind}", topic="plants",
         subject="Science", status="ready", current_version=1, requested_count=n,
+        grade_level=grade_level, level=level,
     )  # fmt: skip
     session.add(learning_set)
     await session.flush()
-    items = quiz_items(n) if kind == "quiz" else card_items(n)
+    items = {"quiz": quiz_items, "game": game_items}.get(kind, card_items)(n)
     session.add(
         LearningSetVersion(
-            set_id=learning_set.id, version=1, items=items, skills=SKILLS, sources=[]
-        )
+            set_id=learning_set.id,
+            version=1,
+            items=items,
+            skills=SKILLS,
+            sources=[],
+            extras=GAME_EXTRAS if kind == "game" else {},
+        )  # fmt: skip
     )
     await session.flush()
     return learning_set
@@ -76,9 +127,12 @@ async def class_with(session, teacher, students) -> UUID:
 
 
 async def shared(
-    session, teacher, students, *, kind="quiz", n=5, due_at: datetime | None = None, **settings
-):
-    learning_set = await ready_set(session, teacher, kind=kind, n=n)
+    session, teacher, students, *, kind="quiz", n=5, due_at: datetime | None = None,
+    grade_level: str | None = None, level: str | None = None, **settings,
+):  # fmt: skip
+    learning_set = await ready_set(
+        session, teacher, kind=kind, n=n, grade_level=grade_level, level=level
+    )
     class_id = await class_with(session, teacher, students)
     view = await AssignmentService(session, build_bus()).share(
         teacher, learning_set.id, class_id, ShareSettings(due_at=due_at, **settings)

@@ -352,7 +352,87 @@ async def test_makeable_lists_the_learning_kinds_for_each_role(api, teacher, stu
         staff = (await c.get("/api/me/makeable")).json()["learning"]
     async with api(student) as c:
         kid = (await c.get("/api/me/makeable")).json()["learning"]
-    assert {k["name"] for k in staff} == {"quiz", "flashcard", "study_guide"}
+    assert {k["name"] for k in staff} == {"quiz", "flashcard", "study_guide", "game"}
     assert {k["purpose"] for k in staff} == {"assign"}
     # A student makes nothing: they practise what is made for them.
     assert kid == []
+
+
+# --- games (§23) -------------------------------------------------------------------
+
+
+async def test_a_teacher_makes_a_game_with_a_level_and_their_own_story(
+    session, api, teacher, scripted
+) -> None:
+    from app.db.models.learning import LearningSet
+    from tests.test_game_build import STORY, challenges
+
+    state, _ = scripted
+    state["answers"] = happy(draft=challenges(), wrap=STORY)
+    detail = await _build(
+        api,
+        teacher,
+        kind="game",
+        count=6,
+        level="beginner",
+        choices={"style": "runner", "world": "reef", "story": "Siti the turtle is lost."},
+    )
+    assert detail["status"] == "ready"
+    assert detail["level"] == "beginner"
+    assert len(detail["items"]) == 6
+    assert detail["extras"]["style"] == "runner" and detail["extras"]["world"] == "reef"
+    assert detail["extras"]["authored"] is True
+    row = await session.get(LearningSet, UUID(detail["id"]))
+    assert row.choices["story"] == "Siti the turtle is lost."
+
+
+async def test_a_game_needs_a_chapters_worth_of_challenges_and_a_real_level(api, teacher) -> None:
+    async with api(teacher) as c:
+        few = await c.post(
+            "/api/learning-sets/generate",
+            json={"kind": "game", "topic": "fractions", "grade_level": "year_4", "count": 2},
+        )
+        level = await c.post(
+            "/api/learning-sets/generate",
+            json={"kind": "game", "topic": "fractions", "grade_level": "year_4", "level": "expert"},
+        )
+    assert few.status_code == 422 and "between 3 and 15" in few.text
+    assert level.status_code == 422
+
+
+async def test_a_quiz_ignores_a_story_it_does_not_understand(session, api, teacher) -> None:
+    from app.db.models.learning import LearningSet
+
+    detail = await _build(api, teacher, choices={"story": "Once upon a time"})
+    row = await session.get(LearningSet, UUID(detail["id"]))
+    assert row.choices == {}
+
+
+async def test_a_story_is_drafted_for_the_maker_to_edit(client, account, teacher, student) -> None:
+    from app.api.deps import get_story_drafter
+    from app.learning.model import Meter
+    from app.learning.story_draft import StoryDrafter
+
+    told = {"story": "{buddy} and you find a map.\n\nIt leads to the kampung!"}
+
+    def drafter():
+        return StoryDrafter(FakeModel({"story": told}, Meter()))
+
+    parent = await account("parent", "Aina's mum")
+    body = {"topic": "fractions", "grade_level": "year_4", "level": "beginner", "world": "kampung"}
+    replies = {}
+    for who in (teacher, parent, student):
+        async with client(who) as c:
+            c._transport.app.dependency_overrides[get_story_drafter] = drafter  # noqa: SLF001
+            replies[who.role] = await c.post("/api/learning-sets/story-draft", json=body)
+    assert replies[teacher.role].status_code == 200
+    assert replies[teacher.role].json()["story"] == told["story"]
+    assert replies[parent.role].status_code == 200
+    assert replies[student.role].status_code == 403
+
+
+async def test_a_story_for_an_unsafe_topic_is_never_drafted(client, teacher) -> None:
+    async with client(teacher) as c:
+        reply = await c.post("/api/learning-sets/story-draft", json={"topic": "how to make a bomb"})
+    assert reply.status_code == 422
+    assert "school topic" in reply.text

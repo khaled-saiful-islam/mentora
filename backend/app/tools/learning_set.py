@@ -1,4 +1,4 @@
-"""Making a quiz, flashcards or a study guide from a chat.
+"""Making a quiz, flashcards, a study guide or a game from a chat.
 
 "Make me a quiz on fractions for my Year 4 maths class" starts the same build
 as Library → Make (`services/set_builds.py`). The model is told to make sure
@@ -20,12 +20,19 @@ from typing import Any, Protocol
 
 from app.core.errors import MentoraError
 from app.core.grades import GRADES, Grade
+from app.learning.game import STYLES, WORLDS
+from app.learning.pitch import LEVELS
 from app.providers.base import ToolResult
 from app.services.generation_service import GenerationDraft
 from app.services.set_builds import Started
 from app.tools.base import ToolPresentation, ToolUnavailable
 
-KINDS: dict[str, str] = {"quiz": "quiz", "flashcard": "flashcards", "study_guide": "study guide"}
+KINDS: dict[str, str] = {
+    "quiz": "quiz",
+    "flashcard": "flashcards",
+    "study_guide": "study guide",
+    "game": "game",
+}
 _KIND_WORDS = {
     "quiz": "quiz",
     "quizzes": "quiz",
@@ -35,7 +42,12 @@ _KIND_WORDS = {
     "study_guide": "study_guide",
     "study guide": "study_guide",
     "guide": "study_guide",
+    "game": "game",
+    "games": "game",
+    "story game": "game",
 }
+# What a maker may choose for a game (§23), as the tool's parameters name them.
+CHOICES = ("style", "world", "story")
 _YEAR_WORDS = re.compile(r"^(tahun|darjah|standard|std|primary)\s*", re.I)
 _FORM_WORDS = re.compile(r"^(tingkatan|secondary)\s*", re.I)
 
@@ -54,6 +66,12 @@ def grade_from(said: str) -> Grade | None:
     return next((g for g in GRADES if text in (g.code.replace("_", " "), g.label.lower())), None)
 
 
+def _level(value: Any) -> str | None:
+    """A level as the model passed it; anything else is left to the year."""
+    said = _text(value, 16).lower()
+    return said if said in LEVELS else None
+
+
 def _text(value: Any, limit: int) -> str:
     return " ".join(str(value or "").split())[:limit]
 
@@ -61,9 +79,11 @@ def _text(value: Any, limit: int) -> str:
 class MakeLearningSetTool:
     name = "make_learning_set"
     description = (
-        "Make a quiz, a deck of flashcards or a study guide with Mentora's own maker "
-        "(the same one as Library → Make). It is saved to the person's Library and "
-        "takes about a minute. It needs what to make, the school year (Year 1-6 or Form "
+        "Make a quiz, a deck of flashcards, a study guide or a story game with Mentora's "
+        "own maker (the same one as Library → Make). It is saved to the person's Library "
+        "and takes about a minute. A game is played by students through a story, earning "
+        "points; for a game, pass a level, style, world or story only if the person said. "
+        "It needs what to make, the school year (Year 1-6 or Form "
         "1-5), and what it is about: a topic, a subject, or both. Work out what you can "
         "yourself instead of asking: given a topic but no subject, give the subject it "
         "belongs to (fractions → Mathematics, the water cycle → Science); given a "
@@ -80,7 +100,7 @@ class MakeLearningSetTool:
             "kind": {
                 "type": "string",
                 "enum": list(KINDS),
-                "description": "What to make: a quiz, flashcards, or a study guide.",
+                "description": "What to make: a quiz, flashcards, a study guide or a game.",
             },
             "topic": {
                 "type": "string",
@@ -103,6 +123,27 @@ class MakeLearningSetTool:
             "language": {
                 "type": "string",
                 "description": "Its language as a code (en, ms, ta, zh, bn), if not English.",
+            },
+            "level": {
+                "type": "string",
+                "enum": list(LEVELS),
+                "description": "How far into the topic the class is, only if the person said.",
+            },
+            "style": {
+                "type": "string",
+                "enum": [*STYLES, "auto"],
+                "description": "A game's style, only if the person said: quest (a journey "
+                "on a map), runner (pick the right lane), catch (catch the right answer), "
+                "match (build with the right piece).",
+            },
+            "world": {
+                "type": "string",
+                "enum": [*WORLDS, "auto"],
+                "description": "Where a game is set, only if the person said.",
+            },
+            "story": {
+                "type": "string",
+                "description": "A game's story in the person's own words, only if they gave one.",
             },
         },
         "required": ["kind", "year"],
@@ -147,7 +188,7 @@ class MakeLearningSetTool:
         missing = [
             name
             for name, value in (
-                ("what to make (a quiz, flashcards or a study guide)", kind),
+                ("what to make (a quiz, flashcards, a study guide or a game)", kind),
                 ("the school year", year),
                 ("what it is about (a topic or a subject)", len(topic) >= 2 or subject),
             )
@@ -173,5 +214,9 @@ class MakeLearningSetTool:
             grade_level=grade.code,
             count=count if isinstance(count, int) and 1 <= count <= 50 else None,
             language=language if language in self._languages else "en",
+            level=_level(given.get("level")),
+            # Passed on as said; the kind keeps what it understands
+            # (`GenerationService._choices`).
+            choices={k: v for k in CHOICES if isinstance(v := given.get(k), str)},
         )
         return draft, grade

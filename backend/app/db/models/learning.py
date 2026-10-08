@@ -63,6 +63,13 @@ class LearningSet(Base):
     web_sources: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default=text("true")
     )
+    # How far into the topic the learner is (`learning/pitch.LEVELS`, §23).
+    level: Mapped[str | None] = mapped_column(String(16))
+    # What the maker chose that only this kind understands — a game's story,
+    # style and world — kept so a failed build is retried as it was asked for.
+    choices: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
@@ -74,6 +81,10 @@ class LearningSet(Base):
         CheckConstraint(
             "status IN ('generating', 'ready', 'failed', 'refused')",
             name="ck_learning_sets_status",
+        ),
+        CheckConstraint(
+            "level IS NULL OR level IN ('beginner', 'intermediate', 'advanced')",
+            name="ck_learning_sets_level",
         ),
         Index("ix_learning_sets_owner", "owner_id", "archived_at", "updated_at"),
     )

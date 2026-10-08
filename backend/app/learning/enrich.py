@@ -9,7 +9,7 @@ same rule the chat uses for tools.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
 from app.core.grades import Grade
@@ -34,6 +34,11 @@ class Finishing:
     language: str
     items: tuple[Item, ...]
     sources: tuple[Source, ...]
+    # How far into the topic the learner is (`pitch.LEVELS`), when chosen.
+    level: str | None = None
+    # What the maker chose for this kind before the build — a game's story,
+    # style and world (§23) — already cleaned by the kind's own `choices`.
+    choices: dict[str, Any] = field(default_factory=dict)
 
 
 @runtime_checkable

@@ -12,3 +12,9 @@ BUDDIES: tuple[str, ...] = ("kiko", "tompok", "ollie", "momo", "rimau")
 
 def is_buddy(name: str) -> bool:
     return name in BUDDIES
+
+
+def buddy_name(key: str | None) -> str:
+    """What a buddy is called, for words said aloud — "Momo". Someone without
+    one (a teacher previewing) hears "your buddy"."""
+    return key.capitalize() if key and is_buddy(key) else "your buddy"

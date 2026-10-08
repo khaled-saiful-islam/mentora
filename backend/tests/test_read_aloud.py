@@ -155,3 +155,70 @@ async def test_a_voice_that_fails_says_so_plainly(session, voiced, teacher, stud
         response = await c.get(f"/api/me/attempts/{attempt['id']}/speech?item={item}&part=question")
     assert response.status_code == 502
     assert response.json()["error"]["message"] == "The voice could not be reached."
+
+
+# --- games (§23) -------------------------------------------------------------------
+
+
+async def test_a_game_story_is_told_with_the_students_own_buddy(
+    session, voiced, teacher, account
+) -> None:
+    player = await account("student", "Adam", buddy="momo")
+    assignment = await shared(session, teacher, [player], kind="game", n=3)
+    async with voiced(player) as c:
+        attempt = (await c.post(f"/api/me/assignments/{assignment.id}/attempts")).json()
+        base = f"/api/me/attempts/{attempt['id']}/speech"
+        hook = await c.get(f"{base}?item=hook&part=story")
+        intro = await c.get(f"{base}?item=intro&part=story&n=1")
+        win = await c.get(f"{base}?item=win&part=story")
+    assert hook.status_code == intro.status_code == win.status_code == 200, hook.text
+    assert voiced.voice.said == [
+        "The river has flooded! Momo needs your help.",
+        "Momo spots a bridge.",
+        "Hooray, Momo is home!",
+    ]
+
+
+async def test_a_hint_is_read_once_asked_for_and_an_explanation_once_answered(
+    session, voiced, teacher, student
+) -> None:
+    assignment = await shared(session, teacher, [student], kind="game", n=3)
+    async with voiced(student) as c:
+        attempt = (await c.post(f"/api/me/assignments/{assignment.id}/attempts")).json()
+        item = attempt["items"][0]
+        base = f"/api/me/attempts/{attempt['id']}/speech?item={item['id']}"
+        unasked = await c.get(f"{base}&part=hint")
+        await c.post(f"/api/me/attempts/{attempt['id']}/items/{item['id']}/hint")
+        hint = await c.get(f"{base}&part=hint")
+        early = await c.get(f"{base}&part=explanation")
+        await c.post(
+            f"/api/me/attempts/{attempt['id']}/answers",
+            json={"item_id": item["id"], "choice": 0, "time_ms": 1000},
+        )
+        later = await c.get(f"{base}&part=explanation")
+    assert unasked.status_code == 404
+    assert hint.status_code == 200 and early.status_code == 404 and later.status_code == 200
+    assert voiced.voice.said == ["Think about 1.", "Because 1."]
+
+
+async def test_a_piece_of_story_that_is_not_there_is_refused(
+    session, voiced, teacher, student
+) -> None:
+    assignment = await shared(session, teacher, [student], kind="game", n=3)
+    async with voiced(student) as c:
+        attempt = (await c.post(f"/api/me/assignments/{assignment.id}/attempts")).json()
+        base = f"/api/me/attempts/{attempt['id']}/speech"
+        unknown = await c.get(f"{base}?item=secret&part=story")
+        beyond = await c.get(f"{base}?item=intro&part=story&n=7")
+    assert unknown.status_code == beyond.status_code == 422
+    assert voiced.voice.said == []
+
+
+def test_a_games_options_are_read_as_their_words_alone() -> None:
+    challenge = {
+        "id": "g1",
+        "prompt": "Which is half?",
+        "options": ["1/2", "1/3"],
+        "has_hint": True,
+    }
+    assert words_for(challenge, "option", 1) == "1/3"

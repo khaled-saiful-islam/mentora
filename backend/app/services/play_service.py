@@ -16,6 +16,7 @@ from app.db.models.classroom import Classroom
 from app.db.models.user import User
 from app.events.bus import EventBus
 from app.events.catalog import AttemptCompleted
+from app.learning.registry import ranks
 from app.services.assignment_service import AssignmentService
 from app.services.attempt_service import AttemptService, AttemptView, Loaded
 from app.services.badge_service import BadgeService, Earned
@@ -76,7 +77,7 @@ class PlayService:
 
     async def _place(self, loaded: Loaded, student_id: UUID) -> tuple[Entry | None, int]:
         assignment = loaded.assignment
-        if assignment is None or not assignment.leaderboard_enabled or loaded.kind.name != "quiz":
+        if assignment is None or not assignment.leaderboard_enabled or not ranks(loaded.kind.name):
             return None, 0
         board = LeaderboardService(self._session, self._bus)
         ranked = await board.ranked(assignment, student_id)
@@ -105,7 +106,7 @@ class PlayService:
                 class_name=class_name,
                 audience=audience,
                 leaderboard=bool(
-                    assignment and assignment.leaderboard_enabled and loaded.kind.name == "quiz"
+                    assignment and assignment.leaderboard_enabled and ranks(loaded.kind.name)
                 ),
                 shared_by=loaded.share.parent_id if loaded.share is not None else None,
             ),

@@ -16,6 +16,9 @@ from app.learning.base import (
 
 OPTIONS = 4
 DIFFICULTIES = ("easy", "medium", "hard")
+# How a kind's class leaderboard ranks, for the kinds that have one.
+FIRST_TRY = "first_try"
+BEST_POINTS = "best_points"
 
 
 class QuizKind:
@@ -25,6 +28,8 @@ class QuizKind:
     item_noun_plural = "questions"
     default_count = 10
     max_count = 30
+    # A class leaderboard ranks first tries (`services/leaderboard_service.py`).
+    leaderboard = FIRST_TRY
 
     def normalise(
         self, raw: dict[str, Any], *, skills: tuple[Skill, ...], source_ids: set[str]

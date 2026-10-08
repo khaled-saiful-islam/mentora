@@ -20,6 +20,7 @@ from app.api.deps import (
     NarratorDep,
     SessionDep,
     SettingsDep,
+    StoryDrafterDep,
     StreamUser,
     limit_generate,
     limit_speech,
@@ -34,9 +35,12 @@ from app.api.schemas.learning import (
     SetDetail,
     SetList,
     SetSummary,
+    StoryDraftRequest,
+    StoryDraftResponse,
 )
 from app.api.schemas.read_aloud import SpokenDep, clip
 from app.core.errors import NotFoundError, ValidationError
+from app.core.grades import is_grade
 from app.db.models.learning import LearningSet
 from app.db.session import session_scope
 from app.learning.model import GenerationUnavailable
@@ -55,6 +59,35 @@ router = APIRouter(
         )
     ],
 )
+
+
+@router.post(
+    "/story-draft",
+    response_model=StoryDraftResponse,
+    dependencies=[
+        Depends(require_any_capability("share_learning_sets", "make_family_sets")),
+        Depends(limit_generate),
+    ],
+)
+async def story_draft(
+    body: StoryDraftRequest, settings: SettingsDep, drafter: StoryDrafterDep
+) -> StoryDraftResponse:
+    """A first story for a game, for its maker to edit — nothing is saved."""
+    if body.grade_level and not is_grade(body.grade_level):
+        raise ValidationError("Pick a grade from the list.")
+    languages = settings.supported_language_list
+    try:
+        story = await drafter.draft(
+            topic=body.topic,
+            subject=body.subject,
+            grade_level=body.grade_level,
+            level=body.level,
+            language=body.language if body.language in languages else settings.default_language,
+            world=body.world,
+        )
+    except GenerationUnavailable as exc:
+        raise ValidationError(str(exc)) from exc
+    return StoryDraftResponse(story=story)
 
 
 @router.post(

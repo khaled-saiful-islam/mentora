@@ -6,17 +6,21 @@ from __future__ import annotations
 
 from app.db.models.learning import LearningSet
 from app.db.models.live import LiveSession
+from app.learning.enrich import Enriching
+from app.learning.registry import build_learning_kinds
 from app.services.work import Ticket
 
-# The generator's stages that finish: check, research, skills, write — and a
-# study guide's pictures and finishing touches.
+# The generator's stages that finish: check, research, skills, write — and,
+# for a kind with a finishing stage (a study guide's pictures, a game's story),
+# that one too.
 _SET_STAGES = 4
-_GUIDE_STAGES = 5
+_FINISHED_STAGES = 5
 
 
 def for_set(learning_set: LearningSet) -> Ticket:
-    """A quiz, flashcards or a study guide being made."""
-    steps = _GUIDE_STAGES if learning_set.kind == "study_guide" else _SET_STAGES
+    """A quiz, flashcards, a study guide or a game being made."""
+    finishes = isinstance(build_learning_kinds().get(learning_set.kind), Enriching)
+    steps = _FINISHED_STAGES if finishes else _SET_STAGES
     return Ticket(
         kind=learning_set.kind,
         title=learning_set.topic or learning_set.title,

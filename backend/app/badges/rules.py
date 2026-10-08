@@ -10,6 +10,8 @@ from app.badges.base import Award, Context
 # Work someone gave you — a teacher, or a parent from home (§20.4) — rather
 # than practice you set yourself.
 GIVEN = ("assign", "family")
+# Where answering one after another in a row means something.
+STREAKED = ("quiz", "game")
 
 
 @dataclass(frozen=True)
@@ -46,7 +48,7 @@ class HotStreak:
     hint: str = "Answer 5 in a row correctly."
 
     def evaluate(self, ctx: Context) -> Award | None:
-        if ctx.kind == "quiz" and ctx.best_streak >= 5:
+        if ctx.kind in STREAKED and ctx.best_streak >= 5:
             return Award(self.key, ctx.scope, f"{ctx.best_streak} in a row!")
         return None
 
@@ -145,4 +147,52 @@ class SkillMaster:
         for tally in ctx.skills:
             if tally.sets >= 3 and tally.total >= 8 and tally.correct / tally.total >= 0.8:
                 return Award(self.key, f"skill:{tally.skill}", "A true master of this skill!")
+        return None
+
+
+# --- games (§23) ---------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class GameHero:
+    key: str = "game_hero"
+    name: str = "Game Hero"
+    description: str = "Played a story game all the way to the end."
+    hint: str = "Finish a game."
+
+    def evaluate(self, ctx: Context) -> Award | None:
+        if ctx.kind == "game":
+            return Award(self.key, ctx.scope, "You saw the story through to the end!")
+        return None
+
+
+@dataclass(frozen=True)
+class ThreeStarStar:
+    key: str = "three_star_star"
+    name: str = "Three-Star Star"
+    description: str = "Three stars in every chapter of a game."
+    hint: str = "Get every challenge in a game right."
+
+    def evaluate(self, ctx: Context) -> Award | None:
+        if ctx.kind == "game" and ctx.percent >= 100:
+            return Award(self.key, ctx.scope, "Three stars, every chapter!")
+        return None
+
+
+@dataclass(frozen=True)
+class NeverGiveUp:
+    key: str = "never_give_up"
+    name: str = "Never Give Up"
+    description: str = "Won a game after a hard first try."
+    hint: str = "Play a game again and win it."
+
+    def evaluate(self, ctx: Context) -> Award | None:
+        if (
+            ctx.kind == "game"
+            and ctx.number >= 2
+            and ctx.first_percent is not None
+            and ctx.first_percent < 50
+            and ctx.percent >= 80
+        ):
+            return Award(self.key, ctx.scope, "You kept going — and you won!")
         return None

@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.core.grades import grade_label
 from app.services.assignment_service import AssignmentView
 from app.services.learning_set_service import SetView
+
+# A story a maker writes for a game runs to about 2 000 characters; the kind
+# cuts it to fit, and this only stops an unbounded body.
+MAX_CHOICE = 4000
 
 
 class GenerateRequest(BaseModel):
@@ -21,6 +25,33 @@ class GenerateRequest(BaseModel):
     # Make it from these of your own materials (§21) — and search the web too?
     material_ids: list[UUID] = Field(default_factory=list, max_length=10)
     web: bool = True
+    # How far into the topic the learner is (§23).
+    level: Literal["beginner", "intermediate", "advanced"] | None = None
+    # What only this kind understands — a game's story, style and world. The
+    # kind keeps what it knows and drops the rest.
+    choices: dict[str, str] = Field(default_factory=dict, max_length=8)
+
+    @field_validator("choices")
+    @classmethod
+    def _choices_fit(cls, value: dict[str, str]) -> dict[str, str]:
+        if any(len(k) > 32 or len(v) > MAX_CHOICE for k, v in value.items()):
+            raise ValueError(f"Keep each choice under {MAX_CHOICE} characters.")
+        return value
+
+
+class StoryDraftRequest(BaseModel):
+    """A story for a game, drafted for its maker to read and edit (§23)."""
+
+    topic: str = Field(min_length=2, max_length=200)
+    subject: str | None = Field(default=None, max_length=80)
+    grade_level: str | None = Field(default=None, max_length=32)
+    level: Literal["beginner", "intermediate", "advanced"] | None = None
+    language: str = Field(default="en", max_length=8)
+    world: str = Field(default="auto", max_length=16)
+
+
+class StoryDraftResponse(BaseModel):
+    story: str
 
 
 class SetSummary(BaseModel):
@@ -32,6 +63,7 @@ class SetSummary(BaseModel):
     topic: str
     grade_level: str | None
     grade_label: str | None
+    level: str | None = None
     language: str
     status: str
     failure: str | None
@@ -55,6 +87,7 @@ class SetSummary(BaseModel):
             topic=s.topic,
             grade_level=s.grade_level,
             grade_label=grade_label(s.grade_level),
+            level=s.level,
             language=s.language,
             status=s.status,
             failure=s.failure,

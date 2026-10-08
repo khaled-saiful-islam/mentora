@@ -10,12 +10,15 @@ from app.badges.rules import (
     CardShark,
     Comeback,
     EarlyBird,
+    GameHero,
     HotStreak,
+    NeverGiveUp,
     PerfectScore,
     PracticePro,
     SelfStarter,
     SkillMaster,
     StarScorer,
+    ThreeStarStar,
 )
 
 
@@ -38,16 +41,26 @@ RULES: tuple[BadgeRule, ...] = (
     SelfStarter(),
     PracticePro(),
     SkillMaster(),
+    GameHero(),
+    ThreeStarStar(),
+    NeverGiveUp(),
 )
 
-# Awarded when a quiz's leaderboard is final (closed, or past its due date).
+# Awarded when a leaderboard is final (closed, or past its due date) — a
+# quiz's, or a game's that its teacher turned one on for (§23).
 PODIUM: tuple[BadgeInfo, ...] = (
-    BadgeInfo("gold", "Gold Medal", "First place on a class quiz.", "Top the leaderboard."),
+    BadgeInfo("gold", "Gold Medal", "First place on a class quiz or game.", "Top the leaderboard."),
     BadgeInfo(
-        "silver", "Silver Medal", "Second place on a class quiz.", "Come second on a leaderboard."
+        "silver",
+        "Silver Medal",
+        "Second place on a class quiz or game.",
+        "Come second on a leaderboard.",
     ),
     BadgeInfo(
-        "bronze", "Bronze Medal", "Third place on a class quiz.", "Come third on a leaderboard."
+        "bronze",
+        "Bronze Medal",
+        "Third place on a class quiz or game.",
+        "Come third on a leaderboard.",
     ),
 )
 

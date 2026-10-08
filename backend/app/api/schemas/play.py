@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from app.badges.catalog import CATALOG
 from app.db.models.attempt import Attempt
 from app.db.models.learning import LearningSet
+from app.learning.registry import ranks
 from app.services.attempt_service import AnswerResult, AttemptView, Played
 from app.services.auto_practice import MadeForYou
 from app.services.badge_service import Earned
@@ -50,6 +51,11 @@ class AttemptResponse(BaseModel):
     language: str
     # The year the set was written for, e.g. "year_2".
     grade_level: str | None = None
+    # A game's level, challenge timer, points, and best points so far (§23).
+    level: str | None = None
+    timer_seconds: int | None = None
+    points: int | None = None
+    best_points: int | None = None
     score: int
     max_score: int
     percent: float
@@ -78,6 +84,10 @@ class AttemptResponse(BaseModel):
             extras=view.extras,
             language=view.language,
             grade_level=view.grade_level,
+            level=view.level,
+            timer_seconds=view.timer_seconds,
+            points=a.points,
+            best_points=view.best_points,
             score=a.score if a.status == "completed" or view.feedback_mode == "instant" else 0,
             max_score=a.max_score,
             percent=float(a.percent),
@@ -85,7 +95,7 @@ class AttemptResponse(BaseModel):
             can_retake=view.can_retake,
             attempts_used=view.attempts_used,
             leaderboard=bool(
-                view.assignment and view.assignment.leaderboard_enabled and view.kind == "quiz"
+                view.assignment and view.assignment.leaderboard_enabled and ranks(view.kind)
             ),
             due_at=view.assignment.due_at if view.assignment else None,
         )
@@ -96,6 +106,12 @@ class AnswerRequest(BaseModel):
     choice: int | None = Field(default=None, ge=0, le=9)
     knew: bool | None = None
     time_ms: int = Field(default=0, ge=0)
+    # A game's timer ran out before a choice (§23): wrong, and still explained.
+    timed_out: bool = False
+
+
+class HintResponse(BaseModel):
+    hint: str
 
 
 class AnswerResponse(BaseModel):
@@ -137,6 +153,8 @@ class EntryResponse(BaseModel):
     buddy: str | None
     percent: float
     you: bool
+    # A game's best points (§23); None on a quiz's board.
+    points: int | None = None
 
     @classmethod
     def of(cls, entry: Entry) -> EntryResponse:
@@ -147,6 +165,7 @@ class EntryResponse(BaseModel):
             buddy=entry.buddy,
             percent=entry.percent,
             you=entry.you,
+            points=entry.points,
         )
 
 

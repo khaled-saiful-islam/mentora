@@ -35,7 +35,7 @@ SOON = timedelta(hours=48)
 LATELY = 10
 # How long after its start a lesson may still be on.
 LESSON_RUNS = timedelta(hours=2)
-KINDS = ("quiz", "flashcard", "study_guide")
+KINDS = ("quiz", "flashcard", "study_guide", "game")
 
 
 @dataclass(frozen=True, slots=True)

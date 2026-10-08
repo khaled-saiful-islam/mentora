@@ -23,6 +23,7 @@ from app.db.models.user import User
 from app.db.repositories.classes import ClassRepository
 from app.events.bus import EventBus
 from app.events.catalog import AssignmentChanged, AssignmentShared
+from app.learning.registry import ranks
 
 FEEDBACK_MODES = ("instant", "end")
 
@@ -72,7 +73,7 @@ class AssignmentService:
             shuffle_options=settings.shuffle_options,
             allow_retakes=settings.allow_retakes,
             max_attempts=settings.max_attempts if settings.allow_retakes else 1,
-            leaderboard_enabled=settings.leaderboard_enabled and learning_set.kind == "quiz",
+            leaderboard_enabled=settings.leaderboard_enabled and ranks(learning_set.kind),
             due_at=settings.due_at,
         )
         self._session.add(assignment)

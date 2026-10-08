@@ -32,6 +32,7 @@ from app.db.models.user import User
 from app.events.bus import EventBus
 from app.events.catalog import AttemptProgressed
 from app.learning.base import Item, LearningKind
+from app.learning.game import Answered
 from app.learning.registry import build_learning_kinds
 from app.policies.access import assignment_for_student
 
@@ -65,6 +66,11 @@ class AttemptView:
     # The year the set was written for — how it looks, when the student's own
     # year is not known.
     grade_level: str | None = None
+    # A game's level, its challenge timer (none for beginners) and the best
+    # points this student has scored on it so far (§23).
+    level: str | None = None
+    timer_seconds: int | None = None
+    best_points: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -222,7 +228,11 @@ class AttemptService:
         assignment: Assignment | None,
         number: int,
     ) -> Attempt:
-        shuffle_items = bool(assignment and assignment.shuffle_questions)
+        kind = self._kinds.get(learning_set.kind)
+        # A game plays its chapters in order, easiest first (§23): never shuffled.
+        shuffle_items = bool(assignment and assignment.shuffle_questions) and not getattr(
+            kind, "keeps_order", False
+        )
         shuffle_options = assignment.shuffle_options if assignment else True
         attempt = Attempt(
             student_id=student.id,
@@ -246,11 +256,10 @@ class AttemptService:
         answers = await self._answers(attempt.id)
         finished = attempt.status == "completed"
         instant = _feedback(loaded) == "instant" or finished
-        used = len(
-            await self._attempts(
-                student_id, assignment_id=attempt.assignment_id, set_id=attempt.set_id
-            )
+        tries = await self._attempts(
+            student_id, assignment_id=attempt.assignment_id, set_id=attempt.set_id
         )
+        used = len(tries)
         return AttemptView(
             attempt=attempt,
             title=loaded.learning_set.title,
@@ -267,6 +276,12 @@ class AttemptService:
             extras=dict(loaded.version.extras or {}),
             language=loaded.learning_set.language,
             grade_level=loaded.learning_set.grade_level,
+            level=loaded.learning_set.level,
+            timer_seconds=_timer(loaded),
+            best_points=max(
+                (t.points for t in tries if t.status == "completed" and t.points is not None),
+                default=None,
+            ),
         )
 
     def _shown(self, loaded: Loaded, item_id: str) -> dict[str, Any]:
@@ -351,6 +366,48 @@ class AttemptService:
         await self._session.flush()
         return answer
 
+    # --- a game's challenges (§23) ------------------------------------------
+
+    async def open_item(self, student_id: UUID, attempt_id: UUID, item_id: str) -> None:
+        """A challenge is on screen: the moment its speed bonus is timed from.
+        Only the first opening counts, so opening it again buys no time."""
+        loaded = await self._challenge(student_id, attempt_id, item_id)
+        opened = dict(loaded.attempt.plan.get("opened", {}))
+        if item_id not in opened:
+            opened[item_id] = datetime.now(UTC).isoformat()
+            loaded.attempt.plan = {**loaded.attempt.plan, "opened": opened}
+            await self._session.flush()
+
+    async def hint(self, student_id: UUID, attempt_id: UUID, item_id: str) -> str:
+        """A challenge's hint, noted so it costs points. Asked again it is the
+        same hint, counted once; after the answer it no longer costs anything."""
+        loaded = await self._challenge(student_id, attempt_id, item_id)
+        hint = str(loaded.by_id[item_id].get("hint") or "")
+        if not hint:
+            raise NotFoundError("There is no hint for that one.")
+        answered = {a.item_id for a in await self._answers(loaded.attempt.id)}
+        hinted = list(loaded.attempt.plan.get("hinted", []))
+        if item_id not in hinted and item_id not in answered:
+            loaded.attempt.plan = {**loaded.attempt.plan, "hinted": [*hinted, item_id]}
+            await self._session.flush()
+        return hint
+
+    async def asked_hint(self, student_id: UUID, attempt_id: UUID, item_id: str) -> str | None:
+        """The hint, if it was asked for in this attempt — for reading it aloud."""
+        loaded = await self._load(student_id, attempt_id)
+        if item_id not in loaded.attempt.plan.get("hinted", []):
+            return None
+        return str(loaded.by_id.get(item_id, {}).get("hint") or "") or None
+
+    async def _challenge(self, student_id: UUID, attempt_id: UUID, item_id: str) -> Loaded:
+        """A challenge in an attempt still being played."""
+        loaded = await self._load(student_id, attempt_id)
+        if loaded.attempt.status != "in_progress":
+            raise ValidationError("This attempt is already finished.")
+        if item_id not in loaded.by_id or item_id not in loaded.attempt.plan["order"]:
+            raise NotFoundError("That challenge isn't in this attempt.")
+        return loaded
+
     # --- finishing -------------------------------------------------------
 
     async def complete(self, student_id: UUID, attempt_id: UUID) -> Loaded:
@@ -367,6 +424,7 @@ class AttemptService:
         attempt.percent = (
             round(100 * attempt.score / attempt.max_score, 2) if attempt.max_score else 0
         )
+        attempt.points = _points(loaded, answers)
         attempt.status = "completed"
         attempt.completed_at = now
         attempt.duration_ms = int((now - attempt.started_at).total_seconds() * 1000)
@@ -484,6 +542,53 @@ def _in_item_terms(response: dict[str, Any], order: list[int] | None) -> dict[st
     if "knew" in response:
         return {"knew": response.get("knew") is True}
     return {}
+
+
+def _timer(loaded: Loaded) -> int | None:
+    seconds = getattr(loaded.kind, "seconds", None)
+    if not callable(seconds):
+        return None
+    return seconds(grade_level=loaded.learning_set.grade_level, level=loaded.learning_set.level)
+
+
+def _points(loaded: Loaded, answers: list[AttemptAnswer]) -> int | None:
+    """A game's points (§23), from the answers as they were given. None for
+    kinds that do not score in points."""
+    score = getattr(loaded.kind, "points", None)
+    if not callable(score):
+        return None
+    hinted = set(loaded.attempt.plan.get("hinted", []))
+    answered = [
+        Answered(
+            correct=a.correct,
+            time_ms=_time_taken(loaded.attempt, a),
+            hinted=a.item_id in hinted,
+            difficulty=str(loaded.by_id.get(a.item_id, {}).get("difficulty", "medium")),
+        )
+        for a in answers
+    ]
+    return int(
+        score(
+            answered,
+            grade_level=loaded.learning_set.grade_level,
+            level=loaded.learning_set.level,
+        )
+    )
+
+
+# A challenge the game never said it opened earns no speed bonus: there is no
+# time the server saw to hold the claimed one to.
+UNTIMED_MS = 3_600_000
+
+
+def _time_taken(attempt: Attempt, answer: AttemptAnswer) -> int:
+    """How long a challenge took, for a game's speed bonus: what the game says,
+    but never quicker than the server saw between opening it and the answer."""
+    opened = attempt.plan.get("opened", {}).get(answer.item_id)
+    if not isinstance(opened, str):
+        return UNTIMED_MS
+    seen = (answer.answered_at - datetime.fromisoformat(opened)).total_seconds() * 1000
+    return max(answer.time_ms, int(seen))
 
 
 def _streak(answers: list[AttemptAnswer]) -> int:

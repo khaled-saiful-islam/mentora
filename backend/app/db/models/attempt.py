@@ -57,6 +57,9 @@ class Attempt(Base):
     max_score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     percent: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False, default=0)
     best_streak: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # A game's points (§23), worked out here when it is finished. Null for
+    # every other kind.
+    points: Mapped[int | None] = mapped_column(Integer)
     is_late: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     duration_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     started_at: Mapped[datetime] = created_at()

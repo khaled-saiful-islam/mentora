@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import AsyncIterator, Callable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import Any
 from uuid import UUID
 
@@ -36,6 +36,7 @@ from app.learning.generator import (
     Update,
 )
 from app.learning.model import GenerationUnavailable, Meter
+from app.learning.pitch import is_level
 from app.learning.research import Source
 from app.moderation.base import Flag
 from app.policies.capabilities import capabilities_for
@@ -61,6 +62,11 @@ class GenerationDraft:
     # the web as well.
     material_ids: tuple[UUID, ...] = ()
     web: bool = True
+    # How far into the topic the learner is (`learning/pitch.LEVELS`, §23).
+    level: str | None = None
+    # What only this kind understands — a game's story, style and world.
+    # Cleaned by the kind; ignored by kinds that take none.
+    choices: dict[str, Any] = field(default_factory=dict)
 
 
 class GenerationService:
@@ -101,6 +107,8 @@ class GenerationService:
             requested_count=request.count,
             material_ids=[str(m) for m in draft.material_ids],
             web_sources=draft.web if draft.material_ids else True,
+            level=request.level,
+            choices=dict(request.choices),
         )
         if draft.material_ids:
             # Refuses a file that is not the owner's before anything is made.
@@ -117,6 +125,8 @@ class GenerationService:
             grade_level=learning_set.grade_level,
             count=learning_set.requested_count,
             language=learning_set.language,
+            level=learning_set.level,
+            choices=dict(learning_set.choices or {}),
         )
 
     async def request_with_materials(
@@ -229,6 +239,7 @@ class GenerationService:
             grade_level=learning_set.grade_level,
             language=learning_set.language,
             instruction=instruction,
+            level=learning_set.level,
         )
         await self._charge(session, version, meter)
         if fresh is None:
@@ -260,6 +271,7 @@ class GenerationService:
             grade_level=learning_set.grade_level,
             language=learning_set.language,
             instruction=wanted,
+            level=learning_set.level,
         )
         await self._charge(session, version, meter)
         if item is None:
@@ -330,8 +342,13 @@ class GenerationService:
         if draft.grade_level and not is_grade(draft.grade_level):
             raise ValidationError("Pick a grade from the list.")
         count = draft.count or kind.default_count
-        if not 1 <= count <= kind.max_count:
-            raise ValidationError(f"Choose between 1 and {kind.max_count} {kind.item_noun_plural}.")
+        least = int(getattr(kind, "min_count", 1))
+        if not least <= count <= kind.max_count:
+            raise ValidationError(
+                f"Choose between {least} and {kind.max_count} {kind.item_noun_plural}."
+            )
+        if draft.level is not None and not is_level(draft.level):
+            raise ValidationError("Pick a level: beginner, intermediate or advanced.")
         languages = self._settings.supported_language_list
         language = (
             draft.language if draft.language in languages else self._settings.default_language
@@ -344,7 +361,16 @@ class GenerationService:
             grade_level=draft.grade_level or None,
             count=count,
             language=language,
+            level=draft.level,
+            choices=_choices(kind, draft.choices),
         )
+
+
+def _choices(kind: LearningKind, raw: dict[str, Any]) -> dict[str, Any]:
+    """What the kind keeps of the maker's choices; nothing for a kind that
+    takes none, so a quiz never carries a stray story."""
+    clean = getattr(kind, "choices", None)
+    return dict(clean(raw or {})) if callable(clean) else {}
 
 
 def _event(update: Update) -> dict[str, Any] | None:

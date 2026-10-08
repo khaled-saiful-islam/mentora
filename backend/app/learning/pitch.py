@@ -100,12 +100,41 @@ def band_for(grade: Grade) -> Band:
     return _SIXTH_FORM
 
 
-def pitch(grade: Grade | None) -> str:
-    """The rules for pitching it at this year, for a prompt. Empty without a year."""
+# A level is how far into a topic the learner already is, within their year
+# (§23): the year sets the ceiling, the level where in the year's range to aim.
+LEVELS = ("beginner", "intermediate", "advanced")
+_LEVEL_RULES = {
+    "beginner": (
+        "Level: Beginner — new to this topic. Instead of the mix above: about 7 in 10 "
+        "'easy', the rest 'medium', no 'hard'. Familiar examples, one idea at a time, "
+        "friendly wording."
+    ),
+    "intermediate": "Level: Intermediate — knows the basics. Keep to the year's mix above.",
+    "advanced": (
+        "Level: Advanced — confident with this topic. Instead of the mix above: about 2 in "
+        "10 'easy', 4 in 10 'medium', 4 in 10 'hard' — still inside the year's syllabus. "
+        "More reasoning, connecting ideas, real-life use."
+    ),
+}
+
+
+def is_level(value: object) -> bool:
+    return value in LEVELS
+
+
+def level_rules(level: str | None) -> str:
+    """The rule for a level, for a prompt. Empty without one."""
+    return _LEVEL_RULES.get(level or "", "")
+
+
+def pitch(grade: Grade | None, level: str | None = None) -> str:
+    """The rules for pitching it at this year and level, for a prompt. Empty
+    without either."""
+    rules = level_rules(level)
     if grade is None:
-        return ""
+        return rules
     band = band_for(grade)
-    return (
+    year = (
         f"Pitch everything for {grade.label}, not above it and not babyish:\n"
         f"- Words: {band.words}.\n"
         f"- Thinking: {band.steps}.\n"
@@ -114,3 +143,4 @@ def pitch(grade: Grade | None) -> str:
         f"'medium' the year's core, 'hard' the top of {grade.label} — never beyond what "
         f"the year's syllabus (KSSR/KSSM) teaches. Mix: {band.mix}."
     )
+    return f"{year}\n{rules}" if rules else year

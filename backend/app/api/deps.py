@@ -33,6 +33,7 @@ from app.learning.factory import (
 )
 from app.learning.model import Meter
 from app.learning.registry import build_learning_kinds
+from app.learning.story_draft import StoryDrafter
 from app.live.answering import Answerer
 from app.live.audio import AudioCache, Narrator
 from app.live.planner import LessonPlanner
@@ -362,6 +363,13 @@ async def limit_generate(session: SessionDep, settings: SettingsDep, user: Curre
         "generate", str(user.id), Limit(settings.rate_limit_generate_per_minute)
     )
     await TokenQuota(session).check(user.id, user.daily_token_limit)
+
+
+def get_story_drafter(settings: SettingsDep) -> StoryDrafter:
+    return StoryDrafter(build_model(settings, Meter()))
+
+
+StoryDrafterDep = Annotated[StoryDrafter, Depends(get_story_drafter)]
 
 
 def get_generation_service(settings: SettingsDep) -> GenerationService:

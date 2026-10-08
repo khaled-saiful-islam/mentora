@@ -178,3 +178,56 @@ async def test_from_a_chat_the_set_is_built_just_like_the_make_form(
         "assign",
         "year_5",
     )
+
+
+# --- games (§23) -------------------------------------------------------------------
+
+
+async def test_a_game_is_made_from_a_chat_with_its_level_style_world_and_story() -> None:
+    maker = _Maker()
+    tool = MakeLearningSetTool(maker, languages=("en",))
+    [result] = await tool.run(
+        kind="game",
+        topic="fractions",
+        subject="Mathematics",
+        year="Year 4",
+        level="Beginner",
+        style="runner",
+        world="rainforest",
+        story="Momo has lost the durians.",
+    )
+    [draft] = maker.drafts
+    assert (draft.kind, draft.level) == ("game", "beginner")
+    assert draft.choices == {
+        "style": "runner",
+        "world": "rainforest",
+        "story": "Momo has lost the durians.",
+    }
+    assert result.url.startswith("/library/")
+    assert result.snippet.startswith("Game")
+
+
+async def test_a_game_without_its_choices_lets_mentora_decide() -> None:
+    maker = _Maker()
+    await MakeLearningSetTool(maker).run(kind="games", topic="the water cycle", year="Year 5")
+    [draft] = maker.drafts
+    assert draft.kind == "game" and draft.level is None
+    # Nothing chosen: the kind fills in "auto" when the build begins.
+    assert draft.choices == {}
+
+
+async def test_a_level_that_is_not_one_is_left_to_the_year() -> None:
+    maker = _Maker()
+    await MakeLearningSetTool(maker).run(
+        kind="quiz", topic="fractions", year="Year 4", level="expert", style=7
+    )
+    [draft] = maker.drafts
+    assert draft.level is None
+    assert draft.choices == {}  # only words are passed on
+
+
+def test_the_tool_tells_the_model_it_can_make_games() -> None:
+    tool = MakeLearningSetTool(_Maker())
+    assert "game" in tool.parameters["properties"]["kind"]["enum"]
+    assert {"level", "style", "world", "story"} <= set(tool.parameters["properties"])
+    assert "game" in tool.description
