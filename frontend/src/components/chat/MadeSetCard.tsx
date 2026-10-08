@@ -149,5 +149,6 @@ function kindFrom(snippet: string): string {
   const first = snippet.split('·')[0]?.trim().toLowerCase() ?? ''
   if (first.startsWith('flash')) return 'flashcard'
   if (first.startsWith('study')) return 'study_guide'
+  if (first.startsWith('game')) return 'game'
   return 'quiz'
 }

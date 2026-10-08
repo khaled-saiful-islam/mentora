@@ -99,6 +99,7 @@ async def test_a_game_leaderboard_ranks_each_players_best_points(
     async with client(teacher) as c:
         board = (await c.get(f"/api/assignments/{assignment.id}/leaderboard")).json()
     assert board["enabled"] is True
+    assert board["ranking"] == "best_points"
     assert [e["student_id"] for e in board["entries"]] == [str(student.id), str(other.id)]
     assert board["entries"][0]["points"] > board["entries"][1]["points"]
     assert done["attempt"]["leaderboard"] is True

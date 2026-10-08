@@ -44,16 +44,18 @@ const LOOKS: Record<string, WorkLook> = {
   },
 }
 
-const NOUN: Record<string, string> = { quiz: 'quiz', flashcard: 'flashcards', study_guide: 'study guide' }
+const NOUN: Record<string, string> = { quiz: 'quiz', flashcard: 'flashcards', study_guide: 'study guide', game: 'game' }
 // Written out whole, so the stylesheet has them.
 const BAR: Record<string, string> = {
   quiz: 'bg-kind-quiz-vivid',
   flashcard: 'bg-kind-flashcard-vivid',
   study_guide: 'bg-kind-study-guide-vivid',
+  game: 'bg-kind-games-vivid',
 }
 
 /** What to do with a finished set, for whoever it is for. */
 function nextFor(kind: string, purpose: string | null | undefined): string {
+  if (kind === 'game') return purpose === 'family' ? 'Play it through, then send it home.' : 'Play it through before you share it with a class.'
   if (purpose === 'family') return kind === 'study_guide' ? 'Read it through, then send it home.' : 'Look it over, then send it home.'
   if (purpose === 'practice') return 'Ready when you are — give it a go.'
   return kind === 'study_guide' ? 'Read it through before you share it.' : 'Look it over, then share it with a class.'

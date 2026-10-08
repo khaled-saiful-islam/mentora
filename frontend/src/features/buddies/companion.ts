@@ -54,6 +54,12 @@ export const HOW_TO: Record<Activity, readonly string[]> = {
     'Pick "Simpler" if it feels hard. You can switch any time.',
     'Read the Remember box twice before the check.',
   ],
+  game: [
+    'Read the challenge before you race. Speed points are a bonus, not the goal!',
+    'Keep a combo going: every right answer in a row adds more points.',
+    'Try it without a hint first. A hint helps, but it costs a few points.',
+    'Play it again to beat your best. Only your best score counts.',
+  ],
   live: [
     'Sit somewhere quiet and turn your sound on.',
     'Have a question? Type it in "Ask Astra" at any time.',
@@ -62,7 +68,7 @@ export const HOW_TO: Record<Activity, readonly string[]> = {
   ],
 }
 
-const KIND_WORDS: Record<BriefKind, string> = { quiz: 'quizzes', flashcard: 'flashcards', study_guide: 'study guides' }
+const KIND_WORDS: Record<BriefKind, string> = { quiz: 'quizzes', flashcard: 'flashcards', study_guide: 'study guides', game: 'games' }
 const GOING_WELL = 85
 const FEELS_HARD = 60
 
@@ -131,7 +137,7 @@ export function homeLines(brief: BuddyBrief | null, now: Date = new Date(), seed
 
 /** Which tips fit a kind of set. */
 export function activityOf(kind: string): BriefKind {
-  return kind === 'flashcard' ? 'flashcard' : kind === 'study_guide' ? 'study_guide' : 'quiz'
+  return kind === 'flashcard' || kind === 'study_guide' || kind === 'game' ? kind : 'quiz'
 }
 
 /**

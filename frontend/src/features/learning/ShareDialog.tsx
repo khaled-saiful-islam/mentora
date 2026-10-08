@@ -16,7 +16,8 @@ import { learningApi, type SetDetail } from './api'
 
 /**
  * Share a set: which class, whole class or some groups, and how it plays —
- * instant or end-of-quiz feedback, a due date, retakes, the leaderboard.
+ * instant or end-of-quiz feedback, a due date, retakes, the leaderboard. A
+ * game is for playing again, and its best-points leaderboard is opt-in (§23).
  */
 export function ShareDialog({ open, set, onClose }: { open: boolean; set: SetDetail; onClose: () => void }) {
   const classes = useResource(open ? 'share:classes' : null, () => classesApi.list())
@@ -26,14 +27,16 @@ export function ShareDialog({ open, set, onClose }: { open: boolean; set: SetDet
   const [chosen, setChosen] = useState<Set<string>>(new Set())
   const [feedback, setFeedback] = useState<'instant' | 'end'>('instant')
   const [due, setDue] = useState('')
-  const [retakes, setRetakes] = useState(set.kind === 'flashcard')
+  const game = set.kind === 'game'
+  const [retakes, setRetakes] = useState(set.kind === 'flashcard' || game)
   const [shuffle, setShuffle] = useState(false)
-  const [leaderboard, setLeaderboard] = useState(true)
+  const [leaderboard, setLeaderboard] = useState(!game)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
   const calm = useCalmMotion()
   const quiz = set.kind === 'quiz'
+  const ranked = quiz || game
   const items = classes.data?.items ?? []
 
   useEffect(() => {
@@ -61,7 +64,7 @@ export function ShareDialog({ open, set, onClose }: { open: boolean; set: SetDet
         max_attempts: null,
         shuffle_questions: shuffle,
         shuffle_options: true,
-        leaderboard_enabled: quiz && leaderboard,
+        leaderboard_enabled: ranked && leaderboard,
       })
       celebrate({ calm, power: 0.6 })
       toast(`Shared with ${shared.audience} ${shared.audience === 1 ? 'student' : 'students'}!`, { body: `${shared.class_name}${shared.group_names.length ? ` · ${shared.group_names.join(', ')}` : ''}` })
@@ -154,14 +157,29 @@ export function ShareDialog({ open, set, onClose }: { open: boolean; set: SetDet
         </section>
 
         <section className="space-y-2">
-          <Toggle label={quiz ? 'Allow retakes' : 'Allow practising again'} hint={quiz ? "The first try counts for the leaderboard." : 'Flashcards are for practice — usually on.'} on={retakes} onChange={setRetakes} />
+          <Toggle {...RETAKES[set.kind]} on={retakes} onChange={setRetakes} />
           {quiz && <Toggle label="Shuffle question order" hint="Answer options are always shuffled for each student." on={shuffle} onChange={setShuffle} />}
-          {quiz && <Toggle label="Show a leaderboard" hint="Students see the top 10 and their own rank — never the bottom." on={leaderboard} onChange={setLeaderboard} icon={<Trophy weight="duotone" className="size-5 text-sun-600" />} />}
+          {ranked && (
+            <Toggle
+              label="Show a leaderboard"
+              hint={game ? 'Ranked by best points. Students see the top 10 and their own rank — never the bottom.' : 'Students see the top 10 and their own rank — never the bottom.'}
+              on={leaderboard}
+              onChange={setLeaderboard}
+              icon={<Trophy weight="duotone" className="size-5 text-sun-600" />}
+            />
+          )}
         </section>
         {error && <Alert>{error}</Alert>}
       </div>
     </Dialog>
   )
+}
+
+const RETAKES: Record<SetDetail['kind'], { label: string; hint: string }> = {
+  quiz: { label: 'Allow retakes', hint: 'The first try counts for the leaderboard.' },
+  flashcard: { label: 'Allow practising again', hint: 'Flashcards are for practice — usually on.' },
+  study_guide: { label: 'Allow practising again', hint: 'Students can go through it again.' },
+  game: { label: 'Allow playing again', hint: 'Every game is played for points — their best counts.' },
 }
 
 function Toggle({ label, hint, on, onChange, icon }: { label: string; hint?: string; on: boolean; onChange: (on: boolean) => void; icon?: React.ReactNode }) {

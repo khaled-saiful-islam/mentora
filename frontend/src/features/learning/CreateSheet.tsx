@@ -11,7 +11,8 @@ import { useMakeable } from '@/hooks/useMakeable'
 import { useAuth } from '@/lib/auth'
 import { spring } from '@/motion'
 import { cn } from '@/lib/utils'
-import { learningApi, type LearningKindName, type SetSummary } from './api'
+import { learningApi, LEVEL_LABELS, type LearningKindName, type Level, type SetSummary } from './api'
+import { FRESH_GAME, gameChoices, GameOptions, type GameSetup } from './GameOptions'
 import { LOOKS } from './kinds'
 import { LEARN_SCENES } from './scenes'
 import type { Material } from '@/features/materials/api'
@@ -33,6 +34,12 @@ const EXAMPLES = [
 const SELECT =
   'h-12 w-full rounded-2xl border-2 border-input bg-surface px-3 font-semibold focus-visible:border-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20'
 
+const LEVELS: { value: Level; label: string; game: string }[] = [
+  { value: 'beginner', label: LEVEL_LABELS.beginner, game: 'No timer — all the time they need to think.' },
+  { value: 'intermediate', label: LEVEL_LABELS.intermediate, game: 'A timer, with points for speed.' },
+  { value: 'advanced', label: LEVEL_LABELS.advanced, game: 'A timer, with points for speed — and harder challenges.' },
+]
+
 const LANGUAGES = [
   { code: 'en', label: 'English' },
   { code: 'ms', label: 'Bahasa Melayu' },
@@ -42,11 +49,12 @@ const LANGUAGES = [
 ]
 
 /**
- * What to make, in five choices: kind, topic, subject, grade, how many.
+ * What to make, in six choices: kind, topic, subject, grade, level, how many.
  * Everything but the topic has a sensible default.
  *
  * Three steps down the sheet, each with room around it: what to make (each
  * kind a small moving picture of itself), what it is about, and the details.
+ * A game asks a little more — its story, style and world (§23).
  */
 export function CreateSheet({
   kind,
@@ -72,6 +80,8 @@ export function CreateSheet({
   const [subject, setSubject] = useState('')
   const [grade, setGrade] = useState('')
   const [count, setCount] = useState(10)
+  const [level, setLevel] = useState<Level | ''>('')
+  const [game, setGame] = useState<GameSetup>(FRESH_GAME)
   const [language, setLanguage] = useState('en')
   const [materials, setMaterials] = useState<Material[]>([])
   const [web, setWeb] = useState(true)
@@ -95,6 +105,10 @@ export function CreateSheet({
     setGrade((g) => g || user?.grade_level || '')
     setCount(info?.default_count ?? 10)
   }, [kind, info?.default_count, user?.grade_level])
+  // On changing kind: a game starts untimed, the others at no level in particular.
+  useEffect(() => {
+    if (kind) setLevel(kind === 'game' ? 'beginner' : '')
+  }, [kind])
 
   async function start(event: React.FormEvent) {
     event.preventDefault()
@@ -111,8 +125,11 @@ export function CreateSheet({
         language,
         material_ids: materials.map((m) => m.id),
         web,
+        level: level || null,
+        choices: kind === 'game' ? gameChoices(game) : undefined,
       })
       setTopic('')
+      setGame(FRESH_GAME)
       onStarted(set)
     } catch (err) {
       setError(errorMessage(err))
@@ -122,6 +139,7 @@ export function CreateSheet({
   }
 
   const max = info?.max_count ?? 30
+  const isGame = kind === 'game'
   const kinds = (Object.keys(LOOKS) as LearningKindName[]).filter((name) => makeable.learning.some((k) => k.name === name))
   return (
     <Dialog
@@ -140,7 +158,7 @@ export function CreateSheet({
       <form onSubmit={start} className="space-y-6">
         <section aria-labelledby="learn-kind-label">
           <p id="learn-kind-label" className="mb-2 text-sm font-bold text-foreground/85">What to make</p>
-          <div className={cn('grid gap-3', kinds.length > 2 ? 'grid-cols-3' : 'grid-cols-2')} role="radiogroup" aria-labelledby="learn-kind-label">
+          <div className={cn('grid gap-3', kinds.length > 3 ? 'grid-cols-2 sm:grid-cols-4' : kinds.length > 2 ? 'grid-cols-3' : 'grid-cols-2')} role="radiogroup" aria-labelledby="learn-kind-label">
             {kinds.map((name) => (
               <KindChoice key={name} name={name} on={kind === name} onPick={() => onKind(name)} />
             ))}
@@ -201,9 +219,17 @@ export function CreateSheet({
           </Field>
           <Field label="Grade" htmlFor="learn-grade">
             <select id="learn-grade" value={grade} onChange={(e) => setGrade(e.target.value)} className={SELECT}>
-              <option value="">Any level</option>
+              <option value="">Any grade</option>
               {grades.map((g) => (
                 <option key={g.code} value={g.code}>{g.label}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Level" htmlFor="learn-level" hint={isGame ? LEVELS.find((l) => l.value === level)?.game : undefined}>
+            <select id="learn-level" value={level} onChange={(e) => setLevel(e.target.value as Level | '')} className={SELECT}>
+              {!isGame && <option value="">Mixed</option>}
+              {LEVELS.map((l) => (
+                <option key={l.value} value={l.value}>{l.label}</option>
               ))}
             </select>
           </Field>
@@ -212,7 +238,7 @@ export function CreateSheet({
             <span id="learn-count-label" className="select-none text-sm font-bold text-foreground/85">
               How many {info?.item_noun_plural ?? 'questions'}
             </span>
-            <Stepper labelledBy="learn-count-label" value={count} min={1} max={max} onChange={setCount} />
+            <Stepper labelledBy="learn-count-label" value={count} min={info?.min_count ?? 1} max={max} onChange={setCount} />
           </div>
           <Field label="Language" htmlFor="learn-language">
             <select id="learn-language" value={language} onChange={(e) => setLanguage(e.target.value)} className={SELECT}>
@@ -222,6 +248,8 @@ export function CreateSheet({
             </select>
           </Field>
         </fieldset>
+
+        {isGame && <GameOptions setup={game} onChange={setGame} ask={{ topic, subject: subject || null, grade_level: grade || null, level: level || null, language, world: game.world }} />}
 
         {error && <Alert>{error}</Alert>}
 

@@ -4,12 +4,13 @@
  * whatever happened. Kind to a low score; it never says "fail".
  */
 import { animate, motion, useMotionValue, useTransform } from 'motion/react'
-import { ArrowClockwise, ClipboardText, House, Medal, Ranking, Star } from '@phosphor-icons/react'
+import { ArrowClockwise, ClipboardText, House, Medal, Ranking, Star, Target, Trophy } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 import { Button, ButtonLink } from '@/components/ui'
 import { BadgeMedal } from '@/features/badges/medals'
 import { Buddy, BuddyStage, type BuddyHandle, type Cue } from '@/features/buddies'
 import { finishTip } from '@/features/buddies/companion'
+import { trickyOnes, TrickyRound } from '@/features/game/TrickyRound'
 import { useAuth } from '@/lib/auth'
 import { useSound } from '@/lib/sound'
 import { cn } from '@/lib/utils'
@@ -58,7 +59,11 @@ export function FinishScreen({
   const [headline] = useState(() => (little ? LITTLE_HEADLINE : HEADLINE)[verdict][Math.floor(Math.random() * 3)])
   const flashcards = attempt.kind === 'flashcard'
   const guide = attempt.kind === 'study_guide'
-  const won = look.points && !guide ? attempt.score * POINTS_EACH : 0
+  // A game counts its own points, on the server (§23); the rest earn ten a right answer.
+  const game = attempt.kind === 'game'
+  const won = look.points && !guide && !game ? attempt.score * POINTS_EACH : 0
+  const [tricky] = useState(() => trickyOnes(attempt))
+  const [practising, setPractising] = useState(false)
 
   useEffect(() => {
     sound('finish')
@@ -74,6 +79,13 @@ export function FinishScreen({
     // Once, on arrival: a re-render must not replay the fanfare.
   }, [])
 
+  if (practising) {
+    return (
+      <div className="mx-auto w-full max-w-3xl px-4 py-8 md:py-12">
+        <TrickyRound tricky={tricky} onDone={() => setPractising(false)} />
+      </div>
+    )
+  }
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 md:py-12">
       <BuddyStage buddy={user?.buddy} className="flex flex-col items-center px-4 pt-24 pb-8 text-center">
@@ -97,6 +109,7 @@ export function FinishScreen({
           <ScoreRing percent={attempt.percent} score={attempt.score} total={attempt.max_score} label={flashcards ? 'knew' : 'right'} />
           <Stars count={stars} />
         </div>
+        {game && attempt.points != null && <GamePoints points={attempt.points} best={attempt.best_points ?? attempt.points} replay={attempt.attempts_used > 1} />}
         {won > 0 && (
           <motion.p
             initial={{ scale: 0, opacity: 0 }}
@@ -172,10 +185,16 @@ export function FinishScreen({
           <ClipboardText weight="bold" className="size-5" />
           {flashcards ? 'See my cards' : 'Check my answers'}
         </Button>
+        {tricky.length > 0 && (
+          <Button size="lg" variant="outline" onClick={() => setPractising(true)}>
+            <Target weight="bold" className="size-5" />
+            Tricky ones ({tricky.length})
+          </Button>
+        )}
         {onRetake && (
           <Button size="lg" variant="sun" onClick={onRetake}>
             <ArrowClockwise weight="bold" className="size-5" />
-            Try again
+            {game ? 'Play again' : 'Try again'}
           </Button>
         )}
         <ButtonLink to={home.to} size="lg">
@@ -183,6 +202,35 @@ export function FinishScreen({
           {home.label}
         </ButtonLink>
       </div>
+    </div>
+  )
+}
+
+/** A game's points, counted up — and how they stand against the player's best. */
+function GamePoints({ points, best, replay }: { points: number; best: number; replay: boolean }) {
+  const value = useMotionValue(0)
+  const shown = useTransform(value, (v) => Math.round(v).toLocaleString())
+  useEffect(() => {
+    const controls = animate(value, points, { duration: 1.6, delay: 0.6, ease: [0.2, 0.8, 0.2, 1] })
+    return () => controls.stop()
+  }, [value, points])
+  const record = replay && points >= best
+  return (
+    <div className="mt-5 flex flex-col items-center gap-2">
+      <p className="inline-flex items-baseline gap-2 rounded-full bg-sun-100 px-5 py-2 font-display font-semibold text-sun-600 dark:bg-sun-600/25 dark:text-sun-300">
+        <Star weight="fill" className="size-6 self-center" aria-hidden />
+        <motion.span className="text-3xl tabular-nums" aria-hidden>{shown}</motion.span>
+        <span className="text-xl">points</span>
+        <span className="sr-only">{points} points</span>
+      </p>
+      {record ? (
+        <motion.p initial={{ scale: 0, rotate: -8 }} animate={{ scale: 1, rotate: 0 }} transition={{ ...spring.bouncy, delay: 2.3 }} className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 font-bold text-primary-foreground shadow-press">
+          <Trophy weight="fill" className="size-4" aria-hidden />
+          Your best yet!
+        </motion.p>
+      ) : (
+        replay && <p className="text-sm font-semibold text-muted-foreground">Your best: {best.toLocaleString()} points</p>
+      )}
     </div>
   )
 }

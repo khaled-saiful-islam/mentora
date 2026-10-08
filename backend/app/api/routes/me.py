@@ -56,6 +56,7 @@ async def makeable(user: CurrentUser, settings: SettingsDep) -> dict[str, object
                 "item_noun": kind.item_noun,
                 "item_noun_plural": kind.item_noun_plural,
                 "default_count": kind.default_count,
+                "min_count": int(getattr(kind, "min_count", 1)),
                 "max_count": kind.max_count,
                 "purpose": _purpose(caps),
             }

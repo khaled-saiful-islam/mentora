@@ -5,7 +5,7 @@ import { Button, buttonClass, Chip } from '@/components/ui'
 import { rise } from '@/motion'
 import { timeAgo } from '@/lib/time'
 import { cn } from '@/lib/utils'
-import type { SetSummary } from './api'
+import { LEVEL_LABELS, type SetSummary } from './api'
 import { lookOfKind, nounOf } from './kinds'
 
 /** A set at a glance: kind, title, how many, where it has been shared.
@@ -18,7 +18,7 @@ export function SetCard({ set, onWatch, onRetry, onSend }: { set: SetSummary; on
     <>
       <div className={cn('relative h-24 overflow-hidden p-4', look.hero)}>
         <look.Icon weight="duotone" aria-hidden className="absolute -bottom-5 -right-3 size-24 rotate-[-10deg] opacity-25 transition-transform duration-500 group-hover:rotate-0 group-hover:scale-110" />
-        <p className="relative text-sm font-bold opacity-85">{[look.label, set.subject, set.grade_label].filter(Boolean).join(' · ')}</p>
+        <p className="relative text-sm font-bold opacity-85">{[look.label, set.subject, set.grade_label, set.level && LEVEL_LABELS[set.level]].filter(Boolean).join(' · ')}</p>
         <p className="relative mt-0.5 break-words font-display text-xl font-semibold leading-tight">{set.title}</p>
         {making && <span className="skeleton absolute inset-0 opacity-25" aria-hidden />}
       </div>

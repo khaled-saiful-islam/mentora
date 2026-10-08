@@ -2,7 +2,8 @@
  * A quiz's leaderboard: the top three on a podium with their buddies, the
  * rest in rows that slide into their new places when someone finishes.
  * Live — a push from the server reloads it — and first tries only, so a
- * retake can improve a score but not a place.
+ * retake can improve a score but not a place. A game's board ranks each
+ * player's best points instead, so playing again can climb it (§23).
  */
 import { AnimatePresence, LayoutGroup, motion } from 'motion/react'
 import { CaretLeft, Crown, Lock, Ranking } from '@phosphor-icons/react'
@@ -46,7 +47,7 @@ export default function LeaderboardPage() {
         </span>
         <div>
           <h1 className="font-display text-3xl font-semibold">Leaderboard</h1>
-          <p className="text-sm text-muted-foreground">First tries only · ties share a place</p>
+          <p className="text-sm text-muted-foreground">{board.data?.ranking === 'best_points' ? 'Best points · ties share a place' : 'First tries only · ties share a place'}</p>
         </div>
         <LiveBadge className="ml-auto" />
         {board.data?.final && (
@@ -122,7 +123,7 @@ function Podium({ entries }: { entries: BoardEntry[] }) {
             <p className={cn('mt-1 max-w-full break-words text-center font-display text-base font-semibold', entry.you && 'text-primary')}>
               {entry.you ? 'You!' : entry.name}
             </p>
-            <p className="text-sm font-bold text-muted-foreground">{Math.round(entry.percent)}%</p>
+            <p className="text-sm font-bold text-muted-foreground">{standing(entry)}</p>
             <div className={cn('mt-2 grid w-full place-items-start justify-center rounded-t-2xl bg-gradient-to-b pt-2 shadow-inner', step.height, step.tone)}>
               <span className="font-celebrate text-2xl text-white drop-shadow">{step.label}</span>
             </div>
@@ -153,7 +154,12 @@ function Row({ entry }: { entry: BoardEntry }) {
         {entry.name}
         {entry.you && <Chip tone="grape" className="ml-2">You</Chip>}
       </span>
-      <span className="font-display text-lg font-semibold">{Math.round(entry.percent)}%</span>
+      <span className="font-display text-lg font-semibold">{standing(entry)}</span>
     </motion.li>
   )
+}
+
+/** What a place was won with: a game's best points, or a quiz's first-try score. */
+function standing(entry: BoardEntry): string {
+  return entry.points != null ? `${entry.points.toLocaleString()} pts` : `${Math.round(entry.percent)}%`
 }

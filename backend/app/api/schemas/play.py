@@ -198,6 +198,8 @@ class BoardResponse(BaseModel):
     entries: list[EntryResponse]
     you: EntryResponse | None
     total: int
+    # "first_try" (a quiz) or "best_points" (a game, §23).
+    ranking: str = "first_try"
 
     @classmethod
     def of(cls, board: Board) -> BoardResponse:
@@ -207,6 +209,7 @@ class BoardResponse(BaseModel):
             entries=[EntryResponse.of(e) for e in board.entries],
             you=EntryResponse.of(board.you) if board.you else None,
             total=board.total,
+            ranking=board.ranking,
         )
 
 

@@ -31,7 +31,7 @@ export default function AttemptReviewPage() {
             <p className="mt-1 text-lg text-muted-foreground">
               {data.status === 'completed' ? (
                 <>
-                  {data.score} of {data.max_score} · {Math.round(data.percent)}% · {'★'.repeat(stars)}
+                  {data.score} of {data.max_score} · {Math.round(data.percent)}%{data.points != null && ` · ${data.points.toLocaleString()} points`} · {'★'.repeat(stars)}
                   {'☆'.repeat(3 - stars)}
                 </>
               ) : (

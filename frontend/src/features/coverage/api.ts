@@ -2,7 +2,7 @@ import { apiFetch } from '@/lib/api'
 
 export type TopicStatus = 'untouched' | 'planned' | 'taught' | 'secure' | 'needs_work'
 export type AreaStatus = 'untouched' | 'started' | 'covered' | 'secure'
-export type TaughtKind = 'quiz' | 'flashcard' | 'study_guide' | 'live'
+export type TaughtKind = 'quiz' | 'flashcard' | 'study_guide' | 'game' | 'live'
 
 export interface SyllabusTopic {
   id: string

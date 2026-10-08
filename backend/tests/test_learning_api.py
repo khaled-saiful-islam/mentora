@@ -354,6 +354,10 @@ async def test_makeable_lists_the_learning_kinds_for_each_role(api, teacher, stu
         kid = (await c.get("/api/me/makeable")).json()["learning"]
     assert {k["name"] for k in staff} == {"quiz", "flashcard", "study_guide", "game"}
     assert {k["purpose"] for k in staff} == {"assign"}
+    # A game needs a challenge for each of its three chapters.
+    counts = {k["name"]: (k["min_count"], k["max_count"]) for k in staff}
+    assert counts["game"] == (3, 15)
+    assert counts["quiz"][0] == 1
     # A student makes nothing: they practise what is made for them.
     assert kid == []
 

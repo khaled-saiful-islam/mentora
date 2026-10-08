@@ -86,10 +86,11 @@ export function atWhen(iso: string, now: Date = new Date()): string {
   return `${when} at ${time}`
 }
 
-/** "a quiz", "some flashcards", "a study guide" — for what was sent home. */
+const THINGS: Record<string, string> = { flashcard: 'some flashcards', study_guide: 'a study guide', game: 'a game' }
+
+/** "a quiz", "some flashcards", "a study guide", "a game" — for what was sent home. */
 function thingFor(n: Notification): string {
-  const kind = text(n, 'kind')
-  return kind === 'flashcard' ? 'some flashcards' : kind === 'study_guide' ? 'a study guide' : 'a quiz'
+  return THINGS[text(n, 'kind')] ?? 'a quiz'
 }
 
 function others(n: Notification, verb: string): string {

@@ -22,7 +22,7 @@ import { SetCard } from './SetCard'
 import { SendHomeDialog } from '@/features/family/SendHomeDialog'
 import type { SetSummary } from './api'
 
-type Filter = 'all' | 'quiz' | 'flashcard' | 'study_guide' | 'archived'
+type Filter = 'all' | 'quiz' | 'flashcard' | 'study_guide' | 'game' | 'archived'
 
 export default function LibraryPage() {
   const { user } = useAuth()
@@ -76,8 +76,8 @@ export default function LibraryPage() {
                   ? 'Your own files — worksheets, notes, pages from a book — to make quizzes and flashcards from.'
                   : 'Your own files, kept to make quizzes, flashcards, guides and live lessons from.'
                 : parent
-                  ? 'Quizzes, flashcards and study guides you made to send home to your child.'
-                  : 'Every quiz, deck and study guide you have made.'}
+                  ? 'Quizzes, flashcards, study guides and games you made to send home to your child.'
+                  : 'Every quiz, deck, study guide and game you have made.'}
           </p>
         </div>
         <Button size="lg" onClick={() => studio.create()}>
@@ -117,7 +117,12 @@ export default function LibraryPage() {
             { value: 'all', label: 'All' },
             { value: 'quiz', label: 'Quizzes' },
             { value: 'flashcard', label: 'Flashcards' },
-            ...(student ? [] : [{ value: 'study_guide' as const, label: 'Study guides' }]),
+            ...(student
+              ? []
+              : [
+                  { value: 'study_guide' as const, label: 'Study guides' },
+                  { value: 'game' as const, label: 'Games' },
+                ]),
             { value: 'archived', label: 'Archived', icon: <Archive weight="bold" className="size-4" /> },
           ]}
         />

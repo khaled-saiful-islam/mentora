@@ -10,6 +10,7 @@ const EXAMPLES: Record<string, string> = {
   quiz: 'e.g. a harder question about roots',
   flashcard: 'e.g. a card for "chlorophyll"',
   study_guide: 'e.g. a part on why the sky is blue',
+  game: 'e.g. a boss challenge about the whole water cycle',
 }
 
 /**

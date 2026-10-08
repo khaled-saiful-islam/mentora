@@ -7,7 +7,7 @@
  * something, share it — ticking itself off as they go.
  */
 import { motion } from 'motion/react'
-import { ArrowRight, BookOpenText, Broadcast, Cards, ChalkboardTeacher, CheckCircle, Circle, Exam, Plus, Sparkle, UserPlus, UsersThree, type Icon } from '@phosphor-icons/react'
+import { ArrowRight, BookOpenText, Broadcast, Cards, ChalkboardTeacher, CheckCircle, Circle, Exam, GameController, Plus, Sparkle, UserPlus, UsersThree, type Icon } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { Alert, ButtonLink, Chip, Skeleton } from '@/components/ui'
 import { AddTile } from '@/components/ui/AddTile'
@@ -73,6 +73,7 @@ export default function TeacherHome() {
           <Action Icon={Exam} label="Make a quiz" onClick={() => studio.create('quiz')} />
           <Action Icon={Cards} label="Make flashcards" onClick={() => studio.create('flashcard')} />
           <Action Icon={BookOpenText} label="Make a study guide" onClick={() => studio.create('study_guide')} />
+          <Action Icon={GameController} label="Make a game" onClick={() => studio.create('game')} />
           <Action Icon={Plus} label="New class" to="/classes?new=1" />
           <Action Icon={Sparkle} label="Ask Mentora" to="/chat" />
         </div>

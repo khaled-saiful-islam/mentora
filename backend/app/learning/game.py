@@ -26,8 +26,22 @@ from app.live.settings import check_size
 
 logger = logging.getLogger(__name__)
 
-STYLES = ("quest", "runner", "catch", "match")
-WORLDS = ("rainforest", "reef", "kampung", "city", "space")
+# What a maker sees each called — the same names as the app's pickers.
+STYLE_LABELS = {
+    "quest": "Quest Map",
+    "runner": "Lane Runner",
+    "catch": "Bubble Catch",
+    "match": "Match & Build",
+}
+WORLD_LABELS = {
+    "rainforest": "Rainforest",
+    "reef": "Coral reef",
+    "kampung": "Kampung festival",
+    "city": "Kuala Lumpur",
+    "space": "Space mission",
+}
+STYLES = tuple(STYLE_LABELS)
+WORLDS = tuple(WORLD_LABELS)
 AUTO = "auto"
 CHAPTERS = 3
 MIN_OPTIONS, MAX_OPTIONS = 2, 4
@@ -254,7 +268,9 @@ class GameKind:
 
     def finish_detail(self, items: list[Item], extras: dict[str, Any]) -> str:
         title = extras.get("title") or "Your game"
-        return f"{title} · {extras.get('style', STYLES[0])} · {extras.get('world', WORLDS[0])}"
+        style = STYLE_LABELS.get(str(extras.get("style")), STYLE_LABELS[STYLES[0]])
+        world = WORLD_LABELS.get(str(extras.get("world")), WORLD_LABELS[WORLDS[0]])
+        return f"{title} · {style} · {world}"
 
 
 def _told_as_written(title: str, story: str) -> dict[str, Any]:

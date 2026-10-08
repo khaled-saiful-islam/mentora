@@ -22,7 +22,7 @@ from app.db.models.attempt import Attempt
 from app.db.models.learning import Assignment, LearningSet
 from app.db.models.user import User
 from app.events.bus import EventBus
-from app.learning.quiz import BEST_POINTS
+from app.learning.quiz import BEST_POINTS, FIRST_TRY
 from app.learning.registry import leaderboard_mode
 from app.policies.access import assignment_for_student
 from app.services.badge_service import BadgeService
@@ -50,6 +50,8 @@ class Board:
     entries: list[Entry]
     you: Entry | None
     total: int
+    # How it ranks: a quiz's first tries, or a game's best points (§23).
+    ranking: str = FIRST_TRY
 
 
 class LeaderboardService:
@@ -65,15 +67,25 @@ class LeaderboardService:
         final = await self.settle(assignment, ranked)
         you = next((e for e in ranked if e.you), None)
         shown = ranked if assignment.teacher_id == viewer.id or viewer.is_admin else ranked[:TOP]
-        return Board(enabled=True, final=final, entries=shown, you=you, total=len(ranked))
+        return Board(
+            enabled=True,
+            final=final,
+            entries=shown,
+            you=you,
+            total=len(ranked),
+            ranking=await self._ranking(assignment),
+        )
 
     async def ranked(self, assignment: Assignment, viewer_id: UUID | None = None) -> list[Entry]:
+        if await self._ranking(assignment) == BEST_POINTS:
+            return await self._by_best_points(assignment, viewer_id)
+        return await self._by_first_try(assignment, viewer_id)
+
+    async def _ranking(self, assignment: Assignment) -> str:
         kind = await self._session.scalar(
             select(LearningSet.kind).where(LearningSet.id == assignment.set_id)
         )
-        if leaderboard_mode(kind or "") == BEST_POINTS:
-            return await self._by_best_points(assignment, viewer_id)
-        return await self._by_first_try(assignment, viewer_id)
+        return leaderboard_mode(kind or "") or FIRST_TRY
 
     async def _by_first_try(self, assignment: Assignment, viewer_id: UUID | None) -> list[Entry]:
         rows = await self._session.execute(

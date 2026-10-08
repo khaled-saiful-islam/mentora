@@ -76,6 +76,40 @@ or add a new one with AI**, preview it as students will see it, and **print it
 as a handout** with an answer key. See
 [`docs/features/034-study-guides.md`](docs/features/034-study-guides.md).
 
+## Play and Learn games
+
+A story game on any topic, made by a teacher or parent in about a minute and
+played by students to learn it. The AI writes the story, the world and the
+challenges, pitched to the year and a **level** (Beginner, Intermediate,
+Advanced) and checked like every quiz. Mentora's own engine plays them, and
+points are counted on the server.
+
+| | |
+|---|---|
+| ![Quest Map on the coral reef: the buddy on a winding path of stops, a challenge card with Read it to me, a timer and a hint](docs/screenshots/game-quest-map.png) | ![Lane Runner at the kampung festival: three answer gates down a road, with the buddy running in the middle lane](docs/screenshots/game-lane-runner.png) |
+| **Quest Map**: a stop on the path for every challenge. | **Lane Runner**: run into the gate with the right answer. |
+| ![Match & Build in space: a rocket built piece by piece, with the pieces to place below](docs/screenshots/game-match-build.png) | ![Making a game: pick how it plays and where, or let Mentora decide, then the story](docs/screenshots/game-make.png) |
+| **Match & Build**: every right answer builds a rocket, a bridge, a kite… | **Making one**: style, world and story, or let Mentora decide. |
+
+- **Four styles** (Quest Map, Lane Runner, Bubble Catch, Match & Build) and
+  **five Malaysian worlds** (the Taman Negara rainforest, the Sipadan reef, a
+  kampung festival, Kuala Lumpur, and a space mission), or let Mentora decide.
+- **The story** is a surprise, a draft from AI to edit, or the maker's own.
+  It is told in three chapters, read aloud, with the student's own buddy as
+  the sidekick. The last challenge is a boss.
+- **Points** for each right answer, more for a harder one, with combos, a
+  speed bonus when timed (none for Beginners) and a cost for asking the
+  buddy for a hint. Stars for every chapter, *Play again* to beat your best,
+  and **Tricky ones** to replay the challenges missed.
+- **Music and sound** made in the browser, a timer ring, full screen,
+  keyboard and touch, and the student's text size and calm motion.
+- **Play it first**, edit any line or challenge, and switch style or world
+  without rebuilding. Share with a class (retakes on, and a best-points
+  **leaderboard if you want one**) or send it home. It can be made from the
+  chat too.
+
+See [`docs/features/050-play-and-learn.md`](docs/features/050-play-and-learn.md).
+
 ## Live lessons
 
 A teacher plans a lesson in four steps (who, what, how, after) and Mentora
@@ -122,7 +156,8 @@ and [`docs/features/038-live-room.md`](docs/features/038-live-room.md).
   the teacher sees the next topics to teach, and each student sees the class
   work they still have to finish.
 - **Make it by asking.** In the chat, *"Make me a quiz on fractions for Year 4
-  maths"* starts the quiz, and a card in the chat follows it until it's ready.
+  maths"* starts the quiz (or a game, a deck or a guide), and a card in the
+  chat follows it until it's ready.
   It works out the subject from the topic, and asks only for what it cannot
   guess (usually the year).
 - **Made for you.** When a student finds a shared quiz hard, Mentora makes
@@ -149,10 +184,10 @@ child's 6-letter code.
   page has six tabs: an overview of the week, all their work (past due
   first), results by skill, their practice, their live-lesson schedule, and
   each class with what it covers. Any finished quiz opens answer by answer.
-- **Make something and send it home.** Parents make quizzes, flashcards and
-  study guides from a topic or their own files. They send them to their
-  child, with a due date if they like. The child finds them under *From
-  home*, and the parent hears the score when it's done.
+- **Make something and send it home.** Parents make quizzes, flashcards,
+  study guides and games from a topic or their own files. They send them to
+  their child, with a due date if they like. The child finds them under
+  *From home*, and the parent hears the score when it's done.
 - **An instant alert when work goes past due**, whether a teacher or a
   parent set it. It arrives once, says where the work came from, and opens
   the child's work.
@@ -182,6 +217,9 @@ See [`docs/features/042-parents.md`](docs/features/042-parents.md).
 - **Study guides.** A topic taught part by part at three reading levels, with
   pictures, words to know in Malay, read-aloud, a concept map, a check after
   every part, and a printable handout.
+- **Play and Learn games.** Story games in four styles and five Malaysian
+  worlds, with the student's buddy, music, points, stars and a best-points
+  leaderboard. They are written by AI and played by Mentora's own engine.
 - **Practice made for each student.** When a shared quiz is tricky, Mentora
   makes a short practice set on exactly the skills missed. Students practise;
   only teachers and parents make sets.
@@ -210,8 +248,9 @@ See [`docs/features/042-parents.md`](docs/features/042-parents.md).
 > their class's work, work sent from home, and the practice made for them;
 > every chat and set-making route refuses them.
 >
-> **The studio is switched off.** No one makes posters, slides, games,
-> websites or apps, in the chat or anywhere else. Ones already made can still
+> **The studio is switched off.** No one makes posters, slides, AI-coded
+> games, websites or apps, in the chat or anywhere else. (Play and Learn games
+> are a learning kind, not a studio artifact, and are on.) Ones already made can still
 > be opened, downloaded and shared. See
 > [`docs/features/025-roles-and-signup.md`](docs/features/025-roles-and-signup.md).
 

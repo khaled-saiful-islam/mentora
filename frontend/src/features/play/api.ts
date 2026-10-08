@@ -246,6 +246,8 @@ export interface Board {
   entries: BoardEntry[]
   you: BoardEntry | null
   total: number
+  /** How it ranks: a quiz's first tries, or a game's best points (§23). */
+  ranking?: 'first_try' | 'best_points'
 }
 
 export interface BadgeCatalog {

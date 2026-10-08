@@ -1218,9 +1218,16 @@ points and who finished. Topic coverage takes game scores automatically.
 4. Docs (`docs/features/050-play-and-learn.md`), README, checks at four
    widths, full test run. Push and deploy when you say.
 
+**Status (2026-10-08):** phases 1–4 built and committed locally, not pushed
+or deployed. Built as planned, plus: story-mode, style and world pickers
+that wrap rather than scroll on a phone; style and world picked before a
+story is drafted, so the draft is set there; the buddy kept the only animal
+friend in a story. Known limits are in the feature doc.
+
 ### 23.6 Defaults I chose (overturn any)
 
-- Nine challenges by default (six to fifteen), three chapters, easiest first.
+- Nine challenges by default (three to fifteen — one a chapter at least),
+  three chapters, easiest first.
 - A wrong answer never ends the game: the score drops, the story goes on.
 - Astra's voice is English only; other languages get subtitles and the
   browser's voice.

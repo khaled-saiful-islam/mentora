@@ -217,10 +217,10 @@ function Glance({ title, empty, more, children }: { title: string; empty: string
   )
 }
 
-/** Make a quiz, some flashcards or a study guide to send home (§20.4). */
+/** Make a quiz, some flashcards, a study guide or a game to send home (§20.4, §23). */
 function MakeCard({ names }: { names: string[] }) {
   const studio = useLearnStudio()
-  const kinds: LearningKindName[] = ['quiz', 'flashcard', 'study_guide']
+  const kinds: LearningKindName[] = ['quiz', 'flashcard', 'study_guide', 'game']
   return (
     <Card className="overflow-hidden">
       <div className="space-y-4 p-5">

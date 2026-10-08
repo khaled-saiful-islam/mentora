@@ -9,7 +9,7 @@ import { useResource } from '@/hooks/useResource'
 import { apiFetch } from '@/lib/api'
 import { useLive } from '@/lib/bus'
 
-export type BriefKind = 'quiz' | 'flashcard' | 'study_guide'
+export type BriefKind = 'quiz' | 'flashcard' | 'study_guide' | 'game'
 
 export interface BriefWaiting {
   title: string

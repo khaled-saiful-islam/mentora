@@ -31,6 +31,7 @@ export const KIND_DOTS: Record<TaughtKind, { label: string; dot: string; hollow:
   quiz: { label: 'Quiz', dot: 'bg-kind-quiz-vivid', hollow: 'border-kind-quiz-vivid' },
   flashcard: { label: 'Flashcards', dot: 'bg-kind-flashcard-vivid', hollow: 'border-kind-flashcard-vivid' },
   study_guide: { label: 'Study guide', dot: 'bg-kind-study-guide-vivid', hollow: 'border-kind-study-guide-vivid' },
+  game: { label: 'Game', dot: 'bg-kind-games-vivid', hollow: 'border-kind-games-vivid' },
   live: { label: 'Live lesson', dot: 'bg-kind-live-vivid', hollow: 'border-kind-live-vivid' },
 }
 

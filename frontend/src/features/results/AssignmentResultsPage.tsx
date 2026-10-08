@@ -71,7 +71,7 @@ export default function AssignmentResultsPage() {
               </div>
             </div>
             <LiveNow results={data} />
-            {data.assignment.leaderboard && data.assignment.kind === 'quiz' && (
+            {data.assignment.leaderboard && (data.assignment.kind === 'quiz' || data.assignment.kind === 'game') && (
               <ButtonLink to={`/leaderboard/${assignmentId}`} variant="sun">
                 <Ranking weight="fill" className="size-5" />
                 Leaderboard

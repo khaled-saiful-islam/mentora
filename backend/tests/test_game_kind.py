@@ -196,6 +196,13 @@ def test_extras_never_raise_and_fall_back_to_a_playable_world() -> None:
         assert len(extras["story"]["chapters"]) == 3
 
 
+def test_a_finished_game_is_described_by_the_names_a_maker_picked_from() -> None:
+    extras = {"title": "Kampung Rain Rescue", "style": "runner", "world": "kampung"}
+    detail = GameKind().finish_detail([], extras)
+    assert detail == "Kampung Rain Rescue · Lane Runner · Kampung festival"
+    assert GameKind().finish_detail([], {}) == "Your game · Quest Map · Rainforest"
+
+
 def test_a_teachers_own_story_is_marked_as_theirs() -> None:
     assert GameKind().normalise_extras(story(authored=True))["authored"] is True
     assert GameKind().normalise_extras(story())["authored"] is False

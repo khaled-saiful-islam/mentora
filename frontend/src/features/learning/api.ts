@@ -90,6 +90,7 @@ export type GameStyle = 'quest' | 'runner' | 'catch' | 'match'
 export type GameWorld = 'rainforest' | 'reef' | 'kampung' | 'city' | 'space'
 /** How far into the topic the learner is (§23). */
 export type Level = 'beginner' | 'intermediate' | 'advanced'
+export const LEVEL_LABELS: Record<Level, string> = { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' }
 
 export interface GameChapter {
   title: string
@@ -202,6 +203,8 @@ export interface LearningKindInfo {
   item_noun: string
   item_noun_plural: string
   default_count: number
+  /** The fewest it can be made with — a game needs one per chapter. */
+  min_count?: number
   max_count: number
   purpose: SetPurpose
 }

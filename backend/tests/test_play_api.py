@@ -65,6 +65,7 @@ async def test_the_teacher_sees_results_and_the_whole_board(
     assert results["students"][0]["first"] == 0.0
     assert len(drill["attempts"]) == 1
     assert board["enabled"] is True and board["total"] == 1
+    assert board["ranking"] == "first_try"
 
 
 async def test_roles_are_kept_apart(session, client, teacher, student) -> None:

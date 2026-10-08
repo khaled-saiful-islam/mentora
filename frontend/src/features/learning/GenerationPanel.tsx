@@ -34,6 +34,8 @@ const STAGE_WAITING: Record<StageKey, string> = {
   write: 'Writing and checking every one',
   finish: 'Adding pictures and finishing touches',
 }
+/** A kind's own finishing stage, before the server names it. */
+const FINISH_WAITING: Record<string, string> = { game: 'Writing the story and building the world' }
 
 type Watched = Pick<SetSummary, 'id' | 'kind' | 'title' | 'topic' | 'grade_label' | 'purpose'>
 
@@ -168,7 +170,7 @@ function Stages({ generation, kind }: { generation: Generation; kind: string }) 
               </AnimatePresence>
             </span>
             <div className="min-w-0">
-              <p className={cn('font-bold', state === 'waiting' && 'text-muted-foreground')}>{stage?.label ?? STAGE_WAITING[key]}</p>
+              <p className={cn('font-bold', state === 'waiting' && 'text-muted-foreground')}>{stage?.label ?? (key === 'finish' ? FINISH_WAITING[kind] : undefined) ?? STAGE_WAITING[key]}</p>
               <AnimatePresence>
                 {stage?.detail && (
                   <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="break-words text-sm text-muted-foreground">

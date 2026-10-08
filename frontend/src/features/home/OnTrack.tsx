@@ -6,7 +6,7 @@
  * has nothing here yet.
  */
 import { motion } from 'motion/react'
-import { ArrowRight, BookOpenText, Cards, Exam, MapTrifold, ShareNetwork, TrendDown } from '@phosphor-icons/react'
+import { ArrowRight, BookOpenText, Cards, Exam, GameController, MapTrifold, ShareNetwork, TrendDown } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import type { LearningKindName } from '@/features/learning/api'
 import { useLearnStudio } from '@/features/learning/LearnStudio'
@@ -35,6 +35,7 @@ const MAKERS: { kind: LearningKindName; label: string; Icon: typeof Exam }[] = [
   { kind: 'quiz', label: 'Quiz', Icon: Exam },
   { kind: 'flashcard', label: 'Flashcards', Icon: Cards },
   { kind: 'study_guide', label: 'Guide', Icon: BookOpenText },
+  { kind: 'game', label: 'Game', Icon: GameController },
 ]
 
 export function OnTrack({ classes }: { classes: ClassNudge[] }) {

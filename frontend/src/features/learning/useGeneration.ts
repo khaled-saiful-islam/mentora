@@ -35,9 +35,13 @@ export interface Generation {
 
 export const STAGE_ORDER: StageKey[] = ['check', 'research', 'skills', 'write']
 
-/** The stages a kind goes through: a study guide has a finishing one. */
+/** The kinds with a finishing stage: a study guide's pictures, a game's
+ *  story and world. */
+const FINISHED = new Set(['study_guide', 'game'])
+
+/** The stages a kind goes through. */
 export function stagesFor(kind: string): StageKey[] {
-  return kind === 'study_guide' ? [...STAGE_ORDER, 'finish'] : STAGE_ORDER
+  return FINISHED.has(kind) ? [...STAGE_ORDER, 'finish'] : STAGE_ORDER
 }
 
 const INITIAL: Generation = { stages: {}, sources: [], skills: [], items: [], outcome: { kind: 'running' } }
