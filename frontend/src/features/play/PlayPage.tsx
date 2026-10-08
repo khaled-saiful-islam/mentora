@@ -21,7 +21,7 @@ import { playApi, type Attempt, type Finish } from './api'
 import { BuddyCorner, BuddyDock } from './BuddyDock'
 import { FinishScreen } from './FinishScreen'
 import { levelFor, PlayLevelProvider } from './level'
-import { PLAYERS } from './players'
+import { HOSTS_BUDDY, PLAYERS } from './players'
 import { Review } from './Review'
 import { starsFor } from './session'
 
@@ -75,7 +75,7 @@ export default function PlayPage({ source }: { source: PlaySource }) {
   const playingId = playing?.id
   const playingKind = playing?.kind
   useEffect(() => {
-    if (!playingId) return
+    if (!playingId || (playingKind && HOSTS_BUDDY.has(playingKind))) return
     const place = playingKind === 'flashcard' ? 'flashcard' : playingKind === 'study_guide' ? 'guide' : 'quiz'
     const hello = window.setTimeout(() => buddy.current?.cue('hello', { name: user ? firstName(user) : undefined }), 700)
     const skills = playing?.skills.map((s) => s.label) ?? []
@@ -138,7 +138,7 @@ export default function PlayPage({ source }: { source: PlaySource }) {
     return (
       <BuddyDock>
         <Player key={step.attempt.id} attempt={step.attempt} buddy={buddy} exitTo={exitTo} onFinished={() => void finish(step.attempt)} />
-        <BuddyCorner buddy={user?.buddy} handle={buddy} />
+        {!HOSTS_BUDDY.has(step.attempt.kind) && <BuddyCorner buddy={user?.buddy} handle={buddy} />}
       </BuddyDock>
     )
   }

@@ -380,7 +380,7 @@ class LearningGenerator:
         written: list[Item],
     ) -> list[Item]:
         system, user = prompts.draft(
-            rules=self._kind.writing_rules(),
+            rules=_rules(self._kind, request),
             noun_plural=self._kind.item_noun_plural,
             count=want,
             topic=plan.topic,
@@ -449,7 +449,7 @@ class LearningGenerator:
             for i in items
         )
         system, user = prompts.repair(
-            rules=self._kind.writing_rules(),
+            rules=_rules(self._kind, request),
             grade=plan.grade,
             language=request.language,
             listing=listing(sources),
@@ -585,6 +585,13 @@ class LearningGenerator:
             build_ms=int((time.monotonic() - started) * 1000),
             extras=extras or {},
         )
+
+
+def _rules(kind: LearningKind, request: GenerationRequest) -> str:
+    """The kind's writing rules — for this build's choices, when the kind takes
+    them into account (a game's world and story)."""
+    rules_for = getattr(kind, "rules_for", None)
+    return str(rules_for(request.choices)) if callable(rules_for) else kind.writing_rules()
 
 
 def _arranged(kind: LearningKind, items: list[Item]) -> list[Item]:

@@ -81,3 +81,13 @@ export function SourceToggles({ value, sources, onChange }: { value: string[]; s
     </div>
   )
 }
+
+/** A labelled box of text that grows as it is written in. */
+export function LabelledText({ label, value, limit, placeholder, onChange }: { label: string; value: string; limit: number; placeholder: string; onChange: (v: string) => void }) {
+  return (
+    <div className="rounded-2xl border-2 border-border p-2">
+      <p className="px-2 pt-1 text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <GrowingText label={label} value={value} maxLength={limit} placeholder={placeholder} onChange={onChange} className="text-sm" />
+    </div>
+  )
+}

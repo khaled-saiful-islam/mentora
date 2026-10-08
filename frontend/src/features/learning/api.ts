@@ -1,6 +1,6 @@
 import { apiFetch } from '@/lib/api'
 
-export type LearningKindName = 'quiz' | 'flashcard' | 'study_guide'
+export type LearningKindName = 'quiz' | 'flashcard' | 'study_guide' | 'game'
 export type SetStatus = 'generating' | 'ready' | 'failed' | 'refused'
 
 export interface QuizItem {
@@ -72,7 +72,55 @@ export interface GuideExtras {
   challenge: { title: string; steps: string[] } | null
 }
 
-export type Item = QuizItem | FlashcardItem | GuideSection
+/** One challenge in a game (§23): a quiz-like question with 2–4 short
+ *  options and a hint the buddy can give. */
+export interface GameItem {
+  id: string
+  prompt: string
+  options: string[]
+  answer: number
+  explanation: string
+  hint: string
+  skill: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  source_ids: string[]
+}
+
+export type GameStyle = 'quest' | 'runner' | 'catch' | 'match'
+export type GameWorld = 'rainforest' | 'reef' | 'kampung' | 'city' | 'space'
+/** How far into the topic the learner is (§23). */
+export type Level = 'beginner' | 'intermediate' | 'advanced'
+
+export interface GameChapter {
+  title: string
+  intro: string
+  outro: string
+}
+
+/** A game's story and world. `{buddy}` in any line is the player's buddy. */
+export interface GameExtras {
+  title: string
+  style: GameStyle
+  world: GameWorld
+  story: {
+    hook: string
+    goal: string
+    chapters: GameChapter[]
+    win: string
+    retry: string
+  }
+  /** The maker wrote the story themselves. */
+  authored: boolean
+}
+
+/** What a maker chooses for a game before it is built; "auto" lets Mentora decide. */
+export interface GameChoices {
+  style: GameStyle | 'auto'
+  world: GameWorld | 'auto'
+  story: string
+}
+
+export type Item = QuizItem | FlashcardItem | GuideSection | GameItem
 
 export interface Skill {
   slug: string
@@ -101,6 +149,8 @@ export interface SetSummary {
   topic: string
   grade_level: string | null
   grade_label: string | null
+  /** How far into the topic the learner is, when the maker chose (§23). */
+  level?: Level | null
   language: string
   status: SetStatus
   failure: string | null
@@ -118,7 +168,7 @@ export interface SetDetail extends SetSummary {
   skills: Skill[]
   sources: Source[]
   /** Empty for kinds without extras. */
-  extras: Partial<GuideExtras>
+  extras: Partial<GuideExtras> & Partial<GameExtras>
 }
 
 export interface GenerateDraft {
@@ -132,6 +182,18 @@ export interface GenerateDraft {
   material_ids?: string[]
   /** …and search trusted sources on the web as well. */
   web?: boolean
+  level?: Level | null
+  /** What only this kind understands — a game's story, style and world. */
+  choices?: Partial<GameChoices>
+}
+
+export interface StoryDraftAsk {
+  topic: string
+  subject?: string | null
+  grade_level?: string | null
+  level?: Level | null
+  language?: string
+  world?: GameWorld | 'auto'
 }
 
 export interface LearningKindInfo {
@@ -184,6 +246,9 @@ export const learningApi = {
   generate: (draft: GenerateDraft) =>
     apiFetch<SetSummary>('/learning-sets/generate', { method: 'POST', ...json(draft) }),
   retry: (id: string) => apiFetch<SetSummary>(`/learning-sets/${id}/retry`, { method: 'POST' }),
+  /** A first story for a game, for its maker to edit (§23). Nothing is saved. */
+  storyDraft: (ask: StoryDraftAsk) =>
+    apiFetch<{ story: string }>('/learning-sets/story-draft', { method: 'POST', ...json(ask) }),
   list: (params: { kind?: string; q?: string; archived?: boolean } = {}) => {
     const query = new URLSearchParams()
     if (params.kind) query.set('kind', params.kind)
@@ -193,7 +258,7 @@ export const learningApi = {
     return apiFetch<{ items: SetSummary[]; total: number }>(`/learning-sets${suffix}`)
   },
   get: (id: string) => apiFetch<SetDetail>(`/learning-sets/${id}`),
-  edit: (id: string, patch: { title?: string; items?: Item[]; extras?: GuideExtras }) =>
+  edit: (id: string, patch: { title?: string; items?: Item[]; extras?: GuideExtras | GameExtras }) =>
     apiFetch<SetDetail>(`/learning-sets/${id}`, { method: 'PATCH', ...json(patch) }),
   /** One more item written by AI, returned for the editor to place and save. */
   add: (id: string, instruction: string) =>

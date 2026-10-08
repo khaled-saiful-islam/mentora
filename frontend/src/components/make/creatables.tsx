@@ -1,6 +1,6 @@
 /**
  * Everything a teacher can make from the studio, in one list: the learning
- * kinds (quizzes, flashcards, study guides) and the studio artifacts
+ * kinds (quizzes, flashcards, study guides, games) and the studio artifacts
  * (posters, slides, websites, apps, games). The create panel and the create
  * menu both read it, so the two can never disagree about what exists.
  *
@@ -38,6 +38,7 @@ const BLURBS: Record<string, string> = {
   quiz: 'Questions from trusted sources',
   flashcard: 'Cards that flip, word to meaning',
   study_guide: 'A topic taught part by part',
+  game: 'A story adventure, played to learn',
   poster: 'Eye-catching, with real photos',
   slides: 'A talk, slide by slide',
   website: 'One page or many, phone-ready',
@@ -49,6 +50,7 @@ const LEARNING_EXAMPLES: Record<LearningKindName, readonly string[]> = {
   quiz: ['Photosynthesis', 'States and capitals of Malaysia', 'Fractions of a whole'],
   flashcard: ['Parts of a flower', 'Planets of the solar system', 'Simpulan bahasa'],
   study_guide: ['The water cycle', 'How volcanoes erupt', 'The history of Melaka'],
+  game: ['Fractions in the rainforest', 'Rescue the turtles: the water cycle', 'A rocket trip through the planets'],
 }
 
 export function creatables(studio: Makeable[], learning: LearningKindInfo[]): Creatable[] {

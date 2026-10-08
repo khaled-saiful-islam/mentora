@@ -329,3 +329,27 @@ def test_a_long_story_is_cut_at_a_paragraph_or_a_sentence_never_mid_word() -> No
     words = GameKind().choices({"story": long_words})["story"]
     assert len(words) <= 2000 and words == words.strip()
     assert long_words.startswith(words) and long_words[len(words)] == " "
+
+
+def test_the_story_prompts_never_give_the_buddy_a_species_or_a_gender() -> None:
+    from app.learning import game_prompts
+
+    wrap, _ = game_prompts.wrap_game(
+        title="T", topic="t", grade=None, language="en", level=None,
+        style="auto", world="auto", story="", outline="",
+    )  # fmt: skip
+    draft, _ = game_prompts.draft_story(
+        topic="t", subject=None, grade=None, language="en", level=None, world="auto"
+    )
+    for system in (wrap, draft):
+        assert "never call {buddy} he, she" in system
+
+
+def test_the_story_has_no_friend_but_the_buddy() -> None:
+    from app.learning import game_prompts
+
+    system, _ = game_prompts.wrap_game(
+        title="T", topic="t", grade=None, language="en", level=None,
+        style="auto", world="auto", story="", outline="",
+    )  # fmt: skip
+    assert "invent no other animal friend" in system

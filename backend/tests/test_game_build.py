@@ -173,3 +173,17 @@ async def test_a_teachers_story_survives_a_story_writer_that_cannot_answer() -> 
         "She swims to the reef.",
         "She finds her friends.",
     ]
+
+
+async def test_challenges_are_written_into_the_games_world_and_story() -> None:
+    seen: dict[str, str] = {}
+
+    def draft(system: str, user: str) -> dict[str, Any]:
+        seen["draft"] = system
+        return challenges()(system, user)
+
+    gen, _ = build(happy(draft=draft, wrap=STORY))
+    await run(gen, count=3, choices={"world": "reef", "story": "Siti the turtle is lost."})
+    assert "coral reef of Sipadan" in seen["draft"]
+    assert "<story>\nSiti the turtle is lost.\n</story>" in seen["draft"]
+    assert "never food or things that do not belong" in seen["draft"]

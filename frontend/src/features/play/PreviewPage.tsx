@@ -24,7 +24,7 @@ import { FinishScreen } from './FinishScreen'
 import { levelForGrade, PlayLevelProvider } from './level'
 import { BrowseCards, BrowseQuiz, type BrowseProps } from './PreviewBrowse'
 import { BuddyCorner, BuddyDock } from './BuddyDock'
-import { PLAYERS } from './players'
+import { HOSTS_BUDDY, PLAYERS } from './players'
 import { previewAttempt, PreviewGrader } from './preview'
 import { Review } from './Review'
 import { starsFor } from './session'
@@ -50,7 +50,8 @@ function Preview({ set }: { set: SetDetail }) {
   // The look follows the set's own year, as it will for a student in it.
   const level = levelForGrade(set.grade_level)
   const [round, setRound] = useState(0)
-  const [mode, setMode] = useState<Mode>('look')
+  // A kind with nothing to browse — a game (§23) — is simply played.
+  const [mode, setMode] = useState<Mode>(BROWSERS[set.kind] ? 'look' : 'play')
   const [reveal, setReveal] = useState(false)
   const [step, setStep] = useState<Step>({ name: 'playing' })
   const buddy = useRef<BuddyHandle>(null)
@@ -76,14 +77,16 @@ function Preview({ set }: { set: SetDetail }) {
               </span>
             </p>
             <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
-              <div role="radiogroup" aria-label="How to preview" className="flex max-w-full flex-wrap gap-1.5">
-                <ModeButton on={mode === 'look'} onClick={() => setMode('look')}>
-                  <ListNumbers weight="bold" className="size-4 shrink-0" aria-hidden /> See every question
-                </ModeButton>
-                <ModeButton on={mode === 'play'} onClick={play}>
-                  <GameController weight="bold" className="size-4 shrink-0" aria-hidden /> Answer it as a student
-                </ModeButton>
-              </div>
+              {Browse && (
+                <div role="radiogroup" aria-label="How to preview" className="flex max-w-full flex-wrap gap-1.5">
+                  <ModeButton on={mode === 'look'} onClick={() => setMode('look')}>
+                    <ListNumbers weight="bold" className="size-4 shrink-0" aria-hidden /> See every question
+                  </ModeButton>
+                  <ModeButton on={mode === 'play'} onClick={play}>
+                    <GameController weight="bold" className="size-4 shrink-0" aria-hidden /> Answer it as a student
+                  </ModeButton>
+                </div>
+              )}
               {mode === 'look' && set.kind === 'quiz' && (
                 <Button variant="ghost" size="sm" onClick={() => setReveal((r) => !r)} aria-pressed={reveal}>
                   {reveal ? <EyeSlash weight="bold" className="size-4" aria-hidden /> : <Eye weight="bold" className="size-4" aria-hidden />}
@@ -111,7 +114,7 @@ function Preview({ set }: { set: SetDetail }) {
         {mode === 'play' && step.name === 'playing' && (
           <BuddyDock>
             <Player key={round} attempt={attempt} buddy={buddy} exitTo={back} onFinished={() => setStep({ name: 'finished', finish: grader.finish(attempt) })} />
-            <BuddyCorner buddy={user?.buddy} handle={buddy} />
+            {!HOSTS_BUDDY.has(set.kind) && <BuddyCorner buddy={user?.buddy} handle={buddy} />}
           </BuddyDock>
         )}
         {mode === 'play' && step.name === 'finished' && (

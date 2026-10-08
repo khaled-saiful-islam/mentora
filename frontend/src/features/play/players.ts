@@ -4,6 +4,7 @@
  */
 import type { ComponentType, RefObject } from 'react'
 import type { BuddyHandle } from '@/features/buddies'
+import { GamePlayer } from '@/features/game/GamePlayer'
 import type { Attempt, PlayKind } from './api'
 import { FlashcardPlayer } from './FlashcardPlayer'
 import { GuidePlayer } from './GuidePlayer'
@@ -22,4 +23,10 @@ export const PLAYERS: Record<PlayKind, ComponentType<PlayerProps>> = {
   quiz: QuizPlayer,
   flashcard: FlashcardPlayer,
   study_guide: GuidePlayer,
+  game: GamePlayer,
 }
+
+/** Players that bring the buddy into their own scene — a game's sidekick
+ *  (§23) — so the play page does not put a second one in the corner. They
+ *  tell their own story, too, so the page's opening tip is not needed. */
+export const HOSTS_BUDDY: ReadonlySet<PlayKind> = new Set<PlayKind>(['game'])

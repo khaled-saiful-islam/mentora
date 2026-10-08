@@ -6,7 +6,7 @@ import { LEVEL_LOOKS } from '@/features/guide/LevelSwitch'
 import { cn } from '@/lib/utils'
 import { spring } from '@/motion'
 import type { GuideExtras, GuidePicture, GuideSection, GuideTerm, QuizItem, ReadingLevel } from '../api'
-import { GrowingText } from './fields'
+import { GrowingText, LabelledText } from './fields'
 import { quizEditor } from './quiz'
 import type { ExtrasEditor, ItemEditorProps, KindEditor } from './types'
 
@@ -90,15 +90,6 @@ function Helpers({ item, set }: { item: GuideSection; set: Set }) {
         <LabelledText label="Did you know?" value={item.fact} limit={LIMITS.fact} placeholder="A surprising true fact" onChange={(fact) => set({ fact })} />
         <LabelledText label="In real life" value={item.example} limit={LIMITS.example} placeholder="Where this shows up in Malaysia" onChange={(example) => set({ example })} />
       </div>
-    </div>
-  )
-}
-
-function LabelledText({ label, value, limit, placeholder, onChange }: { label: string; value: string; limit: number; placeholder: string; onChange: (v: string) => void }) {
-  return (
-    <div className="rounded-2xl border-2 border-border p-2">
-      <p className="px-2 pt-1 text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
-      <GrowingText label={label} value={value} maxLength={limit} placeholder={placeholder} onChange={onChange} className="text-sm" />
     </div>
   )
 }

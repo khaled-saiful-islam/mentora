@@ -2,7 +2,7 @@
  * How each learning kind looks. A new kind is one entry here (plus its
  * editor and player) — every tile, card, panel and header reads this table.
  */
-import { BookOpenText, Cards, Exam, type Icon } from '@phosphor-icons/react'
+import { BookOpenText, Cards, Exam, GameController, type Icon } from '@phosphor-icons/react'
 import type { LearningKindName } from './api'
 
 export interface KindLook {
@@ -56,6 +56,17 @@ export const LOOKS: Record<LearningKindName, KindLook> = {
     colour: 'hsl(var(--kind-study-guide-vivid))',
     promise: 'A topic taught step by step — pictures, words to know, and a check after each part.',
     noun: ['section', 'sections'],
+  },
+  game: {
+    label: 'Game',
+    Icon: GameController,
+    hero: 'bg-gradient-to-br from-kind-games-vivid to-kind-games text-white',
+    soft: 'bg-kind-games-vivid/12 text-kind-games',
+    text: 'text-kind-games',
+    ring: 'border-kind-games-vivid',
+    colour: 'hsl(var(--kind-games-vivid))',
+    promise: 'A story adventure with your buddy — learn the topic while you play, earn points and stars.',
+    noun: ['challenge', 'challenges'],
   },
 }
 

@@ -80,8 +80,38 @@ function GuideScene() {
   )
 }
 
+/** A little buddy runs a winding path, stars popping up as it passes. */
+function GameScene() {
+  const calm = useCalmMotion()
+  return (
+    <span className="relative block h-14 w-24 sm:h-16 sm:w-28">
+      <svg viewBox="0 0 120 64" className="absolute inset-0 size-full" aria-hidden>
+        <path d="M6 52 C 30 52, 30 18, 60 24 S 96 52, 114 14" fill="none" stroke="white" strokeOpacity="0.85" strokeWidth="5" strokeLinecap="round" strokeDasharray="1 9" />
+      </svg>
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          className="absolute grid size-4 place-items-center rounded-full bg-sun-400 text-[0.6rem] text-grape-900 shadow"
+          style={{ left: `${18 + i * 30}%`, top: `${[58, 22, 50][i]}%` }}
+          animate={calm ? undefined : { scale: [0.6, 1.15, 1] }}
+          transition={{ duration: 2.6, repeat: Infinity, delay: i * 0.6 }}
+        >
+          ★
+        </motion.span>
+      ))}
+      <motion.span
+        className="absolute size-5 rounded-full bg-white shadow"
+        style={{ left: '2%', top: '62%' }}
+        animate={calm ? undefined : { left: ['2%', '45%', '86%'], top: ['62%', '24%', '6%'] }}
+        transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+      />
+    </span>
+  )
+}
+
 export const LEARN_SCENES: Record<LearningKindName, () => React.ReactNode> = {
   quiz: QuizScene,
   flashcard: FlashScene,
   study_guide: GuideScene,
+  game: GameScene,
 }

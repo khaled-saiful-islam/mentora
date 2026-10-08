@@ -8,6 +8,7 @@ import {
   Broadcast,
   Eye,
   FloppyDisk,
+  GameController,
   Globe,
   HeartStraight,
   MagicWand,
@@ -125,7 +126,7 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
           </div>
           <div className="flex flex-wrap gap-2">
             <TextSizeControl compact className="border-white/30 bg-white/15 text-white [&_button]:text-white" />
-            {(initial.kind === 'quiz' || initial.kind === 'flashcard') && (
+            {(initial.kind === 'quiz' || initial.kind === 'flashcard' || initial.kind === 'game') && (
               <Link
                 to={`/library/${initial.id}/try`}
                 aria-disabled={dirty}
@@ -133,7 +134,8 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
                 title={dirty ? 'Save your changes first' : 'Play it as a student would'}
                 className={cn(buttonClass('secondary'), 'bg-white/15 text-white ring-1 ring-white/30 hover:bg-white/25', dirty && 'pointer-events-none opacity-50')}
               >
-                <Eye weight="bold" className="size-5" /> Preview
+                {initial.kind === 'game' ? <GameController weight="bold" className="size-5" /> : <Eye weight="bold" className="size-5" />}
+                {initial.kind === 'game' ? 'Play it' : 'Preview'}
               </Link>
             )}
             {kind.previewable && (

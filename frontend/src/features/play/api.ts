@@ -3,9 +3,9 @@
  * Shapes mirror `app/api/schemas/play.py`.
  */
 import { apiFetch } from '@/lib/api'
-import type { GuideExtras, GuideSection, SetPurpose } from '@/features/learning/api'
+import type { GameExtras, GuideExtras, GuideSection, Level, SetPurpose } from '@/features/learning/api'
 
-export type PlayKind = 'quiz' | 'flashcard' | 'study_guide'
+export type PlayKind = 'quiz' | 'flashcard' | 'study_guide' | 'game'
 export type FeedbackMode = 'instant' | 'end'
 
 export interface QuizItem {
@@ -22,6 +22,17 @@ export interface CardItem {
   back: string
   hint: string
   skill: string
+}
+
+/** A game's challenge as a player sees it (§23): never the answer, and never
+ *  the hint until it is asked for — asking costs points. */
+export interface GameChallenge {
+  id: string
+  prompt: string
+  options: string[]
+  has_hint: boolean
+  skill: string
+  difficulty: string
 }
 
 /** A guide section as a student sees it: everything but the check's answer. */
@@ -56,16 +67,22 @@ export interface Attempt {
   feedback_mode: FeedbackMode
   assignment_id: string | null
   set_id: string
-  items: (QuizItem | CardItem | GuidePage)[]
+  items: (QuizItem | CardItem | GuidePage | GameChallenge)[]
   answered: Played[]
   skills: SkillInfo[]
-  /** A study guide's opening and ending; empty for other kinds. */
-  extras: Partial<GuideExtras>
+  /** A study guide's opening and ending, or a game's story and world. */
+  extras: Partial<GuideExtras> & Partial<GameExtras>
   /** What it is written in, e.g. `en` or `ms`. */
   language: string
   /** The year the set was written for, e.g. `year_2` — how it looks when the
    *  student's own year is not known. */
   grade_level?: string | null
+  /** A game's level, the seconds each challenge's timer runs (none for
+   *  beginners), its points once finished, and the best so far (§23). */
+  level?: Level | null
+  timer_seconds?: number | null
+  points?: number | null
+  best_points?: number | null
   score: number
   max_score: number
   percent: number
@@ -97,6 +114,8 @@ export interface BoardEntry {
   buddy: string | null
   percent: number
   you: boolean
+  /** A game's best points (§23); null on a quiz's board. */
+  points?: number | null
 }
 
 export interface SkillScore extends SkillInfo {
@@ -242,9 +261,15 @@ export const playApi = {
   practice: () => apiFetch<{ items: MyPractice[] }>('/me/practice'),
   fromHome: (shareId: string) => apiFetch<Attempt>(`/me/from-home/${shareId}/attempts`, { method: 'POST' }),
   attempt: (attemptId: string) => apiFetch<Attempt>(`/me/attempts/${attemptId}`),
-  answer: (attemptId: string, body: { item_id: string; choice?: number; knew?: boolean; time_ms: number }) =>
+  answer: (attemptId: string, body: { item_id: string; choice?: number; knew?: boolean; timed_out?: boolean; time_ms: number }) =>
     apiFetch<AnswerResult>(`/me/attempts/${attemptId}/answers`, { method: 'POST', body: JSON.stringify(body) }),
   complete: (attemptId: string) => apiFetch<Finish>(`/me/attempts/${attemptId}/complete`, { method: 'POST' }),
+  /** A game's challenge is on screen: its speed bonus is timed from now. */
+  open: (attemptId: string, itemId: string) =>
+    apiFetch<void>(`/me/attempts/${attemptId}/items/${encodeURIComponent(itemId)}/open`, { method: 'POST' }),
+  /** A game's hint from the buddy. Asking costs a few points. */
+  hint: (attemptId: string, itemId: string) =>
+    apiFetch<{ hint: string }>(`/me/attempts/${attemptId}/items/${encodeURIComponent(itemId)}/hint`, { method: 'POST' }),
   results: () => apiFetch<Results>('/me/results'),
   badges: () => apiFetch<BadgeCatalog>('/me/badges'),
   leaderboard: (assignmentId: string) => apiFetch<Board>(`/assignments/${assignmentId}/leaderboard`),

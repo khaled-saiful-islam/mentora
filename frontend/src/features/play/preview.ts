@@ -3,16 +3,22 @@
  * gets, marked here from the answer key the editor already has. Nothing
  * reaches the server, so nothing is saved, counted or seen by anyone.
  */
-import type { FlashcardItem, QuizItem as KeyedQuiz, SetDetail } from '@/features/learning/api'
+import { pointsFor, secondsFor, type Answered } from '@/features/game/points'
+import type { FlashcardItem, GameItem, QuizItem as KeyedQuiz, SetDetail } from '@/features/learning/api'
 import { spokenQuery, type AnswerBody, type PlayBackend, type Spoken } from './backend'
-import type { Attempt, CardItem, Finish, Played, QuizItem, SkillScore } from './api'
+import type { Attempt, CardItem, Finish, GameChallenge, Played, QuizItem, SkillScore } from './api'
 import { starsFor } from './session'
 
 const isQuiz = (item: unknown): item is KeyedQuiz => typeof item === 'object' && item !== null && 'options' in item
 const isCard = (item: unknown): item is FlashcardItem => typeof item === 'object' && item !== null && 'front' in item
 
-/** What a student is shown — never the answer key. */
-function shown(item: KeyedQuiz | FlashcardItem): QuizItem | CardItem {
+/** What a student is shown — never the answer key, and for a game never the
+ *  hint until it is asked for. */
+function shown(item: KeyedQuiz | FlashcardItem, kind: SetDetail['kind']): QuizItem | CardItem | GameChallenge {
+  if (kind === 'game' && isQuiz(item)) {
+    const hint = (item as GameItem).hint ?? ''
+    return { id: item.id, prompt: item.prompt, options: item.options, has_hint: Boolean(hint), skill: item.skill, difficulty: item.difficulty }
+  }
   if (isQuiz(item)) return { id: item.id, prompt: item.prompt, options: item.options, skill: item.skill, difficulty: item.difficulty }
   return { id: item.id, front: item.front, back: item.back, hint: item.hint, skill: item.skill }
 }
@@ -30,12 +36,17 @@ export function previewAttempt(set: SetDetail): Attempt {
     feedback_mode: 'instant',
     assignment_id: null,
     set_id: set.id,
-    items: items.map(shown),
+    items: items.map((item) => shown(item, set.kind)),
     answered: [],
     skills: set.skills,
-    extras: {},
+    // A game plays its story; other kinds start without their extras.
+    extras: set.kind === 'game' ? set.extras : {},
     language: set.language,
     grade_level: set.grade_level,
+    level: set.level ?? null,
+    timer_seconds: set.kind === 'game' ? secondsFor(set.grade_level, set.level) : null,
+    points: null,
+    best_points: null,
     score: 0,
     max_score: items.length,
     percent: 0,
@@ -51,8 +62,20 @@ export function previewAttempt(set: SetDetail): Attempt {
 export class PreviewGrader implements PlayBackend {
   private played = new Map<string, Played>()
   private streak = 0
+  // A game's points, worked out as the server would (`features/game/points`).
+  private timed: Answered[] = []
+  private hinted = new Set<string>()
 
   constructor(private readonly set: SetDetail) {}
+
+  open = async () => undefined
+
+  hint = async (_attemptId: string, itemId: string) => {
+    const item = this.set.items.find((i) => i.id === itemId)
+    const hint = item && 'hint' in item ? item.hint : ''
+    if (hint && !this.played.has(itemId)) this.hinted.add(itemId)
+    return hint
+  }
 
   answer = async (_attemptId: string, body: AnswerBody) => {
     const item = this.set.items.find((i) => i.id === body.item_id)
@@ -61,6 +84,8 @@ export class PreviewGrader implements PlayBackend {
     if (!already) {
       this.played.set(body.item_id, played)
       this.streak = played.correct ? this.streak + 1 : 0
+      const difficulty = item && 'difficulty' in item ? item.difficulty : 'medium'
+      this.timed.push({ correct: played.correct === true, timeMs: body.time_ms, hinted: this.hinted.has(body.item_id), difficulty })
     }
     return { played, streak: this.streak, answered: this.played.size, total: this.set.items.length }
   }
@@ -72,8 +97,9 @@ export class PreviewGrader implements PlayBackend {
     const answered = [...this.played.values()]
     const score = answered.filter((p) => p.correct === true).length
     const percent = attempt.max_score ? Math.round((10000 * score) / attempt.max_score) / 100 : 0
+    const points = this.set.kind === 'game' ? pointsFor(this.timed, attempt.timer_seconds ?? null) : null
     return {
-      attempt: { ...attempt, status: 'completed', answered, score, percent },
+      attempt: { ...attempt, status: 'completed', answered, score, percent, points, best_points: points },
       stars: starsFor(percent),
       skills: this.skills(),
       badges: [],

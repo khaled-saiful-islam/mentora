@@ -175,6 +175,56 @@
   --buddy-astra-ring: 44 100% 64%;
   --buddy-astra-glow: 190 100% 70%;
 
+  /* --- Game worlds (§23) -------------------------------------------------
+     Each Play and Learn world's own palette, drawn by the engine
+     (features/game/worlds). Like the buddies, a world is a scene with its own
+     light, so these are the same in both themes; words never sit on them
+     bare — they ride on surface cards. Art reads them as `hsl(var(--world-…))`. */
+  --world-rainforest-sky: 188 70% 80%;
+  --world-rainforest-haze: 150 50% 86%;
+  --world-rainforest-far: 152 34% 52%;
+  --world-rainforest-mid: 145 44% 34%;
+  --world-rainforest-near: 132 52% 24%;
+  --world-rainforest-ground: 32 42% 40%;
+  --world-rainforest-accent: 196 72% 52%;   /* the river */
+  --world-rainforest-glow: 48 100% 72%;     /* sun through the canopy */
+
+  --world-reef-sky: 194 86% 42%;            /* the water above */
+  --world-reef-haze: 190 80% 24%;
+  --world-reef-far: 186 46% 34%;
+  --world-reef-mid: 10 78% 63%;             /* coral */
+  --world-reef-near: 330 64% 62%;           /* sea fans */
+  --world-reef-ground: 42 56% 72%;          /* sand */
+  --world-reef-accent: 172 70% 52%;
+  --world-reef-glow: 188 100% 86%;          /* light rays */
+
+  --world-kampung-sky: 30 96% 76%;          /* a festival sunset */
+  --world-kampung-haze: 342 72% 82%;
+  --world-kampung-far: 24 38% 48%;
+  --world-kampung-mid: 26 52% 34%;          /* wooden houses */
+  --world-kampung-near: 128 40% 34%;
+  --world-kampung-ground: 34 50% 46%;
+  --world-kampung-accent: 354 76% 56%;      /* lanterns */
+  --world-kampung-glow: 46 100% 66%;
+
+  --world-city-sky: 232 56% 28%;            /* Kuala Lumpur at night */
+  --world-city-haze: 262 44% 44%;
+  --world-city-far: 236 26% 40%;
+  --world-city-mid: 230 22% 26%;
+  --world-city-near: 142 34% 30%;           /* the park */
+  --world-city-ground: 230 16% 22%;
+  --world-city-accent: 200 100% 66%;        /* city lights */
+  --world-city-glow: 46 100% 70%;
+
+  --world-space-sky: 246 62% 12%;
+  --world-space-haze: 266 56% 26%;
+  --world-space-far: 252 40% 36%;
+  --world-space-mid: 220 16% 72%;           /* the moon */
+  --world-space-near: 220 10% 56%;
+  --world-space-ground: 222 12% 40%;
+  --world-space-accent: 190 100% 66%;
+  --world-space-glow: 46 100% 70%;
+
   /* --- Shape and depth: round and tactile ------------------------------ */
   --radius-sm: 0.5rem;
   --radius: 0.75rem;

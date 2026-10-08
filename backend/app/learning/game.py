@@ -142,6 +142,13 @@ class GameKind:
     def writing_rules(self) -> str:
         return game_prompts.challenge_rules(LIMITS)
 
+    def rules_for(self, choices: Mapping[str, Any]) -> str:
+        """The rules, with the world each challenge's little scene is set in —
+        a rambutan to share in the rainforest, not a pizza — and the maker's
+        story, so the challenges belong to the game they are in."""
+        chosen = self.choices(choices)
+        return game_prompts.challenge_rules(LIMITS, world=chosen["world"], story=chosen["story"])
+
     def summary(self, item: Item) -> str:
         return item["prompt"]
 
