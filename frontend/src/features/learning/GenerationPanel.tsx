@@ -286,6 +286,11 @@ function Items({ items, kind }: { items: Item[]; kind: string }) {
                   ))}
                 </div>
               </>
+            ) : 'goal' in item ? (
+              <>
+                <p className="font-bold">{item.goal}</p>
+                <p className="mt-1 break-words text-sm text-muted-foreground">{item.explanation}</p>
+              </>
             ) : (
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <p className="font-bold">{item.front}</p>

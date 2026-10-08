@@ -1,33 +1,33 @@
 /**
- * What only a game asks before it is built (§23): its story — Mentora's
- * surprise, a draft to read and edit, or the maker's own — and how and where
- * it is played: a style and a world, each with "Let Mentora decide".
+ * What only a game asks before it is built (§24): where it happens — or
+ * "Let Mentora decide" — and its story: Mentora's surprise, a draft to read
+ * and edit, or the maker's own. The game itself, a simulation, is written
+ * from the missions and the story once they are checked.
  */
 import { useState } from 'react'
-import { Check, CirclesThree, MagicWand, MapTrifold, PencilSimpleLine, PersonSimpleRun, PuzzlePiece, Sparkle, type Icon } from '@phosphor-icons/react'
+import { Check, MagicWand, PencilSimpleLine, Sparkle, type Icon } from '@phosphor-icons/react'
 import { Alert, Button } from '@/components/ui'
 import { errorMessage } from '@/features/auth/errors'
-import { paint, STYLE_KEYS, STYLES, WORLD_KEYS, WORLDS } from '@/features/game/worlds/info'
+import { paint, WORLD_KEYS, WORLDS } from '@/features/game/worlds'
 import { cn } from '@/lib/utils'
-import { learningApi, type GameChoices, type GameStyle, type GameWorld, type StoryDraftAsk } from './api'
+import { learningApi, type GameChoices, type GameWorld, type StoryDraftAsk } from './api'
 
 export type StoryMode = 'surprise' | 'draft' | 'own'
 
 export interface GameSetup {
   mode: StoryMode
   story: string
-  style: GameStyle | 'auto'
   world: GameWorld | 'auto'
 }
 
-export const FRESH_GAME: GameSetup = { mode: 'surprise', story: '', style: 'auto', world: 'auto' }
+export const FRESH_GAME: GameSetup = { mode: 'surprise', story: '', world: 'auto' }
 
 /** As long as a story the server keeps (`LIMITS["story"]` in game.py). */
 export const STORY_MAX = 2000
 
 /** What is sent to be built: a surprise sends no story of its own. */
 export function gameChoices(setup: GameSetup): GameChoices {
-  return { style: setup.style, world: setup.world, story: setup.mode === 'surprise' ? '' : setup.story.trim() }
+  return { world: setup.world, story: setup.mode === 'surprise' ? '' : setup.story.trim() }
 }
 
 const AUTO_OPTION = { value: 'auto', label: 'Let Mentora decide', blurb: 'Picks what suits the topic and the age', Icon: Sparkle } as const
@@ -36,23 +36,15 @@ const STORY_MODES: ChoiceOption<StoryMode>[] = [
   { value: 'draft', label: 'Draft with AI', blurb: 'A story in seconds, to read and edit first', Icon: MagicWand },
   { value: 'own', label: 'Write my own', blurb: 'Your story — the game is built around it', Icon: PencilSimpleLine },
 ]
-const STYLE_ICONS: Record<GameStyle, Icon> = { quest: MapTrifold, runner: PersonSimpleRun, catch: CirclesThree, match: PuzzlePiece }
 
 /** A change to the setup, made from whatever it is by then — a draft that
- *  arrives late must not undo a style or world picked while it was coming. */
+ *  arrives late must not undo a setting picked while it was coming. */
 export type SetupChange = (update: (setup: GameSetup) => GameSetup) => void
 
 export function GameOptions({ setup, onChange, ask }: { setup: GameSetup; onChange: SetupChange; ask: StoryDraftAsk }) {
   return (
     <div className="space-y-6">
       {/* Where first: a story drafted after is set there. */}
-      <Choices
-        label="How it plays"
-        name="game-style"
-        value={setup.style}
-        onChange={(style) => onChange((s) => ({ ...s, style }))}
-        options={[AUTO_OPTION, ...STYLE_KEYS.map((key) => ({ value: key, label: STYLES[key].label, blurb: STYLES[key].blurb, Icon: STYLE_ICONS[key] }))]}
-      />
       <Choices
         label="Where it happens"
         name="game-world"
@@ -133,7 +125,7 @@ interface ChoiceOption<T extends string> {
   value: T
   label: string
   blurb: string
-  /** A world shows its colours; a style, its picture. */
+  /** A world shows its colours; anything else, its picture. */
   swatch?: GameWorld
   Icon?: Icon
 }

@@ -10,7 +10,7 @@ import { Button, ButtonLink } from '@/components/ui'
 import { BadgeMedal } from '@/features/badges/medals'
 import { Buddy, BuddyStage, type BuddyHandle, type Cue } from '@/features/buddies'
 import { finishTip } from '@/features/buddies/companion'
-import { trickyOnes, TrickyRound } from '@/features/game/TrickyRound'
+import { GameHost } from '@/features/game/GameHost'
 import { useAuth } from '@/lib/auth'
 import { useSound } from '@/lib/sound'
 import { cn } from '@/lib/utils'
@@ -59,10 +59,11 @@ export function FinishScreen({
   const [headline] = useState(() => (little ? LITTLE_HEADLINE : HEADLINE)[verdict][Math.floor(Math.random() * 3)])
   const flashcards = attempt.kind === 'flashcard'
   const guide = attempt.kind === 'study_guide'
-  // A game counts its own points, on the server (§23); the rest earn ten a right answer.
+  // A game counts its own points, on the server (§24); the rest earn ten a right answer.
   const game = attempt.kind === 'game'
   const won = look.points && !guide && !game ? attempt.score * POINTS_EACH : 0
-  const [tricky] = useState(() => trickyOnes(attempt))
+  // A game's missions not reached, to play again — just those, nothing kept.
+  const [missed] = useState(() => (game ? attempt.answered.filter((p) => p.correct === false).map((p) => p.item_id) : []))
   const [practising, setPractising] = useState(false)
 
   useEffect(() => {
@@ -80,11 +81,7 @@ export function FinishScreen({
   }, [])
 
   if (practising) {
-    return (
-      <div className="mx-auto w-full max-w-3xl px-4 py-8 md:py-12">
-        <TrickyRound tricky={tricky} onDone={() => setPractising(false)} />
-      </div>
-    )
+    return <GameHost attempt={attempt} buddy={buddy} exitTo={home.to} only={missed} practice onFinished={() => setPractising(false)} />
   }
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 md:py-12">
@@ -185,10 +182,10 @@ export function FinishScreen({
           <ClipboardText weight="bold" className="size-5" />
           {flashcards ? 'See my cards' : 'Check my answers'}
         </Button>
-        {tricky.length > 0 && (
+        {missed.length > 0 && (
           <Button size="lg" variant="outline" onClick={() => setPractising(true)}>
             <Target weight="bold" className="size-5" />
-            Tricky ones ({tricky.length})
+            Missions you missed ({missed.length})
           </Button>
         )}
         {onRetake && (

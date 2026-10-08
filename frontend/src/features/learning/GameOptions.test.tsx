@@ -1,6 +1,6 @@
 /**
  * What a maker chooses before a game is built (§23): the story — Mentora's
- * surprise, a draft from AI to edit, or their own — and the style and world,
+ * surprise, a draft from AI to edit, or their own — and the setting,
  * each of which Mentora can decide.
  */
 import { render, screen, within } from '@testing-library/react'
@@ -31,8 +31,8 @@ function answering(status: number, body: unknown) {
 
 describe('a game’s options', () => {
   it('sends no story of its own when Mentora is to surprise, and the maker’s story trimmed', () => {
-    expect(gameChoices({ ...FRESH_GAME, story: 'left over from a draft' })).toEqual({ style: 'auto', world: 'auto', story: '' })
-    expect(gameChoices({ mode: 'own', story: '  Siti swims home.  ', style: 'runner', world: 'reef' })).toEqual({ style: 'runner', world: 'reef', story: 'Siti swims home.' })
+    expect(gameChoices({ ...FRESH_GAME, story: 'left over from a draft' })).toEqual({ world: 'auto', story: '' })
+    expect(gameChoices({ mode: 'own', story: '  Siti swims home.  ', world: 'reef' })).toEqual({ world: 'reef', story: 'Siti swims home.' })
   })
 
   it('drafts a story with AI for the maker to read and edit', async () => {
@@ -53,7 +53,7 @@ describe('a game’s options', () => {
     expect(screen.getByRole('button', { name: /Draft another/ })).toBeInTheDocument()
   })
 
-  it('keeps a style and world picked while the draft was on its way', async () => {
+  it('keeps a setting picked while the draft was on its way', async () => {
     let arrive: (response: Response) => void = () => {}
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((resolve) => (arrive = resolve))))
     const seen = vi.fn()
@@ -61,11 +61,11 @@ describe('a game’s options', () => {
     render(<Harness onSetup={seen} />)
     await user.click(screen.getByRole('radio', { name: /Draft with AI/ }))
     await user.click(screen.getByRole('button', { name: /Draft a story/ }))
-    await user.click(screen.getByRole('radio', { name: /Bubble Catch/ }))
+    await user.click(screen.getByRole('radio', { name: /Kampung festival/ }))
     arrive(new Response(JSON.stringify({ story: 'Late, but here.' }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
 
     expect(await screen.findByRole('textbox', { name: /make it yours/ })).toHaveValue('Late, but here.')
-    expect(seen).toHaveBeenLastCalledWith(expect.objectContaining({ style: 'catch', mode: 'draft', story: 'Late, but here.' }))
+    expect(seen).toHaveBeenLastCalledWith(expect.objectContaining({ world: 'kampung', mode: 'draft', story: 'Late, but here.' }))
   })
 
   it('waits for a topic before drafting', async () => {
@@ -88,17 +88,17 @@ describe('a game’s options', () => {
     expect(screen.getByText('15 / 2000')).toBeInTheDocument()
   })
 
-  it('lets Mentora decide the style and the world, or the maker pick them', async () => {
+  it('lets Mentora decide the setting, or the maker pick it — and offers no styles', async () => {
     const seen = vi.fn()
     const user = userEvent.setup()
     render(<Harness onSetup={seen} />)
-    const styles = screen.getByRole('radiogroup', { name: 'How it plays' })
-    expect(within(styles).getByRole('radio', { name: /Let Mentora decide/ })).toHaveAttribute('aria-checked', 'true')
+    const places = screen.getByRole('radiogroup', { name: 'Where it happens' })
+    expect(within(places).getByRole('radio', { name: /Let Mentora decide/ })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.queryByRole('radiogroup', { name: 'How it plays' })).not.toBeInTheDocument()
 
-    await user.click(within(styles).getByRole('radio', { name: /Lane Runner/ }))
-    await user.click(within(screen.getByRole('radiogroup', { name: 'Where it happens' })).getByRole('radio', { name: /Coral reef/ }))
-    expect(seen).toHaveBeenLastCalledWith(expect.objectContaining({ style: 'runner', world: 'reef' }))
-    expect(within(styles).getByRole('radio', { name: /Lane Runner/ })).toHaveAttribute('aria-checked', 'true')
+    await user.click(within(places).getByRole('radio', { name: /Coral reef/ }))
+    expect(seen).toHaveBeenLastCalledWith(expect.objectContaining({ world: 'reef' }))
+    expect(within(places).getByRole('radio', { name: /Coral reef/ })).toHaveAttribute('aria-checked', 'true')
   })
 
   it('is followed as it is made, through writing the story and building the world', () => {

@@ -1,9 +1,9 @@
 /**
  * The end of a game (§23): the points it was worth, counted by the server,
  * and how they stand against the player's best — "Play again" to beat it —
- * and a calm round of the tricky ones it missed.
+ * and a replay of just the missions it missed, in the real game.
  */
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -41,11 +41,17 @@ function mount(finish: Finish) {
   )
 }
 
-const challenge = (id: string, prompt: string) => ({ id, prompt, options: ['Evaporation', 'Condensation', 'Melting'], has_hint: true, skill: 'water', difficulty: 'easy' })
+const mission = (id: string, goal: string) => ({ id, goal, has_hint: true, skill: 'water', difficulty: 'easy' })
 
-const played = (item_id: string, choice: number | null, correct: boolean) => ({
-  item_id, choice, knew: null, correct, reveal: { answer: 0, explanation: `Heat turns water into gas (${item_id}).` },
+const played = (item_id: string, correct: boolean) => ({
+  item_id, choice: null, knew: null, correct, reveal: { explanation: `Heat turns water into gas (${item_id}).` },
 })
+
+/** A message from the game in its frame, as its runtime sends it. */
+function fromGame(data: Record<string, unknown>) {
+  const frame = document.querySelector('iframe')!
+  window.dispatchEvent(new MessageEvent('message', { data: { source: 'mentora-game', ...data }, source: frame.contentWindow }))
+}
 
 describe('the end of a game', () => {
   it('shows the points the server counted, and offers to play again', () => {
@@ -68,33 +74,32 @@ describe('the end of a game', () => {
     expect(screen.queryByText('Your best yet!')).not.toBeInTheDocument()
   })
 
-  it('replays only the missed and timed-out challenges, calmly, then goes back to the score', async () => {
+  it('replays just the missions missed, in the real game, and keeps nothing', async () => {
     const user = userEvent.setup()
     mount(finished({
-      items: [challenge('g1', 'Right first time?'), challenge('g2', 'Missed this one?'), challenge('g3', 'Ran out of time?')],
-      answered: [played('g1', 0, true), played('g2', 1, false), played('g3', null, false)],
+      items: [mission('g1', 'Reached first time.'), mission('g2', 'Missed this one.'), mission('g3', 'And this one.')],
+      answered: [played('g1', true), played('g2', false), played('g3', false)],
     }))
-    await user.click(screen.getByRole('button', { name: 'Tricky ones (2)' }))
-    expect(screen.getByText('No timer, no points — just another go.')).toBeInTheDocument()
-    expect(screen.getByText('Missed this one?')).toBeInTheDocument()
-    expect(screen.queryByText('Right first time?')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Missions you missed (2)' }))
+    const frame = screen.getByTitle(/The game/) as HTMLIFrameElement
+    expect(frame.getAttribute('src')).toBe('/api/me/attempts/a1/game?only=g2%2Cg3')
+    expect(frame.getAttribute('sandbox')).toBe('allow-scripts')
+    expect(screen.getAllByRole('listitem', { name: /^Mission/ })).toHaveLength(2)
 
-    await user.click(screen.getByRole('button', { name: 'Option 1: Evaporation' }))
-    expect(await screen.findByRole('status', { name: 'How it went' })).toHaveTextContent('Heat turns water into gas (g2).')
-    await user.click(screen.getByRole('button', { name: /Next one/ }))
-
-    expect(screen.getByText('Ran out of time?')).toBeInTheDocument()
-    await user.keyboard('2')
-    expect(await screen.findByRole('status', { name: 'How it went' })).toHaveTextContent('The answer is Evaporation')
-    await user.click(screen.getByRole('button', { name: /All done/ }))
-
-    expect(screen.getByText('You got 1 of the 2 tricky ones this time.')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /Back to my score/ }))
+    act(() => fromGame({ type: 'ready' }))
+    act(() => fromGame({ type: 'done', id: 'g2', tries: 2 }))
+    expect(await screen.findByRole('dialog', { name: 'What you discovered' })).toHaveTextContent('Heat turns water into gas (g2).')
+    await user.click(screen.getByRole('button', { name: /Keep going/ }))
+    act(() => fromGame({ type: 'done', id: 'g3', tries: 1 }))
+    await user.click(await screen.findByRole('button', { name: /To the finish/ }))
+    await user.click(await screen.findByRole('button', { name: /Back to my score/ }))
     expect(screen.getByText('640 points')).toBeInTheDocument()
+    // A replay is not an attempt: nothing was sent to be kept.
+    expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes('/answers'))).toBe(false)
   })
 
-  it('offers no tricky round when every challenge was right', () => {
-    mount(finished({ items: [challenge('g1', 'Easy?')], answered: [played('g1', 0, true)] }))
-    expect(screen.queryByRole('button', { name: /Tricky ones/ })).not.toBeInTheDocument()
+  it('offers no replay when every mission was reached', () => {
+    mount(finished({ items: [mission('g1', 'Easy.')], answered: [played('g1', true)] }))
+    expect(screen.queryByRole('button', { name: /Missions you missed/ })).not.toBeInTheDocument()
   })
 })

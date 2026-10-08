@@ -74,11 +74,12 @@ export interface GuideExtras {
 
 /** One challenge in a game (§23): a quiz-like question with 2–4 short
  *  options and a hint the buddy can give. */
+/** A game's mission (§24): a goal reached by experimenting in the game, the
+ *  check that reaches it, and what reaching it teaches. */
 export interface GameItem {
   id: string
-  prompt: string
-  options: string[]
-  answer: number
+  goal: string
+  win: string
   explanation: string
   hint: string
   skill: string
@@ -86,29 +87,19 @@ export interface GameItem {
   source_ids: string[]
 }
 
-export type GameStyle = 'quest' | 'runner' | 'catch' | 'match'
 export type GameWorld = 'rainforest' | 'reef' | 'kampung' | 'city' | 'space'
 /** How far into the topic the learner is (§23). */
 export type Level = 'beginner' | 'intermediate' | 'advanced'
 export const LEVEL_LABELS: Record<Level, string> = { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' }
 
-export interface GameChapter {
-  title: string
-  intro: string
-  outro: string
-}
-
-/** A game's story and world. `{buddy}` in any line is the player's buddy. */
+/** A game's story and setting (§24). `{buddy}` in any line is the player's buddy. */
 export interface GameExtras {
   title: string
-  style: GameStyle
   world: GameWorld
   story: {
     hook: string
     goal: string
-    chapters: GameChapter[]
     win: string
-    retry: string
   }
   /** The maker wrote the story themselves. */
   authored: boolean
@@ -116,7 +107,6 @@ export interface GameExtras {
 
 /** What a maker chooses for a game before it is built; "auto" lets Mentora decide. */
 export interface GameChoices {
-  style: GameStyle | 'auto'
   world: GameWorld | 'auto'
   story: string
 }
@@ -188,6 +178,14 @@ export interface GenerateDraft {
   choices?: Partial<GameChoices>
 }
 
+export interface GameStatus {
+  revision: number
+  built_at: string
+  changing: boolean
+  /** The last thing a change said: a stage while it runs, then done or failed. */
+  change: { type: string; label?: string; detail?: string; message?: string; revision?: number } | null
+}
+
 export interface StoryDraftAsk {
   topic: string
   subject?: string | null
@@ -252,6 +250,12 @@ export const learningApi = {
   /** A first story for a game, for its maker to edit (§23). Nothing is saved. */
   storyDraft: (ask: StoryDraftAsk) =>
     apiFetch<{ story: string }>('/learning-sets/story-draft', { method: 'POST', ...json(ask) }),
+  /** A game's code (§24): which revision is served, and whether a change is
+   *  being made — and how far along it is. */
+  gameStatus: (id: string) => apiFetch<GameStatus>(`/learning-sets/${id}/game`),
+  /** Rewrite the game as asked, then test it as a new one is (§24). */
+  changeGame: (id: string, instruction: string) =>
+    apiFetch<GameStatus>(`/learning-sets/${id}/game/changes`, { method: 'POST', ...json({ instruction }) }),
   list: (params: { kind?: string; q?: string; archived?: boolean } = {}) => {
     const query = new URLSearchParams()
     if (params.kind) query.set('kind', params.kind)

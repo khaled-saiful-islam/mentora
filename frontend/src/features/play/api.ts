@@ -24,12 +24,12 @@ export interface CardItem {
   skill: string
 }
 
-/** A game's challenge as a player sees it (§23): never the answer, and never
- *  the hint until it is asked for — asking costs points. */
-export interface GameChallenge {
+/** A game's mission as a player is given it (§24): its goal — never the check,
+ *  nor what it teaches until it is reached, nor the hint until it is asked
+ *  for (asking costs points). */
+export interface GameMission {
   id: string
-  prompt: string
-  options: string[]
+  goal: string
   has_hint: boolean
   skill: string
   difficulty: string
@@ -41,6 +41,8 @@ export type GuidePage = Omit<GuideSection, 'answer' | 'explanation' | 'alternati
 export interface Reveal {
   answer?: number
   explanation?: string
+  /** A game mission's goal, said again beside what it taught. */
+  goal?: string
 }
 
 export interface Played {
@@ -67,7 +69,7 @@ export interface Attempt {
   feedback_mode: FeedbackMode
   assignment_id: string | null
   set_id: string
-  items: (QuizItem | CardItem | GuidePage | GameChallenge)[]
+  items: (QuizItem | CardItem | GuidePage | GameMission)[]
   answered: Played[]
   skills: SkillInfo[]
   /** A study guide's opening and ending, or a game's story and world. */
@@ -263,12 +265,9 @@ export const playApi = {
   practice: () => apiFetch<{ items: MyPractice[] }>('/me/practice'),
   fromHome: (shareId: string) => apiFetch<Attempt>(`/me/from-home/${shareId}/attempts`, { method: 'POST' }),
   attempt: (attemptId: string) => apiFetch<Attempt>(`/me/attempts/${attemptId}`),
-  answer: (attemptId: string, body: { item_id: string; choice?: number; knew?: boolean; timed_out?: boolean; time_ms: number }) =>
+  answer: (attemptId: string, body: { item_id: string; choice?: number; knew?: boolean; done?: boolean; tries?: number; time_ms: number }) =>
     apiFetch<AnswerResult>(`/me/attempts/${attemptId}/answers`, { method: 'POST', body: JSON.stringify(body) }),
   complete: (attemptId: string) => apiFetch<Finish>(`/me/attempts/${attemptId}/complete`, { method: 'POST' }),
-  /** A game's challenge is on screen: its speed bonus is timed from now. */
-  open: (attemptId: string, itemId: string) =>
-    apiFetch<void>(`/me/attempts/${attemptId}/items/${encodeURIComponent(itemId)}/open`, { method: 'POST' }),
   /** A game's hint from the buddy. Asking costs a few points. */
   hint: (attemptId: string, itemId: string) =>
     apiFetch<{ hint: string }>(`/me/attempts/${attemptId}/items/${encodeURIComponent(itemId)}/hint`, { method: 'POST' }),

@@ -26,8 +26,10 @@ import { useResource } from '@/hooks/useResource'
 import { Page, spring } from '@/motion'
 import { cn } from '@/lib/utils'
 import { AddWithAI } from './AddWithAI'
+import { GameChanges } from './GameChanges'
 import { learningApi, type Item, type SetDetail } from './api'
 import { EDITORS } from './editors'
+import { GrowingText } from './editors/fields'
 import { lookOfKind, nounOf } from './kinds'
 import { ShareDialog } from './ShareDialog'
 import { SendHomeDialog } from '@/features/family/SendHomeDialog'
@@ -118,7 +120,8 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
               <look.Icon weight="duotone" className="size-5" />
               {[look.label, initial.subject, initial.grade_label].filter(Boolean).join(' · ')}
             </p>
-            <input aria-label="Title" value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full rounded-2xl bg-transparent font-display text-4xl font-semibold tracking-tight outline-none placeholder:text-white/60 focus-visible:bg-white/10 sm:text-5xl" />
+            {/* A long title wraps onto more lines — never cut off. */}
+            <GrowingText label="Title" value={title} maxLength={200} onChange={setTitle} className="mt-1 border-0 px-0 font-display text-4xl font-semibold leading-tight tracking-tight text-inherit placeholder:text-white/60 hover:border-0 focus-visible:bg-white/10 sm:text-5xl" />
             <p className="mt-2 font-bold opacity-90">
               {nounOf(initial.kind, items.length)} · version {initial.version}
               {initial.shares > 0 && ` · shared ${initial.shares}×`}
@@ -178,6 +181,7 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
         {/* A container: the editors inside lay out by this column's width, not
             the window's — beside the side panel it is narrower than it looks. */}
         <div className="@container min-w-0 space-y-4">
+          {kind.fixed && <GameChanges setId={initial.id} />}
           {kind.extras && extras !== null && (
             <Card className="p-4 sm:p-5">
               <h2 className="mb-3 font-display text-lg font-semibold">{kind.extras.title}</h2>
@@ -198,16 +202,21 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
                   onReplace={(fresh) => replace(index, fresh)}
                   first={index === 0}
                   last={index === items.length - 1}
+                  fixed={kind.fixed}
                 >
                   <kind.Editor item={item} skills={initial.skills} sources={initial.sources} onChange={(changed) => replace(index, changed)} />
                 </ItemCard>
               </motion.div>
             ))}
           </AnimatePresence>
-          <Button variant="outline" size="lg" className="w-full border-dashed" onClick={add}>
-            <Plus weight="bold" className="size-5" /> Add a {nounOf(initial.kind)}
-          </Button>
-          <AddWithAI setId={initial.id} kind={initial.kind} onAdded={(item) => setItems((all) => [...all, item])} />
+          {!kind.fixed && (
+            <>
+              <Button variant="outline" size="lg" className="w-full border-dashed" onClick={add}>
+                <Plus weight="bold" className="size-5" /> Add a {nounOf(initial.kind)}
+              </Button>
+              <AddWithAI setId={initial.id} kind={initial.kind} onAdded={(item) => setItems((all) => [...all, item])} />
+            </>
+          )}
         </div>
         <SourcesPanel set={initial} />
       </div>
@@ -243,11 +252,14 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
 }
 
 function ItemCard({
-  number, problem, setId, item, saved, onMove, onDelete, onReplace, first, last, children,
+  number, problem, setId, item, saved, onMove, onDelete, onReplace, first, last, fixed, children,
 }: {
   number: number; problem: string | null; setId: string; item: Item; saved: boolean
   onMove: (delta: number) => void; onDelete: () => void; onReplace: (item: Item) => void
-  first: boolean; last: boolean; children: React.ReactNode
+  first: boolean; last: boolean
+  /** In the game's code (§24): words only — not moved, not deleted. */
+  fixed?: boolean
+  children: React.ReactNode
 }) {
   const [asking, setAsking] = useState(false)
   const [instruction, setInstruction] = useState('')
@@ -274,10 +286,10 @@ function ItemCard({
     <Card className={cn('relative p-4 sm:p-5', problem && 'border-destructive/40')}>
       <div className="mb-2 flex items-center gap-1">
         <span className="mr-auto grid size-8 place-items-center rounded-full bg-grape-100 font-display font-semibold text-grape-700 dark:bg-grape-800/50 dark:text-grape-100">{number}</span>
-        <IconButton label="Move up" disabled={first} onClick={() => onMove(-1)}><ArrowUp weight="bold" className="size-4" /></IconButton>
-        <IconButton label="Move down" disabled={last} onClick={() => onMove(1)}><ArrowDown weight="bold" className="size-4" /></IconButton>
+        {!fixed && <IconButton label="Move up" disabled={first} onClick={() => onMove(-1)}><ArrowUp weight="bold" className="size-4" /></IconButton>}
+        {!fixed && <IconButton label="Move down" disabled={last} onClick={() => onMove(1)}><ArrowDown weight="bold" className="size-4" /></IconButton>}
         <IconButton label="Rewrite with AI" disabled={!saved} title={saved ? 'Rewrite with AI' : 'Save first to rewrite this one'} onClick={() => setAsking((a) => !a)}><MagicWand weight="bold" className="size-4" /></IconButton>
-        <IconButton label="Delete" onClick={onDelete}><Trash weight="bold" className="size-4" /></IconButton>
+        {!fixed && <IconButton label="Delete" onClick={onDelete}><Trash weight="bold" className="size-4" /></IconButton>}
       </div>
       <AnimatePresence>
         {asking && (

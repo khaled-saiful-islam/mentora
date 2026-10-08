@@ -45,6 +45,7 @@ from app.services.work import Ticket, work
 SessionMaker = Callable[[], AbstractAsyncContextManager[AsyncSession]]
 
 INSTRUCTION_LIMIT = 400
+DEFAULT_BUDDY = "kiko"
 # A change's job id, from its set's: one change at a time per game.
 _CHANGES = uuid.UUID("6f0c2a52-6a8e-4a1f-9a0d-3c1b7e2d9f40")
 
@@ -117,7 +118,9 @@ class GameService:
         document = await self._document(set_id)
         setup = Setup(
             missions=numbered(items, only),
-            buddy=buddy_name(maker.buddy),
+            # A maker without a buddy of their own previews with the first
+            # one — the buddy the app shows beside the game names it too.
+            buddy=buddy_name(maker.buddy or DEFAULT_BUDDY),
             level=learning_set.level or "beginner",
             language=learning_set.language,
         )

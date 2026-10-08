@@ -3,21 +3,23 @@
  * gets, marked here from the answer key the editor already has. Nothing
  * reaches the server, so nothing is saved, counted or seen by anyone.
  */
-import { pointsFor, secondsFor, type Answered } from '@/features/game/points'
+import { pointsFor, type Answered } from '@/features/game/points'
 import type { FlashcardItem, GameItem, QuizItem as KeyedQuiz, SetDetail } from '@/features/learning/api'
-import { spokenQuery, type AnswerBody, type PlayBackend, type Spoken } from './backend'
-import type { Attempt, CardItem, Finish, GameChallenge, Played, QuizItem, SkillScore } from './api'
+import { onlyQuery, spokenQuery, type AnswerBody, type PlayBackend, type Spoken } from './backend'
+import type { Attempt, CardItem, Finish, GameMission, Played, QuizItem, SkillScore } from './api'
 import { starsFor } from './session'
 
 const isQuiz = (item: unknown): item is KeyedQuiz => typeof item === 'object' && item !== null && 'options' in item
 const isCard = (item: unknown): item is FlashcardItem => typeof item === 'object' && item !== null && 'front' in item
+const isMission = (item: unknown): item is GameItem => typeof item === 'object' && item !== null && 'goal' in item
 
-/** What a student is shown — never the answer key, and for a game never the
- *  hint until it is asked for. */
-function shown(item: KeyedQuiz | FlashcardItem, kind: SetDetail['kind']): QuizItem | CardItem | GameChallenge {
-  if (kind === 'game' && isQuiz(item)) {
-    const hint = (item as GameItem).hint ?? ''
-    return { id: item.id, prompt: item.prompt, options: item.options, has_hint: Boolean(hint), skill: item.skill, difficulty: item.difficulty }
+type Playable = KeyedQuiz | FlashcardItem | GameItem
+
+/** What a student is shown — never the answer key; for a game's mission its
+ *  goal, never the hint until it is asked for. */
+function shown(item: Playable): QuizItem | CardItem | GameMission {
+  if (isMission(item)) {
+    return { id: item.id, goal: item.goal, has_hint: Boolean(item.hint), skill: item.skill, difficulty: item.difficulty }
   }
   if (isQuiz(item)) return { id: item.id, prompt: item.prompt, options: item.options, skill: item.skill, difficulty: item.difficulty }
   return { id: item.id, front: item.front, back: item.back, hint: item.hint, skill: item.skill }
@@ -25,7 +27,7 @@ function shown(item: KeyedQuiz | FlashcardItem, kind: SetDetail['kind']): QuizIt
 
 /** A fresh attempt at the set, as a student would start it. */
 export function previewAttempt(set: SetDetail): Attempt {
-  const items = set.items.filter((i): i is KeyedQuiz | FlashcardItem => isQuiz(i) || isCard(i))
+  const items = set.items.filter((i): i is Playable => isQuiz(i) || isCard(i) || isMission(i))
   return {
     id: `preview-${set.id}`,
     status: 'in_progress',
@@ -36,7 +38,7 @@ export function previewAttempt(set: SetDetail): Attempt {
     feedback_mode: 'instant',
     assignment_id: null,
     set_id: set.id,
-    items: items.map((item) => shown(item, set.kind)),
+    items: items.map(shown),
     answered: [],
     skills: set.skills,
     // A game plays its story; other kinds start without their extras.
@@ -44,7 +46,7 @@ export function previewAttempt(set: SetDetail): Attempt {
     language: set.language,
     grade_level: set.grade_level,
     level: set.level ?? null,
-    timer_seconds: set.kind === 'game' ? secondsFor(set.grade_level, set.level) : null,
+    timer_seconds: null,
     points: null,
     best_points: null,
     score: 0,
@@ -63,12 +65,13 @@ export class PreviewGrader implements PlayBackend {
   private played = new Map<string, Played>()
   private streak = 0
   // A game's points, worked out as the server would (`features/game/points`).
-  private timed: Answered[] = []
+  private counted: Answered[] = []
   private hinted = new Set<string>()
 
   constructor(private readonly set: SetDetail) {}
 
-  open = async () => undefined
+  /** The maker's own game, served as a student's is — nothing is kept. */
+  game = (_attemptId: string, only?: string[]) => `/api/learning-sets/${this.set.id}/game/play${onlyQuery(only)}`
 
   hint = async (_attemptId: string, itemId: string) => {
     const item = this.set.items.find((i) => i.id === itemId)
@@ -85,7 +88,7 @@ export class PreviewGrader implements PlayBackend {
       this.played.set(body.item_id, played)
       this.streak = played.correct ? this.streak + 1 : 0
       const difficulty = item && 'difficulty' in item ? item.difficulty : 'medium'
-      this.timed.push({ correct: played.correct === true, timeMs: body.time_ms, hinted: this.hinted.has(body.item_id), difficulty })
+      this.counted.push({ correct: played.correct === true, tries: body.tries ?? 1, hinted: this.hinted.has(body.item_id), difficulty })
     }
     return { played, streak: this.streak, answered: this.played.size, total: this.set.items.length }
   }
@@ -97,7 +100,7 @@ export class PreviewGrader implements PlayBackend {
     const answered = [...this.played.values()]
     const score = answered.filter((p) => p.correct === true).length
     const percent = attempt.max_score ? Math.round((10000 * score) / attempt.max_score) / 100 : 0
-    const points = this.set.kind === 'game' ? pointsFor(this.timed, attempt.timer_seconds ?? null) : null
+    const points = this.set.kind === 'game' ? pointsFor(this.counted) : null
     return {
       attempt: { ...attempt, status: 'completed', answered, score, percent, points, best_points: points },
       stars: starsFor(percent),
@@ -109,6 +112,10 @@ export class PreviewGrader implements PlayBackend {
   }
 
   private mark(item: unknown, body: AnswerBody): Played {
+    if (isMission(item)) {
+      const reached = body.done === true
+      return { item_id: item.id, choice: null, knew: null, correct: reached, reveal: { explanation: item.explanation, goal: item.goal } }
+    }
     if (isQuiz(item)) {
       const correct = body.choice === item.answer
       return { item_id: item.id, choice: body.choice ?? null, knew: null, correct, reveal: { answer: item.answer, explanation: item.explanation } }

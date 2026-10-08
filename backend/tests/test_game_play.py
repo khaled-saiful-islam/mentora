@@ -218,6 +218,7 @@ async def test_the_maker_plays_their_own_game_and_nobody_else_can(
     assert mine.status_code == 200
     assert mine.headers["content-security-policy"] == HEADER_POLICY
     assert len(setup_of(mine.text)["missions"]) == 3
+    assert setup_of(mine.text)["buddy"] == "Kiko"  # the buddy shown beside it
     assert status["revision"] == 1 and status["changing"] is False
 
     other = await account("teacher", "Other Teacher")
