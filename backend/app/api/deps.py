@@ -30,6 +30,7 @@ from app.learning.factory import (
     build_generator,
     build_model,
     build_researcher,
+    build_sim_builder,
 )
 from app.learning.model import Meter
 from app.learning.registry import build_learning_kinds
@@ -49,6 +50,7 @@ from app.services.accounting_service import Pricing
 from app.services.auth_service import AuthService
 from app.services.cancellation import registry as cancellation_registry
 from app.services.chat_service import ChatService, TurnSettings
+from app.services.game_service import GameService
 from app.services.generation_service import GenerationService
 from app.services.live_plan_service import LivePlanService
 from app.services.live_quiz_service import LiveQuizService
@@ -382,6 +384,19 @@ def get_generation_service(settings: SettingsDep) -> GenerationService:
 
 
 GenerationServiceDep = Annotated[GenerationService, Depends(get_generation_service)]
+
+
+def get_game_service(settings: SettingsDep, session: SessionDep) -> GameService:
+    """A game's code (§24): served, and changed by the model that wrote it."""
+    return GameService(
+        session,
+        build_learning_kinds(),
+        builder=build_sim_builder(settings),
+        session_maker=session_scope,
+    )
+
+
+GameServiceDep = Annotated[GameService, Depends(get_game_service)]
 
 
 async def limit_speech(session: SessionDep, settings: SettingsDep, user: CurrentUser) -> None:

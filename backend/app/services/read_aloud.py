@@ -2,9 +2,9 @@
 
 A child who cannot read yet taps the button and hears the question, then each
 answer by its tile's shape — the same warm voice that teaches live lessons. A
-game (§23) is narrated the same way: its story, each chapter, a hint, and the
-explanation once a challenge is answered, with the student's own buddy named
-where the story says `{buddy}`.
+game (§24) is narrated the same way: its opening, goal and ending, each
+mission's goal, a hint, and what a mission taught once it is reached, with the
+student's own buddy named where the story says `{buddy}`.
 
 The words are never sent by the browser. The server finds the item in the
 attempt (or, for a preview, in the set) and says what is on screen, so this is
@@ -31,8 +31,8 @@ from app.services.attempt_service import AttemptService
 from app.services.learning_set_service import LearningSetService
 
 Part = Literal["question", "option", "front", "back", "hint", "explanation", "story"]
-# A game's story, by piece; a chapter's intro and outro also take its number.
-STORY_PIECES = ("hook", "goal", "intro", "outro", "win", "retry")
+# A game's story, by piece.
+STORY_PIECES = ("hook", "goal", "win")
 BUDDY = "{buddy}"
 
 # The quiz tiles, in order. The quiz player names them the same way
@@ -42,14 +42,13 @@ SHAPES = ("Triangle", "Diamond", "Circle", "Square")
 
 def words_for(item: dict[str, Any], part: Part, n: int | None = None) -> str:
     """What a part of an item says aloud, as the student sees it."""
-    if part == "question" and isinstance(item.get("prompt"), str):
-        return item["prompt"]
+    if part == "question":
+        # A question's prompt, or a game mission's goal (§24).
+        asked = item.get("prompt") or item.get("goal")
+        if isinstance(asked, str) and asked:
+            return asked
     options = item.get("options")
     if part == "option" and isinstance(options, list) and n is not None and 0 <= n < len(options):
-        # A game's options are bubbles, lanes and pieces, not shaped tiles: their
-        # words alone. Told apart by shape, as everything here is (`has_hint`).
-        if "has_hint" in item:
-            return str(options[n])
         return f"{SHAPES[n % len(SHAPES)]}: {options[n]}"
     if part in ("front", "back", "hint", "explanation") and item.get(part):
         return str(item[part])
@@ -57,14 +56,9 @@ def words_for(item: dict[str, Any], part: Part, n: int | None = None) -> str:
 
 
 def story_words(extras: dict[str, Any], piece: str, n: int | None = None) -> str:
-    """What a piece of a game's story says aloud (§23)."""
+    """What a piece of a game's story says aloud (§24)."""
     story = extras.get("story") if isinstance(extras.get("story"), dict) else {}
-    if piece in ("intro", "outro"):
-        chapters = story.get("chapters") if isinstance(story.get("chapters"), list) else []
-        chapter = chapters[n] if n is not None and 0 <= n < len(chapters) else {}
-        words = chapter.get(piece) if isinstance(chapter, dict) else None
-    else:
-        words = story.get(piece) if piece in STORY_PIECES else None
+    words = story.get(piece) if piece in STORY_PIECES else None
     if not isinstance(words, str) or not words.strip():
         raise ValidationError("There is nothing to read there.")
     return words

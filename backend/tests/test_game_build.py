@@ -1,6 +1,7 @@
-"""A game going through the same pipeline as every set (§23): the level reaches
-every prompt that writes or checks, challenges come out easiest first, and the
-finish stage writes the story around them."""
+"""A game through the same pipeline as every set (§24): the level reaches the
+prompts that write and check, missions are checked as missions, the story is
+written around them — and then the game's code is written and tested, and a
+game whose code cannot be made fails the set rather than shipping without it."""
 
 from __future__ import annotations
 
@@ -12,12 +13,13 @@ from app.learning.generator import Built, GenerationRequest, LearningGenerator, 
 from app.learning.model import GenerationUnavailable, Meter
 from app.learning.quiz import QuizKind
 from app.learning.research import Researcher
+from app.learning.sim.builder import Progress, SimBuilt
 from tests.learning_fakes import GOOD_RESULTS, FakeModel, FakeSearch, happy
 
 DIFFICULTY = ["hard", "easy", "medium"]
 
 
-def challenges() -> Any:
+def missions() -> Any:
     counter = iter(range(1, 1000))
 
     def answer(system: str, user: str) -> dict[str, Any]:
@@ -27,11 +29,10 @@ def challenges() -> Any:
             n = next(counter)
             items.append(
                 {
-                    "prompt": f"Challenge {n}: which fraction is one half?",
-                    "options": [f"1/2 ({n})", f"1/3 ({n})", f"2/3 ({n})"],
-                    "answer": 0,
-                    "hint": "Two equal parts.",
-                    "explanation": "One of two equal parts.",
+                    "goal": f"Grow plant {n} to full height.",
+                    "win": f"Plant {n} is 100% tall with sun above half.",
+                    "explanation": "Plants need light to make food.",
+                    "hint": "More sunlight.",
                     "skill": "chlorophyll",
                     "difficulty": DIFFICULTY[n % 3],
                     "source_ids": ["s1"],
@@ -43,147 +44,137 @@ def challenges() -> Any:
 
 
 STORY = {
-    "title": "Momo's Fraction Rescue",
-    "style": "quest",
-    "world": "rainforest",
-    "story": {
-        "hook": "The river has flooded! {buddy} needs you.",
-        "goal": "Share the food fairly.",
-        "chapters": [{"title": "One"}, {"title": "Two"}, {"title": "Three"}],
-        "win": "Hooray!",
-        "retry": "Again!",
-    },
+    "title": "Save the Padi",
+    "world": "kampung",
+    "story": {"hook": "The padi is wilting! {buddy} needs you.", "goal": "Grow it.", "win": "Yay!"},
 }
 
 
-def build(answers: dict[str, Any], kind=None) -> tuple[LearningGenerator, FakeModel]:
+class FakeBuilder:
+    """Says what it is doing, then hands back a game — or fails."""
+
+    def __init__(self, fail: Exception | None = None) -> None:
+        self.specs: list[Any] = []
+        self._fail = fail
+
+    async def build(self, spec):
+        self.specs.append(spec)
+        yield Progress("Designing the simulation")
+        yield Progress("Coding the game", "12 KB written")
+        if self._fail is not None:
+            raise self._fail
+        yield SimBuilt(html="<!DOCTYPE html>", model="fake", prompt_tokens=9, completion_tokens=4,
+                       build_ms=5)  # fmt: skip
+
+
+def build(answers: dict[str, Any], *, kind=None, builder=None) -> tuple[LearningGenerator, Any]:
     meter = Meter()
     model = FakeModel(answers, meter)
     researcher = Researcher(FakeSearch(GOOD_RESULTS), None, PromptInjectionGuard())
-    return LearningGenerator(model, researcher, kind or GameKind(), meter), model
+    gen = LearningGenerator(model, researcher, kind or GameKind(), meter, builder=builder)
+    return gen, model
 
 
 async def run(gen: LearningGenerator, **req: Any) -> list[Any]:
     request = GenerationRequest(
-        kind="game", topic="fractions", subject="Mathematics", grade_level="year_4", **req
+        kind="game", topic="photosynthesis", subject="Science", grade_level="year_5", **req
     )
     return [update async for update in gen.run(request)]
 
 
-async def test_a_game_build_ends_with_its_story_and_its_challenges_easiest_first() -> None:
-    gen, model = build(happy(draft=challenges(), wrap=STORY))
-    updates = await run(gen, count=9)
+async def test_a_game_build_ends_with_its_story_then_its_tested_code() -> None:
+    builder = FakeBuilder()
+    gen, _ = build(happy(draft=missions(), wrap=STORY), builder=builder)
+    updates = await run(gen, count=4, choices={"world": "kampung"})
 
-    finish = [u for u in updates if isinstance(u, Stage) and u.key == "finish"]
-    assert [u.state for u in finish] == ["running", "done"]
-    assert finish[0].label == "Writing the story and building the world"
-    assert "Momo's Fraction Rescue" in finish[1].detail
+    stages = [(u.key, u.state) for u in updates if isinstance(u, Stage)]
+    assert stages.index(("finish", "done")) < stages.index(("build", "running"))
+    assert stages[-1] == ("build", "done")
+    coding = [u.label for u in updates if isinstance(u, Stage) and u.key == "build"]
+    assert "Coding the game" in coding
     built = updates[-1]
     assert isinstance(built, Built)
-    order = [i["difficulty"] for i in built.result.items]
-    assert order == sorted(order, key=["easy", "medium", "hard"].index)
-    assert built.result.extras["story"]["hook"].startswith("The river has flooded!")
-    assert "wrap" in model.asked
+    assert built.result.document.html == "<!DOCTYPE html>"
+    items = list(built.result.items)
+    assert [i["difficulty"] for i in items] == sorted(
+        (i["difficulty"] for i in items), key=["easy", "medium", "hard"].index
+    )
+    spec = builder.specs[0]
+    assert [m["id"] for m in spec.missions] == [i["id"] for i in items]
+    assert spec.title == "Save the Padi" and "kampung" in spec.setting
 
 
-async def test_the_level_reaches_the_prompts_that_write_and_check() -> None:
+async def test_a_game_whose_code_cannot_be_made_fails_the_set() -> None:
+    builder = FakeBuilder(fail=GenerationUnavailable("This game didn't pass its tests."))
+    gen, _ = build(happy(draft=missions(), wrap=STORY), builder=builder)
+    try:
+        await run(gen, count=3)
+    except GenerationUnavailable as exc:
+        assert "didn't pass its tests" in str(exc)
+    else:
+        raise AssertionError("a game with no code was kept")
+
+
+async def test_with_no_game_writer_set_up_no_game_is_made() -> None:
+    gen, _ = build(happy(draft=missions(), wrap=STORY), builder=None)
+    try:
+        await run(gen, count=3)
+    except GenerationUnavailable as exc:
+        assert "Games can't be made here" in str(exc)
+    else:
+        raise AssertionError("a game with no code was kept")
+
+
+async def test_missions_are_checked_as_missions_at_the_level_chosen() -> None:
     seen: dict[str, str] = {}
 
     def draft(system: str, user: str) -> dict[str, Any]:
         seen["draft"] = system
-        return challenges()(system, user)
+        return missions()(system, user)
 
     def verify(system: str, user: str) -> dict[str, Any]:
-        seen["verify"] = user
+        seen["verify_system"], seen["verify"] = system, user
         return {"results": []}
 
-    gen, _ = build(happy(draft=draft, verify=verify, wrap=STORY))
+    gen, _ = build(happy(draft=draft, verify=verify, wrap=STORY), builder=FakeBuilder())
     await run(gen, count=3, level="beginner")
     assert "Level: Beginner" in seen["draft"]
     assert "Level: Beginner" in seen["verify"]
+    assert "These items are missions" in seen["verify_system"]
+    assert "never options" in seen["draft"].lower()
 
 
-async def test_the_teachers_story_and_choices_reach_the_story_writer() -> None:
-    seen: dict[str, str] = {}
-
-    def wrap(system: str, user: str) -> dict[str, Any]:
-        seen["user"] = user
-        return STORY
-
-    gen, _ = build(happy(draft=challenges(), wrap=wrap))
-    updates = await run(
-        gen,
-        count=3,
-        choices={"style": "catch", "world": "auto", "story": "Siti the turtle is lost."},
-    )
-    assert "Siti the turtle is lost." in seen["user"]
-    extras = updates[-1].result.extras
-    assert extras["style"] == "catch"
-    assert extras["authored"] is True
-
-
-async def test_a_story_writer_that_cannot_answer_still_leaves_a_playable_game() -> None:
-    gen, _ = build(happy(draft=challenges(), wrap=GenerationUnavailable("busy")))
-    updates = await run(gen, count=3)
-    built = updates[-1]
-    assert isinstance(built, Built)
-    assert len(built.result.extras["story"]["chapters"]) == 3
-    assert built.result.extras["title"]
-
-
-async def test_kinds_without_a_level_or_an_order_are_unchanged() -> None:
-    gen, model = build(happy(), kind=QuizKind())
+async def test_quizzes_have_no_story_and_no_code() -> None:
+    builder = FakeBuilder()
+    gen, model = build(happy(), kind=QuizKind(), builder=builder)
     updates = await run(gen, count=5)
-    assert not [u for u in updates if isinstance(u, Stage) and u.key == "finish"]
-    assert "wrap" not in model.asked
+    assert not [u for u in updates if isinstance(u, Stage) and u.key in ("finish", "build")]
+    assert "wrap" not in model.asked and builder.specs == []
+    assert updates[-1].result.document is None
 
 
-async def test_an_unsafe_story_is_refused_before_the_model_is_asked() -> None:
-    gen, model = build(happy(draft=challenges(), wrap=STORY))
-    updates = await run(
-        gen,
-        count=3,
-        choices={"style": "auto", "world": "auto", "story": "Ali learns how to make a bomb."},
-    )
+async def test_an_unsafe_story_is_refused_before_any_model_is_asked() -> None:
+    builder = FakeBuilder()
+    gen, model = build(happy(draft=missions(), wrap=STORY), builder=builder)
+    updates = await run(gen, count=3, choices={"story": "Ali learns how to make a bomb."})
     assert isinstance(updates[-1], Refused)
-    assert model.asked == []
+    assert model.asked == [] and builder.specs == []
 
 
-async def test_the_makers_story_is_judged_with_the_topic() -> None:
-    seen: dict[str, str] = {}
-
-    def check(system: str, user: str) -> dict[str, Any]:
-        seen["system"], seen["user"] = system, user
-        return {"ok": True, "title": "Fractions", "topic": "Fractions"}
-
-    gen, _ = build(happy(check=check, draft=challenges(), wrap=STORY))
-    await run(gen, count=3, choices={"story": "Siti the turtle shares her kuih."})
-    assert "Siti the turtle shares her kuih." in seen["user"]
-    assert "story the maker wrote" in seen["system"]
-
-
-async def test_a_teachers_story_survives_a_story_writer_that_cannot_answer() -> None:
-    gen, _ = build(happy(draft=challenges(), wrap=GenerationUnavailable("busy")))
-    story = "Siti the turtle is lost.\n\nShe swims to the reef.\n\nShe finds her friends."
-    updates = await run(gen, count=3, choices={"story": story})
-    extras = updates[-1].result.extras
-    assert extras["authored"] is True
-    assert extras["story"]["hook"] == "Siti the turtle is lost."
-    assert [c["intro"] for c in extras["story"]["chapters"]][:2] == [
-        "She swims to the reef.",
-        "She finds her friends.",
-    ]
-
-
-async def test_challenges_are_written_into_the_games_world_and_story() -> None:
+async def test_the_makers_story_and_setting_reach_the_missions_and_the_story() -> None:
     seen: dict[str, str] = {}
 
     def draft(system: str, user: str) -> dict[str, Any]:
         seen["draft"] = system
-        return challenges()(system, user)
+        return missions()(system, user)
 
-    gen, _ = build(happy(draft=draft, wrap=STORY))
-    await run(gen, count=3, choices={"world": "reef", "story": "Siti the turtle is lost."})
+    def wrap(system: str, user: str) -> dict[str, Any]:
+        seen["wrap"] = user
+        return STORY
+
+    gen, _ = build(happy(draft=draft, wrap=wrap), builder=FakeBuilder())
+    updates = await run(gen, count=3, choices={"world": "reef", "story": "Siti the turtle."})
     assert "coral reef of Sipadan" in seen["draft"]
-    assert "<story>\nSiti the turtle is lost.\n</story>" in seen["draft"]
-    assert "never food or things that do not belong" in seen["draft"]
+    assert "<story>\nSiti the turtle.\n</story>" in seen["draft"]
+    assert "Siti the turtle." in seen["wrap"]
+    assert updates[-1].result.extras["authored"] is True

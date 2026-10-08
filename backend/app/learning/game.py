@@ -1,13 +1,16 @@
-"""A story game (§23): challenges a player meets along a story, in a world.
+"""A simulation game (§24): missions a player reaches by experimenting.
 
-The model writes what changes from game to game — the challenges, checked like
-any quiz question, and the story and world they sit in. Mentora's own engine
-(`frontend/src/features/game`) plays them, so no model-written code runs on a
-child's device and every answer is marked here, on the server.
+The learning model writes what the game teaches — its missions, checked
+against sources like quiz questions, and the story they are told in. Then
+`learning/sim/` has a second model write the game itself, one HTML document,
+and plays it at two sizes before anybody sees it. A kind that is built this
+way says so with `coded = True`; the generator runs the build after the
+story (`LearningGenerator._coding`).
 
-A game is played in three chapters, easiest challenges first. The engine splits
-the challenges between the chapters with `chapter_sizes`, so the story's
-chapter intros, written from the same split, lead into the right challenges.
+A mission is marked from what the game reports through its runtime — reached
+or not, and in how many goes. That report comes from code running on the
+student's device, so it can be faked by someone determined; the points are
+still counted here, from it.
 """
 
 from __future__ import annotations
@@ -17,22 +20,18 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from app.core.grades import Grade
 from app.learning import game_prompts
 from app.learning.base import Graded, Item, Skill, clean_text, new_id, pick_skill, pick_sources
 from app.learning.enrich import Finishing, Pictures
 from app.learning.model import GenerationUnavailable, JsonModel
-from app.learning.quiz import BEST_POINTS, DIFFICULTIES, answer_from
-from app.live.settings import check_size
+from app.learning.prompts import audience
+from app.learning.quiz import BEST_POINTS, DIFFICULTIES
+from app.learning.sim.spec import SimSpec
 
 logger = logging.getLogger(__name__)
 
 # What a maker sees each called — the same names as the app's pickers.
-STYLE_LABELS = {
-    "quest": "Quest Map",
-    "runner": "Lane Runner",
-    "catch": "Bubble Catch",
-    "match": "Match & Build",
-}
 WORLD_LABELS = {
     "rainforest": "Rainforest",
     "reef": "Coral reef",
@@ -40,91 +39,80 @@ WORLD_LABELS = {
     "city": "Kuala Lumpur",
     "space": "Space mission",
 }
-STYLES = tuple(STYLE_LABELS)
 WORLDS = tuple(WORLD_LABELS)
 AUTO = "auto"
-CHAPTERS = 3
-MIN_OPTIONS, MAX_OPTIONS = 2, 4
+LEVELS = ("beginner", "intermediate", "advanced")
 
-# Written into and read out of the prompts, so the two cannot drift.
 LIMITS = {
-    "prompt": 220,
-    # Asked for at most `option_target`, so it fits a bubble or a lane; kept
-    # up to `option` rather than refused for a few letters over.
-    "option_target": 40,
-    "option": 60,
+    "goal": 160,
+    "win": 240,
     "explanation": 300,
     "hint": 160,
     "title": 80,
     "hook": 600,
-    "goal": 200,
-    "chapter_title": 60,
-    "intro": 320,
-    "outro": 240,
-    "win": 320,
-    "retry": 200,
+    "story_goal": 200,
+    "win_line": 320,
     "story": 2000,
 }
 _EASIEST_FIRST = {"easy": 0, "medium": 1, "hard": 2}
 
-# Points (§23), worked out on the server from what was answered — never sent by
-# the game. A right answer is worth more the harder it is; a run of them builds
-# a combo; a quick one earns a speed bonus when the game is timed; asking the
-# buddy for a hint costs a little. A wrong answer scores nothing, never less.
-POINTS_RIGHT = 100
+# Points (§24.3), counted here from what the game reported — never sent by
+# it. A mission reached is worth more the harder it is, and more again on the
+# first go; asking the buddy for its hint costs a little. A mission not
+# reached scores nothing, never less.
+POINTS_MISSION = 100
 POINTS_HARDER = {"easy": 0, "medium": 25, "hard": 50}
-POINTS_COMBO_STEP, POINTS_COMBO_MOST = 10, 50
-POINTS_SPEED_MOST = 50
+POINTS_FIRST_GO = 25
 POINTS_HINT = 40
-# An answer time below this is a game that was not really played, or a clock
-# that was not trusted: it earns what a one-second answer does.
-QUICKEST_MS = 1_000
+MOST_TRIES = 99
 
 
 @dataclass(frozen=True, slots=True)
 class Answered:
-    """One answer, as points need it, in the order it was given."""
+    """One mission's outcome, as points need it."""
 
     correct: bool
-    time_ms: int
     hinted: bool
     difficulty: str
+    # Goes it took, the one that reached it included.
+    tries: int = 1
 
 
 class GameKind:
     name = "game"
     label = "Game"
-    item_noun = "challenge"
-    item_noun_plural = "challenges"
-    default_count = 9
-    min_count = CHAPTERS
-    max_count = 15
+    item_noun = "mission"
+    item_noun_plural = "missions"
+    default_count = 4
+    min_count = 3
+    max_count = 6
     # Teachers and parents make games; a student's practice stays quizzes.
     for_students = False
-    # Chapters are played in order, easiest first: never shuffled.
+    # Missions build on each other: played in order, never shuffled.
     keeps_order = True
-    # A class leaderboard, when the teacher turns one on, ranks each player's
-    # best points: a game is made to be played again.
+    # A class leaderboard, when the teacher turns one on, ranks best points.
     leaderboard = BEST_POINTS
-    finish_label = "Writing the story and building the world"
+    finish_label = "Writing the story"
+    # The game itself is written as code, after the story (`learning/sim`).
+    coded = True
+    check_focus = game_prompts.CHECK_FOCUS
 
-    # --- the challenge -------------------------------------------------------
+    # --- the mission ----------------------------------------------------------
 
     def normalise(
         self, raw: dict[str, Any], *, skills: tuple[Skill, ...], source_ids: set[str]
     ) -> Item | None:
-        prompt = clean_text(raw.get("prompt") or raw.get("question"), LIMITS["prompt"])
-        options = _options(raw.get("options"))
-        answer = answer_from(raw.get("answer"), options) if options else None
-        if prompt is None or options is None or answer is None or answer >= len(options):
+        goal = clean_text(raw.get("goal"), LIMITS["goal"])
+        win = clean_text(raw.get("win"), LIMITS["win"])
+        explanation = clean_text(raw.get("explanation"), LIMITS["explanation"])
+        if goal is None or win is None or explanation is None:
             return None
         difficulty = raw.get("difficulty")
         return {
             "id": raw.get("id") if isinstance(raw.get("id"), str) and raw["id"] else new_id(),
-            "prompt": prompt,
-            "options": options,
-            "answer": answer,
-            "explanation": clean_text(raw.get("explanation"), LIMITS["explanation"]) or "",
+            "goal": goal,
+            "win": win,
+            "explanation": explanation,
             "hint": clean_text(raw.get("hint"), LIMITS["hint"]) or "",
             "skill": pick_skill(raw.get("skill"), skills),
             "difficulty": difficulty if difficulty in DIFFICULTIES else "medium",
@@ -132,96 +120,72 @@ class GameKind:
         }
 
     def public(self, item: Item) -> dict[str, Any]:
-        """The challenge, and whether a hint is there to ask for — not the
-        hint itself: asking is what costs points (`AttemptService.hint`)."""
+        """The mission, and whether a hint is there to ask for — not the hint
+        (asking costs points), not what it teaches (shown once reached)."""
         return {
             "id": item["id"],
-            "prompt": item["prompt"],
-            "options": list(item["options"]),
+            "goal": item["goal"],
             "has_hint": bool(item.get("hint")),
             "skill": item["skill"],
             "difficulty": item.get("difficulty", "medium"),
         }
 
     def grade(self, item: Item, response: dict[str, Any]) -> Graded:
-        choice = response.get("choice")
-        correct = (
-            isinstance(choice, int) and not isinstance(choice, bool) and choice == item["answer"]
-        )
+        """Reached or not, as the game reported it; what it teaches, either way."""
         return Graded(
-            correct=correct,
-            reveal={"answer": item["answer"], "explanation": item.get("explanation", "")},
+            correct=response.get("done") is True,
+            reveal={"explanation": item.get("explanation", ""), "goal": item["goal"]},
         )
 
     def writing_rules(self) -> str:
-        return game_prompts.challenge_rules(LIMITS)
+        return game_prompts.mission_rules(LIMITS)
 
     def rules_for(self, choices: Mapping[str, Any]) -> str:
-        """The rules, with the world each challenge's little scene is set in —
-        a rambutan to share in the rainforest, not a pizza — and the maker's
-        story, so the challenges belong to the game they are in."""
+        """The rules, set where the game happens and around the maker's story."""
         chosen = self.choices(choices)
-        return game_prompts.challenge_rules(LIMITS, world=chosen["world"], story=chosen["story"])
+        return game_prompts.mission_rules(LIMITS, world=chosen["world"], story=chosen["story"])
 
     def summary(self, item: Item) -> str:
-        return item["prompt"]
+        return item["goal"]
 
     def arrange(self, items: list[Item]) -> list[Item]:
-        """Easiest first, so the story builds to its boss. Stable: challenges
-        of one difficulty keep the order they were written in."""
+        """Simplest first, so later missions build on earlier ones. Stable."""
         return sorted(items, key=lambda i: _EASIEST_FIRST.get(i.get("difficulty", ""), 1))
-
-    # --- points and the timer ------------------------------------------------
-
-    def seconds(self, *, grade_level: str | None, level: str | None) -> int | None:
-        """How long a challenge's timer runs: the year's quick-check time
-        (30 / 20 / 15 s, as in a live lesson), and none for beginners."""
-        if level == "beginner":
-            return None
-        return check_size(grade_level).seconds
 
     def points(
         self, answered: Sequence[Answered], *, grade_level: str | None, level: str | None
     ) -> int:
-        seconds = self.seconds(grade_level=grade_level, level=level)
-        total = streak = 0
+        total = 0
         for answer in answered:
             if not answer.correct:
-                streak = 0
                 continue
-            streak += 1
-            earned = POINTS_RIGHT + POINTS_HARDER.get(answer.difficulty, 0)
-            earned += min(POINTS_COMBO_STEP * (streak - 1), POINTS_COMBO_MOST)
-            if seconds:
-                taken = max(answer.time_ms, QUICKEST_MS) / (seconds * 1000)
-                # Halves round up, as the game's own count does (points.ts).
-                earned += int(POINTS_SPEED_MOST * max(0.0, 1 - taken) + 0.5)
+            earned = POINTS_MISSION + POINTS_HARDER.get(answer.difficulty, 0)
+            if answer.tries <= 1:
+                earned += POINTS_FIRST_GO
             if answer.hinted:
                 earned -= POINTS_HINT
             total += max(earned, 0)
         return total
 
-    # --- what the maker chose --------------------------------------------
+    # --- what the maker chose ---------------------------------------------------
 
     def choices(self, raw: Mapping[str, Any]) -> dict[str, Any]:
-        """The style, world and story the maker chose, cleaned. "auto" lets
-        Mentora decide; a story is kept in its paragraphs, cut between words
-        rather than refused when it runs long."""
+        """Where it happens and the maker's own story, cleaned. "auto" lets
+        Mentora decide; a long story is cut between words, never refused."""
         return {
-            "style": _pick(raw.get("style"), STYLES, AUTO),
             "world": _pick(raw.get("world"), WORLDS, AUTO),
             "story": fit_paragraphs(raw.get("story"), LIMITS["story"]),
         }
 
-    # --- the finishing stage -------------------------------------------------
+    # --- the finishing stage ----------------------------------------------------
 
     async def illustrate(self, items: list[Item], *, topic: str, pictures: Pictures) -> list[Item]:
-        """No pictures: a game's world is drawn by the engine, never searched."""
+        """No pictures: a game draws its own world."""
         return items
 
     async def wrap(self, model: JsonModel, finishing: Finishing) -> dict[str, Any]:
-        """The story and world. What the maker chose stands over what the model
-        picks; a model that cannot answer leaves a plain story, never no game."""
+        """The story. What the maker chose stands over what the model picks; a
+        model that cannot answer leaves the maker's story as written."""
         chosen = self.choices(finishing.choices)
         system, user = game_prompts.wrap_game(
             title=finishing.title,
@@ -229,116 +193,83 @@ class GameKind:
             grade=finishing.grade,
             language=finishing.language,
             level=finishing.level,
-            style=chosen["style"],
             world=chosen["world"],
             story=chosen["story"],
-            outline=_outline(finishing.items),
+            outline="\n".join(f"- {item['goal']}" for item in finishing.items),
         )
         try:
-            reply = await model.ask("wrap", system, user, temperature=0.8, max_tokens=1400)
+            reply = await model.ask("wrap", system, user, temperature=0.8, max_tokens=900)
         except GenerationUnavailable:
-            # The challenges are written and checked; the story can be edited in.
             logger.warning("game story for %r could not be written", finishing.topic)
             reply = _told_as_written(finishing.title, chosen["story"])
         extras = self.normalise_extras({**reply, "authored": bool(chosen["story"])})
-        for key in ("style", "world"):
-            if chosen[key] != AUTO:
-                extras[key] = chosen[key]
+        if chosen["world"] != AUTO:
+            extras["world"] = chosen["world"]
         return extras
 
     def normalise_extras(self, raw: Any) -> dict[str, Any]:
-        """A playable story and world from a model or an editor. Never raises:
-        a missing part is empty, a missing chapter a plain one, an unknown style
-        or world the first of its list."""
+        """The story and setting from a model or an editor. Never raises."""
         raw = raw if isinstance(raw, dict) else {}
         story = raw.get("story") if isinstance(raw.get("story"), dict) else {}
         return {
             "title": fit_text(raw.get("title"), LIMITS["title"]),
-            "style": _pick(raw.get("style"), STYLES, STYLES[0]),
             "world": _pick(raw.get("world"), WORLDS, WORLDS[0]),
             "story": {
                 "hook": fit_paragraphs(story.get("hook"), LIMITS["hook"]),
-                "goal": fit_text(story.get("goal"), LIMITS["goal"]),
-                "chapters": _chapters(story.get("chapters")),
-                "win": fit_text(story.get("win"), LIMITS["win"]),
-                "retry": fit_text(story.get("retry"), LIMITS["retry"]),
+                "goal": fit_text(story.get("goal"), LIMITS["story_goal"]),
+                "win": fit_text(story.get("win"), LIMITS["win_line"]),
             },
             "authored": raw.get("authored") is True,
         }
 
     def finish_detail(self, items: list[Item], extras: dict[str, Any]) -> str:
         title = extras.get("title") or "Your game"
-        style = STYLE_LABELS.get(str(extras.get("style")), STYLE_LABELS[STYLES[0]])
-        world = WORLD_LABELS.get(str(extras.get("world")), WORLD_LABELS[WORLDS[0]])
-        return f"{title} · {style} · {world}"
+        return f"{title} · {WORLD_LABELS.get(str(extras.get('world')), WORLD_LABELS[WORLDS[0]])}"
+
+    # --- the game's code ----------------------------------------------------------
+
+    def sim_spec(
+        self,
+        *,
+        title: str,
+        topic: str,
+        grade: Grade | None,
+        language: str,
+        level: str | None,
+        items: Sequence[Item],
+        extras: Mapping[str, Any],
+    ) -> SimSpec:
+        """What the game's writer is given: the checked missions, the story and
+        the setting — never anything a student typed."""
+        story = extras.get("story") if isinstance(extras.get("story"), dict) else {}
+        world = str(extras.get("world") or "")
+        return SimSpec(
+            title=str(extras.get("title") or title),
+            topic=topic,
+            audience=audience(grade, language),
+            language=language,
+            level=level if level in LEVELS else "beginner",
+            setting=game_prompts.WORLD_NOTES.get(world, "a Malaysian setting"),
+            hook=str(story.get("hook") or ""),
+            goal=str(story.get("goal") or ""),
+            win=str(story.get("win") or ""),
+            missions=tuple(
+                {k: item.get(k, "") for k in ("id", "goal", "win", "explanation", "hint")}
+                for item in items
+            ),
+        )
 
 
 def _told_as_written(title: str, story: str) -> dict[str, Any]:
-    """A maker's own story, laid out by its paragraphs, for when the model
-    that shapes it cannot answer: their words are kept, never dropped."""
+    """A maker's own story, for when the model that shapes it cannot answer:
+    their first paragraph opens the game, their last ends it."""
     parts = [p for p in story.split("\n\n") if p.strip()]
     if not parts:
         return {"title": title}
-    hook, *rest = parts
-    return {
-        "title": title,
-        "story": {
-            "hook": hook,
-            "chapters": [{"intro": intro} for intro in rest[:CHAPTERS]],
-            "win": rest[CHAPTERS] if len(rest) > CHAPTERS else "",
-        },
-    }
-
-
-# --- chapters -----------------------------------------------------------------
-
-
-def chapter_sizes(count: int) -> list[int]:
-    """How many challenges each chapter has: as even as it goes, the extra
-    ones in the earlier, easier chapters. The engine splits them the same way."""
-    base, extra = divmod(max(0, count), CHAPTERS)
-    return [base + (1 if n < extra else 0) for n in range(CHAPTERS)]
-
-
-def _outline(items: tuple[Item, ...]) -> str:
-    lines: list[str] = []
-    start = 0
-    for number, size in enumerate(chapter_sizes(len(items)), start=1):
-        lines.append(f"Chapter {number}:")
-        lines.extend(f"- {item['prompt']}" for item in items[start : start + size])
-        start += size
-    return "\n".join(lines)
-
-
-def _chapters(value: Any) -> list[dict[str, str]]:
-    given = value if isinstance(value, list) else []
-    chapters: list[dict[str, str]] = []
-    for number in range(1, CHAPTERS + 1):
-        found = given[number - 1] if number <= len(given) else None
-        raw = found if isinstance(found, dict) else {}
-        title = fit_text(raw.get("title"), LIMITS["chapter_title"])
-        chapters.append(
-            {
-                "title": title or f"Chapter {number}",
-                "intro": fit_text(raw.get("intro"), LIMITS["intro"]),
-                "outro": fit_text(raw.get("outro"), LIMITS["outro"]),
-            }
-        )
-    return chapters
+    return {"title": title, "story": {"hook": parts[0], "win": parts[-1] if len(parts) > 1 else ""}}
 
 
 # --- cleaning -------------------------------------------------------------------
-
-
-def _options(value: Any) -> list[str] | None:
-    if not isinstance(value, list) or not MIN_OPTIONS <= len(value) <= MAX_OPTIONS:
-        return None
-    options = [clean_text(v, LIMITS["option"]) for v in value]
-    if any(o is None for o in options):
-        return None
-    if len({o.lower() for o in options}) != len(options):  # type: ignore[union-attr]
-        return None
-    return options  # type: ignore[return-value]
 
 
 def _pick(value: Any, allowed: tuple[str, ...], fallback: str) -> str:

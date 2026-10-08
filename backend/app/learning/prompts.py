@@ -111,10 +111,19 @@ def draft(
 
 
 def verify(
-    *, topic: str, grade: Grade | None, listing: str, items_json: str, level: str | None = None
+    *,
+    topic: str,
+    grade: Grade | None,
+    listing: str,
+    items_json: str,
+    level: str | None = None,
+    focus: str = "",
 ) -> tuple[str, str]:
+    """`focus` is what a kind's items are, when they are not questions with a
+    marked answer — a game's missions (§24)."""
     system = (
-        f"{VOICE}\nCheck learning items against their sources. For each item decide: "
+        f"{VOICE}\n{focus + chr(10) if focus else ''}"
+        "Check learning items against their sources. For each item decide: "
         "is it on topic, is the marked answer actually right and supported by the "
         "sources, and is it suitable for the audience — pitched for their year? An item "
         "a typical student in that year could not be expected to answer (beyond the "

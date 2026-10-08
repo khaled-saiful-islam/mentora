@@ -20,7 +20,7 @@ from typing import Any, Protocol
 
 from app.core.errors import MentoraError
 from app.core.grades import GRADES, Grade
-from app.learning.game import STYLES, WORLDS
+from app.learning.game import WORLDS
 from app.learning.pitch import LEVELS
 from app.providers.base import ToolResult
 from app.services.generation_service import GenerationDraft
@@ -47,7 +47,7 @@ _KIND_WORDS = {
     "story game": "game",
 }
 # What a maker may choose for a game (§23), as the tool's parameters name them.
-CHOICES = ("style", "world", "story")
+CHOICES = ("world", "story")
 _YEAR_WORDS = re.compile(r"^(tahun|darjah|standard|std|primary)\s*", re.I)
 _FORM_WORDS = re.compile(r"^(tingkatan|secondary)\s*", re.I)
 
@@ -79,10 +79,11 @@ def _text(value: Any, limit: int) -> str:
 class MakeLearningSetTool:
     name = "make_learning_set"
     description = (
-        "Make a quiz, a deck of flashcards, a study guide or a story game with Mentora's "
-        "own maker (the same one as Library → Make). It is saved to the person's Library "
-        "and takes about a minute. A game is played by students through a story, earning "
-        "points; for a game, pass a level, style, world or story only if the person said. "
+        "Make a quiz, a deck of flashcards, a study guide or a game with Mentora's own "
+        "maker (the same one as Library → Make). It is saved to the person's Library and "
+        "takes about a minute (a game, a few minutes). A game is a simulation students "
+        "play to learn the topic, with missions and points; for a game, pass a level, "
+        "world or story only if the person said. "
         "It needs what to make, the school year (Year 1-6 or Form "
         "1-5), and what it is about: a topic, a subject, or both. Work out what you can "
         "yourself instead of asking: given a topic but no subject, give the subject it "
@@ -118,7 +119,7 @@ class MakeLearningSetTool:
             },
             "count": {
                 "type": "integer",
-                "description": "How many questions or cards, only if the person said.",
+                "description": "How many questions, cards or missions, only if the person said.",
             },
             "language": {
                 "type": "string",
@@ -128,13 +129,6 @@ class MakeLearningSetTool:
                 "type": "string",
                 "enum": list(LEVELS),
                 "description": "How far into the topic the class is, only if the person said.",
-            },
-            "style": {
-                "type": "string",
-                "enum": [*STYLES, "auto"],
-                "description": "A game's style, only if the person said: quest (a journey "
-                "on a map), runner (pick the right lane), catch (catch the right answer), "
-                "match (build with the right piece).",
             },
             "world": {
                 "type": "string",

@@ -106,8 +106,10 @@ class AnswerRequest(BaseModel):
     choice: int | None = Field(default=None, ge=0, le=9)
     knew: bool | None = None
     time_ms: int = Field(default=0, ge=0)
-    # A game's timer ran out before a choice (§23): wrong, and still explained.
-    timed_out: bool = False
+    # A game's mission (§24): reached or not, as the game reported it, and in
+    # how many goes.
+    done: bool | None = None
+    tries: int | None = Field(default=None, ge=1, le=99)
 
 
 class HintResponse(BaseModel):

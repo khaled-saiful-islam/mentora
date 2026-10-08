@@ -169,13 +169,16 @@ async def test_a_game_story_is_told_with_the_students_own_buddy(
         attempt = (await c.post(f"/api/me/assignments/{assignment.id}/attempts")).json()
         base = f"/api/me/attempts/{attempt['id']}/speech"
         hook = await c.get(f"{base}?item=hook&part=story")
-        intro = await c.get(f"{base}?item=intro&part=story&n=1")
+        goal = await c.get(f"{base}?item=goal&part=story")
         win = await c.get(f"{base}?item=win&part=story")
-    assert hook.status_code == intro.status_code == win.status_code == 200, hook.text
+        mission = await c.get(f"{base}?item=g1&part=question")
+    assert hook.status_code == goal.status_code == win.status_code == 200, hook.text
+    assert mission.status_code == 200
     assert voiced.voice.said == [
         "The river has flooded! Momo needs your help.",
-        "Momo spots a bridge.",
+        "Get everyone home.",
         "Hooray, Momo is home!",
+        "Reach goal 1.",
     ]
 
 
@@ -193,7 +196,7 @@ async def test_a_hint_is_read_once_asked_for_and_an_explanation_once_answered(
         early = await c.get(f"{base}&part=explanation")
         await c.post(
             f"/api/me/attempts/{attempt['id']}/answers",
-            json={"item_id": item["id"], "choice": 0, "time_ms": 1000},
+            json={"item_id": item["id"], "done": True, "time_ms": 1000},
         )
         later = await c.get(f"{base}&part=explanation")
     assert unasked.status_code == 404
@@ -214,11 +217,6 @@ async def test_a_piece_of_story_that_is_not_there_is_refused(
     assert voiced.voice.said == []
 
 
-def test_a_games_options_are_read_as_their_words_alone() -> None:
-    challenge = {
-        "id": "g1",
-        "prompt": "Which is half?",
-        "options": ["1/2", "1/3"],
-        "has_hint": True,
-    }
-    assert words_for(challenge, "option", 1) == "1/3"
+def test_a_game_missions_goal_is_read_as_its_question() -> None:
+    mission = {"id": "g1", "goal": "Grow the padi plant tall.", "has_hint": True}
+    assert words_for(mission, "question") == "Grow the padi plant tall."

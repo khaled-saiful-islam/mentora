@@ -26,6 +26,7 @@ from app.services.generation_service import GenerationService
 from app.services.jobs import jobs
 from app.services.quota import TokenQuota
 from tests.learning_fakes import GOOD_RESULTS, FakeModel, FakeSearch, happy
+from tests.test_game_build import FakeBuilder
 
 
 @pytest.fixture
@@ -52,6 +53,7 @@ def scripted(session):
                 Researcher(FakeSearch(GOOD_RESULTS), None, PromptInjectionGuard()),
                 kind,
                 meter,
+                builder=FakeBuilder(),
             ),
         )
 
@@ -356,7 +358,7 @@ async def test_makeable_lists_the_learning_kinds_for_each_role(api, teacher, stu
     assert {k["purpose"] for k in staff} == {"assign"}
     # A game needs a challenge for each of its three chapters.
     counts = {k["name"]: (k["min_count"], k["max_count"]) for k in staff}
-    assert counts["game"] == (3, 15)
+    assert counts["game"] == (3, 6)
     assert counts["quiz"][0] == 1
     # A student makes nothing: they practise what is made for them.
     assert kid == []
@@ -369,28 +371,32 @@ async def test_a_teacher_makes_a_game_with_a_level_and_their_own_story(
     session, api, teacher, scripted
 ) -> None:
     from app.db.models.learning import LearningSet
-    from tests.test_game_build import STORY, challenges
+    from app.services.game_service import GameService
+    from tests.test_game_build import STORY, missions
 
     state, _ = scripted
-    state["answers"] = happy(draft=challenges(), wrap=STORY)
+    state["answers"] = happy(draft=missions(), wrap=STORY)
     detail = await _build(
         api,
         teacher,
         kind="game",
-        count=6,
+        count=4,
         level="beginner",
-        choices={"style": "runner", "world": "reef", "story": "Siti the turtle is lost."},
+        choices={"world": "reef", "story": "Siti the turtle is lost."},
     )
     assert detail["status"] == "ready"
     assert detail["level"] == "beginner"
-    assert len(detail["items"]) == 6
-    assert detail["extras"]["style"] == "runner" and detail["extras"]["world"] == "reef"
+    assert len(detail["items"]) == 4
+    assert detail["extras"]["world"] == "reef" and "style" not in detail["extras"]
     assert detail["extras"]["authored"] is True
     row = await session.get(LearningSet, UUID(detail["id"]))
-    assert row.choices["story"] == "Siti the turtle is lost."
+    assert row.choices == {"world": "reef", "story": "Siti the turtle is lost."}
+    # The game's code, as it passed its tests, is kept as its first revision.
+    code = await GameService(session, {}).latest(row.id)
+    assert code.revision == 1 and code.html == "<!DOCTYPE html>"
 
 
-async def test_a_game_needs_a_chapters_worth_of_challenges_and_a_real_level(api, teacher) -> None:
+async def test_a_game_needs_three_to_six_missions_and_a_real_level(api, teacher) -> None:
     async with api(teacher) as c:
         few = await c.post(
             "/api/learning-sets/generate",
@@ -400,7 +406,7 @@ async def test_a_game_needs_a_chapters_worth_of_challenges_and_a_real_level(api,
             "/api/learning-sets/generate",
             json={"kind": "game", "topic": "fractions", "grade_level": "year_4", "level": "expert"},
         )
-    assert few.status_code == 422 and "between 3 and 15" in few.text
+    assert few.status_code == 422 and "between 3 and 6" in few.text
     assert level.status_code == 422
 
 

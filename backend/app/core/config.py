@@ -203,10 +203,21 @@ class Settings(BaseSettings):
     # Exporting a poster as a picture needs a real browser in the image. Off,
     # and the download gives the document instead of a picture.
     artifact_export_png: bool = True
+    # Play and Learn games (§24): a simulation written by `artifact_model` for
+    # each game a teacher or parent makes, tested on a phone and a laptop in
+    # the same browser before anybody plays it. Off, or with no artifact model,
+    # and no one is offered a game to make. Independent of the studio.
+    games_enabled: bool = True
 
     @property
     def artifacts_available(self) -> bool:
         return self.artifacts_enabled and bool(self.artifact_model.strip())
+
+    @property
+    def games_available(self) -> bool:
+        """Play and Learn games (§24) are written by the studio's model and
+        tested in its browser — with the studio itself still switched off."""
+        return self.games_enabled and bool(self.artifact_model.strip())
 
     @property
     def resolved_learning_model(self) -> str:

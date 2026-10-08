@@ -140,27 +140,25 @@ async def attempt(attempt_id: UUID, user: CurrentUser, session: SessionDep) -> A
 async def answer(
     attempt_id: UUID, body: AnswerRequest, user: CurrentUser, session: SessionDep
 ) -> AnswerResponse:
-    given = [body.choice is not None, body.knew is not None, body.timed_out]
-    if sum(given) != 1:
-        raise ValidationError(
-            "Send a choice for a question, knew for a card, or that time ran out."
-        )
-    response: dict[str, Any] = (
-        {"knew": body.knew} if body.knew is not None else {"choice": body.choice}
-    )
     result = await AttemptService(session, bus=build_bus()).answer(
-        user.id, attempt_id, body.item_id, response, body.time_ms
+        user.id, attempt_id, body.item_id, _response(body), body.time_ms
     )
     return AnswerResponse.of(result)
 
 
-@router.post("/attempts/{attempt_id}/items/{item_id}/open", status_code=204)
-async def open_item(
-    attempt_id: UUID, item_id: str, user: CurrentUser, session: SessionDep
-) -> Response:
-    """A game's challenge is on screen (§23): its speed bonus is timed from now."""
-    await AttemptService(session).open_item(user.id, attempt_id, item_id[:40])
-    return Response(status_code=204)
+def _response(body: AnswerRequest) -> dict[str, Any]:
+    """What was given, in the kind's terms: a question's choice, a card's
+    knew, or a game mission reached and in how many goes (§24)."""
+    given = [body.choice is not None, body.knew is not None, body.done is not None]
+    if sum(given) != 1:
+        raise ValidationError(
+            "Send a choice for a question, knew for a card, or done for a game's mission."
+        )
+    if body.knew is not None:
+        return {"knew": body.knew}
+    if body.done is not None:
+        return {"done": body.done, "tries": body.tries or 1}
+    return {"choice": body.choice}
 
 
 @router.post("/attempts/{attempt_id}/items/{item_id}/hint", response_model=HintResponse)

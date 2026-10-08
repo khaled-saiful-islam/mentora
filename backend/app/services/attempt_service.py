@@ -32,7 +32,7 @@ from app.db.models.user import User
 from app.events.bus import EventBus
 from app.events.catalog import AttemptProgressed
 from app.learning.base import Item, LearningKind
-from app.learning.game import Answered
+from app.learning.game import MOST_TRIES, Answered
 from app.learning.registry import build_learning_kinds
 from app.policies.access import assignment_for_student
 
@@ -368,16 +368,6 @@ class AttemptService:
 
     # --- a game's challenges (§23) ------------------------------------------
 
-    async def open_item(self, student_id: UUID, attempt_id: UUID, item_id: str) -> None:
-        """A challenge is on screen: the moment its speed bonus is timed from.
-        Only the first opening counts, so opening it again buys no time."""
-        loaded = await self._challenge(student_id, attempt_id, item_id)
-        opened = dict(loaded.attempt.plan.get("opened", {}))
-        if item_id not in opened:
-            opened[item_id] = datetime.now(UTC).isoformat()
-            loaded.attempt.plan = {**loaded.attempt.plan, "opened": opened}
-            await self._session.flush()
-
     async def hint(self, student_id: UUID, attempt_id: UUID, item_id: str) -> str:
         """A challenge's hint, noted so it costs points. Asked again it is the
         same hint, counted once; after the answer it no longer costs anything."""
@@ -541,6 +531,9 @@ def _in_item_terms(response: dict[str, Any], order: list[int] | None) -> dict[st
         return {"choice": order[shown] if valid and 0 <= shown < len(order) else None}
     if "knew" in response:
         return {"knew": response.get("knew") is True}
+    if "done" in response:
+        # A game's mission (§24): reached or not, and in how many goes.
+        return {"done": response.get("done") is True, "tries": _tries(response)}
     return {}
 
 
@@ -561,9 +554,9 @@ def _points(loaded: Loaded, answers: list[AttemptAnswer]) -> int | None:
     answered = [
         Answered(
             correct=a.correct,
-            time_ms=_time_taken(loaded.attempt, a),
             hinted=a.item_id in hinted,
             difficulty=str(loaded.by_id.get(a.item_id, {}).get("difficulty", "medium")),
+            tries=_tries(a.response),
         )
         for a in answers
     ]
@@ -576,19 +569,12 @@ def _points(loaded: Loaded, answers: list[AttemptAnswer]) -> int | None:
     )
 
 
-# A challenge the game never said it opened earns no speed bonus: there is no
-# time the server saw to hold the claimed one to.
-UNTIMED_MS = 3_600_000
-
-
-def _time_taken(attempt: Attempt, answer: AttemptAnswer) -> int:
-    """How long a challenge took, for a game's speed bonus: what the game says,
-    but never quicker than the server saw between opening it and the answer."""
-    opened = attempt.plan.get("opened", {}).get(answer.item_id)
-    if not isinstance(opened, str):
-        return UNTIMED_MS
-    seen = (answer.answered_at - datetime.fromisoformat(opened)).total_seconds() * 1000
-    return max(answer.time_ms, int(seen))
+def _tries(response: dict[str, Any] | None) -> int:
+    """Goes a mission took, as the game reported it (§24): at least one."""
+    value = (response or {}).get("tries")
+    if isinstance(value, bool) or not isinstance(value, int):
+        return 1
+    return max(1, min(value, MOST_TRIES))
 
 
 def _streak(answers: list[AttemptAnswer]) -> int:

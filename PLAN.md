@@ -1232,3 +1232,151 @@ friend in a story. Known limits are in the feature doc.
 - Astra's voice is English only; other languages get subtitles and the
   browser's voice.
 - Parents' games count toward `PARENT_SETS_PER_DAY`.
+
+## 24. Play and Learn, revised — AI-coded simulation games (proposed 2026-10-08)
+
+**Why:** the games of §23 are multiple-choice questions dressed as a map, a
+road, bubbles and a build. *"Those are not games. Those are like quiz with
+game vibe."* A real game makes the topic the thing you play: you change the
+sunlight and the plant grows or wilts.
+
+### 24.0 Your decisions (asked 2026-10-08)
+
+- **The AI codes a new game each time** — one HTML/CSS/JS document per game,
+  built by the studio's game builder (`artifacts/games.py`, switched off
+  since §22.4), locked down for students. This **reverses §23.0** ("no
+  model-written code runs on a student's device"); §24.4 is what makes that
+  safe enough.
+- **Simulations:** the student experiments and watches what happens.
+- **Scores come from the game.** A clever student could fake them; accepted.
+
+### 24.1 What a game is now
+
+- **A simulation with missions** — 4 by default, 3 to 6. Each mission is a
+  goal the student reaches by experimenting, and what it teaches:
+  - *Photosynthesis, Year 5:* sliders for sunlight, water and carbon
+    dioxide; the padi plant grows, its leaves green or yellow, a sugar meter
+    fills. Mission 1: *"Grow it to full height before sunset."* Mission 2:
+    *"Keep it alive through a cloudy day."*
+  - *Fractions, Year 3:* pour sirap and water into a jug marked in parts.
+    Mission: *"Mix exactly 3/4 of a jug for Pak Ali's stall."*
+  - *Water cycle, Year 4:* heat the sea, cool the air, move the wind; clouds
+    form and rain falls. Mission: *"Make it rain on the dry padi field."*
+- **Missions are written and checked first**, like quiz questions — grounded
+  in sources (or the maker's files), pitched to the year and level. Then the
+  AI codes the simulation around them, and the game must report each one.
+- **"What you discovered"** after each mission is the checked explanation,
+  shown by Mentora outside the game — the learning text a student reads is
+  never the model's code.
+- **Kept from §23:** level, story (*Surprise me* / *Draft with AI* / *Write
+  my own*), the buddy named in the story, the five Malaysian settings (now a
+  hint for the art, or *Let Mentora decide*), sharing, best-points
+  leaderboard (opt-in), badges, homes, Library, chat.
+- **Level:** *Beginner* — guided, wide targets, an on-screen nudge;
+  *Intermediate*; *Advanced* — more variables, tighter targets. No timers
+  unless a mission needs one.
+- **Removed:** the four quiz styles (Quest Map, Lane Runner, Bubble Catch,
+  Match & Build), the drawn worlds and the engine that played them. A build
+  that fails is *"Couldn't make it — Try again"*, never a quiz in costume.
+
+### 24.2 Making a game (teacher or parent)
+
+1. **Make a game**, from the same places. Topic, subject, year, level,
+   language, how many missions, optional My materials, setting, story.
+2. **Watch it build, about 2–4 minutes:** check the topic → research →
+   skills → write and check the missions → design the simulation → code it
+   → playtest it on a phone and a laptop → screen its words. The bell rings
+   when it is ready.
+3. **Play it first** — the real game, nothing recorded.
+4. **Change it:** edit a mission's words directly, or type a change — *"make
+   the sun slider bigger"*, *"add a rain button"* — and the AI rewrites and
+   retests it as a new version.
+5. **Share** with a class or send it home, as today.
+
+### 24.3 Playing (student)
+
+- Full screen. The story's opening is told (read aloud) by Mentora, then the
+  game starts. Around the game, Mentora's own bar: the missions with ticks,
+  points, a hint button (costs points, as today), mute, full screen, exit;
+  the buddy beside it, cheering each mission.
+- **Points:** worked out on the server from what the game reports — 100 a
+  mission, +25/+50 for medium/hard, +25 for reaching it on the first go,
+  −40 for a hint. Best score kept; *Play again* to beat it.
+- **Finish:** points, best, missions done, *Try the missions you missed*
+  (the game restarts at those), and what each mission taught.
+
+### 24.4 Safety — what was missing when it was switched off
+
+- **One way in:** the game is served from its own address with a strict
+  content policy — no network, no web fonts or images, no forms, no popups —
+  in a frame that may run scripts and nothing else. (Today's panel loads it
+  inline, where the network rule never applies.) The same policy is also
+  written inside the document as a second lock.
+- **Works offline:** everything drawn in code; nothing is fetched from a
+  child's device.
+- **No broken game ships:** network calls, `eval`, outside scripts and
+  endless loops must be fixed or the build fails. A game that errors,
+  freezes, does not fit a phone, or cannot complete its own first mission
+  (each game includes a demo that plays mission 1, run by the robot) fails
+  after two fixes — today such games ship anyway.
+- **Its words are screened** by the student safety rules before anyone sees
+  it.
+- **A narrow channel out:** the host listens only to that frame, only for
+  `mission`, `hint-shown` and `finished` messages naming real missions;
+  everything else is ignored.
+- **Only teachers and parents build;** students only play. The studio stays
+  off.
+- **Every model call counts** toward the maker's daily quota (today only one
+  of them does).
+
+### 24.5 How it is built
+
+- **Kind:** `game` keeps its name and everything around it; its items become
+  missions `{id, goal, win (the condition in words), explanation, hint,
+  skill, difficulty}`, checked like quiz items.
+- **Builder:** `learning/sim/` — prompts (design, write, fix, change), the
+  `Mentora` runtime injected into every game (`ready`, `mission(id,
+  result)`, `finish`, buddy name, level, language, calm motion, sound on or
+  off, and a few sound effects), and the build steps, reusing
+  `artifacts/model.py` and the playtest browser.
+- **Playtest, upgraded:** two sizes (390×844 touch, 1280×800 keys), errors,
+  freezes, the demo completing mission 1, the mission message arriving.
+- **Storage:** a new `game_documents` table (set, version, html, playtest
+  report, tokens). One migration.
+- **Routes:** the document for the maker's preview and for a student's
+  attempt (authorised by the attempt), both with the content policy; a
+  mission report; the hint as today; *Change it*.
+- **Frontend:** `features/game/` rewritten as a host (frame, bridge, bar,
+  discoveries, buddy, finish); the create sheet loses style; the editor
+  gains *Change it*.
+
+### 24.6 Phases
+
+1. This plan — your yes, or changes.
+2. Backend: missions, builder, runtime, storage, routes, safety, playtest,
+   tests. Build three real games locally (photosynthesis, fractions, water
+   cycle) and show them to you before going further.
+3. Frontend: host, bar, discoveries, finish, make and change; remove the old
+   engine; the three demo games remade.
+4. Docs, README, screenshots, four widths, full tests. Push and deploy on
+   your word.
+
+### 24.7 Defaults I chose (overturn any)
+
+- Four missions by default (three to six).
+- A failed build fails — no fallback to the quiz-style game.
+- The quiz-style game code is deleted, not kept as an option.
+- In-game words in the set's language; the design prompt is English, so
+  English games will be the best.
+- Must work on a phone, portrait and landscape.
+
+### 24.8 Risks, plainly
+
+- **Quality varies.** Some games will be dull or awkward; a robot can test
+  that a game runs and its first mission can be done, not that it is fun.
+  *Play it first* and *Change it* are the answer.
+- **Time and cost:** about 3–5 model calls of up to 16k tokens each on the
+  artifact model, 2–4 minutes a build; every *Change it* is another full
+  rewrite. I'll measure real numbers in phase 2.
+- **Faked scores** (accepted), so a leaderboard can be gamed.
+- Builds run in the one API process, as every set does.

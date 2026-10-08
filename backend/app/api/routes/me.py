@@ -38,9 +38,13 @@ async def makeable(user: CurrentUser, settings: SettingsDep) -> dict[str, object
         kind
         for kind in build_learning_kinds().values()
         # A student's practice is only the kinds made for students to make.
-        if caps.share_learning_sets
-        or caps.make_family_sets
-        or (caps.make_practice_sets and getattr(kind, "for_students", True))
+        if (
+            caps.share_learning_sets
+            or caps.make_family_sets
+            or (caps.make_practice_sets and getattr(kind, "for_students", True))
+        )
+        # A game needs a model to write its code (§24): no model, no offer.
+        and (settings.games_available or not getattr(kind, "coded", False))
     ]
     return {
         "studio": [

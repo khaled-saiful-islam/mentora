@@ -16,6 +16,7 @@ from sqlalchemy import exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import NotFoundError, ValidationError
+from app.db.models.game_document import GameDocument
 from app.db.models.learning import Assignment, AutoPractice, LearningSet, LearningSetVersion
 from app.learning.base import Item, LearningKind, Skill
 from app.learning.enrich import Enriching
@@ -149,6 +150,21 @@ class LearningSetService:
                 build_ms=result.build_ms,
             )
         )
+        if result.document is not None:
+            # A game's code (§24), as it passed its tests: revision 1.
+            built = result.document
+            self._session.add(
+                GameDocument(
+                    set_id=set_id,
+                    revision=1,
+                    html=built.html,
+                    report=built.report,
+                    model=built.model,
+                    prompt_tokens=built.prompt_tokens,
+                    completion_tokens=built.completion_tokens,
+                    build_ms=built.build_ms,
+                )
+            )
         await self._session.flush()
         return learning_set
 

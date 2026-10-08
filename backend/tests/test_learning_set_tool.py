@@ -183,7 +183,7 @@ async def test_from_a_chat_the_set_is_built_just_like_the_make_form(
 # --- games (§23) -------------------------------------------------------------------
 
 
-async def test_a_game_is_made_from_a_chat_with_its_level_style_world_and_story() -> None:
+async def test_a_game_is_made_from_a_chat_with_its_level_world_and_story() -> None:
     maker = _Maker()
     tool = MakeLearningSetTool(maker, languages=("en",))
     [result] = await tool.run(
@@ -192,17 +192,12 @@ async def test_a_game_is_made_from_a_chat_with_its_level_style_world_and_story()
         subject="Mathematics",
         year="Year 4",
         level="Beginner",
-        style="runner",
         world="rainforest",
         story="Momo has lost the durians.",
     )
     [draft] = maker.drafts
     assert (draft.kind, draft.level) == ("game", "beginner")
-    assert draft.choices == {
-        "style": "runner",
-        "world": "rainforest",
-        "story": "Momo has lost the durians.",
-    }
+    assert draft.choices == {"world": "rainforest", "story": "Momo has lost the durians."}
     assert result.url.startswith("/library/")
     assert result.snippet.startswith("Game")
 
@@ -229,5 +224,6 @@ async def test_a_level_that_is_not_one_is_left_to_the_year() -> None:
 def test_the_tool_tells_the_model_it_can_make_games() -> None:
     tool = MakeLearningSetTool(_Maker())
     assert "game" in tool.parameters["properties"]["kind"]["enum"]
-    assert {"level", "style", "world", "story"} <= set(tool.parameters["properties"])
-    assert "game" in tool.description
+    assert {"level", "world", "story"} <= set(tool.parameters["properties"])
+    assert "style" not in tool.parameters["properties"]
+    assert "simulation" in tool.description

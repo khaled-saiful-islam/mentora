@@ -284,7 +284,8 @@ def _questions(items: list[dict[str, Any]], answers: list[AttemptAnswer]) -> lis
         rows.append(
             QuestionRow(
                 item_id=item["id"],
-                prompt=item.get("prompt") or item.get("front", ""),
+                # A question's prompt, a card's front, a game mission's goal.
+                prompt=item.get("prompt") or item.get("front") or item.get("goal", ""),
                 skill=item.get("skill", "general"),
                 answered=len(mine),
                 correct=sum(1 for a in mine if a.correct),
