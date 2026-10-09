@@ -14,6 +14,7 @@ import {
   HeartStraight,
   Lightbulb,
   ListChecks,
+  GameController,
   Megaphone,
   type Icon,
 } from '@phosphor-icons/react'
@@ -49,6 +50,7 @@ const FOR_TEACHERS: Starter[] = [
   { Icon: ListChecks, tone: 'bg-sun-100 text-sun-600 dark:bg-sun-600/25 dark:text-sun-300', label: 'Ways to check understanding', text: 'Give me three ways to check understanding of the water cycle' },
   { Icon: Lightbulb, tone: 'bg-mint-100 text-mint-700 dark:bg-mint-700/30 dark:text-mint-100', label: 'Differentiate a reading task', text: 'Differentiate a reading task for three levels' },
   { Icon: Megaphone, tone: 'bg-sky-100 text-sky-700 dark:bg-sky-700/30 dark:text-sky-100', label: 'A note to parents', text: 'Write a short note to parents about Sports Day' },
+  { Icon: GameController, tone: 'bg-coral-100 text-coral-700 dark:bg-coral-700/30 dark:text-coral-100', label: 'A game on food chains', text: 'Make a game about food chains for my Year 4 class' },
 ]
 
 /** For a parent: helping at home, with their child's name and year when

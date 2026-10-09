@@ -9,10 +9,12 @@
  * stops asking once the build has ended.
  */
 import { motion } from 'motion/react'
-import { ArrowRight, Eye, ShareNetwork, Sparkle, WarningCircle } from '@phosphor-icons/react'
+import { ArrowRight, Eye, GameController, ShareNetwork, Sparkle, WarningCircle } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { PLAY_LABELS } from '@/features/game/rounds'
 import { learningApi, type SetDetail } from '@/features/learning/api'
+import { fromChat } from '@/features/learning/cameFrom'
 import { lookOfKind, nounOf } from '@/features/learning/kinds'
 import { useOptionalLearnStudio } from '@/features/learning/LearnStudio'
 import { ShareDialog } from '@/features/learning/ShareDialog'
@@ -38,7 +40,10 @@ export function MadeSetCard({ source }: { source: Source }) {
   const [sharing, setSharing] = useState(false)
   const studio = useOptionalLearnStudio()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const { user } = useAuth()
+  // Opened from here, the set's page leads back here.
+  const back = () => (id ? fromChat(id, pathname) : undefined)
 
   useEffect(() => {
     if (!id) return
@@ -77,7 +82,7 @@ export function MadeSetCard({ source }: { source: Source }) {
       studio.watch(set)
       return
     }
-    navigate(`/library/${id}`)
+    navigate(`/library/${id}`, { state: back() })
   }
 
   return (
@@ -107,7 +112,7 @@ export function MadeSetCard({ source }: { source: Source }) {
           {making && <Sparkle weight="fill" className="size-4 shrink-0 animate-pulse" aria-hidden />}
           {!making && !ready && <WarningCircle weight="fill" className="size-4 shrink-0" aria-hidden />}
           <span className="break-words">
-            {making && 'Making it — about a minute'}
+            {making && (kind === 'game' ? 'Making it — a minute or two' : 'Making it — about a minute')}
             {ready && `Ready — ${nounOf(kind, set?.item_count ?? 0)}`}
             {(status === 'failed' || status === 'refused') && 'It could not be made. Open it to try again.'}
             {status === 'gone' && 'No longer in your Library.'}
@@ -116,9 +121,9 @@ export function MadeSetCard({ source }: { source: Source }) {
         {status !== 'gone' && (
           <div className="flex flex-wrap items-center gap-2">
             {ready && (
-              <Link to={playable ? `/library/${id}/try` : `/library/${id}/preview`} className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-2 text-sm font-bold hover:bg-hover">
-                <Eye weight="bold" className="size-4" aria-hidden />
-                Preview
+              <Link to={playable ? `/library/${id}/try` : `/library/${id}/preview`} onClick={() => back()} state={id ? { back: { to: pathname, label: 'Chat' } } : undefined} className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-2 text-sm font-bold hover:bg-hover">
+                {kind === 'game' ? <GameController weight="bold" className="size-4" aria-hidden /> : <Eye weight="bold" className="size-4" aria-hidden />}
+                {kind === 'game' ? 'Play it' : 'Preview'}
               </Link>
             )}
             {ready && set && can(user, 'share_learning_sets') && (
@@ -134,6 +139,7 @@ export function MadeSetCard({ source }: { source: Source }) {
           </div>
         )}
       </div>
+      {ready && kind === 'game' && set && <Templates set={set} />}
       {making && (
         <div className="h-1.5 overflow-hidden bg-muted" aria-hidden>
           <motion.div className="h-full w-1/3 rounded-full" style={{ backgroundColor: look.colour }} animate={{ x: ['-100%', '300%'] }} transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }} />
@@ -141,6 +147,19 @@ export function MadeSetCard({ source }: { source: Source }) {
       )}
       {sharing && set && <ShareDialog open set={set} onClose={() => setSharing(false)} />}
     </motion.div>
+  )
+}
+
+/** A game's templates, in the order its islands play them: what is inside. */
+function Templates({ set }: { set: SetDetail }) {
+  const plays = [...new Set(set.items.flatMap((item) => ('play' in item ? [item.play] : [])))]
+  if (!plays.length) return null
+  return (
+    <ul aria-label="How it plays" className="flex flex-wrap gap-1.5 px-4 pb-3">
+      {plays.map((play) => (
+        <li key={play} className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground">{PLAY_LABELS[play]}</li>
+      ))}
+    </ul>
   )
 }
 

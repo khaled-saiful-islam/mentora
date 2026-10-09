@@ -1633,3 +1633,60 @@ After that, the teacher can:
   and were dropped. The games were built with the rest.
 - Phases 3–5 wait for your word.
 
+
+### 26.8 Feedback on phase 2 (2026-10-09), built with phases 3–5
+
+*"The start is always same, which is boring. Matching is not user friendly.
+Where are the other type of games that we agreed on? Start should be unique."*
+
+- **Every game starts its own way.** The story writer picks one of five
+  openings to suit the story:
+  - a comic (as now);
+  - a **video call** from the character (it rings, you answer);
+  - a **letter in a bottle** that washes up and unrolls;
+  - a **news flash** with a headline and a ticker;
+  - a **postcard** that flips over.
+
+  The maker can change it. The map's stops also look like their world:
+  islands on the reef, tree camps in the rainforest, houses in the kampung,
+  stations in KL, planets in space.
+- **Match Up, rebuilt.** Each left card has an empty slot beside it, and the
+  answers wait in a tray. The child drags one into its slot, or taps one
+  then the slot. A right one snaps in and turns green with its why; a wrong
+  one bounces back.
+- **The other templates** (phases 3–5), each the app's own code with its
+  rules kept on the server:
+  - **The Lab** (Year 3 up): 1–3 sliders drive a formula Mentora evaluates
+    itself, never `eval`. The output is a meter with the target zone, a
+    growing picture and, for Forms, a graph. Each goal is proven reachable
+    on the server, and Show me slides to that answer.
+  - **Spot the Mistake** (Year 4 up): a worked answer or paragraph, line by
+    line. The child taps the wrong line, then picks its fix.
+  - **Detective Case** (Year 5 up): clue cards (with small tables). The
+    child picks who or what, then the clue that proves it.
+  - **Escape Room** (Year 4 up): 2–4 locked doors, each opened by a code: a
+    number on a keypad, a word from letter tiles, or a symbol.
+  - **Boss Battle**: the last island of a game (from Year 3, or when
+    picked). Each right answer hits the boss; a wrong one costs a heart and
+    the question comes back later. On the class screen, the class shares
+    the hearts.
+  - **Streak Ladder** (any game, after it is played) and **Tug-of-War**
+    (the teacher's class screen, two teams on one screen), using the
+    game's pairs and boss questions. Practice only: nothing is kept yet.
+
+**Built** (2026-10-09), committed locally, not pushed:
+
+- All of 26.8 is built.
+- More feedback, also built:
+  - **How to play**: an animated demo with three steps for every template,
+    on Learn it and behind the game bar's **?**.
+  - **Games from the chat**: the chat can name templates, the chat has a
+    game starter, the card says Play it and lists the templates inside, and
+    a game opened from the chat leads back to it.
+  - The chat's four make tiles are aligned.
+  - The revision games are in a "Revise with your class" card beside the
+    game, not in its header.
+- **What the server now guarantees:** a Boss Battle at the end (made from
+  the pairs when the writer left it out), a random opening, varied names,
+  and no repeated ideas.
+

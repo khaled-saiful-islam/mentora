@@ -3,7 +3,7 @@
  * Shapes mirror `app/api/schemas/play.py`.
  */
 import { apiFetch } from '@/lib/api'
-import type { MatchContent, OrderContent, Play, SortContent } from '@/features/game/rounds/types'
+import type { Contents, Play } from '@/features/game/rounds/types'
 import type { GameExtras, GuideExtras, GuideSection, Level, SetPurpose } from '@/features/learning/api'
 
 export type PlayKind = 'quiz' | 'flashcard' | 'study_guide' | 'game'
@@ -28,15 +28,12 @@ export interface CardItem {
 /** A game's island as a student meets it (§26): the idea, what to do, and
  *  its round — with what each move needs, because a round is answered on the
  *  device. Not its hint (asking costs points) nor what it teaches. */
-export interface GameIsland {
+export interface GameIsland extends Partial<Contents> {
   id: string
   learn: string
   icon: string
   play: Play
   task: string
-  sort?: SortContent
-  order?: OrderContent
-  match?: MatchContent
   has_hint: boolean
   skill: string
   difficulty: string

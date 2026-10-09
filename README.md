@@ -80,11 +80,20 @@ as a handout** with an answer key. See
 
 A game on any topic, made by a teacher or parent in a minute or two. It is a
 treasure map of islands, one idea each, told as a short story with the
-student's own buddy. On each island the student plays a round in one of
-Mentora's own templates: they **sort** cards into baskets, put steps in
-**order**, or **match** pairs. The AI writes only the content, checked like a
-quiz, and fits a template to each idea. The year (Year 1–6, Form 1–5) sets
-the size, the words and the help.
+student's own buddy, and it opens a different way each time: a comic, a
+video call, a letter in a bottle, a news flash or a postcard. On each island
+the student plays a round in one of Mentora's eight templates, ending with a
+**Boss Battle**:
+
+- **Sort It Out**, **Line Up** and **Match Up**;
+- **The Lab** (sliders that change a formula's output);
+- **Spot the Mistake**;
+- **Detective Case**;
+- **Escape Room**.
+
+The AI writes only the content, checked like a quiz, and fits a template to
+each idea. The year (Year 1–6, Form 1–5) sets the size, the words, the help
+and which templates are offered.
 
 | | |
 |---|---|
@@ -93,9 +102,12 @@ the size, the words and the help.
 | ![Learn it: the story beat, then the one idea big with its picture, and what to do](docs/screenshots/game-learn.png) | ![What you discovered: stars, the checked explanation, and the story moving on](docs/screenshots/game-discovery.png) |
 | **Learn it**: the idea first, read aloud. | **What you discovered**: stars, why it works, and the story goes on. |
 
-- **Three templates**: Sort It Out, Line Up and Match Up. Every card, step
-  and pair has its own *why*, which the buddy says when it is put in the
-  wrong place.
+- **Every move is answered at once.** Every card, step, pair, line, clue,
+  door and question has its own *why*, which the buddy says after a wrong
+  move.
+- **Revision games** use the game's own questions:
+  - **Streak Ladder**, from the finish screen;
+  - **Tug-of-War**, two teams on the teacher's class screen.
 - **Always built.** A round that breaks its rules is played as a Match Up
   of the island's pairs, so a game never fails to build.
 - **Never stuck.** **Show me** plays one right move once a student is
@@ -215,10 +227,11 @@ See [`docs/features/042-parents.md`](docs/features/042-parents.md).
 - **Study guides.** A topic taught part by part at three reading levels, with
   pictures, words to know in Malay, read-aloud, a concept map, a check after
   every part, and a printable handout.
-- **Play and Learn games.** A treasure map of islands in a story, one idea
-  each, played in Mentora's own templates (sort, line up, match) sized to the
-  year. Show me, stars, a best-points leaderboard, and results that show
-  what was most often wrong. Always built, in a minute or two.
+- **Play and Learn games.** A treasure map of islands in a story that opens
+  five different ways, one idea each, played in eight templates of Mentora's
+  own (from Sort It Out and The Lab to Detective Case, Escape Room and a
+  final Boss Battle), sized to the year. Streak Ladder and class-screen
+  Tug-of-War for revision. Always built, in a minute or two.
 - **Practice made for each student.** When a shared quiz is tricky, Mentora
   makes a short practice set on exactly the skills missed. Students practise;
   only teachers and parents make sets.

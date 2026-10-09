@@ -4,13 +4,16 @@
  * whatever happened. Kind to a low score; it never says "fail".
  */
 import { animate, motion, useMotionValue, useTransform } from 'motion/react'
-import { ArrowClockwise, ClipboardText, House, Medal, Ranking, Star, Target, Trophy } from '@phosphor-icons/react'
+import { ArrowClockwise, ClipboardText, House, Ladder, Medal, Ranking, Star, Target, Trophy } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 import { Button, ButtonLink } from '@/components/ui'
 import { BadgeMedal } from '@/features/badges/medals'
 import { Buddy, BuddyStage, type BuddyHandle, type Cue } from '@/features/buddies'
 import { finishTip } from '@/features/buddies/companion'
 import { GameHost } from '@/features/game/GameHost'
+import { questionsOf } from '@/features/game/revision/questions'
+import { StreakLadder } from '@/features/game/revision/StreakLadder'
+import type { GameIsland } from './api'
 import { useAuth } from '@/lib/auth'
 import { useSound } from '@/lib/sound'
 import { cn } from '@/lib/utils'
@@ -18,6 +21,9 @@ import { celebrate, pop, spring, stagger, useCalmMotion } from '@/motion'
 import type { Finish } from './api'
 import { POINTS_EACH, rankFor, usePlayLook } from './level'
 import { verdictFor, type Verdict } from './session'
+
+// Fewer questions than this is no ladder to climb.
+const MIN_QUESTIONS = 4
 
 const HEADLINE: Record<Verdict, string[]> = {
   great: ['Amazing!', 'Superstar!', 'Brilliant!'],
@@ -65,6 +71,9 @@ export function FinishScreen({
   // A game's islands not cleared, to play again — just those, nothing kept.
   const [missed] = useState(() => (game ? attempt.answered.filter((p) => p.correct === false).map((p) => p.item_id) : []))
   const [practising, setPractising] = useState(false)
+  // A game's pairs and boss questions, for a climb up the Streak Ladder (§26.8).
+  const [questions] = useState(() => (game ? questionsOf(attempt.items.filter((i): i is GameIsland => 'play' in i)) : []))
+  const [climbing, setClimbing] = useState(false)
 
   useEffect(() => {
     sound('finish')
@@ -82,6 +91,9 @@ export function FinishScreen({
 
   if (practising) {
     return <GameHost attempt={attempt} buddy={buddy} exitTo={home.to} only={missed} practice onFinished={() => setPractising(false)} />
+  }
+  if (climbing) {
+    return <StreakLadder title={attempt.extras.title || attempt.title} questions={questions} calm={calm} onExit={() => setClimbing(false)} />
   }
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 md:py-12">
@@ -186,6 +198,12 @@ export function FinishScreen({
           <Button size="lg" variant="outline" onClick={() => setPractising(true)}>
             <Target weight="bold" className="size-5" />
             Islands to clear again ({missed.length})
+          </Button>
+        )}
+        {questions.length >= MIN_QUESTIONS && (
+          <Button size="lg" variant="outline" onClick={() => setClimbing(true)}>
+            <Ladder weight="bold" className="size-5" />
+            Streak Ladder
           </Button>
         )}
         {onRetake && (

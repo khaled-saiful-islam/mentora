@@ -13,11 +13,17 @@
 import { Info } from '@phosphor-icons/react'
 import { Segmented } from '@/components/ui/Segmented'
 import { PLAY_LABELS, type Play } from '@/features/game/rounds'
+import { isStart, START_LABELS, STARTS } from '@/features/game/openings'
 import { isWorld, paint, WORLD_KEYS, WORLDS } from '@/features/game/worlds'
 import { cn } from '@/lib/utils'
 import type { GameExtras, GameItem, StoryBeat } from '../api'
 import { StoryLines } from './storyLines'
 import { GrowingText, LabelledText, SkillPicker, SourceToggles } from './fields'
+import { BossEditor } from './boss'
+import { CaseEditor } from './case'
+import { EscapeEditor } from './escape'
+import { LabEditor } from './lab'
+import { MistakeEditor } from './mistake'
 import { MatchEditor, OrderEditor, SortEditor } from './rounds'
 import type { ExtrasEditor, ItemEditorProps, KindEditor } from './types'
 
@@ -37,7 +43,7 @@ export const LIMITS = {
   about: 80,
 }
 const MOST_LINES = { opening: 3, ending: 2, before: 2, after: 2 }
-const PLAYS: Play[] = ['sort', 'order', 'match']
+const PLAYS = Object.keys(PLAY_LABELS) as Play[]
 
 function IslandEditor({ item, skills, sources, onChange }: ItemEditorProps<GameItem>) {
   const set = (patch: Partial<GameItem>) => onChange({ ...item, ...patch })
@@ -53,13 +59,14 @@ function IslandEditor({ item, skills, sources, onChange }: ItemEditorProps<GameI
       </div>
       <LabelledText label="What to do" value={item.task} limit={LIMITS.task} placeholder="Sort what the plant takes in and gives out!" onChange={(task) => set({ task })} />
       <div className="flex flex-wrap items-center gap-2">
-        <Segmented
-          label="How it plays"
-          value={item.play}
-          onChange={(play) => has(play) && set({ play })}
-          options={PLAYS.map((play) => ({ value: play, label: PLAY_LABELS[play], disabled: !has(play) }))}
-          className="[&_button]:px-3 [&_button]:py-1 [&_button]:text-xs"
-        />
+        <label className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-bold">
+          How it plays
+          <select value={item.play} onChange={(e) => set({ play: e.target.value as Play })} className="h-9 max-w-full rounded-full border-2 border-border bg-surface px-3 font-bold">
+            {PLAYS.filter(has).map((play) => (
+              <option key={play} value={play}>{PLAY_LABELS[play]}</option>
+            ))}
+          </select>
+        </label>
         {PLAYS.some((play) => !has(play)) && (
           <p className="flex items-start gap-1.5 text-sm text-muted-foreground">
             <Info weight="fill" className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -70,6 +77,11 @@ function IslandEditor({ item, skills, sources, onChange }: ItemEditorProps<GameI
       {item.play === 'sort' && item.sort && <SortEditor content={item.sort} onChange={(sort) => set({ sort })} />}
       {item.play === 'order' && item.order && <OrderEditor content={item.order} onChange={(order) => set({ order })} />}
       {item.play === 'match' && item.match && <MatchEditor content={item.match} onChange={(match) => set({ match })} />}
+      {item.play === 'lab' && item.lab && <LabEditor content={item.lab} onChange={(lab) => set({ lab })} />}
+      {item.play === 'mistake' && item.mistake && <MistakeEditor content={item.mistake} onChange={(mistake) => set({ mistake })} />}
+      {item.play === 'case' && item.case && <CaseEditor content={item.case} onChange={(found) => set({ case: found })} />}
+      {item.play === 'escape' && item.escape && <EscapeEditor content={item.escape} onChange={(escape) => set({ escape })} />}
+      {item.play === 'boss' && item.boss && <BossEditor content={item.boss} onChange={(boss) => set({ boss })} />}
       <LabelledText label="What it teaches" value={item.explanation} limit={LIMITS.explanation} placeholder="Shown once the island is cleared" onChange={(explanation) => set({ explanation })} />
       <LabelledText label="The buddy's hint" value={item.hint} limit={LIMITS.hint} placeholder="A nudge — never the answer" onChange={(hint) => set({ hint })} />
       <div className="flex flex-wrap items-center gap-2">
@@ -108,11 +120,39 @@ function roundProblem(item: GameItem): string | null {
     if (new Set(steps.map((s) => s.text.trim().toLowerCase())).size < steps.length) return 'No two steps the same.'
     return null
   }
+  const other = newerProblem(item)
+  if (other !== undefined) return other
   const pairs = item.match?.pairs ?? []
   if (pairs.some((p) => !p.left.trim() || !p.right.trim())) return 'Fill both sides of every pair.'
   const sides = (side: 'left' | 'right') => new Set(pairs.map((p) => p[side].trim().toLowerCase())).size
   if (sides('left') < pairs.length || sides('right') < pairs.length) return 'No side of a pair said twice.'
   return null
+}
+
+/** The §26.8 templates' rules, as the server keeps them; undefined for the
+ *  first three. */
+function newerProblem(item: GameItem): string | null | undefined {
+  const blank = (text: string) => !text.trim()
+  if (item.play === 'lab' && item.lab) {
+    if (item.lab.controls.some((c) => blank(c.id) || blank(c.label) || c.max <= c.min || c.step <= 0)) return 'Give every slider a name and a range.'
+    if (blank(item.lab.formula)) return 'Write the formula.'
+    return item.lab.goals.some((g) => blank(g.text) || g.high <= g.low) ? 'Give every goal its words and a range.' : null
+  }
+  if (item.play === 'mistake' && item.mistake) {
+    const lines = item.mistake.lines
+    if (lines.some((l) => blank(l.text))) return 'Write every line.'
+    if (!lines.some((l) => l.wrong)) return 'Mark the mistake.'
+    return lines.some((l) => l.wrong && (blank(l.fix) || l.decoys.every(blank))) ? 'Give every mistake its fix and a wrong one.' : null
+  }
+  if (item.play === 'case' && item.case) {
+    if (blank(item.case.question)) return 'Ask the question.'
+    return item.case.suspects.some((s) => blank(s.name)) || item.case.clues.some((c) => blank(c.title)) ? 'Name every suspect and clue.' : null
+  }
+  if (item.play === 'escape' && item.escape) return item.escape.doors.some((d) => blank(d.puzzle) || blank(d.answer)) ? 'Give every door its puzzle and code.' : null
+  if (item.play === 'boss' && item.boss) {
+    return item.boss.questions.some((q) => blank(q.ask) || q.options.some(blank)) ? 'Fill in every question and option.' : null
+  }
+  return undefined
 }
 
 /** A whole story and setting from what the server sent, which may be partial. */
@@ -130,6 +170,7 @@ export function gameExtrasOf(raw: Partial<GameExtras>): GameExtras {
       ending: story.ending ?? [],
     },
     beats: raw.beats ?? {},
+    start: isStart(raw.start) ? raw.start : 'comic',
     authored: raw.authored === true,
   }
 }
@@ -146,6 +187,14 @@ export function GameExtrasEditor({ extras, onChange }: { extras: GameExtras; onC
         <LabelledText label="Main character" value={extras.character.name} limit={LIMITS.name} placeholder="Atuk Hassan" onChange={(name) => set({ character: { ...extras.character, name } })} />
         <LabelledText label="Who they are" value={extras.character.about} limit={LIMITS.about} placeholder="a padi farmer in Kedah" onChange={(about) => set({ character: { ...extras.character, about } })} />
       </div>
+      <label className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-bold">
+        How it begins
+        <select value={extras.start ?? 'comic'} onChange={(e) => set({ start: isStart(e.target.value) ? e.target.value : 'comic' })} className="h-9 max-w-full rounded-full border-2 border-border bg-surface px-3 font-bold">
+          {STARTS.map((start) => (
+            <option key={start} value={start}>{START_LABELS[start]}</option>
+          ))}
+        </select>
+      </label>
       <fieldset>
         <legend className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Where it happens</legend>
         <p className="mt-1 text-sm text-muted-foreground">The treasure map is drawn in this world's colours.</p>

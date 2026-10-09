@@ -29,6 +29,8 @@ from typing import Any
 from app.learning import game_prompts
 from app.learning.base import Graded, Item, Skill, clean_text, new_id, pick_skill, pick_sources
 from app.learning.enrich import Finishing, Pictures
+from app.learning.game_finish import STARTS, names, opening, same_idea, with_boss
+from app.learning.game_rounds import PLAY_LABELS, PLAYS, ident, rounds_of
 from app.learning.model import GenerationUnavailable, JsonModel
 from app.learning.quiz import BEST_POINTS, DIFFICULTIES
 
@@ -47,9 +49,6 @@ AUTO = "auto"
 LEVELS = ("beginner", "intermediate", "advanced")
 BUDDY = game_prompts.BUDDY
 
-# The templates an island can be played in (§26.2), and their names.
-PLAY_LABELS = {"sort": "Sort It Out", "order": "Line Up", "match": "Match Up"}
-PLAYS = tuple(PLAY_LABELS)
 # What to do, when the round written for an island could not be kept and it
 # is played as a Match Up of its pairs instead.
 FALLBACK_TASK = "Join each one to the one it goes with!"
@@ -60,11 +59,6 @@ LIMITS = {
     "task": 160,
     "explanation": 300,
     "hint": 160,
-    # A basket's name; a card, a step or one side of a pair; why it goes there.
-    "label": 40,
-    "piece": 120,
-    "why": 220,
-    "id": 40,
     "title": 80,
     "hook": 600,
     "story_goal": 200,
@@ -76,12 +70,6 @@ LIMITS = {
     "who": 40,
     "says": 160,
 }
-# How many of each a round may have, whatever the year: the prompt asks for
-# the year's size (§26.3); these are what a round can lay out at all.
-SORT_BASKETS = (2, 4)
-SORT_CARDS = (3, 14)
-ORDER_STEPS = (3, 9)
-MATCH_PAIRS = (3, 8)
 # Lines in a panel, at most: the opening and a beat before an island; a beat
 # after one and the ending.
 MOST_LINES = {"opening": 3, "before": 2, "after": 2, "ending": 2}
@@ -100,6 +88,7 @@ POINTS_HINT = 40
 # Cleared after the buddy showed a move (§25): never zero, never the full count.
 POINTS_SHOWN = 50
 MOST_TRIES = 99
+STORY_TOKENS = 1800
 
 
 @dataclass(frozen=True, slots=True)
@@ -136,8 +125,8 @@ class GameKind:
     # so the writer sees the whole lesson. Each carries its round, so a batch
     # is long.
     batch = 6
-    draft_tokens = 7000
-    item_tokens = 1600
+    draft_tokens = 9000
+    item_tokens = 2400
     check_focus = game_prompts.CHECK_FOCUS
 
     # --- the island -------------------------------------------------------------
@@ -149,7 +138,7 @@ class GameKind:
         explanation = clean_text(raw.get("explanation"), LIMITS["explanation"])
         if learn is None or explanation is None:
             return None
-        rounds = _rounds(raw, explanation)
+        rounds = rounds_of(raw, explanation)
         wanted = raw.get("play")
         play = wanted if wanted in rounds else "match" if "match" in rounds else None
         if play is None:
@@ -159,7 +148,7 @@ class GameKind:
             logger.info("an island's %r round broke its rules; played as Match Up", wanted)
         difficulty = raw.get("difficulty")
         return {
-            "id": _id(raw.get("id")) or new_id(),
+            "id": ident(raw.get("id")) or new_id(),
             "learn": learn,
             "icon": clean_text(raw.get("icon"), LIMITS["icon"]) or "",
             "play": play,
@@ -176,7 +165,8 @@ class GameKind:
         """The island as the child meets it: the idea, what to do, and the
         round — with what each move needs to be answered at once, because it
         is answered on the device. Not the hint (asking costs points), not
-        the explanation (said once it is cleared)."""
+        the explanation (said once it is cleared). Its pairs come too, played
+        or not: the questions of the revision games (§26.8)."""
         play = item.get("play", "match")
         return {
             "id": item["id"],
@@ -184,6 +174,7 @@ class GameKind:
             "icon": item.get("icon", ""),
             "play": play,
             "task": item.get("task", ""),
+            **({"match": item["match"]} if isinstance(item.get("match"), dict) else {}),
             play: item.get(play, {}),
             "has_hint": bool(item.get("hint")),
             "skill": item["skill"],
@@ -213,9 +204,30 @@ class GameKind:
         # not taught twice, and how it was played.
         return f"{item['learn']} ({PLAY_LABELS.get(item.get('play', ''), '')}: {item['task']})"
 
+    def repeats(self, item: Item, other: Item) -> bool:
+        """Two islands that teach one idea, in different words (§26.8)."""
+        return same_idea(str(item.get("learn", "")), str(other.get("learn", "")))
+
     def arrange(self, items: list[Item]) -> list[Item]:
-        """Simplest first, so later islands build on earlier ones. Stable."""
-        return sorted(items, key=lambda i: _EASIEST_FIRST.get(i.get("difficulty", ""), 1))
+        """Simplest first, so later islands build on earlier ones, and a Boss
+        Battle last of all: it revises the rest. Within the same difficulty,
+        no template twice in a row where another can come between."""
+        level = lambda i: (i.get("play") == "boss", _EASIEST_FIRST.get(i.get("difficulty", ""), 1))  # noqa: E731
+        return _varied(sorted(items, key=level), level)
+
+    def complete(
+        self, items: list[Item], extras: dict[str, Any], finishing: Finishing
+    ) -> list[Item]:
+        """The game's islands, ending with a Boss Battle (§26.8) even when the
+        writer wrote none — made from the islands' own pairs."""
+        return with_boss(
+            items,
+            world=str(extras.get("world") or ""),
+            language=finishing.language,
+            grade=finishing.grade.code if finishing.grade else None,
+            plays=self.choices(finishing.choices)["plays"],
+            most=self.max_count,
+        )
 
     def points(
         self, answered: Sequence[Answered], *, grade_level: str | None, level: str | None
@@ -265,6 +277,7 @@ class GameKind:
             level=finishing.level,
             world=chosen["world"],
             story=chosen["story"],
+            names=names(),
             outline="\n".join(
                 f"- id={item['id']}: {item.get('learn', '')} "
                 f"({PLAY_LABELS.get(item.get('play', ''), '')}: {item.get('task', '')})"
@@ -272,11 +285,20 @@ class GameKind:
             ),
         )
         try:
-            reply = await model.ask("wrap", system, user, temperature=0.8, max_tokens=900)
+            # A beat before and after each of up to six islands: room for all of it.
+            reply = await model.ask("wrap", system, user, temperature=0.8, max_tokens=STORY_TOKENS)
         except GenerationUnavailable:
+            reply = {}
+        if not reply:
+            # Not answered, or not in a shape to read: the maker's own story, if
+            # any, and the game's own title — never a game with no name.
             logger.warning("game story for %r could not be written", finishing.topic)
             reply = _told_as_written(finishing.title, chosen["story"])
-        extras = self.normalise_extras({**reply, "authored": bool(chosen["story"])})
+        # The opening is picked here, not by the writer, which picks the comic
+        # nearly every time: games should not all start alike.
+        extras = self.normalise_extras(
+            {**reply, "start": opening(), "authored": bool(chosen["story"])}
+        )
         if chosen["world"] != AUTO:
             extras["world"] = chosen["world"]
         return extras
@@ -303,6 +325,7 @@ class GameKind:
                 "ending": _lines(story.get("ending"), MOST_LINES["ending"]),
             },
             "beats": _beats(raw.get("beats")),
+            "start": _start(raw.get("start"), str(raw.get("title") or "")),
             "authored": raw.get("authored") is True,
         }
 
@@ -312,143 +335,6 @@ class GameKind:
 
 
 # --- the rounds -------------------------------------------------------------------
-
-
-def piece_names(item: Mapping[str, Any]) -> dict[str, str]:
-    """An island's pieces by id, as a teacher reads them in results — a card
-    and where it belongs, a step and its place, a pair. Empty for anything
-    that is not an island."""
-    play = item.get("play")
-    content = item.get(play) if isinstance(play, str) and isinstance(item.get(play), dict) else {}
-    if play == "sort":
-        baskets = {b["id"]: b["label"] for b in _dicts(content.get("baskets"))}
-        return {
-            c["id"]: f"{c['text']} (belongs in {baskets.get(c['basket'], '?')})"
-            for c in _dicts(content.get("cards"))
-        }
-    if play == "order":
-        steps = _dicts(content.get("steps"))
-        return {s["id"]: f"{s['text']} (step {n})" for n, s in enumerate(steps, start=1)}
-    if play == "match":
-        return {p["id"]: f"{p['left']} — {p['right']}" for p in _dicts(content.get("pairs"))}
-    return {}
-
-
-def _rounds(raw: Mapping[str, Any], why: str) -> dict[str, dict[str, Any]]:
-    """Every round written for an island that keeps its template's rules, by
-    template. A model writes the pairs on their own; an editor sends them back
-    as a Match Up."""
-    match = raw.get("match") if isinstance(raw.get("match"), dict) else {"pairs": raw.get("pairs")}
-    found = {
-        "sort": _sort(raw.get("sort"), why),
-        "order": _order(raw.get("order"), why),
-        "match": _match(match, why),
-    }
-    return {play: content for play, content in found.items() if content is not None}
-
-
-def _sort(value: Any, why: str) -> dict[str, Any] | None:
-    """Cards in baskets: each card in exactly one basket, every basket used."""
-    if not isinstance(value, dict):
-        return None
-    baskets: list[dict[str, str]] = []
-    for n, raw in enumerate(_dicts(value.get("baskets")), start=1):
-        label = clean_text(raw.get("label"), LIMITS["label"])
-        if label and label.lower() not in {b["label"].lower() for b in baskets}:
-            own = _id(raw.get("id")) or f"b{n}"
-            baskets.append({"id": own, "label": label, "icon": _icon(raw)})
-    if not SORT_BASKETS[0] <= len(baskets) <= SORT_BASKETS[1] or not _unique(baskets):
-        return None
-    named = {b["id"]: b["id"] for b in baskets} | {b["label"].lower(): b["id"] for b in baskets}
-    cards = []
-    for raw in _dicts(value.get("cards")):
-        basket = str(raw.get("basket") or "").strip()
-        cards.append({**_piece(raw, why), "basket": named.get(basket) or named.get(basket.lower())})
-    cards = _distinct([c for c in cards if c["text"] and c["basket"]], "text")[: SORT_CARDS[1]]
-    used = {c["basket"] for c in cards}
-    if len(cards) < SORT_CARDS[0] or any(b["id"] not in used for b in baskets):
-        return None
-    return {"baskets": baskets, "cards": _numbered(cards, "c")}
-
-
-def _order(value: Any, why: str) -> dict[str, Any] | None:
-    """Steps in their right order, none the same."""
-    if not isinstance(value, dict):
-        return None
-    steps = [_piece(raw, why) for raw in _dicts(value.get("steps"))]
-    steps = _distinct([s for s in steps if s["text"]], "text")
-    # Too many is refused, not cut: the steps left would not be the whole process.
-    if len(steps) < ORDER_STEPS[0] or len(steps) > ORDER_STEPS[1]:
-        return None
-    return {"steps": _numbered(steps, "s")}
-
-
-def _match(value: Any, why: str) -> dict[str, Any] | None:
-    """Pairs, one to one: no side said twice."""
-    if not isinstance(value, dict):
-        return None
-    pairs = []
-    for raw in _dicts(value.get("pairs")):
-        left = clean_text(raw.get("left"), LIMITS["piece"])
-        right = clean_text(raw.get("right"), LIMITS["piece"])
-        if left and right:
-            mine = clean_text(raw.get("why"), LIMITS["why"]) or why
-            pairs.append({"id": _id(raw.get("id")), "left": left, "right": right, "why": mine})
-    pairs = _distinct(_distinct(pairs, "left"), "right")[: MATCH_PAIRS[1]]
-    if len(pairs) < MATCH_PAIRS[0]:
-        return None
-    return {"pairs": _numbered(pairs, "p")}
-
-
-def _piece(raw: dict[str, Any], why: str) -> dict[str, Any]:
-    """A card or a step: its words, its picture, and why it goes where it does."""
-    return {
-        "id": _id(raw.get("id")),
-        "text": clean_text(raw.get("text"), LIMITS["piece"]) or "",
-        "icon": _icon(raw),
-        "why": clean_text(raw.get("why"), LIMITS["why"]) or why,
-    }
-
-
-def _dicts(value: Any) -> list[dict[str, Any]]:
-    return [v for v in value if isinstance(v, dict)] if isinstance(value, list) else []
-
-
-def _distinct(pieces: list[dict[str, Any]], key: str) -> list[dict[str, Any]]:
-    """The first of each, by what it says — two cards that say the same are one."""
-    seen: set[str] = set()
-    kept = []
-    for piece in pieces:
-        said = str(piece[key]).lower()
-        if said not in seen:
-            seen.add(said)
-            kept.append(piece)
-    return kept
-
-
-def _numbered(pieces: list[dict[str, Any]], prefix: str) -> list[dict[str, Any]]:
-    """Every piece with an id of its own: kept from an editor, new where a model
-    wrote none or two pieces share one."""
-    seen: set[str] = set()
-    out = []
-    for n, piece in enumerate(pieces, start=1):
-        given = piece.get("id") or ""
-        own = given if given and given not in seen else f"{prefix}{n}"
-        seen.add(own)
-        out.append({**piece, "id": own})
-    return out
-
-
-def _unique(baskets: list[dict[str, str]]) -> bool:
-    return len({b["id"] for b in baskets}) == len(baskets)
-
-
-def _icon(raw: dict[str, Any]) -> str:
-    return clean_text(raw.get("icon"), LIMITS["icon"]) or ""
-
-
-def _id(value: Any) -> str:
-    return value.strip()[: LIMITS["id"]] if isinstance(value, str) and value.strip() else ""
 
 
 def _plays(value: Any) -> list[str]:
@@ -492,6 +378,31 @@ def _beats(value: Any) -> dict[str, dict[str, list[dict[str, str]]]]:
                 "after": _lines(beat.get("after"), MOST_LINES["after"]),
             }
     return beats
+
+
+def _varied(items: list[Item], level: Any) -> list[Item]:
+    """`items` with no template twice in a row, where an island of the same
+    difficulty further on can take the second one's place."""
+    out = list(items)
+    for at in range(1, len(out)):
+        if out[at].get("play") != out[at - 1].get("play"):
+            continue
+        swap = next(
+            (n for n in range(at + 1, len(out))
+             if level(out[n]) == level(out[at]) and out[n].get("play") != out[at - 1].get("play")),
+            None,
+        )  # fmt: skip
+        if swap is not None:
+            out[at], out[swap] = out[swap], out[at]
+    return out
+
+
+def _start(value: Any, title: str) -> str:
+    """How the game opens (§26.8): as the writer or the maker chose, or else
+    one picked from the title, so games do not all open the same way."""
+    if value in STARTS:
+        return str(value)
+    return STARTS[sum(map(ord, title)) % len(STARTS)]
 
 
 def _told_as_written(title: str, story: str) -> dict[str, Any]:

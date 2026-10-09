@@ -282,10 +282,12 @@ class LearningGenerator:
             if isinstance(outcome, BaseException):
                 # The set is whole without it; the log says which half is missing.
                 logger.warning("finishing %s: %s failed: %r", plan.topic, part, outcome)
-        return (
-            pictured if isinstance(pictured, list) else items,
-            extras if isinstance(extras, dict) else {},
-        )
+        done = pictured if isinstance(pictured, list) else items
+        wrapped = extras if isinstance(extras, dict) else {}
+        # A kind may round its items off once it knows its extras — a game
+        # ends with a Boss Battle made from its own pairs (§26.8).
+        complete = getattr(kind, "complete", None)
+        return (complete(done, wrapped, finishing) if callable(complete) else done), wrapped
 
     async def _check(self, request: GenerationRequest, grade: Grade | None) -> _Plan | Refused:
         # The fast rules first: "how to make a bomb" needs no model to refuse.
@@ -558,9 +560,17 @@ class LearningGenerator:
             )
             if item is None or self._kind.summary(item).lower() in seen:
                 continue
+            if self._repeats(item, [*written, *kept]):
+                continue
             seen.add(self._kind.summary(item).lower())
             kept.append(item)
         return kept
+
+    def _repeats(self, item: Item, others: list[Item]) -> bool:
+        """A kind may say two items are the same beyond their exact words —
+        a game's islands that teach one idea twice (§26.8)."""
+        repeats = getattr(self._kind, "repeats", None)
+        return callable(repeats) and any(repeats(item, other) for other in others)
 
     def _result(
         self,

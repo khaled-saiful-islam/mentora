@@ -125,10 +125,11 @@ async function lineUp(user: User, round: HTMLElement) {
   for (const step of STEPS) await user.click(within(round).getByRole('button', { name: new RegExp(`^Put '${step.text}'`) }))
 }
 
+/** Every answer into its slot, as a child taps them. */
 async function matchAll(user: User, round: HTMLElement) {
   for (const pair of PAIRS) {
-    await user.click(within(round).getByRole('button', { name: pair.left }))
     await user.click(within(round).getByRole('button', { name: pair.right }))
+    await user.click(within(round).getByRole('button', { name: `Slot for '${pair.left}'` }))
   }
 }
 
@@ -151,9 +152,16 @@ describe('a game', () => {
     expect(learn).toHaveTextContent('The leaves need light.')
     expect(learn).toHaveTextContent('Idea 1: leaves cook food.')
     expect(learn).toHaveTextContent('Do task 1!')
+    // The first Sort It Out shows how to play it.
+    expect(within(learn).getByRole('region', { name: 'How to play' })).toHaveTextContent('Look at the card.')
     await user.click(within(learn).getByRole('button', { name: /Let's play/ }))
     const round = await screen.findByRole('region', { name: 'Island 1' })
     expect(round).toHaveTextContent('Do task 1!')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    // How to play, again, from the bar.
+    await user.click(screen.getByRole('button', { name: 'How to play' }))
+    expect(within(screen.getByRole('dialog', { name: 'How to play' })).getByText(/Tap the basket/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Back to the game' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 

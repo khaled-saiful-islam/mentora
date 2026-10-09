@@ -2,26 +2,46 @@
 
 Teachers and parents make a **game** on any topic. It is a treasure map of
 3–6 islands, one idea each, set in a Malaysian world and told as a short
-story. On each island the child plays one round in a **template Mentora
-owns**: they sort cards into baskets, put steps in order, or match pairs.
+story. On each island the child plays one round in one of **eight templates
+Mentora owns**, from sorting cards to escaping locked doors, and a game ends
+with a Boss Battle.
 The AI writes only the content (checked against sources, like a quiz) and
 picks the template that fits each idea. It never writes code. **A game is
 always built**, in one to two minutes.
-Plans: `PLAN.md` §26. The AI-coded games of §24/§25 came before it and were
-retired: about one build in three passed.
+Plans: `PLAN.md` §26 and §26.8. The AI-coded games of §24/§25 came before it
+and were retired: about one build in three passed.
 
 ## What it does
 
 ### For the child
 
-- **The story**: a short comic, read aloud. A character with a problem and
-  the child's own buddy.
-- **The map**: the islands on a winding path across the world. The next
-  island glows with the buddy on it; the rest wait under fog until their
-  turn.
+- **The story opens one of five ways**, picked at random for each game (the
+  maker can change it), all read aloud:
+  - a comic;
+  - a **video call** from the character that rings until answered;
+  - a **letter in a bottle** that washes up;
+  - a **news flash** with a ticker;
+  - a **postcard** that flips over.
+
+  The character's name is chosen from many Malaysian names.
+- **The map**: the stops on a winding trail, drawn for the world:
+  - sand islands on the reef;
+  - tree camps in the rainforest;
+  - stilt houses in the kampung;
+  - stations in KL;
+  - planets in space.
+
+  The next stop glows with the buddy on it; the rest wait under fog until
+  their turn.
 - **On each island**:
   - **Learn it**: the story beat before the island, then the one idea, big,
     with a picture, and what to do. All of it can be read aloud.
+  - **How to play**: an animated demo of the template, in which a little hand
+    plays one move in a miniature of it, beside three short steps that light
+    up in turn. It is open the first time a template comes up in a game and
+    folded after; the **?** in the game bar brings it back mid-round.
+    English or Malay, as the game; read aloud in the browser's voice; still
+    when calm.
   - **Play it**: one round in a template, described below. Every move is
     answered at once. A right move locks in; a wrong one wobbles and the
     buddy says **why**: *"Vinegar is an acid: it tastes sour."*
@@ -37,11 +57,24 @@ retired: about one build in three passed.
 
 ### The templates (`frontend/src/features/game/rounds/`)
 
-| Template | The child… | Fits |
-|---|---|---|
-| **Sort It Out** | puts one card at a time into its basket, by tapping or dragging | groups: living or not, acids and bases, nouns and verbs |
-| **Line Up** | taps steps into place one after another; right ones lock | processes, cycles, timelines, sentences |
-| **Match Up** | taps a piece on each side to join a pair | word and meaning, cause and effect, BM and English |
+| Template | The child… | Fits | Years |
+|---|---|---|---|
+| **Sort It Out** | puts one card at a time into its basket, by tapping or dragging | groups: living or not, acids and bases, nouns and verbs | all |
+| **Line Up** | taps steps into place one after another; right ones lock | processes, cycles, timelines, sentences | all |
+| **Match Up** | drags each answer from a tray into the slot beside its partner (or taps one, then the slot); a right one snaps in green with its why | word and meaning, cause and effect, BM and English | all |
+| **The Lab** | moves 1–3 sliders; a meter (and for Forms a graph) shows the output; brings it into each goal's green zone | how one thing changes another: light and growth, Ohm's law, a launch angle | Year 3 up |
+| **Spot the Mistake** | taps the wrong line of a worked answer, then picks its fix | methods often got wrong: a sum's working, grammar | Year 4 up |
+| **Detective Case** | opens clue cards (some with tables), names who or what did it, then the clue that proves it | reasoning from evidence: sources, data | Year 5 up |
+| **Escape Room** | opens 2–4 doors with codes: a keypad number, a word from letter tiles, or a symbol | using an idea to work answers out | Year 4 up |
+| **Boss Battle** | answers questions to drain the boss's health; a wrong one costs a heart and comes back later; hearts refill, never a game over | revising the whole game, as its last island | Year 3 up |
+
+**Revision games**, from a game's finish screen and the teacher's Library,
+use its pairs and boss questions and keep nothing:
+
+- **Streak Ladder**: climb until the first slip.
+- **Tug-of-War** (the teacher's class screen): two teams, Harimau and
+  Kancil, on one screen. The first right answer pulls the rope, a wrong one
+  freezes that team for the question, and five pulls wins.
 
 **By year** (`bandOf`):
 
@@ -55,7 +88,11 @@ retired: about one build in three passed.
 ### For the teacher or parent
 
 - **Make a game** from the homes, the coverage nudges, Library → Make, or
-  the chat. Pick the topic, year, **level** and language, and how many
+  **the chat**: "Make an escape room game about fractions for my Year 5
+  class" picks the template. "A game on food chains" is one of the chat's
+  starters. The chat's card follows the build, then offers **Play it**,
+  Share and Open, and names the templates inside. A game opened from the chat
+  leads back to the chat (`learning/cameFrom.ts`, remembered for the session). Pick the topic, year, **level** and language, and how many
   islands (4 by default, 3 to 6). Then three choices, each with *Let Mentora
   decide* as the default:
   - **how it plays**: any of the templates, or the ones picked;
@@ -72,6 +109,8 @@ retired: about one build in three passed.
   removed or moved, because the story has a beat for each.
 - **Share** with a class (retakes on by default, a best-points leaderboard
   if wanted) or send it home.
+- **Revise with your class**: a card beside the game in the Library starts
+  Tug-of-War on the class screen, or the Streak Ladder.
 - **Results** show each island by its task, how many cleared it, and the
   pieces **most often wrong first**: *"Whale (belongs in Mammals): 12
   students"*.
@@ -93,6 +132,20 @@ retired: about one build in three passed.
     that breaks its rules is played as a Match Up of those pairs instead,
     and an island with no valid round at all is written again. This is what
     makes a game always build.
+  - **Every template's rules** live in `game_rounds.py`; The Lab's in
+    `game_lab.py`. A Lab's formula is read by `formula.py` (the same grammar
+    as the app's `rounds/formula.ts`, never `eval`). Every goal is proven
+    reachable by trying the sliders across their range; a goal met where the
+    sliders start is dropped, and Show me slides to the setting found.
+  - **What the server guarantees** (`game_finish.py`):
+    - a game for Year 3 up ends with a Boss Battle, made from the islands'
+      own pairs when the writer wrote none;
+    - the opening is picked at random;
+    - the writer is offered a few names from across Malaysia;
+    - two islands saying nearly the same idea are one (70% of their words
+      and at least three);
+    - the same template never comes twice in a row where another can come
+      between.
   - **The story plan** lives in the set's extras: title, world, character,
     opening and ending lines, and `beats` keyed by island id.
   - The maker's choices are `world`, `story` and `plays` (`"sort,match"`;
@@ -127,7 +180,7 @@ retired: about one build in three passed.
 
 ## Extending it
 
-- **A new template**:
+- **A new template** (as §26.8 added five):
   1. Write its round in `frontend/src/features/game/rounds/` (it gets
      `RoundProps`, and must answer every move, call `onMove` and `onDone`,
      and play one move on Show me).
@@ -144,9 +197,13 @@ retired: about one build in three passed.
 - **Less surprise than a hand-made game.** Every Sort It Out plays like a
   Sort It Out. The variety comes from the templates, the five worlds and the
   story.
-- **Three templates so far.** The Lab (sliders), Spot the Mistake, Detective
-  Case, Escape Room and the revision games (Boss Battle, Tug-of-War, Streak
-  Ladder) are later phases of §26.
+- **The revision games keep nothing.** Streak Ladder and Tug-of-War are
+  practice: no streaks reach the teacher's results yet.
+- **The Lab's scenes are generic**: a meter, a growing emoji and, for Forms,
+  a graph. There is no bespoke animation for each topic. Its formula is an
+  honest simple model for young years and the real one for Forms.
+- **Years are asked, not enforced**: the writer is told which templates suit
+  which years, but nothing stops a Year 2 Detective Case.
 - **Answered on the device.** A round needs each move's answer at once, so
   the student's copy carries the answers. A determined student could read
   them, or fake a report. Points and the leaderboard should be read in that

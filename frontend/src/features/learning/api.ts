@@ -1,4 +1,5 @@
-import type { MatchContent, OrderContent, Play, SortContent } from '@/features/game/rounds/types'
+import type { Start } from '@/features/game/openings'
+import type { Contents, Play } from '@/features/game/rounds/types'
 import { apiFetch } from '@/lib/api'
 
 export type LearningKindName = 'quiz' | 'flashcard' | 'study_guide' | 'game'
@@ -76,15 +77,12 @@ export interface GuideExtras {
 /** A game's island (§26): one idea, the round that makes the child use it —
  *  in one of Mentora's own templates — and what to do there. Every round
  *  written for it that keeps its rules is kept, its Match Up at least. */
-export interface GameItem {
+export interface GameItem extends Partial<Contents> {
   id: string
   learn: string
   icon: string
   play: Play
   task: string
-  sort?: SortContent
-  order?: OrderContent
-  match?: MatchContent
   explanation: string
   hint: string
   skill: string
@@ -123,6 +121,8 @@ export interface GameExtras {
   }
   /** By island id. */
   beats: Record<string, StoryBeat>
+  /** How the game opens (§26.8): a comic, a call, a letter, news, a postcard. */
+  start?: Start
   /** The maker wrote the story themselves. */
   authored: boolean
 }

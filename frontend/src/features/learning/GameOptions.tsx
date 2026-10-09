@@ -5,7 +5,7 @@
  * "Let Mentora decide" is the default for each.
  */
 import { useState } from 'react'
-import { ArrowsDownUp, Check, LinkSimple, MagicWand, PencilSimpleLine, Sparkle, SquaresFour, type Icon } from '@phosphor-icons/react'
+import { ArrowsDownUp, Check, Eraser, Flask, LinkSimple, LockKey, MagicWand, MagnifyingGlass, PencilSimpleLine, Sparkle, SquaresFour, Sword, type Icon } from '@phosphor-icons/react'
 import { Alert, Button } from '@/components/ui'
 import { errorMessage } from '@/features/auth/errors'
 import { PLAY_LABELS, type Play } from '@/features/game/rounds'
@@ -37,6 +37,11 @@ const PLAYS: { value: Play; blurb: string; Icon: Icon }[] = [
   { value: 'sort', blurb: 'Drag cards into the right groups', Icon: SquaresFour },
   { value: 'order', blurb: 'Put steps or events in the right order', Icon: ArrowsDownUp },
   { value: 'match', blurb: 'Join the pairs that go together', Icon: LinkSimple },
+  { value: 'lab', blurb: 'Move sliders and watch what changes (Year 3 up)', Icon: Flask },
+  { value: 'mistake', blurb: 'Find the wrong line in a worked answer and fix it (Year 4 up)', Icon: Eraser },
+  { value: 'case', blurb: 'Read the clues and name who or what did it (Year 5 up)', Icon: MagnifyingGlass },
+  { value: 'escape', blurb: 'Solve each puzzle to open the next door (Year 4 up)', Icon: LockKey },
+  { value: 'boss', blurb: 'A last island that battles through everything learnt', Icon: Sword },
 ]
 
 const AUTO_OPTION = { value: 'auto', label: 'Let Mentora decide', blurb: 'Picks what suits the topic and the age', Icon: Sparkle } as const
@@ -138,7 +143,7 @@ function PlaysPicker({ value, onChange }: { value: Play[]; onChange: (plays: Pla
   return (
     <section aria-labelledby="game-plays-label">
       <p id="game-plays-label" className="mb-2 text-sm font-bold text-foreground/85">How it plays</p>
-      <div role="group" aria-labelledby="game-plays-label" className="grid gap-2 sm:grid-cols-2">
+      <div role="group" aria-labelledby="game-plays-label" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         <ChoiceTile option={{ ...AUTO_OPTION, label: 'Let Mentora choose', blurb: 'The best fit for each idea' }} on={value.length === 0} onPick={() => onChange([])} role="checkbox" />
         {PLAYS.map((play) => (
           <ChoiceTile key={play.value} option={{ ...play, label: PLAY_LABELS[play.value] }} on={value.includes(play.value)} onPick={() => toggle(play.value)} role="checkbox" />

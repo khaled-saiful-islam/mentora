@@ -133,8 +133,8 @@ export function StoryCard({ title, hook, goal, lines, cast, count, telling, onSt
 
 /** Learn it: the beat that makes the idea matter, then the idea, big, with
  *  its picture — and what the round will ask. */
-export function LearnCard({ number, total, icon, learn, task, play, lines, cast, telling, onTry }: {
-  number: number; total: number; icon: string; learn: string; task: string; play: string; lines: StoryLine[]; cast: Cast; telling: Telling; onTry: () => void
+export function LearnCard({ number, total, icon, learn, task, play, lines, cast, telling, howTo, onTry }: {
+  number: number; total: number; icon: string; learn: string; task: string; play: string; lines: StoryLine[]; cast: Cast; telling: Telling; howTo?: React.ReactNode; onTry: () => void
 }) {  // fmt: skip
   return (
     <Card label="Learn it">
@@ -156,6 +156,7 @@ export function LearnCard({ number, total, icon, learn, task, play, lines, cast,
           <span className="min-w-0 break-words">{told(task, cast.buddyName)}</span>
         </p>
       )}
+      {howTo && <div className="mt-3">{howTo}</div>}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <ReadAloud telling={telling} />
         <Button variant="sun" size="lg" onClick={onTry} autoFocus>

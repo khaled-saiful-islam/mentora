@@ -4,7 +4,7 @@
  * sound, full screen, and finishing early. Wraps onto two rows on a phone.
  */
 import { motion } from 'motion/react'
-import { ArrowsIn, ArrowsOut, Check, Eye, FlagCheckered, Lightbulb, SpeakerHigh, SpeakerSlash, Star, X } from '@phosphor-icons/react'
+import { ArrowsIn, ArrowsOut, Check, Eye, FlagCheckered, Lightbulb, Question, SpeakerHigh, SpeakerSlash, Star, X } from '@phosphor-icons/react'
 import { Button, ButtonLink } from '@/components/ui'
 import type { GameIsland } from '@/features/play/api'
 import { cn } from '@/lib/utils'
@@ -24,6 +24,8 @@ interface GameBarProps {
   onHint: () => void
   /** "Show me" — offered once the child is stuck on an island (§25). */
   showMe: (() => void) | null
+  /** How to play this island's template, while it is played (§26.8). */
+  onHowTo: (() => void) | null
   sound: boolean
   onSound: () => void
   fullscreen: { available: boolean; on: boolean; toggle: () => void }
@@ -31,7 +33,7 @@ interface GameBarProps {
 }
 
 export function GameBar(props: GameBarProps) {
-  const { title, exitTo, islands, outcomes, current, points, canHint, onHint, showMe, sound, onSound, fullscreen, onFinish } = props
+  const { title, exitTo, islands, outcomes, current, points, canHint, onHint, showMe, onHowTo, sound, onSound, fullscreen, onFinish } = props
   return (
     <header className="relative z-20 flex flex-wrap items-center gap-x-3 gap-y-2 border-b-2 border-border bg-surface px-3 py-2">
       <ButtonLink to={exitTo} variant="ghost" size="icon" aria-label="Close the game">
@@ -51,6 +53,11 @@ export function GameBar(props: GameBarProps) {
               Show me
             </Button>
           </motion.span>
+        )}
+        {onHowTo && (
+          <Button variant="ghost" size="icon" onClick={onHowTo} aria-label="How to play">
+            <Question weight="bold" className="size-5" />
+          </Button>
         )}
         {canHint && (
           <Button variant="outline" size="sm" onClick={onHint}>

@@ -25,6 +25,7 @@ from app.core.buddies import buddy_name
 from app.core.config import Settings
 from app.core.errors import NotFoundError, UpstreamError, ValidationError
 from app.db.models.user import User
+from app.learning.game_rounds import pieces_of
 from app.learning.registry import build_learning_kinds
 from app.live.audio import Narrator
 from app.providers.speech import SpeechError
@@ -66,26 +67,6 @@ def words_for(item: dict[str, Any], part: Part, n: int | None = None) -> str:
     if part in ("front", "back", "hint", "explanation", "learn", "task") and item.get(part):
         return str(item[part])
     raise ValidationError("There is nothing to read there.")
-
-
-def pieces_of(item: dict[str, Any]) -> list[dict[str, Any]]:
-    """An island's round, piece by piece, as `piece` and `why` count them
-    (§26): a Sort It Out's cards then its baskets, a Line Up's steps, a Match
-    Up's left sides then its right ones. `piece` n says the words; `why` n
-    says why it goes where it does."""
-    play = item.get("play")
-    content = item.get(play) if isinstance(play, str) and isinstance(item.get(play), dict) else {}
-    listed = {key: [v for v in content.get(key) or [] if isinstance(v, dict)] for key in content}
-    if play == "sort":
-        baskets = [{"text": b.get("label"), "why": ""} for b in listed.get("baskets", [])]
-        return [*listed.get("cards", []), *baskets]
-    if play == "order":
-        return listed.get("steps", [])
-    if play == "match":
-        pairs = listed.get("pairs", [])
-        lefts = [{"text": p.get("left"), "why": p.get("why")} for p in pairs]
-        return [*lefts, *({"text": p.get("right"), "why": p.get("why")} for p in pairs)]
-    return []
 
 
 def story_words(extras: dict[str, Any], piece: str, n: int | None = None) -> str:

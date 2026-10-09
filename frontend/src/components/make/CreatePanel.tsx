@@ -74,13 +74,25 @@ export function CreatePanel({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8, transition: { duration: 0.14 } }}
           transition={spring.gentle}
-          className={cn('mt-4 grid gap-4', shown.length > 3 ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5' : 'sm:grid-cols-3')}
+          className={cn('mt-4 grid gap-4', COLUMNS[shown.length] ?? COLUMNS[0])}
         >
           <Cards items={shown} onPick={onPick} />
         </motion.div>
       </AnimatePresence>
     </section>
   )
+}
+
+// As many across as there are tiles, so a row is never left with a hole in
+// it: four go two by two, then all four in a row; five, three and two, then
+// five in a row.
+const COLUMNS: Record<number, string> = {
+  0: 'grid-cols-2 sm:grid-cols-3',
+  1: 'max-w-sm',
+  2: 'sm:grid-cols-2',
+  3: 'sm:grid-cols-3',
+  4: 'grid-cols-2 lg:grid-cols-4',
+  5: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5',
 }
 
 function Cards({ items, onPick }: { items: Creatable[]; onPick: (item: Creatable, example: string) => void }) {

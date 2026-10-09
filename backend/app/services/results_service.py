@@ -25,7 +25,7 @@ from app.db.models.classroom import ClassGroup, GroupMember
 from app.db.models.learning import Assignment, LearningSet, LearningSetVersion
 from app.db.models.user import User
 from app.events.bus import EventBus
-from app.learning.game import piece_names
+from app.learning.game_rounds import piece_names
 from app.services.assignment_service import AssignmentService
 
 # A game island's slips shown in results: the few most often made.

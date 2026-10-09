@@ -58,8 +58,8 @@ const played = (item_id: string, correct: boolean) => ({
 async function joinAll(user: ReturnType<typeof userEvent.setup>) {
   const round = await screen.findByRole('region', { name: /^Island/ })
   for (const pair of PAIRS) {
-    await user.click(within(round).getByRole('button', { name: pair.left }))
     await user.click(within(round).getByRole('button', { name: pair.right }))
+    await user.click(within(round).getByRole('button', { name: `Slot for '${pair.left}'` }))
   }
 }
 

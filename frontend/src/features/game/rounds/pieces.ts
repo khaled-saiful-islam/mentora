@@ -1,19 +1,24 @@
 /**
  * An island's round piece by piece, numbered as the server numbers them for
- * "Read it to me" (`pieces_of` in `app/services/read_aloud.py`): a Sort It
- * Out's cards then its baskets, a Line Up's steps, a Match Up's left sides
- * then its right ones. The voice is asked for a piece by its number, never
- * by its words.
+ * "Read it to me" (`pieces_of` in `app/learning/game_rounds.py`):
+ *
+ * - a Sort It Out's cards, then its baskets;
+ * - a Line Up's steps;
+ * - a Match Up's left sides, then its right ones;
+ * - a Lab's goals;
+ * - a Mistake's lines;
+ * - a Case's suspects, then its clues;
+ * - an Escape Room's doors;
+ * - a Boss Battle's questions.
+ *
+ * The voice is asked for a piece by its number, never by its words.
  */
 import type { Spoken } from '@/features/play/backend'
 import type { Contents, Play } from './types'
 
-export interface Readable {
+export interface Readable extends Partial<Contents> {
   id: string
   play: Play
-  sort?: Contents['sort']
-  order?: Contents['order']
-  match?: Contents['match']
 }
 
 interface Piece {
@@ -21,16 +26,29 @@ interface Piece {
   why: string
 }
 
+const said = <T extends { why: string }>(rows: T[], text: (row: T) => string): Piece[] => rows.map((row) => ({ text: text(row), why: row.why }))
+
 export function piecesOf(island: Readable): Piece[] {
-  if (island.play === 'sort' && island.sort) {
-    return [...island.sort.cards, ...island.sort.baskets.map((basket) => ({ text: basket.label, why: '' }))]
+  switch (island.play) {
+    case 'sort':
+      return island.sort ? [...island.sort.cards, ...island.sort.baskets.map((b) => ({ text: b.label, why: '' }))] : []
+    case 'order':
+      return island.order?.steps ?? []
+    case 'match': {
+      const pairs = island.match?.pairs ?? []
+      return [...said(pairs, (p) => p.left), ...said(pairs, (p) => p.right)]
+    }
+    case 'lab':
+      return said(island.lab?.goals ?? [], (g) => g.text)
+    case 'mistake':
+      return said(island.mistake?.lines ?? [], (l) => l.text)
+    case 'case':
+      return island.case ? [...said(island.case.suspects, (s) => s.claim), ...said(island.case.clues, (c) => c.text)] : []
+    case 'escape':
+      return said(island.escape?.doors ?? [], (d) => d.puzzle)
+    case 'boss':
+      return said(island.boss?.questions ?? [], (q) => q.ask)
   }
-  if (island.play === 'order' && island.order) return island.order.steps
-  if (island.play === 'match' && island.match) {
-    const pairs = island.match.pairs
-    return [...pairs.map((p) => ({ text: p.left, why: p.why })), ...pairs.map((p) => ({ text: p.right, why: p.why }))]
-  }
-  return []
 }
 
 /** What to ask the voice for to hear `text` — a piece of the round, or why

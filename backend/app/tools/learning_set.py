@@ -21,6 +21,7 @@ from typing import Any, Protocol
 from app.core.errors import MentoraError
 from app.core.grades import GRADES, Grade
 from app.learning.game import WORLDS
+from app.learning.game_rounds import PLAY_LABELS
 from app.learning.pitch import LEVELS
 from app.providers.base import ToolResult
 from app.services.generation_service import GenerationDraft
@@ -45,9 +46,11 @@ _KIND_WORDS = {
     "game": "game",
     "games": "game",
     "story game": "game",
+    "escape room": "game",
+    "boss battle": "game",
 }
-# What a maker may choose for a game (§23), as the tool's parameters name them.
-CHOICES = ("world", "story")
+# What a maker may choose for a game (§26), as the tool's parameters name them.
+CHOICES = ("world", "story", "plays")
 _YEAR_WORDS = re.compile(r"^(tahun|darjah|standard|std|primary)\s*", re.I)
 _FORM_WORDS = re.compile(r"^(tingkatan|secondary)\s*", re.I)
 
@@ -72,6 +75,14 @@ def _level(value: Any) -> str | None:
     return said if said in LEVELS else None
 
 
+def _choice(value: Any) -> str:
+    """A choice as the model passed it: words, or a list of words (a game's
+    templates), as the maker's form sends them."""
+    if isinstance(value, list):
+        return ",".join(_text(v, 16) for v in value if isinstance(v, str))
+    return value if isinstance(value, str) else ""
+
+
 def _text(value: Any, limit: int) -> str:
     return " ".join(str(value or "").split())[:limit]
 
@@ -81,10 +92,12 @@ class MakeLearningSetTool:
     description = (
         "Make a quiz, a deck of flashcards, a study guide or a game with Mentora's own "
         "maker (the same one as Library → Make). It is saved to the person's Library and "
-        "takes about a minute. A game is a treasure map of islands, one idea each, where "
-        "students sort cards, put steps in order or match pairs to learn the topic, with "
-        "a story and points; for a game, pass a level, world or story only if the person "
-        "said. "
+        "takes a minute or two. A game is a treasure map of islands, one idea each, each "
+        "played in one of Mentora's templates — sort, order (line up), match, lab (sliders), "
+        "mistake (spot the mistake), case (detective case), escape (escape room), boss (boss "
+        "battle) — with a story and points. Mentora fits a template to each idea itself; "
+        "pass `plays` only when the person asked for particular ones ('an escape room "
+        "about fractions' → escape), and a level, world or story only if they said. "
         "It needs what to make, the school year (Year 1-6 or Form "
         "1-5), and what it is about: a topic, a subject, or both. Work out what you can "
         "yourself instead of asking: given a topic but no subject, give the subject it "
@@ -140,6 +153,12 @@ class MakeLearningSetTool:
                 "type": "string",
                 "description": "A game's story in the person's own words, only if they gave one.",
             },
+            "plays": {
+                "type": "array",
+                "items": {"type": "string", "enum": list(PLAY_LABELS)},
+                "description": "A game's templates, only if the person asked for particular "
+                "ones: " + "; ".join(f"{k} = {v}" for k, v in PLAY_LABELS.items()) + ".",
+            },
         },
         "required": ["kind", "year"],
     }
@@ -167,7 +186,8 @@ class MakeLearningSetTool:
                 snippet=" · ".join(x for x in (what.capitalize(), grade.label, draft.subject) if x),
                 excerpt=(
                     f'Started making the {what} "{started.title}" ({about}). It will be '
-                    "ready in about a minute; it is shown as a "
+                    f"ready in {'a minute or two' if started.kind == 'game' else 'about a minute'};"
+                    " it is shown as a "
                     "card in this chat, it goes into the Library, and the bell rings when it "
                     "is ready. Tell the person that in a sentence or two. Do not write the "
                     "questions or cards yourself, and do not cite this."
@@ -212,6 +232,6 @@ class MakeLearningSetTool:
             level=_level(given.get("level")),
             # Passed on as said; the kind keeps what it understands
             # (`GenerationService._choices`).
-            choices={k: v for k in CHOICES if isinstance(v := given.get(k), str)},
+            choices={k: v for k in CHOICES if (v := _choice(given.get(k)))},
         )
         return draft, grade

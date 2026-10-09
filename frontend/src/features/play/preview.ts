@@ -26,11 +26,10 @@ function shown(item: Playable): QuizItem | CardItem | GameIsland {
   return { id: item.id, front: item.front, back: item.back, hint: item.hint, skill: item.skill }
 }
 
-/** The round an island is played in, and not the others written for it. */
-function roundOf(item: GameItem): Pick<GameIsland, 'sort' | 'order' | 'match'> {
-  if (item.play === 'sort') return { sort: item.sort }
-  if (item.play === 'order') return { order: item.order }
-  return { match: item.match }
+/** The round an island is played in — and its pairs, the revision games'
+ *  questions — but not the other rounds written for it (as the server). */
+function roundOf(item: GameItem): Partial<GameIsland> {
+  return { ...(item.match ? { match: item.match } : {}), [item.play]: item[item.play] }
 }
 
 /** A fresh attempt at the set, as a student would start it. */

@@ -8,8 +8,11 @@ import type { StoryLine } from '@/features/learning/api'
 import type { Attempt, GameIsland } from '@/features/play/api'
 import type { Spoken } from '@/features/play/backend'
 import type { Line, PlayVoice } from '@/features/play/usePlayVoice'
-import { Discovery, Finale, LearnCard, StoryCard, told, type Cast, type Telling } from './cards'
+import type { GameWorld } from '@/features/learning/api'
+import { Discovery, Finale, LearnCard, told, type Cast, type Telling } from './cards'
+import { isStart, Opening } from './openings'
 import { PLAY_LABELS } from './rounds'
+import { HowToFolded, HowToPlay } from './rounds/howto'
 import type { Islands, Outcome } from './useIslands'
 
 export type Phase = 'story' | 'map' | 'learn' | 'play' | 'end'
@@ -27,6 +30,8 @@ interface OverlayArgs {
   shown: Shown | null
   /** The island the child went to on the map: its Learn it, then its round. */
   active: GameIsland | null
+  world: GameWorld
+  calm: boolean
   voice: PlayVoice
   practice: boolean
   onStart: () => void
@@ -44,12 +49,15 @@ export function overlayFor(args: OverlayArgs): React.ReactNode {
   return null
 }
 
-function opening({ attempt, run, cast, voice, onStart }: OverlayArgs) {
+function opening({ attempt, run, cast, voice, world, calm, onStart }: OverlayArgs) {
   const extras = attempt.extras
   const story = extras.story
   const telling = tellingFrom(voice, cast.buddyName)
   return (
-    <StoryCard
+    <Opening
+      start={isStart(extras.start) ? extras.start : 'comic'}
+      world={world}
+      calm={calm}
       title={extras.title || attempt.title}
       hook={told(story?.hook, cast.buddyName)}
       goal={told(story?.goal, cast.buddyName)}
@@ -84,9 +92,12 @@ function discovery({ attempt, run, cast, voice, onNext }: OverlayArgs, { island,
   )
 }
 
-function learning({ attempt, run, cast, voice, practice, onPlay }: OverlayArgs, island: GameIsland) {
+function learning({ attempt, run, cast, voice, practice, calm, onPlay }: OverlayArgs, island: GameIsland) {
   const before = practice ? [] : attempt.extras.beats?.[island.id]?.before ?? []
   const telling = tellingFrom(voice, cast.buddyName)
+  // Shown open the first time a template comes up in the game; folded after.
+  const first = run.islands.find((other) => other.play === island.play) === island
+  const how = { play: island.play, language: attempt.language, calm }
   return (
     <LearnCard
       number={run.islands.indexOf(island) + 1}
@@ -97,6 +108,7 @@ function learning({ attempt, run, cast, voice, practice, onPlay }: OverlayArgs, 
       play={PLAY_LABELS[island.play]}
       lines={before}
       cast={cast}
+      howTo={first ? <HowToPlay {...how} /> : <HowToFolded {...how} />}
       telling={telling(`learn-${island.id}`, [
         ...beatLines(island.id, 'before', before),
         ...(island.learn ? [{ spoken: { item: island.id, part: 'learn' } as Spoken, text: island.learn }] : []),

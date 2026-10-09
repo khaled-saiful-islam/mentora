@@ -8,7 +8,8 @@ import pytest
 
 from app.learning.base import LearningKind, Skill
 from app.learning.enrich import Enriching, Finishing
-from app.learning.game import FALLBACK_TASK, LIMITS, Answered, GameKind, piece_names
+from app.learning.game import FALLBACK_TASK, LIMITS, Answered, GameKind
+from app.learning.game_rounds import piece_names
 from app.learning.model import GenerationUnavailable, Meter
 from app.learning.registry import build_learning_kinds, switched_on
 from tests.learning_fakes import FakeModel
@@ -180,6 +181,8 @@ def test_a_player_meets_the_idea_the_task_and_the_round_but_not_the_hint_or_less
         "play": "sort",
         "task": "Sort what the plant takes in and what it gives out!",
         "sort": item["sort"],
+        # The pairs come too: the revision games' questions.
+        "match": item["match"],
         "has_hint": True,
         "skill": "light",
         "difficulty": "easy",
@@ -224,7 +227,10 @@ def test_islands_are_played_simplest_first_keeping_their_order_otherwise() -> No
 
 def test_the_writing_rules_fit_a_round_to_each_idea_at_the_years_size() -> None:
     rules = GameKind().rules_for({"world": "reef", "story": "Siti the turtle is lost."})
-    assert '"play": "sort|order|match"' in rules and '"pairs"' in rules and '"why"' in rules
+    every = "sort|order|match|lab|mistake|case|escape|boss"
+    assert f'"play": "{every}"' in rules and '"pairs"' in rules and '"why"' in rules
+    assert '"lab": {"controls"' in rules and '"case": {"question"' in rules
+    assert "From Year 3, the LAST island is a `boss`" in rules
     assert "ONE idea" in rules and "ALWAYS `pairs`" in rules
     assert "Year 1–3: 4 to 6 cards" in rules and "Form 1–5" in rules
     assert "words only" in rules  # the picture goes in `icon`, not in the text too
@@ -233,7 +239,7 @@ def test_the_writing_rules_fit_a_round_to_each_idea_at_the_years_size() -> None:
     assert GameKind().check_focus.startswith("These items are islands")
     # The maker's own choice of templates is the only one offered.
     only = GameKind().rules_for({"plays": ["order"]})
-    assert "Use only order." in only and "`sort` when" not in only
+    assert "Use only order," in only and "`sort` when" not in only
 
 
 def test_choices_keep_the_setting_the_story_and_the_templates_and_drop_the_rest() -> None:
@@ -344,3 +350,106 @@ def test_the_story_prompts_never_give_the_buddy_a_species_or_a_gender() -> None:
     assert "Never say what kind of animal {buddy} is" in wrap
     assert "the only animal friend" in wrap and "invent no" in wrap
     assert "a beat before and after EVERY island" in wrap
+
+
+def test_a_boss_battle_comes_last_whatever_its_difficulty() -> None:
+    boss = {
+        "name": "Captain Muddle",
+        "questions": [
+            {"ask": f"Q{n}?", "options": ["a", "b", "c"], "answer": 0, "why": "So."}
+            for n in range(4)
+        ],
+    }
+    items = [island(difficulty="hard"), island(play="boss", boss=boss, difficulty="easy")]
+    arranged = GameKind().arrange(list(reversed(items)))
+    assert [i["play"] for i in arranged] == ["sort", "boss"]
+
+
+def test_a_game_opens_the_way_its_story_says_or_else_varies_by_title() -> None:
+    kind = GameKind()
+    assert kind.normalise_extras({**story(), "start": "call"})["start"] == "call"
+    starts = {kind.normalise_extras({"title": t})["start"] for t in ("A", "Bb", "Ccc", "Dddd")}
+    assert len(starts) > 1 and starts <= {"comic", "call", "letter", "news", "postcard"}
+
+
+
+def _islands(n: int) -> list[dict]:
+    pairs = [
+        {"left": f"Thing {i}.{p}", "right": f"Does {i}.{p}", "why": f"Why {i}.{p}"}
+        for i in range(n)
+        for p in range(3)
+    ]
+    return [
+        island(learn=f"Idea {letter}.", pairs=pairs[3 * i : 3 * i + 3])
+        for i, letter in enumerate("ABCDEF"[:n])
+    ]
+
+
+def _finishing(grade: str | None = "year_5", plays: str = "") -> Finishing:
+    from app.core.grades import grade_for
+
+    return Finishing(
+        title="T", topic="T", grade=grade_for(grade), language="en", items=(), sources=(),
+        choices={"plays": plays},
+    )  # fmt: skip
+
+
+def test_a_game_ends_with_a_boss_made_from_its_own_pairs_when_the_writer_wrote_none() -> None:
+    items = GameKind().complete(_islands(3), {"world": "reef"}, _finishing())
+    boss = items[-1]
+    assert len(items) == 4 and boss["play"] == "boss"
+    assert boss["boss"]["name"] == "Captain Muddle" and boss["difficulty"] == "hard"
+    questions = boss["boss"]["questions"]
+    assert 4 <= len(questions) <= 6
+    first = questions[0]
+    right = first["options"][first["answer"]]
+    assert first["ask"].startswith('What goes with "Thing') and right.startswith("Does")
+
+
+def test_no_boss_is_added_for_the_youngest_when_left_out_or_when_full() -> None:
+    kind = GameKind()
+    assert len(kind.complete(_islands(3), {}, _finishing("year_1"))) == 3
+    assert len(kind.complete(_islands(3), {}, _finishing(plays="sort,match"))) == 3
+    assert len(kind.complete(_islands(6), {}, _finishing())) == 6
+
+
+def test_two_islands_saying_one_idea_are_one_and_two_ideas_alike_are_two() -> None:
+    kind = GameKind()
+    first = island(learn="To add fractions, you must first find a common denominator.")
+    again = island(learn="First, find a common denominator for the fractions.")
+    water = island(learn="Plants need water to grow well.")
+    light = island(learn="Plants need light to grow well.")
+    assert kind.repeats(first, again) and not kind.repeats(water, light)
+
+
+def test_the_same_template_never_comes_twice_in_a_row_where_another_can_come_between() -> None:
+    order = {"steps": [{"text": f"Step {n}"} for n in range(3)]}
+    sorts = [island(learn=f"Sort {n}.") for n in range(2)]
+    line = island(play="order", order=order, learn="Order.")
+    played = [i["play"] for i in GameKind().arrange([*sorts, line])]
+    assert played == ["sort", "order", "sort"]
+
+
+async def test_the_story_offers_varied_names_and_the_opening_is_picked_not_written() -> None:
+    seen: dict[str, str] = {}
+
+    def wrap(system: str, user: str) -> dict:
+        seen["system"] = system
+        return {**story(), "start": "comic"}
+
+    finishing = Finishing(
+        title="Plants", topic="Photosynthesis", grade=None, language="en", items=(island(),),
+        sources=(), choices={"world": "auto"},
+    )  # fmt: skip
+    extras = await GameKind().wrap(FakeModel({"wrap": wrap}, Meter()), finishing)
+    assert "Name the main character one of these" in seen["system"]
+    assert extras["start"] in {"comic", "call", "letter", "news", "postcard"}
+
+
+async def test_a_story_reply_that_cannot_be_read_still_leaves_the_game_its_title() -> None:
+    finishing = Finishing(
+        title="Adding Fractions", topic="Fractions", grade=None, language="en", items=(),
+        sources=(), choices={"world": "kampung"},
+    )  # fmt: skip
+    extras = await GameKind().wrap(FakeModel({"wrap": {}}, Meter()), finishing)
+    assert extras["title"] == "Adding Fractions" and extras["world"] == "kampung"

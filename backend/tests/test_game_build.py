@@ -17,6 +17,8 @@ from app.learning.research import Researcher
 from tests.learning_fakes import GOOD_RESULTS, FakeModel, FakeSearch, happy
 
 DIFFICULTY = ["hard", "easy", "medium"]
+IDEAS = ["roots drink water", "leaves catch light", "stems carry food", "flowers make seeds",
+         "bees carry pollen", "fruit protects seeds", "soil holds minerals"]  # fmt: skip
 PAIRS = [
     {"left": "Roots", "right": "drink water", "why": "Roots take in water."},
     {"left": "Leaves", "right": "catch sunlight", "why": "Leaves catch the light."},
@@ -56,7 +58,7 @@ def islands(broken: set[int] | None = None) -> Any:
             n = next(counter)
             items.append(
                 {
-                    "learn": f"Idea number {n}.",
+                    "learn": f"Idea number {n}: {IDEAS[n % len(IDEAS)]}.",
                     "icon": "☀️",
                     **rounds(n),
                     "task": f"Do task {n}!",
@@ -126,7 +128,7 @@ async def test_a_round_that_breaks_its_rules_is_played_as_a_match_up() -> None:
 
     gen, _ = build(happy(draft=draft, wrap=STORY))
     updates = await run(gen, count=3)
-    first = next(i for i in updates[-1].result.items if i["learn"] == "Idea number 1.")
+    first = next(i for i in updates[-1].result.items if i["learn"].startswith("Idea number 1:"))
     assert first["play"] == "match" and first["task"] == FALLBACK_TASK
 
 
@@ -135,7 +137,7 @@ async def test_an_island_with_no_round_that_keeps_its_rules_is_written_again() -
     gen, model = build(happy(draft=islands(broken={3}), wrap=STORY))
     updates = await run(gen, count=3)
     items = updates[-1].result.items
-    assert len(items) == 3 and "Idea number 3." not in [i["learn"] for i in items]
+    assert len(items) == 3 and not [i for i in items if i["learn"].startswith("Idea number 3:")]
     assert model.asked.count("draft") == 2
 
 
@@ -188,6 +190,6 @@ async def test_the_makers_story_setting_and_templates_reach_the_islands_and_the_
     updates = await run(gen, count=3, choices=choices)
     assert "coral reef of Sipadan" in seen["draft"]
     assert "<story>\nSiti the turtle.\n</story>" in seen["draft"]
-    assert "Use only sort, order." in seen["draft"]
+    assert "Use only sort, order," in seen["draft"]
     assert "Siti the turtle." in seen["wrap"]
     assert updates[-1].result.extras["authored"] is True

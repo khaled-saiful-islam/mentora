@@ -28,6 +28,7 @@ import { HOSTS_BUDDY, PLAYERS } from './players'
 import { previewAttempt, PreviewGrader } from './preview'
 import { Review } from './Review'
 import { starsFor } from './session'
+import { useCameWith } from '@/features/learning/cameFrom'
 
 export default function PreviewPage() {
   const { setId = '' } = useParams()
@@ -58,7 +59,8 @@ function Preview({ set }: { set: SetDetail }) {
   // A fresh attempt and a fresh marker each round, so Start over is clean.
   const attempt = useMemo(() => previewAttempt(set), [set, round])
   const grader = useMemo(() => new PreviewGrader(set), [set, round])
-  const back = `/library/${set.id}`
+  // Played straight from the chat's card: closing leads back to the chat.
+  const back = useCameWith()?.to ?? `/library/${set.id}`
   const again = () => (setRound((r) => r + 1), setStep({ name: 'playing' }))
   const play = () => (again(), setMode('play'), window.scrollTo({ top: 0 }))
   const Player = PLAYERS[set.kind]

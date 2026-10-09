@@ -14,6 +14,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { Lightbulb } from '@phosphor-icons/react'
 import { useRef, useState } from 'react'
+import { Button } from '@/components/ui'
 import { Confirm } from '@/components/ui/Confirm'
 import { Buddy, profileOf } from '@/features/buddies'
 import type { GameIsland } from '@/features/play/api'
@@ -27,7 +28,8 @@ import { told, type Cast } from './cards'
 import { GameBar } from './GameBar'
 import { TreasureMap } from './Map'
 import { overlayFor, type Phase, type Shown } from './overlay'
-import { bandOf, Round, type Band, type Move } from './rounds'
+import { bandOf, Round, roundContent, type Band, type Move, type RoundContent } from './rounds'
+import { HowToPlay } from './rounds/howto'
 import { spokenFor } from './rounds/pieces'
 import { useFullscreen } from './useFullscreen'
 import { useIslands } from './useIslands'
@@ -71,6 +73,8 @@ export function GameHost({ attempt, buddy, exitTo, onFinished, only, practice = 
   const [showMe, setShowMe] = useState(0)
   const [line, setLine] = useState<string | null>(null)
   const [ending, setEnding] = useState(false)
+  // How to play, asked for from the bar in the middle of a round.
+  const [asking, setAsking] = useState(false)
   const current = run.current
   const allIn = run.islands.every((m) => run.outcomes[m.id])
 
@@ -117,7 +121,7 @@ export function GameHost({ attempt, buddy, exitTo, onFinished, only, practice = 
   }
 
   const overlay = overlayFor({
-    attempt, run, cast, phase, shown, active, voice, practice,
+    attempt, run, cast, phase, shown, active, world, calm, voice, practice,
     onStart: () => setPhase('map'),
     onPlay: () => setPhase('play'),
     onNext: next,
@@ -141,6 +145,7 @@ export function GameHost({ attempt, buddy, exitTo, onFinished, only, practice = 
         // The hint shows under the bar; the buddy beside the game says it too.
         onHint={() => active && void run.hint(active.id).then((hint) => hint && buddy.current?.say(hint, 5000))}
         showMe={stuck && active ? () => help(active) : null}
+        onHowTo={playing ? () => setAsking(true) : null}
         sound={sound}
         onSound={() => setSound((on) => !on)}
         fullscreen={fullscreen}
@@ -196,6 +201,16 @@ export function GameHost({ attempt, buddy, exitTo, onFinished, only, practice = 
             />
           )}
           <AnimatePresence>
+            {playing && asking && (
+              <motion.div key="how" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-10 grid place-items-center overflow-y-auto bg-foreground/40 p-4 backdrop-blur-[2px]">
+                <section role="dialog" aria-label="How to play" className="w-full max-w-md space-y-3 rounded-3xl border-4 border-surface bg-surface p-4 shadow-lg">
+                  <HowToPlay play={active.play} language={attempt.language} calm={calm} />
+                  <Button variant="sun" size="lg" className="w-full" onClick={() => setAsking(false)} autoFocus>
+                    Back to the game
+                  </Button>
+                </section>
+              </motion.div>
+            )}
             {overlay && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-10 grid place-items-center overflow-y-auto bg-foreground/40 p-4 backdrop-blur-[2px]">
                 {overlay}
@@ -240,9 +255,8 @@ function IslandNote({ island, number, total }: { island: GameIsland; number: num
   )
 }
 
-/** The round an island is played in, with its content, for `Round`. */
-function roundOf(island: GameIsland) {
-  if (island.play === 'sort' && island.sort) return { play: 'sort' as const, content: island.sort }
-  if (island.play === 'order' && island.order) return { play: 'order' as const, content: island.order }
-  return { play: 'match' as const, content: island.match ?? { pairs: [] } }
+/** The round an island is played in, with its content, for `Round` — its
+ *  pairs as a Match Up should its own round be missing. */
+function roundOf(island: GameIsland): RoundContent {
+  return roundContent(island) ?? { play: 'match', content: island.match ?? { pairs: [] } }
 }

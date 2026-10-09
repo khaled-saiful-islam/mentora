@@ -1,5 +1,5 @@
 /**
- * The three first templates (§26): a right move, a wrong one (the buddy says
+ * The first three templates (§26): a right move, a wrong one (the buddy says
  * why, and it counts as a slip), Show me playing one right move, and the round
  * finishing exactly once.
  */
@@ -104,24 +104,25 @@ describe('Line Up', () => {
 })
 
 describe('Match Up', () => {
-  it('joins pairs from either side, says why a wrong pair is wrong, and Show me can finish it', async () => {
+  it('fills each slot from the tray, says why a wrong answer is wrong, and Show me can finish it', async () => {
     const user = userEvent.setup()
     const round = mount({ play: 'match', content: MATCH, shuffle: identity })
+    expect(screen.getByText('Drag each answer to its partner — 0 of 3 matched')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: '1/2' }))
-    expect(screen.getByText("Now find the partner of '1/2'")).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'one quarter' }))
+    expect(screen.getByText("Now tap where 'one quarter' goes")).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: "Slot for '1/2'" }))
     expect(round.say).toHaveBeenCalledWith('1 of 2 equal parts is a half.')
     expect(round.onMove).toHaveBeenLastCalledWith({ piece: 'p1', right: false })
 
-    await user.click(screen.getByRole('button', { name: '1/2' }))
     await user.click(screen.getByRole('button', { name: 'one half' }))
+    await user.click(screen.getByRole('button', { name: "Slot for '1/2'" }))
     expect(round.onMove).toHaveBeenLastCalledWith({ piece: 'p1', right: true })
-    expect(screen.getByRole('button', { name: /1\/2/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: "'1/2' goes with 'one half'" })).toBeDisabled()
 
-    // Right side first, then its partner.
+    // A slot first, then its answer.
+    await user.click(screen.getByRole('button', { name: "Slot for '1/4'" }))
     await user.click(screen.getByRole('button', { name: 'one quarter' }))
-    await user.click(screen.getByRole('button', { name: '1/4' }))
     expect(round.onMove).toHaveBeenLastCalledWith({ piece: 'p2', right: true })
 
     round.showMe(1)

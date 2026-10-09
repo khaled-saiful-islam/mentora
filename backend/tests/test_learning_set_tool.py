@@ -202,6 +202,15 @@ async def test_a_game_is_made_from_a_chat_with_its_level_world_and_story() -> No
     assert result.snippet.startswith("Game")
 
 
+async def test_a_game_can_be_asked_for_in_particular_templates() -> None:
+    maker = _Maker()
+    await MakeLearningSetTool(maker).run(
+        kind="escape room", topic="fractions", year="Year 5", plays=["escape", "boss", 7]
+    )
+    [draft] = maker.drafts
+    assert draft.kind == "game" and draft.choices == {"plays": "escape,boss"}
+
+
 async def test_a_game_without_its_choices_lets_mentora_decide() -> None:
     maker = _Maker()
     await MakeLearningSetTool(maker).run(kind="games", topic="the water cycle", year="Year 5")
@@ -226,4 +235,5 @@ def test_the_tool_tells_the_model_it_can_make_games() -> None:
     assert "game" in tool.parameters["properties"]["kind"]["enum"]
     assert {"level", "world", "story"} <= set(tool.parameters["properties"])
     assert "style" not in tool.parameters["properties"]
-    assert "treasure map of islands" in tool.description
+    assert "treasure map of islands" in tool.description and "escape room" in tool.description
+    assert tool.parameters["properties"]["plays"]["items"]["enum"][-1] == "boss"

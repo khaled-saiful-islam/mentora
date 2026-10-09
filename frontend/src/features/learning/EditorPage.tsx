@@ -26,9 +26,11 @@ import { useResource } from '@/hooks/useResource'
 import { Page, spring } from '@/motion'
 import { cn } from '@/lib/utils'
 import { AddWithAI } from './AddWithAI'
-import { learningApi, type Item, type SetDetail } from './api'
+import { RevisionCard } from '@/features/game/revision/RevisionLaunch'
+import { learningApi, type GameItem, type Item, type SetDetail } from './api'
 import { EDITORS } from './editors'
 import { GrowingText } from './editors/fields'
+import { useBackFor } from './cameFrom'
 import { lookOfKind, nounOf } from './kinds'
 import { ShareDialog } from './ShareDialog'
 import { SendHomeDialog } from '@/features/family/SendHomeDialog'
@@ -49,6 +51,8 @@ export default function EditorPage() {
 }
 
 function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDetail) => void }) {
+  // Back to the chat it was opened from, or the Library.
+  const back = useBackFor(initial.id)
   const [title, setTitle] = useState(initial.title)
   const [items, setItems] = useState<Item[]>(initial.items)
   const [saving, setSaving] = useState(false)
@@ -106,8 +110,8 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
 
   return (
     <Page className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8">
-      <Link to="/library" className="inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground hover:text-foreground">
-        <ArrowLeft weight="bold" className="size-4" /> Library
+      <Link to={back.to} className="inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground hover:text-foreground">
+        <ArrowLeft weight="bold" className="size-4" /> {back.label}
       </Link>
 
       <section className={cn('relative mt-4 overflow-hidden rounded-[2rem] p-6 shadow-press sm:p-8', look.hero)}>
@@ -314,6 +318,7 @@ function IconButton({ label, title, disabled, onClick, children }: { label: stri
 function SourcesPanel({ set }: { set: SetDetail }) {
   return (
     <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+      {set.kind === 'game' && <RevisionCard title={set.title} items={set.items as GameItem[]} />}
       <Card className="p-5">
         <h2 className="flex items-center gap-2 font-display text-lg font-semibold"><Globe weight="duotone" className="size-5 text-sky-700 dark:text-sky-100" /> Sources</h2>
         {set.sources.length === 0 ? (
