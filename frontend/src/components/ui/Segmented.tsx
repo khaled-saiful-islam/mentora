@@ -7,6 +7,8 @@ export interface SegmentedOption<T extends string> {
   value: T
   label: string
   icon?: React.ReactNode
+  /** Shown, but not for picking now. */
+  disabled?: boolean
 }
 
 /**
@@ -42,9 +44,10 @@ export function Segmented<T extends string>({
             type="button"
             role="radio"
             aria-checked={active}
+            disabled={option.disabled}
             onClick={() => onChange(option.value)}
             className={cn(
-              'relative inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-bold transition-colors',
+              'relative inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40',
               active ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
             )}
           >

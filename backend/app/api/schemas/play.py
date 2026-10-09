@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -106,12 +106,15 @@ class AnswerRequest(BaseModel):
     choice: int | None = Field(default=None, ge=0, le=9)
     knew: bool | None = None
     time_ms: int = Field(default=0, ge=0)
-    # A game's mission (§24): reached or not, as the game reported it, and in
-    # how many goes.
+    # A game's island (§26): cleared or not, as its round reported it, and in
+    # how many goes — one, and one more for each slip.
     done: bool | None = None
     tries: int | None = Field(default=None, ge=1, le=99)
-    # Reached after "Show me" (§25): the buddy played it first.
+    # Cleared after "Show me" (§25): the buddy played a move.
     shown: bool = False
+    # The pieces put in the wrong place at least once, by id: what the
+    # teacher's results count as most often wrong.
+    slips: list[Annotated[str, Field(max_length=40)]] = Field(default_factory=list, max_length=40)
 
 
 class HintResponse(BaseModel):

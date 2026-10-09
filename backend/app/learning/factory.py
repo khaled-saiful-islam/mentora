@@ -3,7 +3,6 @@ provider, search and guard. Everything else takes them as arguments."""
 
 from __future__ import annotations
 
-from app.artifacts.model import ArtifactModel
 from app.core.config import Settings
 from app.guards.registry import build_guards
 from app.learning.base import LearningKind
@@ -11,8 +10,6 @@ from app.learning.generator import LearningGenerator
 from app.learning.model import JsonModel, LearningModel, Meter
 from app.learning.picture_check import PictureCheck, VisionPictureCheck, WordsPictureCheck
 from app.learning.research import Researcher
-from app.learning.sim.builder import SimBuilder
-from app.learning.sim.playtest import BrowserTester
 from app.providers.openai_compatible import OpenAICompatibleProvider
 from app.tools.page_reader import PageReader
 from app.tools.serpapi import SerpApiSearch
@@ -60,24 +57,6 @@ def build_picture_check(settings: Settings) -> PictureCheck:
     return WordsPictureCheck()
 
 
-def build_sim_builder(settings: Settings) -> SimBuilder | None:
-    """What writes and tests a game (§24): the studio's model, which has the
-    output budget for a whole document, and the browser it already uses.
-    None when games are off, or there is no such model to write them."""
-    if not settings.games_available:
-        return None
-    model = ArtifactModel(
-        OpenAICompatibleProvider(
-            base_url=settings.resolved_artifact_base_url,
-            api_key=settings.resolved_artifact_api_key,
-            model=settings.artifact_model,
-            timeout=settings.artifact_timeout_seconds,
-        ),
-        max_tokens=settings.artifact_max_tokens,
-    )
-    return SimBuilder(model, BrowserTester())
-
-
 def build_generator(settings: Settings, kind: LearningKind, meter: Meter) -> LearningGenerator:
     return LearningGenerator(
         build_model(settings, meter),
@@ -85,5 +64,4 @@ def build_generator(settings: Settings, kind: LearningKind, meter: Meter) -> Lea
         kind,
         meter,
         picture_check=build_picture_check(settings),
-        builder=build_sim_builder(settings) if getattr(kind, "coded", False) else None,
     )

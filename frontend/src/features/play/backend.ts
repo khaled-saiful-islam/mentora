@@ -14,12 +14,14 @@ export interface AnswerBody {
   item_id: string
   choice?: number
   knew?: boolean
-  /** A game's mission, as the game reported it (§24): reached or not, and
-   *  in how many goes. */
+  /** A game's island, as its round reported it (§26): cleared or not, and
+   *  in how many goes — one, and one more for each slip. */
   done?: boolean
   tries?: number
-  /** Reached after "Show me" (§25): the buddy played it first. */
+  /** Cleared after "Show me" (§25): the buddy played a move. */
   shown?: boolean
+  /** The pieces put in the wrong place on the way, by id. */
+  slips?: string[]
   time_ms: number
 }
 
@@ -29,15 +31,19 @@ export type StoryPiece = 'hook' | 'goal' | 'win' | 'opening' | 'ending'
 
 /** One part of an item the tutor's voice can say. */
 export type Spoken =
-  | { item: string; part: 'question' | 'front' | 'back' | 'hint' | 'explanation' | 'learn' | 'guide' }
-  /** A line of the story panel before or after a game's mission. */
+  | { item: string; part: 'question' | 'front' | 'back' | 'hint' | 'explanation' | 'learn' | 'task' }
+  /** A line of the story panel before or after a game's island. */
   | { item: string; part: 'before' | 'after'; n: number }
-  | { item: string; part: 'option'; n: number }
+  /** A game round's piece, or why it goes where it does, by its number
+   *  (`piecesOf` in `features/game/rounds`). */
+  | { item: string; part: 'option' | 'piece' | 'why'; n: number }
   | { item: StoryPiece; part: 'story'; n?: number }
+
+const NUMBERED = new Set(['option', 'before', 'after', 'piece', 'why'])
 
 export function spokenQuery(spoken: Spoken): string {
   const query = new URLSearchParams({ item: spoken.item, part: spoken.part })
-  if (spoken.part === 'option' || spoken.part === 'before' || spoken.part === 'after') query.set('n', String(spoken.n))
+  if (NUMBERED.has(spoken.part) && 'n' in spoken && spoken.n !== undefined) query.set('n', String(spoken.n))
   if (spoken.part === 'story' && spoken.n !== undefined) query.set('n', String(spoken.n))
   return query.toString()
 }
@@ -48,21 +54,12 @@ export interface PlayBackend {
   speech: (attemptId: string, spoken: Spoken) => string
   /** A game's hint, which costs a few points once asked for. */
   hint: (attemptId: string, itemId: string) => Promise<string>
-  /** Where a game's code is played (§24): the student's own attempt, or the
-   *  set its maker is previewing. `only` replays just those missions. */
-  game: (attemptId: string, only?: string[]) => string
-}
-
-/** `?only=a,b` for a replay of some missions; nothing for the whole game. */
-export function onlyQuery(only?: string[]): string {
-  return only && only.length ? `?${new URLSearchParams({ only: only.join(',') })}` : ''
 }
 
 const server: PlayBackend = {
   answer: playApi.answer,
   speech: (attemptId, spoken) => `/api/me/attempts/${attemptId}/speech?${spokenQuery(spoken)}`,
   hint: async (attemptId, itemId) => (await playApi.hint(attemptId, itemId)).hint,
-  game: (attemptId, only) => `/api/me/attempts/${attemptId}/game${onlyQuery(only)}`,
 }
 
 const BackendContext = createContext<PlayBackend>(server)

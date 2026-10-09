@@ -1,172 +1,163 @@
-# 050 — Play and Learn: simulation games that teach
+# 050 — Play and Learn: games from Mentora's own templates
 
-Teachers and parents make a **game** on any topic. It is a small simulation
-where the child learns by changing things and watching what happens, never
-by answering questions. The game teaches one idea at a time, inside a story
-that moves forward as they learn. The AI writes the lesson (checked against
-sources), the story and the game's code. A robot plays every game on a phone
-and a laptop before anyone else sees it. Plans: `PLAN.md` §24 (AI-coded
-simulations) and §25 (Learn it → Try it → Do it).
+Teachers and parents make a **game** on any topic. It is a treasure map of
+3–6 islands, one idea each, set in a Malaysian world and told as a short
+story. On each island the child plays one round in a **template Mentora
+owns**: they sort cards into baskets, put steps in order, or match pairs.
+The AI writes only the content (checked against sources, like a quiz) and
+picks the template that fits each idea. It never writes code. **A game is
+always built**, in one to two minutes.
+Plans: `PLAN.md` §26. The AI-coded games of §24/§25 came before it and were
+retired: about one build in three passed.
 
 ## What it does
 
 ### For the child
 
-- **The opening**: a short comic, read aloud. The story's main character
-  (*Aina, the reef keeper*) has a problem; the child's own buddy says
-  they will help.
-- **Each mission is a little lesson in three beats.**
-  1. **Learn it**: before the mission, a story panel that makes the idea
-     matter, then the idea itself, big, with a picture: *☀️ "The sun heats
-     the sea and turns water into invisible vapour."* Read aloud.
-  2. **Try it**: in the game, the one control this idea is about glows and
-     an arrow points at it. Only that control works, the scene reacts
-     big, and it cannot be got wrong.
-  3. **Do it**: a small problem that uses the idea (*"Make lots of
-     vapour float up"*), with the target shown at beginner level and
-     warmer/colder words. A miss is a "Try again", never a game over.
-- **Controls arrive one per mission**, so the first mission has just one;
-  the last mission is a big finish that uses them together.
-- **What you discovered**: when a mission is done, its stars, the checked
-  explanation, and the story moving on (*"…but the sky is getting dark!"*).
-- **Show me**: after two misses at a mission, the buddy plays it while the
-  child watches; the mission still counts, with one star.
-- **Hints** from the buddy cost a few points. **Stars**: three on the first
-  go without help, two with help or after some goes, one after Show me.
-- **The ending**: the character thanks the child; stars, points, and
-  *Missions you missed* to replay just those (nothing is kept).
-- Sound, full screen, read-aloud of every story line, idea and explanation;
-  the buddy beside the game on a wide screen, in a line under the bar on a
-  phone.
+- **The story**: a short comic, read aloud. A character with a problem and
+  the child's own buddy.
+- **The map**: the islands on a winding path across the world. The next
+  island glows with the buddy on it; the rest wait under fog until their
+  turn.
+- **On each island**:
+  - **Learn it**: the story beat before the island, then the one idea, big,
+    with a picture, and what to do. All of it can be read aloud.
+  - **Play it**: one round in a template, described below. Every move is
+    answered at once. A right move locks in; a wrong one wobbles and the
+    buddy says **why**: *"Vinegar is an acid: it tastes sour."*
+  - **What you discovered**: the explanation, the stars, and the story
+    moving on. The fog lifts from the next island.
+- **Show me**: once the child is stuck, the buddy plays one right move.
+  That is after one wrong move for Year 1–3, after two otherwise. The island
+  still counts, with one star.
+- **Hints** cost a few points. **Stars**: three with no slip and no help,
+  two otherwise, one after Show me.
+- **The ending**: the character thanks the child. *Islands to clear again*
+  replays only the islands missed, and keeps nothing.
+
+### The templates (`frontend/src/features/game/rounds/`)
+
+| Template | The child… | Fits |
+|---|---|---|
+| **Sort It Out** | puts one card at a time into its basket, by tapping or dragging | groups: living or not, acids and bases, nouns and verbs |
+| **Line Up** | taps steps into place one after another; right ones lock | processes, cycles, timelines, sentences |
+| **Match Up** | taps a piece on each side to join a pair | word and meaning, cause and effect, BM and English |
+
+**By year** (`bandOf`):
+
+| | Years 1–3 | Years 4–6 | Forms 1–5 |
+|---|---|---|---|
+| Text | biggest | large | denser, so more fits |
+| Read aloud | a speaker on every piece, and every *why* is read aloud | on request | on request |
+| Show me | after one wrong move | after two | after two |
+| Size the AI is asked for | 4–6 cards in 2 baskets, 3–4 steps or pairs | 6–9 cards, 4–6 steps or pairs | 8–12 cards, 5–8 steps or pairs |
 
 ### For the teacher or parent
 
-- **Make a game** from the teacher and parent homes, the coverage nudges,
-  Library → Make, or the chat. Pick the topic, subject, year, **level**,
-  language, how many missions (4 by default, 3 to 6), the setting (or *Let
-  Mentora decide*) and the story (*Surprise me*, *Draft with AI* or *Write
-  my own*).
-- **Watch it build**, about 3–6 minutes: check the topic → research →
-  skills → write and check the missions → write the story → design the
-  simulation → code it → test it on a phone and a laptop → screen its words.
-  The bell rings when it is ready.
+- **Make a game** from the homes, the coverage nudges, Library → Make, or
+  the chat. Pick the topic, year, **level** and language, and how many
+  islands (4 by default, 3 to 6). Then three choices, each with *Let Mentora
+  decide* as the default:
+  - **how it plays**: any of the templates, or the ones picked;
+  - **the world**;
+  - **the story**: *Surprise me*, *Draft with AI* or *Write my own*.
+- **Watch it build**, one to two minutes: check the topic → research → skills →
+  write and check the islands → write the story.
 - **Play it first** in the real game screen, with nothing recorded.
-- **Edit** each mission's words (the idea, its picture, the control, what
-  to try, the problem, what it teaches, the hint), the story plan (the
-  character, the opening and ending panels, the beat before and after each
-  mission) and the setting. Missions are not added or removed here, because
-  they live in the game's code.
-- **Change it**: type a change (*"make the sun slider bigger"*); the game is
-  revised and tested again, and a change that breaks it is not kept.
+- **Edit** each island: the idea and picture, what to do, its round (cards
+  and baskets, steps in order, pairs, and each piece's *why*), what it
+  teaches and the hint. Also the story plan and the world. An island can be
+  switched to any template it already has a round for. *Rewrite with AI*
+  ("make this a Line Up") writes it a new one. Islands are not added,
+  removed or moved, because the story has a beat for each.
 - **Share** with a class (retakes on by default, a best-points leaderboard
-  if you want one) or send it home. Results show each mission by its goal.
+  if wanted) or send it home.
+- **Results** show each island by its task, how many cleared it, and the
+  pieces **most often wrong first**: *"Whale (belongs in Mammals): 12
+  students"*.
 
 ## How it works
 
-- **The kind** (`backend/app/learning/game.py`, `game_prompts.py`): a
-  mission is `{learn, icon, control, guide, goal, win, explanation, hint,
-  skill, difficulty, source_ids}`, checked by the same pipeline as quiz
-  items with a mission-specific focus (`CHECK_FOCUS`). Missions are
-  written in one go (`batch = 6`), simplest first, and two that add the
-  same control are one mission (`distinct`: the thing controlled, so "the
-  sun" and "the sun slider" are the same). The story plan lives in the
-  set's extras: title, setting, character, opening and ending lines, and
-  `beats` keyed by mission id. `coded = True` tells the generator to build
-  the game's code after the story.
-- **The builder** (`backend/app/learning/sim/`):
-  - `prompts.py`: design, then write, with the three beats, one control
-    per mission, and a `Mentora.demo(id)` (Show me) for every mission.
-  - `checks.py`: refuses network, `eval`, blocking loops, web storage,
-    dialogs and outside resources, and any reply that isn't one whole
-    document. It also refuses a game that tells missions apart by their
-    words (`m.control === "Knife"`): the words are the maker's to edit, so
-    such a game stops working once they change. Missions go by `id`.
-  - `playtest.py`: runs the game, served as a student gets it (from an
-    address of its own, with the content policy as a header), at 390×700
-    by touch and 1280×760 by keys. It presses Show me for every mission in
-    turn (up to three presses each) and fails errors, freezes, blank
-    pages, horizontal scrolling and any reach for the network. Each error
-    is reported with the line of the game it came from, so a syntax error
-    can be fixed. When Show me falls short, the complaint says what the
-    game did meanwhile (failed tries, what the buddy was told to say).
-  - `builder.py`: the build. A cut-off write is continued. Problems are
-    fixed by line edits (`edits.py`), with a whole rewrite as fallback, at
-    most twice, and a game that still fails is not kept. Each call to the
-    writer is retried once if the connection drops. The game's words go
-    through the student safety rules.
-- **The runtime** (`sim/runtime.py`) is injected when a game is served. It
-  is the game's only way out: `ready`, `tried`, `done`, `say`, `play`, and
-  Show me coming in. It also carries the viewer's missions (with their
-  beats), the buddy's name, the level, the language, calm motion and sound.
-  The content policy is sent both as a header and as a `<meta>` tag.
-- **Storage and routes**: `game_documents` holds each game's code, one
-  revision per change. The routes are:
-  - `GET /api/learning-sets/{id}/game/play` for the maker, and
-    `GET /api/me/attempts/{id}/game` for the student whose attempt it is,
-    both with `?only=` for a replay.
-  - `GET /api/learning-sets/{id}/game` for the status.
-  - `POST …/game/changes` for Change it.
-  - A mission is reported as an answer with `done`, `tries` and `shown`.
-- **Points** (server, mirrored in `features/game/points.ts`): a mission
-  reached earns 100, plus 25 or 50 for medium or hard, plus 25 on the first
-  go, minus 40 for a hint. A mission reached after Show me earns 50. A
-  mission not reached earns 0.
+- **The kind** (`backend/app/learning/game.py`, `game_prompts.py`):
+  - **An island** is `{learn, icon, play, task, sort?, order?, match?,
+    explanation, hint, skill, difficulty, source_ids}`. Islands are written
+    in one go (`batch = 6`), simplest first, and checked by the same
+    pipeline as quiz items, with an island-specific focus (`CHECK_FOCUS`).
+  - **Each template's rules are kept on the server** (`_sort`, `_order`,
+    `_match`):
+    - every card is in exactly one basket and every basket gets cards;
+    - no two cards, steps or pairs say the same thing;
+    - too many steps is refused, not cut;
+    - pairs are one to one.
+  - **The Match Up fallback:** every island also carries 3–4 pairs. A round
+    that breaks its rules is played as a Match Up of those pairs instead,
+    and an island with no valid round at all is written again. This is what
+    makes a game always build.
+  - **The story plan** lives in the set's extras: title, world, character,
+    opening and ending lines, and `beats` keyed by island id.
+  - The maker's choices are `world`, `story` and `plays` (`"sort,match"`;
+    empty means any).
+- **Answers** (`attempt_service`): an island is reported cleared or not,
+  with `tries` (one, plus one per slip), `shown` and `slips` (the ids of
+  pieces put in the wrong place). Points are counted on the server.
+  `results_service` names the most frequent slips (`piece_names`).
+- **Read aloud** (`services/read_aloud.py`): adds the parts `task`, `piece`
+  and `why`. A round's pieces are numbered the same way on both sides
+  (`pieces_of` on the server, `rounds/pieces.ts` in the app), and the voice
+  is asked for a piece by its number, never by its words.
 - **The screen** (`frontend/src/features/game/`):
-  - `GameHost` frames the game (`sandbox="allow-scripts"`, its own
-    address), with `GameBar`, the cards (`cards.tsx`, chosen by
-    `overlay.tsx`), the buddy, and Show me.
-  - `bridge.ts` listens only to that frame, and only for the runtime's
-    shapes.
-  - `useMissions` keeps the outcomes, stars and points.
+  - `GameHost` steps through the story, the map, Learn it, the round, What
+    you discovered, and the ending.
+  - It also holds the island being played, Show me, slips and sound.
+  - `Map.tsx` draws the map, `cards.tsx` and `overlay.tsx` the cards.
+  - `useIslands` keeps the outcomes, points and stars.
+  - `rounds/` holds the templates.
+- **Points** (server, mirrored in `features/game/points.ts`):
+  - An island cleared earns 100, plus 25 for medium or 50 for hard, plus 25
+    with no slip, minus 40 for a hint.
+  - Cleared after Show me: 50. Not cleared: 0.
 
 ## Configuration
 
-- `GAMES_ENABLED` (default on) turns games on or off. They also need
-  `ARTIFACT_MODEL`, the model that writes games, which is independent of
-  the switched-off studio. With either missing, games are not offered.
-- `ARTIFACT_MAX_TOKENS` and `ARTIFACT_TIMEOUT_SECONDS` apply to each
-  writing call.
-- `LEARNING_MODEL` writes the missions and the story.
-- Every call that writes a game counts toward the maker's daily tokens
-  (`services/quota.py` sums `game_documents` too). `PARENT_SETS_PER_DAY`
-  counts a parent's games.
+- `GAMES_ENABLED` (default on) turns games on or off. When off, no one is
+  offered a game and making one is refused (`switched_on` in
+  `learning/registry.py`).
+- `LEARNING_MODEL` writes the islands and the story; no other model is used.
+- `PARENT_SETS_PER_DAY` counts a parent's games.
 
 ## Extending it
 
-- **A new runtime call**: add it in `sim/runtime.py` (the injected JS)
-  and `features/game/bridge.ts` (the listener), tell the writer in
-  `sim/prompts.py`, and test it with the robot in `sim/playtest.py`.
-- **Stricter or looser tests** live in `sim/checks.py` (reading) and
-  `sim/playtest.py` (playing). Each complaint is a sentence the writer can
-  act on.
-- **A new setting**: add it to `WORLD_NOTES` and `WORLD_LABELS` in
-  `game_prompts.py` / `game.py`, `features/game/worlds.ts`, and eight
-  `--world-<name>-*` tokens for its swatch.
+- **A new template**:
+  1. Write its round in `frontend/src/features/game/rounds/` (it gets
+     `RoundProps`, and must answer every move, call `onMove` and `onDone`,
+     and play one move on Show me).
+  2. Add it to `Round` and `PLAY_LABELS`.
+  3. On the server, add a validator next to `_sort` in `game.py`, a line in
+     `_PLAY_RULES` in `game_prompts.py`, and its pieces in `pieces_of` /
+     `piecesOf` and `piece_names`.
+  4. Write an editor in `learning/editors/rounds.tsx`.
+- **A new world**: add it to `WORLD_NOTES`, `WORLD_LABELS` and
+  `features/game/worlds.ts`, plus eight `--world-<name>-*` tokens.
 
 ## Known limits
 
-- **Builds fail sometimes**, and that is by design. A game that doesn't
-  pass its robot playtest (most often because Show me can't reach a
-  mission) is not kept. The maker is told to try again, and each build is
-  different. Expect most builds to pass, not all.
-- **Build time and cost**: 3–6 minutes, with about 4–8 calls to the game
-  writer (up to 16k tokens each). Each fix and each Change it adds more.
-- **Quality varies.** The robot proves a game runs, fits a phone and can be
-  finished; it cannot judge whether it is fun or beautiful. Labels drawn
-  inside the game can overlap; play it first and use Change it.
-- **Scores come from the game**, which runs on the child's device. A
-  determined student could fake a mission report. Points and the
-  leaderboard should be read in that light.
-- **Repeats are caught by their control only.** Two missions that teach the
-  same idea with different things (halves of a kuih, then halves of a
-  lantern) both stay; the prompt asks for new ideas, but nothing checks.
-- **Missions can't be added or removed after the build.** Their words can
-  be edited, and Change it can rework the game, but a new mission means a
-  new game.
-- **English design.** The game's words follow the set's language, but the
-  prompts are English, so English games are the best.
-- **The robot plays by its demos.** It proves each mission can be reached
-  by the game's own Show me, not that a child will find the way. The Learn
-  it and Try it beats are what make that likely.
-- Story drafts are not counted toward a day's set quota, only rate-limited.
-  Builds run in the API process, like every set.
+- **Less surprise than a hand-made game.** Every Sort It Out plays like a
+  Sort It Out. The variety comes from the templates, the five worlds and the
+  story.
+- **Three templates so far.** The Lab (sliders), Spot the Mistake, Detective
+  Case, Escape Room and the revision games (Boss Battle, Tug-of-War, Streak
+  Ladder) are later phases of §26.
+- **Answered on the device.** A round needs each move's answer at once, so
+  the student's copy carries the answers. A determined student could read
+  them, or fake a report. Points and the leaderboard should be read in that
+  light.
+- **Islands can't be added, removed or moved after the build.** Each one's
+  words and round can be edited, but a new island means a new game.
+- **Games made before §26 were archived** by the migration that dropped
+  their code (`b9e4c1a7d203`): they had no rounds to play.
+- **English design.** The pieces follow the set's language, but the prompts
+  are English, so English games are the best.
+- **Repeats are caught by their words.** Two islands that teach the same
+  idea in different words both stay; the prompt asks for different ideas,
+  but nothing checks.
+- Story drafts are rate-limited but not counted toward a day's set quota.

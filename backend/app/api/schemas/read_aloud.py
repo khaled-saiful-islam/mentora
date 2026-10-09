@@ -20,7 +20,8 @@ class Spoken:
 def _spoken(
     item: Annotated[str, Query(min_length=1, max_length=64)],
     part: Part,
-    n: Annotated[int | None, Query(ge=0, le=9)] = None,
+    # A quiz's options, a story panel's lines, a game round's pieces (§26).
+    n: Annotated[int | None, Query(ge=0, le=39)] = None,
 ) -> Spoken:
     return Spoken(item=item, part=part, n=n)
 

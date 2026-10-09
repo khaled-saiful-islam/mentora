@@ -1,7 +1,7 @@
 /**
- * What a maker chooses before a game is built (§23): the story — Mentora's
- * surprise, a draft from AI to edit, or their own — and the setting,
- * each of which Mentora can decide.
+ * What a maker chooses before a game is built (§26): how it plays, the story —
+ * Mentora's surprise, a draft from AI to edit, or their own — and the
+ * setting, each of which Mentora can decide.
  */
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -31,8 +31,8 @@ function answering(status: number, body: unknown) {
 
 describe('a game’s options', () => {
   it('sends no story of its own when Mentora is to surprise, and the maker’s story trimmed', () => {
-    expect(gameChoices({ ...FRESH_GAME, story: 'left over from a draft' })).toEqual({ world: 'auto', story: '' })
-    expect(gameChoices({ mode: 'own', story: '  Siti swims home.  ', world: 'reef' })).toEqual({ world: 'reef', story: 'Siti swims home.' })
+    expect(gameChoices({ ...FRESH_GAME, story: 'left over from a draft' })).toEqual({ world: 'auto', story: '', plays: '' })
+    expect(gameChoices({ mode: 'own', story: '  Siti swims home.  ', world: 'reef', plays: ['sort', 'match'] })).toEqual({ world: 'reef', story: 'Siti swims home.', plays: 'sort,match' })
   })
 
   it('drafts a story with AI for the maker to read and edit', async () => {
@@ -88,20 +88,35 @@ describe('a game’s options', () => {
     expect(screen.getByText('15 / 2000')).toBeInTheDocument()
   })
 
-  it('lets Mentora decide the setting, or the maker pick it — and offers no styles', async () => {
+  it('lets Mentora fit a template to each idea, or the maker pick some', async () => {
+    const seen = vi.fn()
+    const user = userEvent.setup()
+    render(<Harness onSetup={seen} />)
+    const plays = screen.getByRole('group', { name: 'How it plays' })
+    expect(within(plays).getByRole('checkbox', { name: /Let Mentora choose/ })).toHaveAttribute('aria-checked', 'true')
+
+    await user.click(within(plays).getByRole('checkbox', { name: /Match Up/ }))
+    await user.click(within(plays).getByRole('checkbox', { name: /Sort It Out/ }))
+    expect(seen).toHaveBeenLastCalledWith(expect.objectContaining({ plays: ['sort', 'match'] }))
+    expect(within(plays).getByRole('checkbox', { name: /Let Mentora choose/ })).toHaveAttribute('aria-checked', 'false')
+
+    await user.click(within(plays).getByRole('checkbox', { name: /Let Mentora choose/ }))
+    expect(seen).toHaveBeenLastCalledWith(expect.objectContaining({ plays: [] }))
+  })
+
+  it('lets Mentora decide the setting, or the maker pick it', async () => {
     const seen = vi.fn()
     const user = userEvent.setup()
     render(<Harness onSetup={seen} />)
     const places = screen.getByRole('radiogroup', { name: 'Where it happens' })
     expect(within(places).getByRole('radio', { name: /Let Mentora decide/ })).toHaveAttribute('aria-checked', 'true')
-    expect(screen.queryByRole('radiogroup', { name: 'How it plays' })).not.toBeInTheDocument()
 
     await user.click(within(places).getByRole('radio', { name: /Coral reef/ }))
     expect(seen).toHaveBeenLastCalledWith(expect.objectContaining({ world: 'reef' }))
     expect(within(places).getByRole('radio', { name: /Coral reef/ })).toHaveAttribute('aria-checked', 'true')
   })
 
-  it('is followed as it is made, through writing the story and building the world', () => {
+  it('is followed as it is made, through writing the story', () => {
     expect(stagesFor('game')).toContain('finish')
     expect(stagesFor('quiz')).not.toContain('finish')
   })

@@ -26,7 +26,6 @@ import { useResource } from '@/hooks/useResource'
 import { Page, spring } from '@/motion'
 import { cn } from '@/lib/utils'
 import { AddWithAI } from './AddWithAI'
-import { GameChanges } from './GameChanges'
 import { learningApi, type Item, type SetDetail } from './api'
 import { EDITORS } from './editors'
 import { GrowingText } from './editors/fields'
@@ -181,7 +180,6 @@ function Editor({ initial, onSaved }: { initial: SetDetail; onSaved: (set: SetDe
         {/* A container: the editors inside lay out by this column's width, not
             the window's — beside the side panel it is narrower than it looks. */}
         <div className="@container min-w-0 space-y-4">
-          {kind.fixed && <GameChanges setId={initial.id} />}
           {kind.extras && extras !== null && (
             <Card className="p-4 sm:p-5">
               <h2 className="mb-3 font-display text-lg font-semibold">{kind.extras.title}</h2>

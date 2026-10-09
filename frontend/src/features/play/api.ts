@@ -3,6 +3,7 @@
  * Shapes mirror `app/api/schemas/play.py`.
  */
 import { apiFetch } from '@/lib/api'
+import type { MatchContent, OrderContent, Play, SortContent } from '@/features/game/rounds/types'
 import type { GameExtras, GuideExtras, GuideSection, Level, SetPurpose } from '@/features/learning/api'
 
 export type PlayKind = 'quiz' | 'flashcard' | 'study_guide' | 'game'
@@ -24,17 +25,18 @@ export interface CardItem {
   skill: string
 }
 
-/** A game's mission as a player is given it (§24): its goal — never the check,
- *  nor what it teaches until it is reached, nor the hint until it is asked
- *  for (asking costs points). */
-export interface GameMission {
+/** A game's island as a student meets it (§26): the idea, what to do, and
+ *  its round — with what each move needs, because a round is answered on the
+ *  device. Not its hint (asking costs points) nor what it teaches. */
+export interface GameIsland {
   id: string
-  /** Learn it (§25): the idea, its picture-word, the control, what to try. */
   learn: string
   icon: string
-  control: string
-  guide: string
-  goal: string
+  play: Play
+  task: string
+  sort?: SortContent
+  order?: OrderContent
+  match?: MatchContent
   has_hint: boolean
   skill: string
   difficulty: string
@@ -46,8 +48,8 @@ export type GuidePage = Omit<GuideSection, 'answer' | 'explanation' | 'alternati
 export interface Reveal {
   answer?: number
   explanation?: string
-  /** A game mission's goal, said again beside what it taught. */
-  goal?: string
+  /** A game island's task, said again beside what it taught. */
+  task?: string
 }
 
 export interface Played {
@@ -74,7 +76,7 @@ export interface Attempt {
   feedback_mode: FeedbackMode
   assignment_id: string | null
   set_id: string
-  items: (QuizItem | CardItem | GuidePage | GameMission)[]
+  items: (QuizItem | CardItem | GuidePage | GameIsland)[]
   answered: Played[]
   skills: SkillInfo[]
   /** A study guide's opening and ending, or a game's story and world. */
@@ -270,7 +272,7 @@ export const playApi = {
   practice: () => apiFetch<{ items: MyPractice[] }>('/me/practice'),
   fromHome: (shareId: string) => apiFetch<Attempt>(`/me/from-home/${shareId}/attempts`, { method: 'POST' }),
   attempt: (attemptId: string) => apiFetch<Attempt>(`/me/attempts/${attemptId}`),
-  answer: (attemptId: string, body: { item_id: string; choice?: number; knew?: boolean; done?: boolean; tries?: number; shown?: boolean; time_ms: number }) =>
+  answer: (attemptId: string, body: { item_id: string; choice?: number; knew?: boolean; done?: boolean; tries?: number; shown?: boolean; slips?: string[]; time_ms: number }) =>
     apiFetch<AnswerResult>(`/me/attempts/${attemptId}/answers`, { method: 'POST', body: JSON.stringify(body) }),
   complete: (attemptId: string) => apiFetch<Finish>(`/me/attempts/${attemptId}/complete`, { method: 'POST' }),
   /** A game's hint from the buddy. Asking costs a few points. */

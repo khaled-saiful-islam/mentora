@@ -80,6 +80,7 @@ def _question(q) -> dict[str, object]:
         "correct": q.correct,
         "choices": q.choices,
         "answer": q.answer,
+        "slips": q.slips,
     }
 
 

@@ -16,7 +16,7 @@ from app.api.schemas.classes import StudentClassList, StudentClassResponse
 from app.artifacts.registry import build_kinds
 from app.db.models.user import User
 from app.events.registry import build_bus
-from app.learning.registry import build_learning_kinds
+from app.learning.registry import build_learning_kinds, switched_on
 from app.policies.capabilities import Capabilities, capabilities_for
 from app.services.class_pulse import ClassPulseService
 from app.services.membership_service import MembershipService
@@ -43,8 +43,8 @@ async def makeable(user: CurrentUser, settings: SettingsDep) -> dict[str, object
             or caps.make_family_sets
             or (caps.make_practice_sets and getattr(kind, "for_students", True))
         )
-        # A game needs a model to write its code (§24): no model, no offer.
-        and (settings.games_available or not getattr(kind, "coded", False))
+        # A kind can be switched off (games: `GAMES_ENABLED`).
+        and switched_on(kind, settings)
     ]
     return {
         "studio": [

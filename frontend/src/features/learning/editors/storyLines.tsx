@@ -1,6 +1,6 @@
 /**
  * A game's story as speech-bubble lines (§25): who says what, a few lines at
- * a time — the opening, a mission's beat before and after it, the ending.
+ * a time — the opening, an island's beat before and after it, the ending.
  * `{buddy}` is the player's own buddy.
  */
 import { Plus, Trash } from '@phosphor-icons/react'
@@ -19,7 +19,7 @@ export function StoryLines({ label, lines, most, onChange, people }: {
 }) {  // fmt: skip
   const set = (n: number, patch: Partial<StoryLine>) => onChange(lines.map((line, i) => (i === n ? { ...line, ...patch } : line)))
   return (
-    <fieldset className="rounded-2xl border-2 border-border p-2">
+    <fieldset className="min-w-0 rounded-2xl border-2 border-border p-2">
       <legend className="px-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</legend>
       <ol className="space-y-2">
         {lines.map((line, n) => (

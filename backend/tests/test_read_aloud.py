@@ -157,7 +157,7 @@ async def test_a_voice_that_fails_says_so_plainly(session, voiced, teacher, stud
     assert response.json()["error"]["message"] == "The voice could not be reached."
 
 
-# --- games (§23) -------------------------------------------------------------------
+# --- games (§26) -------------------------------------------------------------------
 
 
 async def test_a_game_story_is_told_with_the_students_own_buddy(
@@ -171,22 +171,30 @@ async def test_a_game_story_is_told_with_the_students_own_buddy(
         hook = await c.get(f"{base}?item=hook&part=story")
         goal = await c.get(f"{base}?item=goal&part=story")
         win = await c.get(f"{base}?item=win&part=story")
-        mission = await c.get(f"{base}?item=g1&part=question")
+        task = await c.get(f"{base}?item=g1&part=question")
         idea = await c.get(f"{base}?item=g1&part=learn")
+        card = await c.get(f"{base}?item=g1&part=piece&n=1")
+        basket = await c.get(f"{base}?item=g1&part=piece&n=4")
+        why = await c.get(f"{base}?item=g1&part=why&n=0")
+        nothing = await c.get(f"{base}?item=g1&part=piece&n=9")
         opening = await c.get(f"{base}?item=opening&part=story&n=1")
         before = await c.get(f"{base}?item=g1&part=before&n=0")
         after = await c.get(f"{base}?item=g1&part=after&n=0")
         missing = await c.get(f"{base}?item=g2&part=before&n=0")
     assert hook.status_code == goal.status_code == win.status_code == 200, hook.text
-    assert mission.status_code == idea.status_code == opening.status_code == 200
+    assert task.status_code == idea.status_code == opening.status_code == 200
+    assert card.status_code == basket.status_code == why.status_code == 200
     assert before.status_code == after.status_code == 200
-    assert missing.status_code == 422
+    assert missing.status_code == nothing.status_code == 422
     assert voiced.voice.said == [
         "The river has flooded! Momo needs your help.",
         "Get everyone home.",
         "Hooray, Momo is home!",
-        "Reach goal 1.",
+        "Do task 1!",
         "Idea 1.",
+        "Card 1.2",
+        "Living",
+        "So.",
         "Momo will help, Atuk!",
         "The leaves need light.",
         "Green again!",
@@ -228,6 +236,13 @@ async def test_a_piece_of_story_that_is_not_there_is_refused(
     assert voiced.voice.said == []
 
 
-def test_a_game_missions_goal_is_read_as_its_question() -> None:
-    mission = {"id": "g1", "goal": "Grow the padi plant tall.", "has_hint": True}
-    assert words_for(mission, "question") == "Grow the padi plant tall."
+def test_a_game_islands_task_is_read_as_its_question_and_its_pieces_by_number() -> None:
+    island = {
+        "id": "g1",
+        "play": "match",
+        "task": "Join each part to its job!",
+        "match": {"pairs": [{"id": "p1", "left": "Roots", "right": "drink", "why": "They do."}]},
+    }
+    assert words_for(island, "question") == "Join each part to its job!"
+    assert [words_for(island, "piece", n) for n in (0, 1)] == ["Roots", "drink"]
+    assert words_for(island, "why", 1) == "They do."

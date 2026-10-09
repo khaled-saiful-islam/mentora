@@ -25,6 +25,7 @@ import { useShowing } from '@/features/work/onScreen'
 import { lookOfKind } from './kinds'
 import { OPTION_LOOKS } from './options'
 import { stagesFor, type Generation, type StageKey } from './useGeneration'
+import { PLAY_LABELS } from '@/features/game/rounds'
 
 const STAGE_ICONS = { check: ShieldCheck, research: MagnifyingGlass, skills: PuzzlePiece, write: PencilSimpleLine, finish: Images }
 const STAGE_WAITING: Record<StageKey, string> = {
@@ -286,10 +287,14 @@ function Items({ items, kind }: { items: Item[]; kind: string }) {
                   ))}
                 </div>
               </>
-            ) : 'goal' in item ? (
+            ) : 'play' in item ? (
               <>
-                <p className="font-bold">{item.goal}</p>
-                <p className="mt-1 break-words text-sm text-muted-foreground">{item.explanation}</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">{PLAY_LABELS[item.play]}</p>
+                <p className="break-words font-bold">
+                  {item.icon && <span className="mr-1" aria-hidden>{item.icon}</span>}
+                  {item.learn}
+                </p>
+                <p className="mt-1 break-words text-sm text-muted-foreground">{item.task}</p>
               </>
             ) : (
               <div className="grid grid-cols-2 gap-3 text-sm">

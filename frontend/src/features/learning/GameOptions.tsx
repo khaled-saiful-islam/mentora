@@ -1,13 +1,14 @@
 /**
- * What only a game asks before it is built (§24): where it happens — or
- * "Let Mentora decide" — and its story: Mentora's surprise, a draft to read
- * and edit, or the maker's own. The game itself, a simulation, is written
- * from the missions and the story once they are checked.
+ * What only a game asks before it is built (§26): how it plays — any of
+ * Mentora's templates, or the ones the maker picks — where its map is, and its
+ * story: Mentora's surprise, a draft to read and edit, or the maker's own.
+ * "Let Mentora decide" is the default for each.
  */
 import { useState } from 'react'
-import { Check, MagicWand, PencilSimpleLine, Sparkle, type Icon } from '@phosphor-icons/react'
+import { ArrowsDownUp, Check, LinkSimple, MagicWand, PencilSimpleLine, Sparkle, SquaresFour, type Icon } from '@phosphor-icons/react'
 import { Alert, Button } from '@/components/ui'
 import { errorMessage } from '@/features/auth/errors'
+import { PLAY_LABELS, type Play } from '@/features/game/rounds'
 import { paint, WORLD_KEYS, WORLDS } from '@/features/game/worlds'
 import { cn } from '@/lib/utils'
 import { learningApi, type GameChoices, type GameWorld, type StoryDraftAsk } from './api'
@@ -18,17 +19,25 @@ export interface GameSetup {
   mode: StoryMode
   story: string
   world: GameWorld | 'auto'
+  /** The templates to play in; none picked lets Mentora fit one to each idea. */
+  plays: Play[]
 }
 
-export const FRESH_GAME: GameSetup = { mode: 'surprise', story: '', world: 'auto' }
+export const FRESH_GAME: GameSetup = { mode: 'surprise', story: '', world: 'auto', plays: [] }
 
 /** As long as a story the server keeps (`LIMITS["story"]` in game.py). */
 export const STORY_MAX = 2000
 
 /** What is sent to be built: a surprise sends no story of its own. */
 export function gameChoices(setup: GameSetup): GameChoices {
-  return { world: setup.world, story: setup.mode === 'surprise' ? '' : setup.story.trim() }
+  return { world: setup.world, story: setup.mode === 'surprise' ? '' : setup.story.trim(), plays: setup.plays.join(',') }
 }
+
+const PLAYS: { value: Play; blurb: string; Icon: Icon }[] = [
+  { value: 'sort', blurb: 'Drag cards into the right groups', Icon: SquaresFour },
+  { value: 'order', blurb: 'Put steps or events in the right order', Icon: ArrowsDownUp },
+  { value: 'match', blurb: 'Join the pairs that go together', Icon: LinkSimple },
+]
 
 const AUTO_OPTION = { value: 'auto', label: 'Let Mentora decide', blurb: 'Picks what suits the topic and the age', Icon: Sparkle } as const
 const STORY_MODES: ChoiceOption<StoryMode>[] = [
@@ -44,7 +53,8 @@ export type SetupChange = (update: (setup: GameSetup) => GameSetup) => void
 export function GameOptions({ setup, onChange, ask }: { setup: GameSetup; onChange: SetupChange; ask: StoryDraftAsk }) {
   return (
     <div className="space-y-6">
-      {/* Where first: a story drafted after is set there. */}
+      <PlaysPicker value={setup.plays} onChange={(plays) => onChange((s) => ({ ...s, plays }))} />
+      {/* Where next: a story drafted after is set there. */}
       <Choices
         label="Where it happens"
         name="game-world"
@@ -121,6 +131,23 @@ function StoryBox({ setup, onChange, ask }: { setup: GameSetup; onChange: SetupC
   )
 }
 
+/** How it plays: Mentora fits a template to each idea, or only the ones picked. */
+function PlaysPicker({ value, onChange }: { value: Play[]; onChange: (plays: Play[]) => void }) {
+  // Kept in the app's order, whatever order they were picked in.
+  const toggle = (play: Play) => onChange(PLAYS.map((p) => p.value).filter((p) => (p === play ? !value.includes(p) : value.includes(p))))
+  return (
+    <section aria-labelledby="game-plays-label">
+      <p id="game-plays-label" className="mb-2 text-sm font-bold text-foreground/85">How it plays</p>
+      <div role="group" aria-labelledby="game-plays-label" className="grid gap-2 sm:grid-cols-2">
+        <ChoiceTile option={{ ...AUTO_OPTION, label: 'Let Mentora choose', blurb: 'The best fit for each idea' }} on={value.length === 0} onPick={() => onChange([])} role="checkbox" />
+        {PLAYS.map((play) => (
+          <ChoiceTile key={play.value} option={{ ...play, label: PLAY_LABELS[play.value] }} on={value.includes(play.value)} onPick={() => toggle(play.value)} role="checkbox" />
+        ))}
+      </div>
+    </section>
+  )
+}
+
 interface ChoiceOption<T extends string> {
   value: T
   label: string
@@ -144,11 +171,11 @@ function Choices<T extends string>({ label, name, value, onChange, options }: { 
   )
 }
 
-function ChoiceTile<T extends string>({ option, on, onPick }: { option: ChoiceOption<T>; on: boolean; onPick: () => void }) {
+function ChoiceTile<T extends string>({ option, on, onPick, role = 'radio' }: { option: ChoiceOption<T>; on: boolean; onPick: () => void; role?: 'radio' | 'checkbox' }) {
   return (
     <button
       type="button"
-      role="radio"
+      role={role}
       aria-checked={on}
       onClick={onPick}
       className={cn('flex min-w-0 items-start gap-3 rounded-2xl border-2 bg-surface p-3 text-left transition-colors', on ? 'border-primary' : 'border-border hover:border-hover-border')}

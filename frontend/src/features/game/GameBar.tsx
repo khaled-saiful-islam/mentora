@@ -1,29 +1,28 @@
 /**
- * Mentora's own bar above a game (§24.3) — outside the game's frame, so it is
- * always the app's words and controls: the way out, the missions with a tick
- * for each one reached, the points, the buddy's hint (it costs a little),
+ * The bar above a game (§26): the way out, the islands with a tick for each
+ * one cleared, the points, Show me and the buddy's hint (it costs a little),
  * sound, full screen, and finishing early. Wraps onto two rows on a phone.
  */
 import { motion } from 'motion/react'
 import { ArrowsIn, ArrowsOut, Check, Eye, FlagCheckered, Lightbulb, SpeakerHigh, SpeakerSlash, Star, X } from '@phosphor-icons/react'
 import { Button, ButtonLink } from '@/components/ui'
-import type { GameMission } from '@/features/play/api'
+import type { GameIsland } from '@/features/play/api'
 import { cn } from '@/lib/utils'
 import { spring } from '@/motion'
 import { POINTS } from './points'
-import type { Outcome } from './useMissions'
+import type { Outcome } from './useIslands'
 
 interface GameBarProps {
   title: string
   exitTo: string
-  missions: GameMission[]
+  islands: GameIsland[]
   outcomes: Record<string, Outcome>
-  current: GameMission | null
+  current: GameIsland | null
   points: number
   /** Whether a hint can be asked for now, and what it was if it was. */
   canHint: boolean
   onHint: () => void
-  /** "Show me" — offered after two misses at a mission (§25). */
+  /** "Show me" — offered once the child is stuck on an island (§25). */
   showMe: (() => void) | null
   sound: boolean
   onSound: () => void
@@ -32,16 +31,16 @@ interface GameBarProps {
 }
 
 export function GameBar(props: GameBarProps) {
-  const { title, exitTo, missions, outcomes, current, points, canHint, onHint, showMe, sound, onSound, fullscreen, onFinish } = props
+  const { title, exitTo, islands, outcomes, current, points, canHint, onHint, showMe, sound, onSound, fullscreen, onFinish } = props
   return (
     <header className="relative z-20 flex flex-wrap items-center gap-x-3 gap-y-2 border-b-2 border-border bg-surface px-3 py-2">
       <ButtonLink to={exitTo} variant="ghost" size="icon" aria-label="Close the game">
         <X weight="bold" className="size-5" />
       </ButtonLink>
       <h1 className="min-w-0 max-w-full break-words font-display text-lg font-semibold">{title}</h1>
-      <ol aria-label="Missions" className="flex flex-wrap items-center gap-1.5">
-        {missions.map((mission, n) => (
-          <MissionDot key={mission.id} number={n + 1} goal={mission.goal} outcome={outcomes[mission.id]} current={current?.id === mission.id} />
+      <ol aria-label="Islands" className="flex flex-wrap items-center gap-1.5">
+        {islands.map((island, n) => (
+          <IslandDot key={island.id} number={n + 1} idea={island.learn} outcome={outcomes[island.id]} current={current?.id === island.id} />
         ))}
       </ol>
       <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -82,13 +81,13 @@ export function GameBar(props: GameBarProps) {
   )
 }
 
-function MissionDot({ number, goal, outcome, current }: { number: number; goal: string; outcome: Outcome | undefined; current: boolean }) {
+function IslandDot({ number, idea, outcome, current }: { number: number; idea: string; outcome: Outcome | undefined; current: boolean }) {
   const state = outcome ? (outcome.reached ? 'reached' : 'missed') : current ? 'current' : 'waiting'
-  const said = { reached: 'reached', missed: 'not reached', current: 'now', waiting: 'to come' }[state]
+  const said = { reached: 'cleared', missed: 'not cleared', current: 'now', waiting: 'to come' }[state]
   return (
     <li
-      title={`Mission ${number}: ${goal}`}
-      aria-label={`Mission ${number}, ${said}: ${goal}`}
+      title={`Island ${number}: ${idea}`}
+      aria-label={`Island ${number}, ${said}: ${idea}`}
       className={cn(
         'grid size-8 place-items-center rounded-full border-2 font-display text-sm font-bold',
         state === 'reached' && 'border-correct bg-correct text-white',

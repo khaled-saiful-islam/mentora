@@ -1,21 +1,24 @@
 /**
- * Editing a game (§24, §25): each mission's words — its Learn it (the idea,
- * its picture-word, the control, what Try it asks), the Do it problem, when
- * it is reached, what it teaches, the buddy's hint — and the game's story
- * plan: its character, the opening and ending, a beat before and after each
- * mission.
+ * Editing a game (§26): each island — its idea and picture, what to do, the
+ * template it is played in and its round (cards and baskets, steps, pairs,
+ * each with its *why*), what it teaches and the buddy's hint — and the game's
+ * story plan: its character, the opening and ending, a beat before and after
+ * each island.
  *
- * The missions are in the game's own code, so they are changed here in words
- * only: none added, none taken away, their order kept. To change the game
- * itself, *Change it* (`GameChanges`) asks for it to be rewritten and tested.
+ * Islands are a journey with a beat of the story before and after each, so
+ * none is added, taken away or moved here. An island can be played in any
+ * template it has a round for; *Rewrite with AI* ("make this a Line Up")
+ * writes it a new one.
  */
 import { Info } from '@phosphor-icons/react'
 import { Segmented } from '@/components/ui/Segmented'
+import { PLAY_LABELS, type Play } from '@/features/game/rounds'
 import { isWorld, paint, WORLD_KEYS, WORLDS } from '@/features/game/worlds'
 import { cn } from '@/lib/utils'
 import type { GameExtras, GameItem, StoryBeat } from '../api'
 import { StoryLines } from './storyLines'
 import { GrowingText, LabelledText, SkillPicker, SourceToggles } from './fields'
+import { MatchEditor, OrderEditor, SortEditor } from './rounds'
 import type { ExtrasEditor, ItemEditorProps, KindEditor } from './types'
 
 // The server's limits (`LIMITS` in app/learning/game.py), so nothing saved here
@@ -23,10 +26,7 @@ import type { ExtrasEditor, ItemEditorProps, KindEditor } from './types'
 export const LIMITS = {
   learn: 160,
   icon: 16,
-  control: 40,
-  guide: 120,
-  goal: 160,
-  win: 240,
+  task: 160,
   explanation: 300,
   hint: 160,
   title: 80,
@@ -37,9 +37,11 @@ export const LIMITS = {
   about: 80,
 }
 const MOST_LINES = { opening: 3, ending: 2, before: 2, after: 2 }
+const PLAYS: Play[] = ['sort', 'order', 'match']
 
-function MissionEditor({ item, skills, sources, onChange }: ItemEditorProps<GameItem>) {
+function IslandEditor({ item, skills, sources, onChange }: ItemEditorProps<GameItem>) {
   const set = (patch: Partial<GameItem>) => onChange({ ...item, ...patch })
+  const has = (play: Play) => Boolean(item[play])
   return (
     <div className="space-y-3">
       <div className="flex items-start gap-2 rounded-2xl bg-sky-100 p-2 dark:bg-sky-700/30">
@@ -49,13 +51,26 @@ function MissionEditor({ item, skills, sources, onChange }: ItemEditorProps<Game
           <GrowingText label="Learn it" value={item.learn} maxLength={LIMITS.learn} placeholder="One idea, said simply" onChange={(learn) => set({ learn })} className="font-display text-lg font-semibold" />
         </div>
       </div>
-      <div className="grid gap-2 @md:grid-cols-2">
-        <LabelledText label="The control it adds" value={item.control} limit={LIMITS.control} placeholder="the sun slider" onChange={(control) => set({ control })} />
-        <LabelledText label="Try it — what to do" value={item.guide} limit={LIMITS.guide} placeholder="Slide the sun all the way up!" onChange={(guide) => set({ guide })} />
+      <LabelledText label="What to do" value={item.task} limit={LIMITS.task} placeholder="Sort what the plant takes in and gives out!" onChange={(task) => set({ task })} />
+      <div className="flex flex-wrap items-center gap-2">
+        <Segmented
+          label="How it plays"
+          value={item.play}
+          onChange={(play) => has(play) && set({ play })}
+          options={PLAYS.map((play) => ({ value: play, label: PLAY_LABELS[play], disabled: !has(play) }))}
+          className="[&_button]:px-3 [&_button]:py-1 [&_button]:text-xs"
+        />
+        {PLAYS.some((play) => !has(play)) && (
+          <p className="flex items-start gap-1.5 text-sm text-muted-foreground">
+            <Info weight="fill" className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <span className="min-w-0 break-words">For another, Rewrite with AI: "make this a Line Up".</span>
+          </p>
+        )}
       </div>
-      <LabelledText label="Do it — the problem" value={item.goal} limit={LIMITS.goal} placeholder="What the player makes happen" onChange={(goal) => set({ goal })} />
-      <LabelledText label="Reached when" value={item.win} limit={LIMITS.win} placeholder="What the game checks" onChange={(win) => set({ win })} />
-      <LabelledText label="What it teaches" value={item.explanation} limit={LIMITS.explanation} placeholder="Shown once the mission is reached" onChange={(explanation) => set({ explanation })} />
+      {item.play === 'sort' && item.sort && <SortEditor content={item.sort} onChange={(sort) => set({ sort })} />}
+      {item.play === 'order' && item.order && <OrderEditor content={item.order} onChange={(order) => set({ order })} />}
+      {item.play === 'match' && item.match && <MatchEditor content={item.match} onChange={(match) => set({ match })} />}
+      <LabelledText label="What it teaches" value={item.explanation} limit={LIMITS.explanation} placeholder="Shown once the island is cleared" onChange={(explanation) => set({ explanation })} />
       <LabelledText label="The buddy's hint" value={item.hint} limit={LIMITS.hint} placeholder="A nudge — never the answer" onChange={(hint) => set({ hint })} />
       <div className="flex flex-wrap items-center gap-2">
         <SkillPicker value={item.skill} skills={skills} onChange={(skill) => set({ skill })} />
@@ -74,6 +89,30 @@ function MissionEditor({ item, skills, sources, onChange }: ItemEditorProps<Game
       <SourceToggles value={item.source_ids} sources={sources} onChange={(source_ids) => set({ source_ids })} />
     </div>
   )
+}
+
+/** What is missing from a round, in the words of the rule it breaks — the
+ *  same rules the server keeps, so a game saved here plays. */
+function roundProblem(item: GameItem): string | null {
+  if (item.play === 'sort' && item.sort) {
+    const { baskets, cards } = item.sort
+    if (baskets.some((b) => !b.label.trim())) return 'Name every basket.'
+    if (cards.some((c) => !c.text.trim())) return 'Write every card.'
+    if (baskets.some((b) => !cards.some((c) => c.basket === b.id))) return 'Put a card in every basket.'
+    if (new Set(cards.map((c) => c.text.trim().toLowerCase())).size < cards.length) return 'No two cards the same.'
+    return null
+  }
+  if (item.play === 'order' && item.order) {
+    const steps = item.order.steps
+    if (steps.some((s) => !s.text.trim())) return 'Write every step.'
+    if (new Set(steps.map((s) => s.text.trim().toLowerCase())).size < steps.length) return 'No two steps the same.'
+    return null
+  }
+  const pairs = item.match?.pairs ?? []
+  if (pairs.some((p) => !p.left.trim() || !p.right.trim())) return 'Fill both sides of every pair.'
+  const sides = (side: 'left' | 'right') => new Set(pairs.map((p) => p[side].trim().toLowerCase())).size
+  if (sides('left') < pairs.length || sides('right') < pairs.length) return 'No side of a pair said twice.'
+  return null
 }
 
 /** A whole story and setting from what the server sent, which may be partial. */
@@ -98,7 +137,7 @@ export function gameExtrasOf(raw: Partial<GameExtras>): GameExtras {
 export function GameExtrasEditor({ extras, onChange }: { extras: GameExtras; onChange: (extras: GameExtras) => void }) {
   const set = (patch: Partial<GameExtras>) => onChange({ ...extras, ...patch })
   const story = (patch: Partial<GameExtras['story']>) => set({ story: { ...extras.story, ...patch } })
-  const beats = (mission: string, beat: StoryBeat) => set({ beats: { ...extras.beats, [mission]: beat } })
+  const beats = (island: string, beat: StoryBeat) => set({ beats: { ...extras.beats, [island]: beat } })
   const people = [extras.character.name || 'The character', '{buddy}']
   return (
     <div className="space-y-5">
@@ -109,7 +148,7 @@ export function GameExtrasEditor({ extras, onChange }: { extras: GameExtras; onC
       </div>
       <fieldset>
         <legend className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Where it happens</legend>
-        <p className="mt-1 text-sm text-muted-foreground">The game draws its own world: a new setting shows once you ask for it with Change it.</p>
+        <p className="mt-1 text-sm text-muted-foreground">The treasure map is drawn in this world's colours.</p>
         <div className="mt-2 grid gap-2 @lg:grid-cols-3" role="radiogroup" aria-label="Setting">
           {WORLD_KEYS.map((key) => (
             <button
@@ -138,13 +177,13 @@ export function GameExtrasEditor({ extras, onChange }: { extras: GameExtras; onC
         <LabelledText label="The goal" value={extras.story.goal} limit={LIMITS.storyGoal} placeholder="What the player sets out to do" onChange={(goal) => story({ goal })} />
       </div>
       <StoryLines label="Opening panel" lines={extras.story.opening} most={MOST_LINES.opening} people={people} onChange={(opening) => story({ opening })} />
-      {Object.entries(extras.beats).map(([mission, beat], n) => (
-        <div key={mission} className="grid gap-3 @2xl:grid-cols-2">
-          <StoryLines label={`Before mission ${n + 1}`} lines={beat.before} most={MOST_LINES.before} people={people} onChange={(before) => beats(mission, { ...beat, before })} />
-          <StoryLines label={`After mission ${n + 1}`} lines={beat.after} most={MOST_LINES.after} people={people} onChange={(after) => beats(mission, { ...beat, after })} />
+      {Object.entries(extras.beats).map(([island, beat], n) => (
+        <div key={island} className="grid gap-3 @2xl:grid-cols-2">
+          <StoryLines label={`Before island ${n + 1}`} lines={beat.before} most={MOST_LINES.before} people={people} onChange={(before) => beats(island, { ...beat, before })} />
+          <StoryLines label={`After island ${n + 1}`} lines={beat.after} most={MOST_LINES.after} people={people} onChange={(after) => beats(island, { ...beat, after })} />
         </div>
       ))}
-      <LabelledText label="The happy ending" value={extras.story.win} limit={LIMITS.storyWin} placeholder="Said when every mission is done" onChange={(win) => story({ win })} />
+      <LabelledText label="The happy ending" value={extras.story.win} limit={LIMITS.storyWin} placeholder="Said when every island is cleared" onChange={(win) => story({ win })} />
       <StoryLines label="Ending panel" lines={extras.story.ending} most={MOST_LINES.ending} people={people} onChange={(ending) => story({ ending })} />
     </div>
   )
@@ -157,15 +196,26 @@ const gameExtras: ExtrasEditor<GameExtras> = {
 }
 
 export const gameEditor: KindEditor<GameItem> = {
-  Editor: MissionEditor,
+  Editor: IslandEditor,
   extras: gameExtras as ExtrasEditor<unknown>,
-  blank: (skill) => ({ id: '', learn: '', icon: '', control: '', guide: '', goal: '', win: '', explanation: '', hint: '', skill, difficulty: 'medium', source_ids: [] }),
+  blank: (skill) => ({
+    id: '',
+    learn: '',
+    icon: '',
+    play: 'match',
+    task: '',
+    match: { pairs: [] },
+    explanation: '',
+    hint: '',
+    skill,
+    difficulty: 'medium',
+    source_ids: [],
+  }),
   problem: (item) => {
     if (!item.learn.trim()) return 'Say the one idea it teaches.'
-    if (!item.goal.trim()) return 'Write the mission.'
-    if (!item.win.trim()) return 'Say when the mission is reached.'
-    if (!item.explanation.trim()) return 'Say what the mission teaches.'
-    return null
+    if (!item.task.trim()) return 'Say what to do.'
+    if (!item.explanation.trim()) return 'Say what the island teaches.'
+    return roundProblem(item)
   },
   fixed: true,
 }

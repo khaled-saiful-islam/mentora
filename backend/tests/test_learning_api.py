@@ -16,6 +16,7 @@ from sqlalchemy import select
 
 from app.api.deps import get_generation_service
 from app.core.config import get_settings
+from app.core.errors import ValidationError
 from app.db.models.moderation import ModerationEvent
 from app.db.models.notification import Notification
 from app.guards.prompt_injection import PromptInjectionGuard
@@ -26,7 +27,6 @@ from app.services.generation_service import GenerationService
 from app.services.jobs import jobs
 from app.services.quota import TokenQuota
 from tests.learning_fakes import GOOD_RESULTS, FakeModel, FakeSearch, happy
-from tests.test_game_build import FakeBuilder
 
 
 @pytest.fixture
@@ -53,7 +53,6 @@ def scripted(session):
                 Researcher(FakeSearch(GOOD_RESULTS), None, PromptInjectionGuard()),
                 kind,
                 meter,
-                builder=FakeBuilder(),
             ),
         )
 
@@ -371,32 +370,43 @@ async def test_a_teacher_makes_a_game_with_a_level_and_their_own_story(
     session, api, teacher, scripted
 ) -> None:
     from app.db.models.learning import LearningSet
-    from app.services.game_service import GameService
-    from tests.test_game_build import STORY, missions
+    from tests.test_game_build import STORY, islands
 
     state, _ = scripted
-    state["answers"] = happy(draft=missions(), wrap=STORY)
+    state["answers"] = happy(draft=islands(), wrap=STORY)
     detail = await _build(
         api,
         teacher,
         kind="game",
         count=4,
         level="beginner",
-        choices={"world": "reef", "story": "Siti the turtle is lost."},
+        choices={"world": "reef", "story": "Siti the turtle is lost.", "plays": "sort,match"},
     )
     assert detail["status"] == "ready"
     assert detail["level"] == "beginner"
     assert len(detail["items"]) == 4
     assert detail["extras"]["world"] == "reef" and "style" not in detail["extras"]
     assert detail["extras"]["authored"] is True
+    assert {i["play"] for i in detail["items"]} <= {"sort", "order", "match"}
     row = await session.get(LearningSet, UUID(detail["id"]))
-    assert row.choices == {"world": "reef", "story": "Siti the turtle is lost."}
-    # The game's code, as it passed its tests, is kept as its first revision.
-    code = await GameService(session, {}).latest(row.id)
-    assert code.revision == 1 and code.html == "<!DOCTYPE html>"
+    assert row.choices == {
+        "world": "reef",
+        "story": "Siti the turtle is lost.",
+        "plays": ["sort", "match"],
+    }
 
 
-async def test_a_game_needs_three_to_six_missions_and_a_real_level(api, teacher) -> None:
+def test_a_game_is_not_made_when_games_are_switched_off() -> None:
+    off = get_settings().model_copy(update={"games_enabled": False})
+    service = GenerationService(
+        kinds=build_learning_kinds(), settings=off, session_maker=None, generator_factory=None
+    )
+    with pytest.raises(ValidationError, match="switched off"):
+        service._kind("game")  # noqa: SLF001
+    assert service._kind("quiz").name == "quiz"  # noqa: SLF001
+
+
+async def test_a_game_needs_three_to_six_islands_and_a_real_level(api, teacher) -> None:
     async with api(teacher) as c:
         few = await c.post(
             "/api/learning-sets/generate",

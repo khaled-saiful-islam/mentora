@@ -62,7 +62,7 @@ export function FinishScreen({
   // A game counts its own points, on the server (§24); the rest earn ten a right answer.
   const game = attempt.kind === 'game'
   const won = look.points && !guide && !game ? attempt.score * POINTS_EACH : 0
-  // A game's missions not reached, to play again — just those, nothing kept.
+  // A game's islands not cleared, to play again — just those, nothing kept.
   const [missed] = useState(() => (game ? attempt.answered.filter((p) => p.correct === false).map((p) => p.item_id) : []))
   const [practising, setPractising] = useState(false)
 
@@ -185,7 +185,7 @@ export function FinishScreen({
         {missed.length > 0 && (
           <Button size="lg" variant="outline" onClick={() => setPractising(true)}>
             <Target weight="bold" className="size-5" />
-            Missions you missed ({missed.length})
+            Islands to clear again ({missed.length})
           </Button>
         )}
         {onRetake && (

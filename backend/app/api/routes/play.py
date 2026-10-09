@@ -148,16 +148,21 @@ async def answer(
 
 def _response(body: AnswerRequest) -> dict[str, Any]:
     """What was given, in the kind's terms: a question's choice, a card's
-    knew, or a game mission reached and in how many goes (§24)."""
+    knew, or a game island cleared, in how many goes, and its slips (§26)."""
     given = [body.choice is not None, body.knew is not None, body.done is not None]
     if sum(given) != 1:
         raise ValidationError(
-            "Send a choice for a question, knew for a card, or done for a game's mission."
+            "Send a choice for a question, knew for a card, or done for a game's island."
         )
     if body.knew is not None:
         return {"knew": body.knew}
     if body.done is not None:
-        return {"done": body.done, "tries": body.tries or 1, "shown": body.shown}
+        return {
+            "done": body.done,
+            "tries": body.tries or 1,
+            "shown": body.shown,
+            "slips": body.slips,
+        }
     return {"choice": body.choice}
 
 

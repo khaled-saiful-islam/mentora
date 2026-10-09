@@ -1,3 +1,4 @@
+import type { MatchContent, OrderContent, Play, SortContent } from '@/features/game/rounds/types'
 import { apiFetch } from '@/lib/api'
 
 export type LearningKindName = 'quiz' | 'flashcard' | 'study_guide' | 'game'
@@ -72,20 +73,18 @@ export interface GuideExtras {
   challenge: { title: string; steps: string[] } | null
 }
 
-/** One challenge in a game (§23): a quiz-like question with 2–4 short
- *  options and a hint the buddy can give. */
-/** A game's mission (§24): a goal reached by experimenting in the game, the
- *  check that reaches it, and what reaching it teaches. */
+/** A game's island (§26): one idea, the round that makes the child use it —
+ *  in one of Mentora's own templates — and what to do there. Every round
+ *  written for it that keeps its rules is kept, its Match Up at least. */
 export interface GameItem {
   id: string
-  /** Learn it (§25): the one idea, a picture-word for it, the control it
-   *  adds, and what Try it asks. */
   learn: string
   icon: string
-  control: string
-  guide: string
-  goal: string
-  win: string
+  play: Play
+  task: string
+  sort?: SortContent
+  order?: OrderContent
+  match?: MatchContent
   explanation: string
   hint: string
   skill: string
@@ -104,7 +103,7 @@ export interface StoryLine {
   says: string
 }
 
-/** The story panels before and after one mission. */
+/** The story panels before and after one island. */
 export interface StoryBeat {
   before: StoryLine[]
   after: StoryLine[]
@@ -122,16 +121,18 @@ export interface GameExtras {
     opening: StoryLine[]
     ending: StoryLine[]
   }
-  /** By mission id. */
+  /** By island id. */
   beats: Record<string, StoryBeat>
   /** The maker wrote the story themselves. */
   authored: boolean
 }
 
-/** What a maker chooses for a game before it is built; "auto" lets Mentora decide. */
+/** What a maker chooses for a game before it is built; "auto" lets Mentora
+ *  decide. `plays` names the templates to use, comma-separated; empty is any. */
 export interface GameChoices {
   world: GameWorld | 'auto'
   story: string
+  plays: string
 }
 
 export type Item = QuizItem | FlashcardItem | GuideSection | GameItem
@@ -201,14 +202,6 @@ export interface GenerateDraft {
   choices?: Partial<GameChoices>
 }
 
-export interface GameStatus {
-  revision: number
-  built_at: string
-  changing: boolean
-  /** The last thing a change said: a stage while it runs, then done or failed. */
-  change: { type: string; label?: string; detail?: string; message?: string; revision?: number } | null
-}
-
 export interface StoryDraftAsk {
   topic: string
   subject?: string | null
@@ -273,12 +266,6 @@ export const learningApi = {
   /** A first story for a game, for its maker to edit (§23). Nothing is saved. */
   storyDraft: (ask: StoryDraftAsk) =>
     apiFetch<{ story: string }>('/learning-sets/story-draft', { method: 'POST', ...json(ask) }),
-  /** A game's code (§24): which revision is served, and whether a change is
-   *  being made — and how far along it is. */
-  gameStatus: (id: string) => apiFetch<GameStatus>(`/learning-sets/${id}/game`),
-  /** Rewrite the game as asked, then test it as a new one is (§24). */
-  changeGame: (id: string, instruction: string) =>
-    apiFetch<GameStatus>(`/learning-sets/${id}/game/changes`, { method: 'POST', ...json({ instruction }) }),
   list: (params: { kind?: string; q?: string; archived?: boolean } = {}) => {
     const query = new URLSearchParams()
     if (params.kind) query.set('kind', params.kind)

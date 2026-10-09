@@ -37,6 +37,7 @@ from app.learning.generator import (
 )
 from app.learning.model import GenerationUnavailable, Meter
 from app.learning.pitch import is_level
+from app.learning.registry import switched_on
 from app.learning.research import Source
 from app.moderation.base import Flag
 from app.policies.capabilities import capabilities_for
@@ -304,6 +305,8 @@ class GenerationService:
         kind = self._kinds.get(name)
         if kind is None:
             raise ValidationError(f"Pick one of: {', '.join(self._kinds)}.")
+        if not switched_on(kind, self._settings):
+            raise ValidationError(f"Making a {kind.label.lower()} is switched off here.")
         return kind
 
     async def _purpose(self, session: AsyncSession, owner: User, *, made_for: bool = False) -> str:

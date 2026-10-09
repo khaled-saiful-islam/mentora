@@ -10,8 +10,8 @@ attempt; retakes show as the best score beside it.
 from __future__ import annotations
 
 import statistics
-from collections import defaultdict
-from dataclasses import dataclass, replace
+from collections import Counter, defaultdict
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Any
 from uuid import UUID
@@ -25,8 +25,11 @@ from app.db.models.classroom import ClassGroup, GroupMember
 from app.db.models.learning import Assignment, LearningSet, LearningSetVersion
 from app.db.models.user import User
 from app.events.bus import EventBus
+from app.learning.game import piece_names
 from app.services.assignment_service import AssignmentService
 
+# A game island's slips shown in results: the few most often made.
+MOST_SLIPS_SHOWN = 3
 STRONG = 0.8
 WEAK = 0.5
 MIN_ANSWERS = 2
@@ -59,6 +62,8 @@ class QuestionRow:
     correct: int
     choices: list[int]  # how many chose each original option (quizzes)
     answer: int | None
+    # A game island's pieces most often put in the wrong place (§26), most first.
+    slips: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)
@@ -284,16 +289,31 @@ def _questions(items: list[dict[str, Any]], answers: list[AttemptAnswer]) -> lis
         rows.append(
             QuestionRow(
                 item_id=item["id"],
-                # A question's prompt, a card's front, a game mission's goal.
-                prompt=item.get("prompt") or item.get("front") or item.get("goal", ""),
+                # A question's prompt, a card's front, a game island's task.
+                prompt=item.get("prompt") or item.get("front") or item.get("task", ""),
                 skill=item.get("skill", "general"),
                 answered=len(mine),
                 correct=sum(1 for a in mine if a.correct),
                 choices=choices,
                 answer=item.get("answer"),
+                slips=_slipped(item, mine),
             )
         )
     return rows
+
+
+def _slipped(item: dict[str, Any], answers: list[AttemptAnswer]) -> list[dict[str, Any]]:
+    """The pieces of a game island's round the class most often put in the
+    wrong place — "12 put *whale* under *fish*" — by name, most first."""
+    names = piece_names(item)
+    if not names:
+        return []
+    counts: Counter[str] = Counter()
+    for answer in answers:
+        slips = (answer.response or {}).get("slips")
+        if isinstance(slips, list):
+            counts.update(s for s in slips if s in names)
+    return [{"piece": names[p], "students": n} for p, n in counts.most_common(MOST_SLIPS_SHOWN)]
 
 
 def _heat(

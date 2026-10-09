@@ -65,8 +65,8 @@ export const LOOKS: Record<LearningKindName, KindLook> = {
     text: 'text-kind-games',
     ring: 'border-kind-games-vivid',
     colour: 'hsl(var(--kind-games-vivid))',
-    promise: 'A simulation game — students experiment to reach each mission, and learn the topic by playing it.',
-    noun: ['mission', 'missions'],
+    promise: 'A treasure map of islands — students sort, put in order and match to learn the topic, one idea at a time.',
+    noun: ['island', 'islands'],
   },
 }
 

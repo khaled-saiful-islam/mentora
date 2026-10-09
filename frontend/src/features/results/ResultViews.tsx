@@ -120,9 +120,9 @@ export function Questions({ questions, kind }: { questions: QuestionResult[]; ki
                 {q.answered ? `${Math.round(share * 100)}%` : '—'}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="font-bold">{q.prompt}</p>
+                <p className="break-words font-bold">{q.prompt}</p>
                 <p className="text-sm text-muted-foreground">
-                  {q.correct} of {q.answered} {kind === 'flashcard' ? 'knew it' : 'right'}
+                  {q.correct} of {q.answered} {kind === 'flashcard' ? 'knew it' : kind === 'game' ? 'cleared' : 'right'}
                   {q.answered > 0 && share < 0.5 && (
                     <span className="ml-2 inline-flex items-center gap-1 font-bold text-destructive">
                       <Warning weight="fill" className="size-3.5" />
@@ -131,12 +131,32 @@ export function Questions({ questions, kind }: { questions: QuestionResult[]; ki
                   )}
                 </p>
                 {q.choices.length > 0 && q.answered > 0 && <Choices q={q} />}
+                {q.slips && q.slips.length > 0 && <Slips slips={q.slips} />}
               </div>
             </div>
           </motion.li>
         )
       })}
     </motion.ol>
+  )
+}
+
+/** A game island's slips: the pieces the class most often put in the wrong place. */
+function Slips({ slips }: { slips: NonNullable<QuestionResult['slips']> }) {
+  return (
+    <div className="mt-3 rounded-2xl bg-muted/50 px-3 py-2">
+      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Most often wrong first</p>
+      <ul className="mt-1 space-y-1">
+        {slips.map((slip) => (
+          <li key={slip.piece} className="flex items-start justify-between gap-3 text-sm">
+            <span className="min-w-0 break-words">{slip.piece}</span>
+            <span className="shrink-0 font-bold tabular-nums">
+              {slip.students} {slip.students === 1 ? 'student' : 'students'}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
 

@@ -20,7 +20,7 @@ import re
 import time
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Any
 
 from app.core.grades import Grade, grade_for
 from app.learning import prompts
@@ -34,7 +34,6 @@ from app.learning.picture_check import (
     WordsPictureCheck,
 )
 from app.learning.research import Researcher, Source, listing
-from app.learning.sim.builder import Progress, SimBuilt
 from app.moderation.base import Decision
 from app.moderation.rules import InputRules
 
@@ -95,8 +94,6 @@ class GenerationResult:
     build_ms: int
     # What the set has besides its items — a study guide's opening and ending.
     extras: dict[str, Any] = field(default_factory=dict)
-    # A coded kind's game (§24): written, tested, ready to serve.
-    document: SimBuilt | None = None
 
 
 # --- what a build says as it goes ---------------------------------------------
@@ -104,7 +101,7 @@ class GenerationResult:
 
 @dataclass(frozen=True, slots=True)
 class Stage:
-    key: str  # check | research | skills | write | finish | build
+    key: str  # check | research | skills | write | finish
     state: str  # running | done
     label: str
     detail: str = ""
@@ -134,7 +131,6 @@ class Pictured:
 
 REFUSED_TOPIC = "That topic isn't one we can make a set about. Try a school topic!"
 FINISH_LABEL = "Adding pictures and finishing touches"
-BUILD_LABEL = "Making the game"
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,12 +158,6 @@ class _Plan:
     grade: Grade | None
 
 
-class GameBuilder(Protocol):
-    """Writes and tests a coded kind's game (`learning/sim/builder.py`)."""
-
-    def build(self, spec: Any) -> AsyncIterator[Progress | SimBuilt]: ...
-
-
 class LearningGenerator:
     def __init__(
         self,
@@ -177,14 +167,12 @@ class LearningGenerator:
         meter: Meter,
         *,
         picture_check: PictureCheck | None = None,
-        builder: GameBuilder | None = None,
     ) -> None:
         self._model = model
         self._researcher = researcher
         self._kind = kind
         self._meter = meter
         self._picture_check = picture_check or WordsPictureCheck()
-        self._builder = builder
 
     async def run(self, request: GenerationRequest) -> AsyncIterator[Update]:
         started = time.monotonic()
@@ -232,9 +220,6 @@ class LearningGenerator:
         if isinstance(self._kind, Enriching):
             async for update in self._finishing(self._kind, request, plan, sources, finished):
                 yield update
-        if getattr(self._kind, "coded", False):
-            async for update in self._coding(request, plan, finished):
-                yield update
         yield Built(
             self._result(
                 request,
@@ -245,37 +230,7 @@ class LearningGenerator:
                 count,
                 started,
                 finished["extras"],
-                finished.get("document"),
             )
-        )
-
-    async def _coding(
-        self, request: GenerationRequest, plan: _Plan, finished: dict[str, Any]
-    ) -> AsyncIterator[Update]:
-        """A coded kind's game (§24), written from the checked items and the
-        story, and tested. Unlike the finish stage this can fail the set: a
-        game kind with no game has nothing to play."""
-        if self._builder is None:
-            raise GenerationUnavailable("Games can't be made here yet. Please tell your admin.")
-        spec = self._kind.sim_spec(  # type: ignore[attr-defined]
-            title=plan.title,
-            topic=plan.topic,
-            grade=plan.grade,
-            language=request.language,
-            level=request.level,
-            items=finished["items"],
-            extras=finished["extras"],
-        )
-        yield Stage("build", "running", BUILD_LABEL)
-        async for update in self._builder.build(spec):
-            if isinstance(update, SimBuilt):
-                finished["document"] = update
-            else:
-                yield Stage("build", "running", update.label, update.detail)
-        if finished.get("document") is None:
-            raise GenerationUnavailable("The game could not be made. Try again.")
-        yield Stage(
-            "build", "done", BUILD_LABEL, "It runs, fits a phone, and mission 1 can be done"
         )
 
     async def _finishing(
@@ -469,6 +424,7 @@ class LearningGenerator:
             listing=listing(sources),
             items_json=json.dumps(items, ensure_ascii=False),
             level=level,
+            # What the kind's items are, when they are not questions: a game's islands.
             focus=str(getattr(self._kind, "check_focus", "")),
         )
         verdict = await self._model.ask("verify", system, user, temperature=0.0, max_tokens=1500)
@@ -593,10 +549,6 @@ class LearningGenerator:
             return []
         known = {s.id for s in sources}
         seen = {self._kind.summary(i).lower() for i in written}
-        # A kind may say what makes two items the same beyond their words — a
-        # game's missions, the control each adds (§25).
-        distinct = getattr(self._kind, "distinct", None)
-        keys = {distinct(i) for i in written} if callable(distinct) else set()
         kept: list[Item] = []
         for entry in raw:
             item = (
@@ -604,11 +556,9 @@ class LearningGenerator:
                 if isinstance(entry, dict)
                 else None
             )
-            key = distinct(item) if item is not None and callable(distinct) else ""
-            if item is None or self._kind.summary(item).lower() in seen or (key and key in keys):
+            if item is None or self._kind.summary(item).lower() in seen:
                 continue
             seen.add(self._kind.summary(item).lower())
-            keys.add(key)
             kept.append(item)
         return kept
 
@@ -622,7 +572,6 @@ class LearningGenerator:
         count: int,
         started: float,
         extras: dict[str, Any] | None = None,
-        document: SimBuilt | None = None,
     ) -> GenerationResult:
         return GenerationResult(
             title=plan.title,
@@ -637,7 +586,6 @@ class LearningGenerator:
             completion_tokens=self._meter.completion_tokens,
             build_ms=int((time.monotonic() - started) * 1000),
             extras=extras or {},
-            document=document,
         )
 
 

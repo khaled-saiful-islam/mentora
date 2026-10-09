@@ -2,9 +2,10 @@
 
 A child who cannot read yet taps the button and hears the question, then each
 answer by its tile's shape — the same warm voice that teaches live lessons. A
-game (§24) is narrated the same way: its opening, goal and ending, each
-mission's goal, a hint, and what a mission taught once it is reached, with the
-student's own buddy named where the story says `{buddy}`.
+game (§26) is narrated the same way: its story, each island's idea and task,
+every card, step or side of a pair in its round and why it goes where it does,
+a hint, and what an island taught once it is cleared — with the student's own
+buddy named where the story says `{buddy}`.
 
 The words are never sent by the browser. The server finds the item in the
 attempt (or, for a preview, in the set) and says what is on screen, so this is
@@ -32,12 +33,12 @@ from app.services.learning_set_service import LearningSetService
 
 Part = Literal[
     "question", "option", "front", "back", "hint", "explanation", "story",
-    "learn", "guide", "before", "after",
+    "learn", "task", "piece", "why", "before", "after",
 ]  # fmt: skip
 # A game's story, by piece: told as narration, or a panel's line by number.
 STORY_PIECES = ("hook", "goal", "win")
 STORY_PANELS = ("opening", "ending")
-# A game mission's beats in the story (§25): a panel before it, one after.
+# An island's beats in the story (§25): a panel before it, one after.
 BEAT_PARTS = ("before", "after")
 BUDDY = "{buddy}"
 
@@ -49,16 +50,42 @@ SHAPES = ("Triangle", "Diamond", "Circle", "Square")
 def words_for(item: dict[str, Any], part: Part, n: int | None = None) -> str:
     """What a part of an item says aloud, as the student sees it."""
     if part == "question":
-        # A question's prompt, or a game mission's goal (§24).
-        asked = item.get("prompt") or item.get("goal")
+        # A question's prompt, or a game island's task (§26).
+        asked = item.get("prompt") or item.get("task")
         if isinstance(asked, str) and asked:
             return asked
     options = item.get("options")
     if part == "option" and isinstance(options, list) and n is not None and 0 <= n < len(options):
         return f"{SHAPES[n % len(SHAPES)]}: {options[n]}"
-    if part in ("front", "back", "hint", "explanation", "learn", "guide") and item.get(part):
+    if part in ("piece", "why"):
+        pieces = pieces_of(item)
+        piece = pieces[n] if n is not None and 0 <= n < len(pieces) else {}
+        said = piece.get("text" if part == "piece" else "why")
+        if isinstance(said, str) and said:
+            return said
+    if part in ("front", "back", "hint", "explanation", "learn", "task") and item.get(part):
         return str(item[part])
     raise ValidationError("There is nothing to read there.")
+
+
+def pieces_of(item: dict[str, Any]) -> list[dict[str, Any]]:
+    """An island's round, piece by piece, as `piece` and `why` count them
+    (§26): a Sort It Out's cards then its baskets, a Line Up's steps, a Match
+    Up's left sides then its right ones. `piece` n says the words; `why` n
+    says why it goes where it does."""
+    play = item.get("play")
+    content = item.get(play) if isinstance(play, str) and isinstance(item.get(play), dict) else {}
+    listed = {key: [v for v in content.get(key) or [] if isinstance(v, dict)] for key in content}
+    if play == "sort":
+        baskets = [{"text": b.get("label"), "why": ""} for b in listed.get("baskets", [])]
+        return [*listed.get("cards", []), *baskets]
+    if play == "order":
+        return listed.get("steps", [])
+    if play == "match":
+        pairs = listed.get("pairs", [])
+        lefts = [{"text": p.get("left"), "why": p.get("why")} for p in pairs]
+        return [*lefts, *({"text": p.get("right"), "why": p.get("why")} for p in pairs)]
+    return []
 
 
 def story_words(extras: dict[str, Any], piece: str, n: int | None = None) -> str:
@@ -73,10 +100,10 @@ def story_words(extras: dict[str, Any], piece: str, n: int | None = None) -> str
     return words
 
 
-def beat_words(extras: dict[str, Any], mission: str, part: str, n: int | None) -> str:
-    """A line of the story panel before or after a game's mission (§25)."""
+def beat_words(extras: dict[str, Any], island: str, part: str, n: int | None) -> str:
+    """A line of the story panel before or after a game's island (§25)."""
     beats = extras.get("beats") if isinstance(extras.get("beats"), dict) else {}
-    beat = beats.get(mission) if isinstance(beats.get(mission), dict) else {}
+    beat = beats.get(island) if isinstance(beats.get(island), dict) else {}
     words = _line(beat.get(part), n)
     if not words:
         raise ValidationError("There is nothing to read there.")

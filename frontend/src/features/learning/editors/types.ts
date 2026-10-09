@@ -24,7 +24,7 @@ export interface KindEditor<T extends Item> {
   extras?: ExtrasEditor<unknown>
   /** Worth seeing as a student would before sharing: it has a reader. */
   previewable?: boolean
-  /** Its items cannot be added, removed or moved — a game's missions are in
-   *  its code (§24) — only their words changed. */
+  /** Its items cannot be added, removed or moved — a game's islands are a
+   *  journey, and its story has a beat for each (§26) — only changed. */
   fixed?: boolean
 }

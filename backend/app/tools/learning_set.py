@@ -81,9 +81,10 @@ class MakeLearningSetTool:
     description = (
         "Make a quiz, a deck of flashcards, a study guide or a game with Mentora's own "
         "maker (the same one as Library → Make). It is saved to the person's Library and "
-        "takes about a minute (a game, a few minutes). A game is a simulation students "
-        "play to learn the topic, with missions and points; for a game, pass a level, "
-        "world or story only if the person said. "
+        "takes about a minute. A game is a treasure map of islands, one idea each, where "
+        "students sort cards, put steps in order or match pairs to learn the topic, with "
+        "a story and points; for a game, pass a level, world or story only if the person "
+        "said. "
         "It needs what to make, the school year (Year 1-6 or Form "
         "1-5), and what it is about: a topic, a subject, or both. Work out what you can "
         "yourself instead of asking: given a topic but no subject, give the subject it "
@@ -119,7 +120,7 @@ class MakeLearningSetTool:
             },
             "count": {
                 "type": "integer",
-                "description": "How many questions, cards or missions, only if the person said.",
+                "description": "How many questions, cards or islands, only if the person said.",
             },
             "language": {
                 "type": "string",

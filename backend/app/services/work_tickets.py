@@ -10,16 +10,17 @@ from app.learning.enrich import Enriching
 from app.learning.registry import build_learning_kinds
 from app.services.work import Ticket
 
-# The generator's stages that finish: check, research, skills, write — then,
+# The generator's stages that finish: check, research, skills, write — and,
 # for a kind with a finishing stage (a study guide's pictures, a game's story),
-# that one, and for a game, the stage that writes and tests its code (§24).
+# that one too.
 _SET_STAGES = 4
+_FINISHED_STAGES = 5
 
 
 def for_set(learning_set: LearningSet) -> Ticket:
     """A quiz, flashcards, a study guide or a game being made."""
-    kind = build_learning_kinds().get(learning_set.kind)
-    steps = _SET_STAGES + isinstance(kind, Enriching) + bool(getattr(kind, "coded", False))
+    finishes = isinstance(build_learning_kinds().get(learning_set.kind), Enriching)
+    steps = _FINISHED_STAGES if finishes else _SET_STAGES
     return Ticket(
         kind=learning_set.kind,
         title=learning_set.topic or learning_set.title,

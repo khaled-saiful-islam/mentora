@@ -4,7 +4,8 @@ import { ArrowCounterClockwise, Check, Lightbulb, X } from '@phosphor-icons/reac
 import { Chip } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { rise, stagger } from '@/motion'
-import { isQuizItem, type Attempt, type CardItem, type GameMission, type Played, type QuizItem } from './api'
+import { PLAY_LABELS } from '@/features/game/rounds'
+import { isQuizItem, type Attempt, type CardItem, type GameIsland, type Played, type QuizItem } from './api'
 import { playedById, skillLabel } from './session'
 
 /** `whose` names the answer given: "your answer" for the student, their
@@ -16,8 +17,8 @@ export function Review({ attempt, whose = 'your answer' }: { attempt: Attempt; w
     <motion.ol className="@container space-y-3" variants={stagger(0.05)} initial="hidden" animate="shown">
       {attempt.items.map((item, i) => (
         <motion.li key={item.id} variants={rise}>
-          {'goal' in item ? (
-            <MissionRow n={i + 1} item={item} answer={played[item.id]} skill={skillLabel(attempt, item.skill)} />
+          {'play' in item ? (
+            <IslandRow n={i + 1} item={item} answer={played[item.id]} skill={skillLabel(attempt, item.skill)} />
           ) : 'front' in item ? (
             <CardRow item={item} answer={played[item.id]} skill={skillLabel(attempt, item.skill)} />
           ) : isQuizItem(item as QuizItem) ? (
@@ -76,15 +77,20 @@ function QuizRow({ n, item, answer, skill, whose }: { n: number; item: QuizItem;
   )
 }
 
-/** A game's mission (§24): reached or not, and what it teaches. */
-function MissionRow({ n, item, answer, skill }: { n: number; item: GameMission; answer: Played | undefined; skill: string }) {
+/** A game's island (§26): the idea, cleared or not, and what it teaches. */
+function IslandRow({ n, item, answer, skill }: { n: number; item: GameIsland; answer: Played | undefined; skill: string }) {
   const reached = answer ? answer.correct === true : null
   return (
     <article className="flex items-start gap-3 rounded-3xl border-2 border-border bg-surface p-4 md:p-5">
       <Mark right={reached} />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold uppercase tracking-wide text-primary">Mission {n}</p>
-        <p className="break-words font-display text-lg font-semibold">{item.goal}</p>
+        <p className="text-sm font-bold uppercase tracking-wide text-primary">
+          Island {n} · {PLAY_LABELS[item.play]}
+        </p>
+        <p className="break-words font-display text-lg font-semibold">
+          {item.icon && <span className="mr-1.5" aria-hidden>{item.icon}</span>}
+          {item.learn}
+        </p>
         {answer?.reveal?.explanation && (
           <p className="mt-2 flex items-start gap-2 rounded-2xl bg-correct-soft px-3 py-2">
             <Lightbulb weight="fill" className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />

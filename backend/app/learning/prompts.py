@@ -120,7 +120,7 @@ def verify(
     focus: str = "",
 ) -> tuple[str, str]:
     """`focus` is what a kind's items are, when they are not questions with a
-    marked answer — a game's missions (§24)."""
+    marked answer — a game's islands (§26)."""
     system = (
         f"{VOICE}\n{focus + chr(10) if focus else ''}"
         "Check learning items against their sources. For each item decide: "

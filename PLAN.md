@@ -1465,7 +1465,7 @@ and the story moves on.
 three passed; each took 4–6 minutes, and the ones that passed still had
 flaws (a tiny plant, repeated missions). **Superseded by §26.**
 
-## 26. Play and Learn from Mentora's own game templates (proposed 2026-10-09)
+## 26. Play and Learn from Mentora's own game templates (approved 2026-10-09)
 
 **Why:** *"Mentora could not create the game gracefully. The game is too much
 for Mentora."* A teacher makes a game, plays it, and shares it with the
@@ -1620,3 +1620,16 @@ After that, the teacher can:
   bespoke animation for each topic.
 - **Revision templates are question-and-answer by nature.**
 - **Diagrams and conversations are out** (see 26.2).
+
+**Built** (2026-10-09), committed locally, not pushed:
+
+- **Phase 2** is done: the map, Sort It Out, Line Up and Match Up, the
+  Match Up fallback, editors, slips in results, and the AI game writer
+  retired.
+- **The four demo games** all built on the first try, in 80–134 seconds
+  (research, writing, checking, story): a Year 2 water cycle, Year 3
+  fractions, Year 5 photosynthesis and Form 4 acids and bases.
+- Two islands (one in photosynthesis, one in acids) failed the fact check
+  and were dropped. The games were built with the rest.
+- Phases 3–5 wait for your word.
+

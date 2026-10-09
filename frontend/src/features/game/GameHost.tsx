@@ -1,44 +1,44 @@
 /**
- * Playing a simulation game (§24, §25): the game itself in a sandboxed frame —
- * model-written code, served on its own address with no way out but the
- * runtime's messages (`bridge.ts`) — and around it, Mentora telling the story
- * and teaching, one small idea at a time:
+ * Playing a game (§26): a treasure map of islands, one idea each, played in
+ * Mentora's own templates (`rounds/`), with the story told around it:
  *
- *   opening → for each mission: Learn it → (the game) Try it, Do it
- *           → What you discovered, and the story moves on → the ending
+ *   opening → the map → for each island: Learn it → its round
+ *           → What you discovered, and back to the map → the ending
  *
- * After two misses at a mission, *Show me*: the game plays it while the child
- * watches. A student's game reports each mission to the server, which keeps
- * it and counts the points; a maker's preview marks it on the page; a replay
- * of the missed missions (`practice`) keeps nothing at all.
+ * Every move in a round is answered at once — right, or wrong and why, said
+ * by the buddy. Once the child is stuck, *Show me* plays one right move. A
+ * student's game reports each island to the server, which keeps it with the
+ * pieces slipped on and counts the points; a maker's preview marks it on the
+ * page; a replay of the missed islands (`practice`) keeps nothing at all.
  */
 import { AnimatePresence, motion } from 'motion/react'
-import { CircleNotch, Lightbulb } from '@phosphor-icons/react'
-import { useEffect, useRef, useState } from 'react'
+import { Lightbulb } from '@phosphor-icons/react'
+import { useRef, useState } from 'react'
 import { Confirm } from '@/components/ui/Confirm'
 import { Buddy, profileOf } from '@/features/buddies'
-import type { GameMission } from '@/features/play/api'
-import { usePlayBackend } from '@/features/play/backend'
+import type { GameIsland } from '@/features/play/api'
 import type { PlayerProps } from '@/features/play/players'
 import { usePlayVoice } from '@/features/play/usePlayVoice'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useAuth } from '@/lib/auth'
+import { playSound, type Sound } from '@/lib/sound'
 import { useCalmMotion } from '@/motion'
-import { tellGame, useGameMessages, type GameMessage } from './bridge'
-import { type Cast } from './cards'
+import { told, type Cast } from './cards'
 import { GameBar } from './GameBar'
-import { overlayFor, type Shown } from './overlay'
+import { TreasureMap } from './Map'
+import { overlayFor, type Phase, type Shown } from './overlay'
+import { bandOf, Round, type Band, type Move } from './rounds'
+import { spokenFor } from './rounds/pieces'
 import { useFullscreen } from './useFullscreen'
-import { useMissions } from './useMissions'
+import { useIslands } from './useIslands'
+import { isWorld, paint } from './worlds'
 
-type Phase = 'story' | 'play' | 'end'
-// The buddy speaks for the game at most this often.
-const SAY_EVERY_MS = 3000
-// Misses at a mission before "Show me" is offered.
-const SHOW_ME_AFTER = 2
+// Wrong moves on an island before "Show me" is offered: the youngest sooner.
+const SHOW_ME_AFTER: Record<Band, number> = { early: 1, middle: 2, secondary: 2 }
+const MOST_TRIES = 99
 
 interface GameHostProps extends PlayerProps {
-  /** Just these missions — a replay of the missed ones. */
+  /** Just these islands — a replay of the missed ones. */
   only?: string[]
   /** Nothing is kept: a replay after the game is finished. */
   practice?: boolean
@@ -48,123 +48,152 @@ export { told } from './cards'
 
 export function GameHost({ attempt, buddy, exitTo, onFinished, only, practice = false }: GameHostProps) {
   const { user } = useAuth()
-  const backend = usePlayBackend()
   const calm = useCalmMotion()
   const voice = usePlayVoice(attempt.id, attempt.language)
   const stage = useRef<HTMLDivElement>(null)
-  const frame = useRef<HTMLIFrameElement>(null)
   const fullscreen = useFullscreen(stage)
-  const run = useMissions(attempt, { only, practice })
+  const run = useIslands(attempt, { only, practice })
   // Beside the game on a wide screen; on a narrow one the buddy's words go
-  // in the line under the bar, so no bubble lands on the game's controls.
+  // in the line under the bar, where they cover nothing.
   const roomy = useMediaQuery('(min-width: 1280px)')
+  const band = bandOf(attempt.grade_level)
+  const world = isWorld(attempt.extras.world) ? attempt.extras.world : 'rainforest'
   const cast: Cast = { buddyKey: user?.buddy, buddyName: profileOf(user?.buddy).name, character: attempt.extras.character?.name ?? '' }
-  const [phase, setPhase] = useState<Phase>(practice || attempt.answered.length > 0 ? 'play' : 'story')
-  const [ready, setReady] = useState(false)
+  const [phase, setPhase] = useState<Phase>(practice || attempt.answered.length > 0 ? 'map' : 'story')
   const [sound, setSound] = useState(true)
   const [shown, setShown] = useState<Shown | null>(null)
-  const [learnt, setLearnt] = useState<Set<string>>(() => new Set(practice ? [] : attempt.answered.map((p) => p.item_id)))
+  // The island being played: set on the map, and kept until What you
+  // discovered — the next island must not show while this one is being kept.
+  const [active, setActive] = useState<GameIsland | null>(null)
+  const [slips, setSlips] = useState<Record<string, string[]>>({})
   const [misses, setMisses] = useState<Record<string, number>>({})
   const [helped, setHelped] = useState<Set<string>>(() => new Set())
+  const [showMe, setShowMe] = useState(0)
   const [line, setLine] = useState<string | null>(null)
   const [ending, setEnding] = useState(false)
-  const said = useRef(0)
-  const allIn = run.missions.every((m) => run.outcomes[m.id])
-
-  const speak = (text: string) => {
-    if (Date.now() - said.current < SAY_EVERY_MS) return
-    said.current = Date.now()
-    setLine(text)
-    buddy.current?.say(text, 4500)
-  }
-
-  useGameMessages(frame, (message: GameMessage) => {
-    if (message.type === 'ready') {
-      setReady(true)
-      tellGame(frame.current, 'calm', calm)
-      tellGame(frame.current, 'sound', sound)
-    } else if (message.type === 'say') speak(message.text)
-    else if (message.type === 'tried') setMisses((all) => ({ ...all, [message.id]: message.tries }))
-    else if (message.type === 'done') void reach(message.id, message.tries)
-  })
-
-  async function reach(id: string, tries: number) {
-    const outcome = await run.reach(id, tries, helped.has(id))
-    const mission = run.missions.find((m) => m.id === id)
-    if (!outcome || !mission) return
-    buddy.current?.cue('correct')
-    setShown({ mission, outcome })
-  }
-
-  function showMe(mission: GameMission) {
-    setHelped((all) => new Set(all).add(mission.id))
-    frame.current?.contentWindow?.postMessage({ source: 'mentora-host', type: 'show', id: mission.id }, '*')
-    speak(`Watch me, then it's your turn!`)
-  }
-
-  useEffect(() => tellGame(frame.current, 'sound', sound), [sound])
-  useEffect(() => {
-    // Picked up with every mission already in: straight to the end.
-    if (allIn && !shown && phase === 'play') setPhase('end')
-  }, [allIn, shown, phase])
-
   const current = run.current
+  const allIn = run.islands.every((m) => run.outcomes[m.id])
+
+  const ring = (name: Sound) => sound && playSound(name)
+
+  function say(text: string, island: GameIsland | null = active) {
+    setLine(text)
+    buddy.current?.say(told(text, cast.buddyName), 5000)
+    // The youngest hear it too, in the tutor's voice, when it is a piece of
+    // the round or why it goes where it does.
+    const spoken = island && band === 'early' && voice.supported ? spokenFor(island, text) : null
+    if (spoken) voice.read(`say-${island?.id}`, [{ spoken, text }])
+  }
+
+  function move(island: GameIsland, { piece, right }: Move) {
+    if (right) return
+    setMisses((all) => ({ ...all, [island.id]: (all[island.id] ?? 0) + 1 }))
+    setSlips((all) => ({ ...all, [island.id]: [...new Set([...(all[island.id] ?? []), piece])] }))
+  }
+
+  async function cleared(island: GameIsland) {
+    const tries = Math.min(MOST_TRIES, 1 + (misses[island.id] ?? 0))
+    const outcome = await run.reach(island.id, tries, helped.has(island.id), slips[island.id] ?? [])
+    if (!outcome) return
+    ring('streak')
+    buddy.current?.cue('correct')
+    setLine(null)
+    setShown({ island, outcome })
+  }
+
+  function next() {
+    setShown(null)
+    setActive(null)
+    if (run.islands.every((m) => run.outcomes[m.id])) {
+      ring('finish')
+      setPhase('end')
+    } else setPhase('map')
+  }
+
+  function help(island: GameIsland) {
+    setHelped((all) => new Set(all).add(island.id))
+    setShowMe((n) => n + 1)
+    say(`Watch me, then it's your turn!`, null)
+  }
+
   const overlay = overlayFor({
-    attempt, run, cast, phase, shown, voice, practice,
-    learning: phase === 'play' && !shown && current !== null && !learnt.has(current.id),
-    onStart: () => setPhase('play'),
-    onLearnt: (id) => setLearnt((all) => new Set(all).add(id)),
-    onNext: () => setShown(null),
+    attempt, run, cast, phase, shown, active, voice, practice,
+    onStart: () => setPhase('map'),
+    onPlay: () => setPhase('play'),
+    onNext: next,
     onFinished,
   })  // fmt: skip
-  const stuck = phase === 'play' && !shown && current !== null && (misses[current.id] ?? 0) >= SHOW_ME_AFTER && !helped.has(current.id)
+  const playing = phase === 'play' && !shown && active !== null
+  const stuck = playing && (misses[active.id] ?? 0) >= SHOW_ME_AFTER[band]
   const title = attempt.extras.title || attempt.title
+  // What the buddy's corner names: the island being played, or the next one.
+  const focus = active ?? current
   return (
     <div ref={stage} className="fixed inset-0 z-40 flex flex-col bg-background" data-game>
       <GameBar
         title={title}
         exitTo={exitTo}
-        missions={run.missions}
+        islands={run.islands}
         outcomes={run.outcomes}
-        current={current}
+        current={active ?? current}
         points={run.points}
-        canHint={phase === 'play' && !practice && Boolean(current?.has_hint) && !overlay}
+        canHint={playing && !practice && Boolean(active?.has_hint)}
         // The hint shows under the bar; the buddy beside the game says it too.
-        onHint={() => current && void run.hint(current.id).then((hint) => hint && buddy.current?.say(hint, 5000))}
-        showMe={stuck && current ? () => showMe(current) : null}
+        onHint={() => active && void run.hint(active.id).then((hint) => hint && buddy.current?.say(hint, 5000))}
+        showMe={stuck && active ? () => help(active) : null}
         sound={sound}
         onSound={() => setSound((on) => !on)}
         fullscreen={fullscreen}
-        onFinish={phase === 'play' && !allIn ? () => setEnding(true) : null}
+        onFinish={!allIn && (phase === 'map' || phase === 'play') ? () => setEnding(true) : null}
       />
-      {current && run.hints[current.id] && (
+      {playing && run.hints[active.id] && (
         <p role="status" className="flex items-start gap-2 border-b-2 border-border bg-star-soft px-4 py-2 font-semibold">
           <Lightbulb weight="fill" className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden />
-          <span className="min-w-0 break-words">{run.hints[current.id]}</span>
+          <span className="min-w-0 break-words">{run.hints[active.id]}</span>
         </p>
       )}
-      {line && !roomy && (
-        <p className="border-b-2 border-border bg-surface px-4 py-1.5 text-sm font-semibold" aria-live="polite">
-          <span className="text-primary">{cast.buddyName}:</span> <span className="break-words">{line}</span>
+      {line && !roomy && playing && (
+        <p className="border-b-2 border-border bg-surface px-4 py-1.5 font-semibold" aria-live="polite">
+          <span className="text-primary">{cast.buddyName}:</span> <span className="break-words">{told(line, cast.buddyName)}</span>
         </p>
       )}
       <div className="relative flex min-h-0 flex-1">
         <div className="relative min-h-0 min-w-0 flex-1">
-          <iframe
-            ref={frame}
-            title={`The game: ${title}`}
-            src={backend.game(attempt.id, only)}
-            sandbox="allow-scripts"
-            referrerPolicy="no-referrer"
-            className="absolute inset-0 size-full border-0 bg-surface"
-          />
-          {!ready && (
-            <div className="absolute inset-0 grid place-items-center bg-surface" aria-live="polite">
-              <p className="flex items-center gap-2 font-display text-lg font-semibold text-muted-foreground">
-                <CircleNotch weight="bold" className="size-6 animate-spin" aria-hidden />
-                Getting the game ready…
+          {playing ? (
+            <section aria-label={`Island ${run.islands.indexOf(active) + 1}`} className="absolute inset-0 flex flex-col" style={{ background: `linear-gradient(180deg, ${paint(world, 'sky')}, ${paint(world, 'haze')})` }}>
+              <p className="mx-3 mt-3 flex items-start gap-2 rounded-2xl bg-surface/95 px-4 py-2 font-display text-lg font-semibold shadow-sm sm:mx-auto sm:max-w-3xl">
+                {active.icon && <span aria-hidden>{active.icon}</span>}
+                <span className="min-w-0 break-words">{told(active.task, cast.buddyName)}</span>
               </p>
-            </div>
+              <div className="relative min-h-0 flex-1">
+                <Round
+                  key={active.id}
+                  {...roundOf(active)}
+                  band={band}
+                  calm={calm}
+                  say={(text) => say(text)}
+                  sound={ring}
+                  showMe={showMe}
+                  onMove={(m) => move(active, m)}
+                  onDone={() => void cleared(active)}
+                />
+              </div>
+            </section>
+          ) : (
+            <TreasureMap
+              title={title}
+              world={world}
+              islands={run.islands}
+              outcomes={run.outcomes}
+              stars={run.stars}
+              current={phase === 'map' ? current : null}
+              buddyKey={user?.buddy}
+              calm={calm}
+              onGo={(island) => {
+                setActive(island)
+                setPhase('learn')
+              }}
+            />
           )}
           <AnimatePresence>
             {overlay && (
@@ -177,22 +206,14 @@ export function GameHost({ attempt, buddy, exitTo, onFinished, only, practice = 
         {roomy && (
           <aside className="flex w-64 shrink-0 flex-col items-center gap-3 border-l-2 border-border bg-surface p-4 pt-24" aria-label="Your buddy">
             <Buddy ref={buddy} buddy={user?.buddy} size={150} bubble="top" speaks />
-            {current && (
-              <p className="break-words text-center font-semibold">
-                <span className="block text-sm uppercase tracking-wide text-primary">
-                  Mission {run.missions.indexOf(current) + 1} of {run.missions.length}
-                </span>
-                {current.icon && <span className="mr-1" aria-hidden>{current.icon}</span>}
-                {current.learn}
-              </p>
-            )}
+            {focus && <IslandNote island={focus} number={run.islands.indexOf(focus) + 1} total={run.islands.length} />}
           </aside>
         )}
       </div>
       {ending && (
         <Confirm
           title="Finish the game now?"
-          body="Missions you haven't reached score nothing — you can play again after."
+          body="Islands you haven't cleared score nothing — you can play again after."
           confirmLabel="Finish"
           destructive={false}
           onCancel={() => setEnding(false)}
@@ -204,4 +225,24 @@ export function GameHost({ attempt, buddy, exitTo, onFinished, only, practice = 
       )}
     </div>
   )
+}
+
+/** Beside the game: which island, and its idea. */
+function IslandNote({ island, number, total }: { island: GameIsland; number: number; total: number }) {
+  return (
+    <p className="break-words text-center font-semibold">
+      <span className="block text-sm uppercase tracking-wide text-primary">
+        Island {number} of {total}
+      </span>
+      {island.icon && <span className="mr-1" aria-hidden>{island.icon}</span>}
+      {island.learn}
+    </p>
+  )
+}
+
+/** The round an island is played in, with its content, for `Round`. */
+function roundOf(island: GameIsland) {
+  if (island.play === 'sort' && island.sort) return { play: 'sort' as const, content: island.sort }
+  if (island.play === 'order' && island.order) return { play: 'order' as const, content: island.order }
+  return { play: 'match' as const, content: island.match ?? { pairs: [] } }
 }

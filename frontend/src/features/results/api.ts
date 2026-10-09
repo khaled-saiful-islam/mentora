@@ -30,6 +30,8 @@ export interface QuestionResult {
   /** How many chose each option, in the question's own order. */
   choices: number[]
   answer: number | null
+  /** A game island's pieces most often put in the wrong place (§26). */
+  slips?: { piece: string; students: number }[]
 }
 
 export interface AssignmentResults {

@@ -21,15 +21,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import RateLimitError
 from app.db.models.conversation import Conversation, Message
-from app.db.models.game_document import GameDocument
 from app.db.models.learning import LearningSet, LearningSetVersion
 
 logger = logging.getLogger(__name__)
 
 WINDOW = timedelta(hours=24)
-
-
-_CODED = GameDocument.prompt_tokens + GameDocument.completion_tokens
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,18 +74,10 @@ class TokenQuota:
             .join(LearningSet, LearningSet.id == LearningSetVersion.set_id)
             .where(LearningSet.owner_id == user_id, LearningSetVersion.created_at >= since)
         )
-        # A game's code is written by a second model, and each change rewrites
-        # it whole (§24): every one of those calls counts too.
-        coding = await self._session.scalar(
-            select(func.coalesce(func.sum(_CODED), 0))
-            .select_from(GameDocument)
-            .join(LearningSet, LearningSet.id == GameDocument.set_id)
-            .where(LearningSet.owner_id == user_id, GameDocument.created_at >= since)
-        )
-        return Usage(tokens=int(chat or 0) + int(building or 0) + int(coding or 0), limit=limit)
+        return Usage(tokens=int(chat or 0) + int(building or 0), limit=limit)
 
     async def usage_many(self, limits: dict[UUID, int | None]) -> dict[UUID, Usage]:
-        """`usage` for a page of accounts in three queries rather than three each."""
+        """`usage` for a page of accounts in two queries rather than two each."""
         if not limits:
             return {}
         since = datetime.now(UTC) - WINDOW
@@ -110,14 +98,8 @@ class TokenQuota:
             .where(LearningSet.owner_id.in_(ids), LearningSetVersion.created_at >= since)
             .group_by(LearningSet.owner_id)
         )
-        coding = await self._session.execute(
-            select(LearningSet.owner_id, func.sum(_CODED))
-            .join(LearningSet, LearningSet.id == GameDocument.set_id)
-            .where(LearningSet.owner_id.in_(ids), GameDocument.created_at >= since)
-            .group_by(LearningSet.owner_id)
-        )
         totals: dict[UUID, int] = dict.fromkeys(ids, 0)
-        for user_id, tokens in [*chat.all(), *building.all(), *coding.all()]:
+        for user_id, tokens in [*chat.all(), *building.all()]:
             totals[user_id] += int(tokens or 0)
         return {user_id: Usage(tokens=totals[user_id], limit=limits[user_id]) for user_id in ids}
 

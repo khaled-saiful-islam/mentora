@@ -6,7 +6,6 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from app.db.models.game_document import GameDocument
 from app.db.models.learning import LearningSet, LearningSetVersion
 from app.events.registry import build_bus
 from app.services.assignment_service import AssignmentService, ShareSettings
@@ -48,17 +47,16 @@ def card_items(n: int = 4) -> list[dict]:
 
 
 def game_items(n: int = 4) -> list[dict]:
-    """Missions, simplest first, as a built game keeps them (§24)."""
+    """Islands, simplest first, as a built game keeps them (§26): a Sort It
+    Out, a Line Up and a Match Up in turn."""
     levels = ["easy", "medium", "medium", "hard", "hard", "hard"]
     return [
         {
             "id": f"g{i}",
             "learn": f"Idea {i}.",
             "icon": "☀️",
-            "control": f"control {i}",
-            "guide": f"Slide control {i} up!",
-            "goal": f"Reach goal {i}.",
-            "win": f"Level {i} reached.",
+            "task": f"Do task {i}!",
+            **_round(i),
             "explanation": f"Because {i}.",
             "hint": f"Think about {i}.",
             "skill": "light" if i % 2 else "water",
@@ -67,6 +65,38 @@ def game_items(n: int = 4) -> list[dict]:
         }
         for i in range(1, n + 1)
     ]
+
+
+def _round(i: int) -> dict:
+    pairs = {
+        "pairs": [
+            {"id": f"p{n}", "left": f"Left {i}.{n}", "right": f"Right {i}.{n}", "why": f"Pair {n}."}
+            for n in range(1, 4)
+        ]
+    }
+    if i % 3 == 1:
+        baskets = [
+            {"id": "b1", "label": "Living", "icon": ""},
+            {"id": "b2", "label": "Not", "icon": ""},
+        ]
+        cards = [
+            {
+                "id": f"c{n}",
+                "text": f"Card {i}.{n}",
+                "icon": "",
+                "basket": f"b{n % 2 + 1}",
+                "why": "So.",
+            }
+            for n in range(1, 5)
+        ]
+        return {"play": "sort", "sort": {"baskets": baskets, "cards": cards}, "match": pairs}
+    if i % 3 == 2:
+        steps = [
+            {"id": f"s{n}", "text": f"Step {i}.{n}", "icon": "", "why": "Then."}
+            for n in range(1, 4)
+        ]
+        return {"play": "order", "order": {"steps": steps}, "match": pairs}
+    return {"play": "match", "match": pairs}
 
 
 GAME_EXTRAS = {
@@ -91,24 +121,6 @@ GAME_EXTRAS = {
     },
     "authored": False,
 }
-
-# A game's code, as small as one can be and still play by the rules (§24).
-GAME_HTML = (
-    "<!DOCTYPE html><html><head><title>Game</title></head><body><canvas></canvas>"
-    "<script>Mentora.demo = function () { Mentora.done(Mentora.missions[0].id); };"
-    "requestAnimationFrame(function () { Mentora.ready(); });</script></body></html>"
-)
-
-
-async def with_game(session, learning_set: LearningSet, html: str = GAME_HTML) -> GameDocument:
-    """The set's game code, as a build keeps it."""
-    document = GameDocument(
-        set_id=learning_set.id, revision=1, html=html, report={}, model="fake",
-        prompt_tokens=700, completion_tokens=300,
-    )  # fmt: skip
-    session.add(document)
-    await session.flush()
-    return document
 
 
 async def ready_set(

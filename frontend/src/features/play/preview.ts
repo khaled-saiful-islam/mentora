@@ -5,30 +5,37 @@
  */
 import { pointsFor, type Answered } from '@/features/game/points'
 import type { FlashcardItem, GameItem, QuizItem as KeyedQuiz, SetDetail } from '@/features/learning/api'
-import { onlyQuery, spokenQuery, type AnswerBody, type PlayBackend, type Spoken } from './backend'
-import type { Attempt, CardItem, Finish, GameMission, Played, QuizItem, SkillScore } from './api'
+import { spokenQuery, type AnswerBody, type PlayBackend, type Spoken } from './backend'
+import type { Attempt, CardItem, Finish, GameIsland, Played, QuizItem, SkillScore } from './api'
 import { starsFor } from './session'
 
 const isQuiz = (item: unknown): item is KeyedQuiz => typeof item === 'object' && item !== null && 'options' in item
 const isCard = (item: unknown): item is FlashcardItem => typeof item === 'object' && item !== null && 'front' in item
-const isMission = (item: unknown): item is GameItem => typeof item === 'object' && item !== null && 'goal' in item
+const isIsland = (item: unknown): item is GameItem => typeof item === 'object' && item !== null && 'play' in item
 
 type Playable = KeyedQuiz | FlashcardItem | GameItem
 
-/** What a student is shown — never the answer key; for a game's mission its
- *  goal, never the hint until it is asked for. */
-function shown(item: Playable): QuizItem | CardItem | GameMission {
-  if (isMission(item)) {
-    const { id, learn, icon, control, guide, goal, skill, difficulty } = item
-    return { id, learn, icon, control, guide, goal, has_hint: Boolean(item.hint), skill, difficulty }
+/** What a student is shown — never the answer key; for a game's island its
+ *  round (answered on the device), never the hint until it is asked for. */
+function shown(item: Playable): QuizItem | CardItem | GameIsland {
+  if (isIsland(item)) {
+    const { id, learn, icon, play, task, skill, difficulty } = item
+    return { id, learn, icon, play, task, ...roundOf(item), has_hint: Boolean(item.hint), skill, difficulty }
   }
   if (isQuiz(item)) return { id: item.id, prompt: item.prompt, options: item.options, skill: item.skill, difficulty: item.difficulty }
   return { id: item.id, front: item.front, back: item.back, hint: item.hint, skill: item.skill }
 }
 
+/** The round an island is played in, and not the others written for it. */
+function roundOf(item: GameItem): Pick<GameIsland, 'sort' | 'order' | 'match'> {
+  if (item.play === 'sort') return { sort: item.sort }
+  if (item.play === 'order') return { order: item.order }
+  return { match: item.match }
+}
+
 /** A fresh attempt at the set, as a student would start it. */
 export function previewAttempt(set: SetDetail): Attempt {
-  const items = set.items.filter((i): i is Playable => isQuiz(i) || isCard(i) || isMission(i))
+  const items = set.items.filter((i): i is Playable => isQuiz(i) || isCard(i) || isIsland(i))
   return {
     id: `preview-${set.id}`,
     status: 'in_progress',
@@ -71,9 +78,6 @@ export class PreviewGrader implements PlayBackend {
 
   constructor(private readonly set: SetDetail) {}
 
-  /** The maker's own game, served as a student's is — nothing is kept. */
-  game = (_attemptId: string, only?: string[]) => `/api/learning-sets/${this.set.id}/game/play${onlyQuery(only)}`
-
   hint = async (_attemptId: string, itemId: string) => {
     const item = this.set.items.find((i) => i.id === itemId)
     const hint = item && 'hint' in item ? item.hint : ''
@@ -89,7 +93,7 @@ export class PreviewGrader implements PlayBackend {
       this.played.set(body.item_id, played)
       this.streak = played.correct ? this.streak + 1 : 0
       const difficulty = item && 'difficulty' in item ? item.difficulty : 'medium'
-      this.counted.push({ correct: played.correct === true, tries: body.tries ?? 1, hinted: this.hinted.has(body.item_id), difficulty })
+      this.counted.push({ correct: played.correct === true, tries: body.tries ?? 1, shown: body.shown, hinted: this.hinted.has(body.item_id), difficulty })
     }
     return { played, streak: this.streak, answered: this.played.size, total: this.set.items.length }
   }
@@ -113,9 +117,9 @@ export class PreviewGrader implements PlayBackend {
   }
 
   private mark(item: unknown, body: AnswerBody): Played {
-    if (isMission(item)) {
-      const reached = body.done === true
-      return { item_id: item.id, choice: null, knew: null, correct: reached, reveal: { explanation: item.explanation, goal: item.goal } }
+    if (isIsland(item)) {
+      const cleared = body.done === true
+      return { item_id: item.id, choice: null, knew: null, correct: cleared, reveal: { explanation: item.explanation, task: item.task } }
     }
     if (isQuiz(item)) {
       const correct = body.choice === item.answer

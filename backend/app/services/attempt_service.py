@@ -32,7 +32,7 @@ from app.db.models.user import User
 from app.events.bus import EventBus
 from app.events.catalog import AttemptProgressed
 from app.learning.base import Item, LearningKind
-from app.learning.game import MOST_TRIES, Answered
+from app.learning.game import MOST_SLIPS, MOST_TRIES, Answered
 from app.learning.registry import build_learning_kinds
 from app.policies.access import assignment_for_student
 
@@ -532,11 +532,13 @@ def _in_item_terms(response: dict[str, Any], order: list[int] | None) -> dict[st
     if "knew" in response:
         return {"knew": response.get("knew") is True}
     if "done" in response:
-        # A game's mission (§24): reached or not, and in how many goes.
+        # A game's island (§26): cleared or not, in how many goes, and the
+        # pieces that were put in the wrong place on the way.
         return {
             "done": response.get("done") is True,
             "tries": _tries(response),
             "shown": response.get("shown") is True,
+            "slips": _slips(response),
         }
     return {}
 
@@ -574,8 +576,15 @@ def _points(loaded: Loaded, answers: list[AttemptAnswer]) -> int | None:
     )
 
 
+def _slips(response: dict[str, Any]) -> list[str]:
+    """The pieces of a round put in the wrong place, each once."""
+    given = response.get("slips")
+    listed = given if isinstance(given, list) else []
+    return list(dict.fromkeys(s[:40] for s in listed if isinstance(s, str) and s))[:MOST_SLIPS]
+
+
 def _tries(response: dict[str, Any] | None) -> int:
-    """Goes a mission took, as the game reported it (§24): at least one."""
+    """Goes an island took, as its round reported it (§26): at least one."""
     value = (response or {}).get("tries")
     if isinstance(value, bool) or not isinstance(value, int):
         return 1

@@ -78,35 +78,33 @@ as a handout** with an answer key. See
 
 ## Play and Learn games
 
-A small simulation game on any topic, made by a teacher or parent. The child
-learns by changing things and watching what happens, not by answering
-questions. The AI writes the lesson (checked against sources like every
-quiz), the story and the game's code, pitched to the year and a **level**
-(Beginner, Intermediate, Advanced). A robot plays every game on a phone and a
-laptop before anyone else sees it.
+A game on any topic, made by a teacher or parent in a minute or two. It is a
+treasure map of islands, one idea each, told as a short story with the
+student's own buddy. On each island the student plays a round in one of
+Mentora's own templates: they **sort** cards into baskets, put steps in
+**order**, or **match** pairs. The AI writes only the content, checked like a
+quiz, and fits a template to each idea. The year (Year 1–6, Form 1–5) sets
+the size, the words and the help.
 
 | | |
 |---|---|
-| ![The story's opening as a comic: the main character and the student's buddy in speech bubbles, read aloud](docs/screenshots/game-story.png) | ![Learn it: the story beat, then the one idea big with its picture, and what to try](docs/screenshots/game-learn.png) |
-| **The story**: a short comic with a character who needs help. | **Learn it**: one idea, big, with a picture, read aloud. |
-| ![Try it: the one control the idea is about glows in the game, with Mentora's bar above](docs/screenshots/game-try.png) | ![What you discovered: stars, the checked explanation, and the story moving on](docs/screenshots/game-discovery.png) |
-| **Try it, then Do it**: one control, then a small problem with it. | **What you discovered**: stars, why it works, and the story goes on. |
+| ![The treasure map: islands on a winding path, the next one glowing with the buddy on it, the rest under fog](docs/screenshots/game-map.png) | ![Line Up: steps tapped into order; a wrong one is answered by the buddy with why](docs/screenshots/game-round.png) |
+| **The map**: one idea per island; the fog lifts as you go. | **A round**: every move answered at once — a wrong one with why. |
+| ![Learn it: the story beat, then the one idea big with its picture, and what to do](docs/screenshots/game-learn.png) | ![What you discovered: stars, the checked explanation, and the story moving on](docs/screenshots/game-discovery.png) |
+| **Learn it**: the idea first, read aloud. | **What you discovered**: stars, why it works, and the story goes on. |
 
-- **Each mission is a little lesson in three beats.** *Learn it* (the idea,
-  with a picture), *Try it* (the one control it is about glows and cannot be
-  got wrong), *Do it* (a small problem using it). A new control arrives with
-  each mission; the last one uses them together.
-- **Never stuck.** A miss is "Try again"; after two, **Show me** lets the
-  buddy play the mission while the child watches. Hints cost a few points.
-- **The story** is a surprise, a draft from AI to edit, or the maker's own:
-  a character, an opening, a beat before and after each mission, and an
-  ending, told in speech bubbles with the student's own buddy and read aloud.
-- **Stars and points**, counted on the server; *Missions you missed* to
-  replay just those; sound, full screen, touch and keys, calm motion.
-- **Make it** in the app or from the chat; watch it build (3–6 minutes);
-  **play it first**; edit the words; **Change it** by typing what to change.
-  Share with a class (retakes on, and a best-points **leaderboard if you
-  want one**) or send it home.
+- **Three templates**: Sort It Out, Line Up and Match Up. Every card, step
+  and pair has its own *why*, which the buddy says when it is put in the
+  wrong place.
+- **Always built.** A round that breaks its rules is played as a Match Up
+  of the island's pairs, so a game never fails to build.
+- **Never stuck.** **Show me** plays one right move once a student is
+  stuck, and hints cost a few points. Students earn stars and points, and
+  *Islands to clear again* replays only the ones missed.
+- **Make it** in the app or from the chat: pick how it plays (or let Mentora
+  choose), the world and the story. **Play it first**, edit any piece, then
+  share it with a class (with a best-points **leaderboard** if you want one)
+  or send it home. Results show the pieces most often wrong.
 
 See [`docs/features/050-play-and-learn.md`](docs/features/050-play-and-learn.md).
 
@@ -217,10 +215,10 @@ See [`docs/features/042-parents.md`](docs/features/042-parents.md).
 - **Study guides.** A topic taught part by part at three reading levels, with
   pictures, words to know in Malay, read-aloud, a concept map, a check after
   every part, and a printable handout.
-- **Play and Learn games.** Simulation games that teach one idea per
-  mission (Learn it, Try it, Do it) inside a story, with the student's buddy,
-  Show me, stars and a best-points leaderboard. The AI codes each game and a
-  robot plays it on a phone and a laptop before it is kept.
+- **Play and Learn games.** A treasure map of islands in a story, one idea
+  each, played in Mentora's own templates (sort, line up, match) sized to the
+  year. Show me, stars, a best-points leaderboard, and results that show
+  what was most often wrong. Always built, in a minute or two.
 - **Practice made for each student.** When a shared quiz is tricky, Mentora
   makes a short practice set on exactly the skills missed. Students practise;
   only teachers and parents make sets.

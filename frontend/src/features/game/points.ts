@@ -4,9 +4,9 @@
  * they get. The server's is the one that counts; this one drives the live
  * counter and a maker's preview, where nothing reaches the server.
  *
- * A mission reached is worth more the harder it is, and more again on the
- * first go; asking the buddy for its hint costs a little. A mission not
- * reached scores nothing, never less.
+ * An island cleared is worth more the harder it is, and more again with no
+ * slip; asking the buddy for its hint costs a little. An island not cleared
+ * scores nothing, never less.
  */
 
 export const POINTS = {
@@ -28,7 +28,7 @@ export interface Answered {
   shown?: boolean
 }
 
-/** What one mission earns. */
+/** What one island earns. */
 export function earned(answer: Answered): number {
   if (!answer.correct) return 0
   if (answer.shown) return POINTS.shown
@@ -42,7 +42,7 @@ export function pointsFor(answered: Answered[]): number {
   return answered.reduce((total, answer) => total + earned(answer), 0)
 }
 
-/** A mission's stars (§25): three on the first go without help, two with
+/** An island's stars (§25): three with no slip and no help, two with
  *  help or after some goes, one after Show me, none if not reached. */
 export function starsOf(answer: Answered): number {
   if (!answer.correct) return 0

@@ -46,11 +46,6 @@ class Job:
     def done(self) -> bool:
         return self._done
 
-    @property
-    def latest(self) -> Event | None:
-        """The last thing it said — how far along it is, or how it ended."""
-        return self._events[-1] if self._events else None
-
     def append(self, event: Event) -> None:
         self._events.append(event)
         self._ring()

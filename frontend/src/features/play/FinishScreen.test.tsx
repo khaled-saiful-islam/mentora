@@ -1,9 +1,9 @@
 /**
- * The end of a game (§23): the points it was worth, counted by the server,
+ * The end of a game (§26): the points it was worth, counted by the server,
  * and how they stand against the player's best — "Play again" to beat it —
- * and a replay of just the missions it missed, in the real game.
+ * and a replay of just the islands it missed, in the real game.
  */
-import { act, render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -41,16 +41,26 @@ function mount(finish: Finish) {
   )
 }
 
-const mission = (id: string, goal: string) => ({ id, goal, learn: 'Heat makes water rise.', icon: '☀️', control: 'the sun', guide: 'Slide the sun up!', has_hint: true, skill: 'water', difficulty: 'easy' })
+const PAIRS = [
+  { id: 'p1', left: 'Sun', right: 'heats', why: 'The sun heats the sea.' },
+  { id: 'p2', left: 'Cloud', right: 'holds', why: 'Clouds hold water.' },
+  { id: 'p3', left: 'Rain', right: 'falls', why: 'Rain falls down.' },
+]
+const island = (id: string, learn: string) => ({
+  id, learn, icon: '☀️', play: 'match' as const, task: 'Join each pair!', match: { pairs: PAIRS }, has_hint: true, skill: 'water', difficulty: 'easy',
+})
 
 const played = (item_id: string, correct: boolean) => ({
   item_id, choice: null, knew: null, correct, reveal: { explanation: `Heat turns water into gas (${item_id}).` },
 })
 
-/** A message from the game in its frame, as its runtime sends it. */
-function fromGame(data: Record<string, unknown>) {
-  const frame = document.querySelector('iframe')!
-  window.dispatchEvent(new MessageEvent('message', { data: { source: 'mentora-game', ...data }, source: frame.contentWindow }))
+/** Join every pair of a Match Up, as a child would. */
+async function joinAll(user: ReturnType<typeof userEvent.setup>) {
+  const round = await screen.findByRole('region', { name: /^Island/ })
+  for (const pair of PAIRS) {
+    await user.click(within(round).getByRole('button', { name: pair.left }))
+    await user.click(within(round).getByRole('button', { name: pair.right }))
+  }
 }
 
 describe('the end of a game', () => {
@@ -74,25 +84,23 @@ describe('the end of a game', () => {
     expect(screen.queryByText('Your best yet!')).not.toBeInTheDocument()
   })
 
-  it('replays just the missions missed, in the real game, and keeps nothing', async () => {
+  it('replays just the islands missed, in the real game, and keeps nothing', async () => {
     const user = userEvent.setup()
     mount(finished({
-      items: [mission('g1', 'Reached first time.'), mission('g2', 'Missed this one.'), mission('g3', 'And this one.')],
+      items: [island('g1', 'Cleared first time.'), island('g2', 'Missed this one.'), island('g3', 'And this one.')],
       answered: [played('g1', true), played('g2', false), played('g3', false)],
     }))
-    await user.click(screen.getByRole('button', { name: 'Missions you missed (2)' }))
-    const frame = screen.getByTitle(/The game/) as HTMLIFrameElement
-    expect(frame.getAttribute('src')).toBe('/api/me/attempts/a1/game?only=g2%2Cg3')
-    expect(frame.getAttribute('sandbox')).toBe('allow-scripts')
-    expect(screen.getAllByRole('listitem', { name: /^Mission/ })).toHaveLength(2)
+    await user.click(screen.getByRole('button', { name: 'Islands to clear again (2)' }))
+    expect(screen.getAllByRole('listitem', { name: /^Island/ })).toHaveLength(2)
 
-    await user.click(await screen.findByRole('button', { name: /Let's try/ }))
-    act(() => fromGame({ type: 'ready' }))
-    act(() => fromGame({ type: 'done', id: 'g2', tries: 2 }))
+    await user.click(await screen.findByRole('button', { name: /Island 1, play it now/ }))
+    await user.click(await screen.findByRole('button', { name: /Let's play/ }))
+    await joinAll(user)
     expect(await screen.findByRole('dialog', { name: 'What you discovered' })).toHaveTextContent('Heat turns water into gas (g2).')
-    await user.click(screen.getByRole('button', { name: /Next mission/ }))
-    await user.click(await screen.findByRole('button', { name: /Let's try/ }))
-    act(() => fromGame({ type: 'done', id: 'g3', tries: 1 }))
+    await user.click(screen.getByRole('button', { name: /Back to the map/ }))
+    await user.click(await screen.findByRole('button', { name: /Island 2, play it now/ }))
+    await user.click(await screen.findByRole('button', { name: /Let's play/ }))
+    await joinAll(user)
     await user.click(await screen.findByRole('button', { name: /To the finish/ }))
     await user.click(await screen.findByRole('button', { name: /Back to my score/ }))
     expect(screen.getByText('640 points')).toBeInTheDocument()
@@ -100,8 +108,8 @@ describe('the end of a game', () => {
     expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes('/answers'))).toBe(false)
   })
 
-  it('offers no replay when every mission was reached', () => {
-    mount(finished({ items: [mission('g1', 'Easy.')], answered: [played('g1', true)] }))
-    expect(screen.queryByRole('button', { name: /Missions you missed/ })).not.toBeInTheDocument()
+  it('offers no replay when every island was cleared', () => {
+    mount(finished({ items: [island('g1', 'Easy.')], answered: [played('g1', true)] }))
+    expect(screen.queryByRole('button', { name: /Islands to clear again/ })).not.toBeInTheDocument()
   })
 })

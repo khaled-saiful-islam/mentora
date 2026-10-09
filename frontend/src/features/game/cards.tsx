@@ -1,11 +1,9 @@
 /**
- * What Mentora says over a game (§25), in its own words and look, read aloud:
- * the story's opening, each mission's **Learn it** — the story beat that makes
- * the idea matter, then the idea with its picture and what to try — what a
- * mission taught with its stars and the story moving on, and the ending.
- *
- * The story is told here as speech-bubble panels, not by the game's code, so
- * it reads well whoever wrote the game.
+ * What Mentora says around a game (§25, §26), read aloud: the story's opening,
+ * each island's **Learn it** — the story beat that makes the idea matter, then
+ * the idea with its picture and what to do — what an island taught with its
+ * stars and the story moving on, and the ending. The story is told as
+ * speech-bubble panels.
  */
 import { motion } from 'motion/react'
 import { ArrowRight, Confetti, HandPointing, Play, SpeakerHigh, Sparkle, Star, Stop } from '@phosphor-icons/react'
@@ -95,7 +93,7 @@ function initials(name: string): string {
   return name.split(/\s+/).filter(Boolean).slice(-2).map((w) => w[0]?.toUpperCase()).join('') || '★'
 }
 
-function Stars({ count, of = 3, label }: { count: number; of?: number; label?: string }) {
+export function Stars({ count, of = 3, label }: { count: number; of?: number; label?: string }) {
   return (
     <span className="inline-flex items-center gap-0.5" aria-label={label ?? `${count} of ${of} stars`}>
       {Array.from({ length: of }, (_, n) => (
@@ -110,7 +108,7 @@ export function StoryCard({ title, hook, goal, lines, cast, count, telling, onSt
 }) {  // fmt: skip
   return (
     <Card label="The story">
-      <p className="text-sm font-bold uppercase tracking-wide text-primary">{count} missions</p>
+      <p className="text-sm font-bold uppercase tracking-wide text-primary">{count} islands to explore</p>
       <h2 className="mt-1 break-words font-display text-3xl font-semibold">{title}</h2>
       {hook && <p className="mt-3 break-words text-lg italic text-muted-foreground">{hook}</p>}
       <div className="mt-4">
@@ -134,13 +132,15 @@ export function StoryCard({ title, hook, goal, lines, cast, count, telling, onSt
 }
 
 /** Learn it: the beat that makes the idea matter, then the idea, big, with
- *  its picture — and what Try it will ask. */
-export function LearnCard({ number, total, icon, learn, guide, lines, cast, telling, onTry }: {
-  number: number; total: number; icon: string; learn: string; guide: string; lines: StoryLine[]; cast: Cast; telling: Telling; onTry: () => void
+ *  its picture — and what the round will ask. */
+export function LearnCard({ number, total, icon, learn, task, play, lines, cast, telling, onTry }: {
+  number: number; total: number; icon: string; learn: string; task: string; play: string; lines: StoryLine[]; cast: Cast; telling: Telling; onTry: () => void
 }) {  // fmt: skip
   return (
     <Card label="Learn it">
-      <p className="text-sm font-bold uppercase tracking-wide text-primary">Mission {number} of {total}</p>
+      <p className="text-sm font-bold uppercase tracking-wide text-primary">
+        Island {number} of {total} · {play}
+      </p>
       {lines.length > 0 && (
         <div className="mt-3">
           <Panels lines={lines} cast={cast} />
@@ -150,16 +150,16 @@ export function LearnCard({ number, total, icon, learn, guide, lines, cast, tell
         {icon && <span className="shrink-0 text-6xl leading-none" aria-hidden>{icon}</span>}
         <p className="min-w-0 break-words font-display text-2xl font-semibold leading-snug">{learn}</p>
       </div>
-      {guide && (
-        <p className="mt-3 flex items-start gap-2 font-semibold">
-          <HandPointing weight="fill" className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
-          <span className="min-w-0 break-words">Try it: {guide}</span>
+      {task && (
+        <p className="mt-3 flex items-start gap-2 text-lg font-semibold">
+          <HandPointing weight="fill" className="mt-1 size-5 shrink-0 text-primary" aria-hidden />
+          <span className="min-w-0 break-words">{told(task, cast.buddyName)}</span>
         </p>
       )}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <ReadAloud telling={telling} />
         <Button variant="sun" size="lg" onClick={onTry} autoFocus>
-          Let's try!
+          Let's play!
           <ArrowRight weight="bold" className="size-5" />
         </Button>
       </div>
@@ -167,19 +167,19 @@ export function LearnCard({ number, total, icon, learn, guide, lines, cast, tell
   )
 }
 
-export function Discovery({ number, goal, reached, stars, explanation, lines, cast, last, telling, onNext }: {
-  number: number; goal: string; reached: boolean; stars: number; explanation: string; lines: StoryLine[]; cast: Cast; last: boolean; telling: Telling; onNext: () => void
+export function Discovery({ number, learn, reached, stars, explanation, lines, cast, last, telling, onNext }: {
+  number: number; learn: string; reached: boolean; stars: number; explanation: string; lines: StoryLine[]; cast: Cast; last: boolean; telling: Telling; onNext: () => void
 }) {  // fmt: skip
   return (
     <Card label="What you discovered" className={reached ? 'border-correct' : undefined}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-2 font-display text-2xl font-bold">
           {reached && <Sparkle weight="fill" className="size-7 text-warning" aria-hidden />}
-          {reached ? `Mission ${number} done!` : `Mission ${number}`}
+          {reached ? `Island ${number} cleared!` : `Island ${number}`}
         </p>
         {reached && <Stars count={stars} />}
       </div>
-      <p className="mt-1 break-words text-muted-foreground">{goal}</p>
+      <p className="mt-1 break-words text-muted-foreground">{learn}</p>
       {explanation && (
         <div className="mt-4 rounded-2xl bg-correct-soft px-4 py-3">
           <p className="text-sm font-bold uppercase tracking-wide text-success">What you discovered</p>
@@ -194,7 +194,7 @@ export function Discovery({ number, goal, reached, stars, explanation, lines, ca
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <ReadAloud telling={telling} label="Read why" />
         <Button variant="sun" size="lg" onClick={onNext} autoFocus>
-          {last ? 'To the finish' : 'Next mission'}
+          {last ? 'To the finish' : 'Back to the map'}
           <ArrowRight weight="bold" className="size-5" />
         </Button>
       </div>
@@ -209,7 +209,7 @@ export function Finale({ win, lines, cast, reached, total, stars, points, tellin
     <Card label="The end of the game">
       <div className="text-center">
         <Confetti weight="duotone" className="mx-auto size-12 text-primary" aria-hidden />
-        <h2 className="mt-2 font-display text-3xl font-semibold">{reached === total ? 'Every mission done!' : 'Well played!'}</h2>
+        <h2 className="mt-2 font-display text-3xl font-semibold">{reached === total ? 'Every island cleared!' : 'Well played!'}</h2>
         {win && <p className="mt-2 break-words text-lg">{win}</p>}
       </div>
       {lines.length > 0 && (
@@ -220,7 +220,7 @@ export function Finale({ win, lines, cast, reached, total, stars, points, tellin
       <p className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-display text-xl font-semibold">
         <Stars count={stars} of={total * 3} label={`${stars} of ${total * 3} stars`} />
         <span>
-          {reached} of {total} missions · <span className="tabular-nums">{points}</span> points
+          {reached} of {total} islands · <span className="tabular-nums">{points}</span> points
         </span>
       </p>
       <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
