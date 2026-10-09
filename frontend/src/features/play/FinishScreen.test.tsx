@@ -41,7 +41,7 @@ function mount(finish: Finish) {
   )
 }
 
-const mission = (id: string, goal: string) => ({ id, goal, has_hint: true, skill: 'water', difficulty: 'easy' })
+const mission = (id: string, goal: string) => ({ id, goal, learn: 'Heat makes water rise.', icon: '☀️', control: 'the sun', guide: 'Slide the sun up!', has_hint: true, skill: 'water', difficulty: 'easy' })
 
 const played = (item_id: string, correct: boolean) => ({
   item_id, choice: null, knew: null, correct, reveal: { explanation: `Heat turns water into gas (${item_id}).` },
@@ -86,10 +86,12 @@ describe('the end of a game', () => {
     expect(frame.getAttribute('sandbox')).toBe('allow-scripts')
     expect(screen.getAllByRole('listitem', { name: /^Mission/ })).toHaveLength(2)
 
+    await user.click(await screen.findByRole('button', { name: /Let's try/ }))
     act(() => fromGame({ type: 'ready' }))
     act(() => fromGame({ type: 'done', id: 'g2', tries: 2 }))
     expect(await screen.findByRole('dialog', { name: 'What you discovered' })).toHaveTextContent('Heat turns water into gas (g2).')
-    await user.click(screen.getByRole('button', { name: /Keep going/ }))
+    await user.click(screen.getByRole('button', { name: /Next mission/ }))
+    await user.click(await screen.findByRole('button', { name: /Let's try/ }))
     act(() => fromGame({ type: 'done', id: 'g3', tries: 1 }))
     await user.click(await screen.findByRole('button', { name: /To the finish/ }))
     await user.click(await screen.findByRole('button', { name: /Back to my score/ }))

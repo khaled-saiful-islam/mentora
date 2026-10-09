@@ -29,6 +29,11 @@ export interface CardItem {
  *  for (asking costs points). */
 export interface GameMission {
   id: string
+  /** Learn it (§25): the idea, its picture-word, the control, what to try. */
+  learn: string
+  icon: string
+  control: string
+  guide: string
   goal: string
   has_hint: boolean
   skill: string
@@ -265,7 +270,7 @@ export const playApi = {
   practice: () => apiFetch<{ items: MyPractice[] }>('/me/practice'),
   fromHome: (shareId: string) => apiFetch<Attempt>(`/me/from-home/${shareId}/attempts`, { method: 'POST' }),
   attempt: (attemptId: string) => apiFetch<Attempt>(`/me/attempts/${attemptId}`),
-  answer: (attemptId: string, body: { item_id: string; choice?: number; knew?: boolean; done?: boolean; tries?: number; time_ms: number }) =>
+  answer: (attemptId: string, body: { item_id: string; choice?: number; knew?: boolean; done?: boolean; tries?: number; shown?: boolean; time_ms: number }) =>
     apiFetch<AnswerResult>(`/me/attempts/${attemptId}/answers`, { method: 'POST', body: JSON.stringify(body) }),
   complete: (attemptId: string) => apiFetch<Finish>(`/me/attempts/${attemptId}/complete`, { method: 'POST' }),
   /** A game's hint from the buddy. Asking costs a few points. */

@@ -1233,7 +1233,7 @@ friend in a story. Known limits are in the feature doc.
   browser's voice.
 - Parents' games count toward `PARENT_SETS_PER_DAY`.
 
-## 24. Play and Learn, revised — AI-coded simulation games (proposed 2026-10-08)
+## 24. Play and Learn, revised — AI-coded simulation games (approved 2026-10-08)
 
 **Why:** the games of §23 are multiple-choice questions dressed as a map, a
 road, bubbles and a build. *"Those are not games. Those are like quiz with
@@ -1380,3 +1380,243 @@ sunlight and the plant grows or wilts.
   rewrite. I'll measure real numbers in phase 2.
 - **Faked scores** (accepted), so a leaderboard can be gamed.
 - Builds run in the one API process, as every set does.
+
+## 25. Games that teach, easily — Learn it, Try it, Do it (approved 2026-10-08)
+
+**Why:** *"I feel like games are difficult for student. Story is poor."* The
+§24 games put a child in front of every control at once with a goal like
+"make the leaves darker green" and leave them to find the rule by trial and
+error. The story is one paragraph at the start that never moves.
+
+### 25.1 Every mission is a little lesson in three beats
+
+1. **Learn it** (Mentora, outside the game). A story panel, comic-style: a
+   character says the one idea in a sentence a child can read, with a big
+   picture-word — *"Leaves are tiny kitchens. They cook food from sunlight!"*
+   — read aloud. One idea per mission, never more.
+2. **Try it with help** (the game). The one control that idea is about
+   glows, an arrow points at it, and the buddy says what to do — *"Slide the
+   sun up!"*. Only that control works. The scene reacts big: the leaves turn
+   green, a sparkle, a sound. It cannot be got wrong.
+3. **Do it yourself** (the game). A small problem that uses the idea —
+   *"Clouds are coming! Keep the plant green."* The target shows as a green
+   zone on the control; feedback is warmer/colder (*"Almost — a bit more
+   sun!"*). Two misses and **Show me** appears: the buddy plays it while the
+   child watches, then it is their turn again.
+
+Then **What you discovered** — the checked explanation and its picture-word —
+and the story moves on.
+
+### 25.2 One thing at a time
+
+- Controls arrive one per mission: mission 1 only the sun; mission 2 adds
+  water; mission 3 uses both. The last mission is a **big finish** that puts
+  them together.
+- **Picture first:** icons and meters instead of numbers for Years 1–3;
+  numbers with units from Year 4; a simple graph for the Forms.
+- **You cannot lose.** No lives, no game over. A wilted plant springs back
+  with *"Try again!"*. Stars per mission: first go, after help, after
+  Show me.
+- By level: *Beginner*, all three beats every time. *Intermediate*, Try it
+  is shorter. *Advanced*, straight to Do it, with Learn it a tap away.
+
+### 25.3 A story worth following
+
+- Written first, as a **story plan**: a main character with a name and a
+  problem (*Atuk Hassan's padi is turning yellow before the harvest
+  festival*), the buddy as the child's sidekick, one **story beat per
+  mission** — each one moved forward by what the mission taught — a
+  cliffhanger between missions (*"…but the sky is getting dark!"*), and an
+  ending that celebrates what the child did.
+- Mentora shows the story, not the game's code: speech-bubble panels with
+  the character and the buddy, read aloud, before and after each mission —
+  so its words and look are always good, whoever wrote the game.
+- The game draws the same character and place, named in the code, so the
+  story and the play are one world.
+
+### 25.4 How it changes what is built
+
+- **Missions** gain `learn` (the idea, one sentence), `icon` (a
+  picture-word), `before` and `after` (the story beats), and `try` (the one
+  control and the guided action). Checked as now.
+- **Story plan** replaces the story paragraph: title, character, problem,
+  beats, ending — in the set's extras, editable.
+- **The game's code** must: unlock controls one mission at a time; run a
+  guided Try it for each mission (glow, arrow, only that control live);
+  show the target zone on Beginner; give warmer/colder feedback; never end
+  the game; and provide `Mentora.demo(missionId)` for **every** mission
+  (Show me — the robot still checks mission 1 with it).
+- **The runtime** adds `Mentora.phase(id, "try" | "do")` so Mentora knows
+  which beat the child is on, and `Mentora.showMe(id)`.
+- **Mentora's screen** adds the story panels (character avatar, buddy, read
+  aloud), Show me after two misses, and stars per mission.
+- **Points:** a star for each beat done without help; Show me still
+  completes the mission, with fewer stars — never zero.
+
+### 25.5 Phases
+
+1. This plan.
+2. Missions, story plan and prompts (backend); rebuild the three demo
+   games and show them.
+3. Mentora's story panels, Show me, stars (frontend); four widths.
+4. Docs, tests. Push and deploy on your word.
+
+**Built** (2026-10-08/09), not committed: phases 1–4. Of about nine builds,
+three passed; each took 4–6 minutes, and the ones that passed still had
+flaws (a tiny plant, repeated missions). **Superseded by §26.**
+
+## 26. Play and Learn from Mentora's own game templates (proposed 2026-10-09)
+
+**Why:** *"Mentora could not create the game gracefully. The game is too much
+for Mentora."* A teacher makes a game, plays it, and shares it with the
+class, so it must be **built every time**, be **clear and easy to learn
+from**, and fit the student's **year** (Year 1–6, Form 1–5). In §24/§25 the
+AI wrote each game's code from scratch: about one build in three passed,
+after 4–6 minutes, and the games that passed were not ready to share.
+
+**The idea:** Mentora owns a set of game **templates**. We build each one
+once, as part of the app, and test it in the browser like any screen. The AI
+writes only the **content**: it picks the template that fits each idea and
+fills in its cards, steps, pairs or sliders for the year. Content is checked
+like quiz items, so there is no code to fail.
+
+### 26.1 What a game is
+
+A game is a **treasure map** of 3–5 islands, set in one of the five
+Malaysian worlds (rainforest, reef, kampung, Kuala Lumpur, space). Each
+island is one idea, simplest first.
+
+1. **The story**: a short comic with a character and the student's own
+   buddy, read aloud (from §25).
+2. **On each island**:
+   - **Learn it**: the idea, big, with a picture, read aloud (from §25).
+   - **Play it**: one round of a template. Every move is answered at once,
+     and a wrong move says *why* ("Vinegar is an acid: it tastes sour").
+     **Show me** plays one correct move.
+   - **What you discovered**: the explanation, stars, and the story moves
+     on. The fog lifts from the next island.
+3. **The ending**: stars and points. Islands not cleared stay **foggy** and
+   can be replayed on their own.
+
+The teacher's results show the map for each student (*who is stuck where*),
+and the moves most often wrong ("12 students put *whale* under *fish*").
+
+### 26.2 The templates
+
+**Learning templates**: the move is the lesson.
+
+| Template | The student… | Fits | Years |
+|---|---|---|---|
+| **Sort It Out** | drags cards into 2–4 baskets | classifying: acids/bases, living/non-living, simile/metaphor | all |
+| **Line Up** | puts steps, events or words in order; right ones lock | processes, timelines, proofs, karangan, sentence building | all |
+| **Match Up** | joins pairs | word↔meaning, cause↔effect, formula↔use, BM↔English | all |
+| **The Lab** | moves 1–3 sliders and watches a scene or graph change, to reach a target | variables: light and plants, circuits, projectiles, supply and demand, graphs | Year 3 up |
+| **Spot the Mistake** | taps the wrong line in a worked answer or paragraph and picks the fix | maths working, grammar, science explanations (SPM) | Year 4 up |
+| **Detective Case** | reads clue cards (text, a table, a chart) and picks who or what, and the clue that proves it | sources (Sejarah), science reasoning | Year 5 up |
+| **Escape Room** | opens 3 doors; each puzzle's answer is the code (a number, an order, a word) | multi-step problems | Year 4 up |
+
+**Revision templates**: fast recall on a topic already learnt. These are
+answer-driven by nature, so they are offered for revision, never as the way
+to learn a topic.
+
+| Template | How it plays |
+|---|---|
+| **Boss Battle** | each right answer hits the boss; a wrong one, the boss hits back. On the class screen, the class shares one health bar. |
+| **Tug-of-War** | two teams on the teacher's screen; each right answer pulls the rope. Questions get harder near the edge. |
+| **Streak Ladder** | climb until the first slip; the teacher sees where each student breaks. |
+
+From Wordwall: *Group sort* is Sort It Out, *Rank order* and *Unjumble* are
+Line Up, *Match up* is Match Up.
+
+**Not in this plan:**
+
+- **Role-Play Debate and Teach the Bot**: these need students to chat with
+  the AI, which Mentora does not allow students.
+- **Labelled diagrams**: these need a picture with known positions, which we
+  can't draw reliably.
+
+### 26.3 By year
+
+| | Year 1–3 | Year 4–6 | Form 1–5 |
+|---|---|---|---|
+| Words | a picture and 3–6 words on each card; everything read aloud | short sentences | the subject's terms, equations, sources |
+| Size | 4–6 cards, 2 baskets, 3–4 steps | 6–9 cards, 3 baskets, 5–6 steps | 8–12 cards, 3–4 baskets, 6–8 steps |
+| Help | Show me after one miss; no timer | after two misses | after two misses; timer and combos if wanted |
+| The Lab | one slider in stops (low, medium, high) | two sliders, numbers with units | real formulas and a graph |
+
+Within each band, the level (Beginner, Intermediate, Advanced) moves the
+size and the help a step.
+
+### 26.4 How a game is made, every time
+
+1. The teacher picks the topic, subject, year and level, and how it plays:
+   *Let Mentora choose* (the default) or particular templates.
+2. Mentora checks the topic, researches it and writes 3–5 ideas, simplest
+   first (the existing pipeline).
+3. For each idea, it picks the template that fits and writes its content to
+   that template's form, at the year's size. Each card carries its own
+   *why*.
+4. **Checks**: the facts are checked against sources, as for quizzes. Each
+   template also has its own rules:
+   - Sort It Out: each card belongs in exactly one basket.
+   - Line Up: no two steps are the same.
+   - Match Up: the pairs are one to one.
+   - Spot the Mistake: a mistake really differs from its fix.
+   - Escape Room: the code is worked out where it can be.
+   - The Lab: each target can be reached. Mentora finds the slider settings
+     that reach it, and Show me plays them.
+5. **No dead end:** a round that breaks its rules is written again. If it
+   fails a second time, that idea becomes a Match Up, which fits any idea.
+   A game is always built, in about a minute, with no code written.
+6. The story is written as in §25: the character, the opening, a beat for
+   each island, the ending.
+
+After that, the teacher can:
+
+- **Play it first.**
+- **Edit any card, step, pair or *why*** in a form.
+- **Change one island's template** ("make this a Line Up"). Only that island
+  is rewritten, in seconds.
+- **Share** with retakes and a leaderboard, as today.
+
+### 26.5 What stays and what goes
+
+- **Stays**:
+  - From §25: the story comic, Learn it, What you discovered, the ending,
+    the buddy, read-aloud, stars and points, the game bar, Play it first,
+    the editor, sharing and the leaderboard, results.
+  - The learning-kind pipeline and its checks.
+- **Goes**:
+  - The AI game writer (`learning/sim/`: writing, fixing, the robot
+    playtest), the game frame and its runtime, `game_documents` (a
+    migration drops it), Change it, and games' need for `ARTIFACT_MODEL`.
+  - The two AI-coded demo games are rebuilt from templates.
+  - The §25 work is committed first, so git history keeps it.
+
+### 26.6 Phases
+
+1. This plan.
+2. **The map and the first three templates**:
+   - The map hub, islands and fog, and the round host with its year bands.
+   - Sort It Out, Line Up and Match Up.
+   - Picking and filling templates, their checks, the Match Up fallback,
+     and the editor forms.
+   - Results with foggy islands and the moves most often wrong.
+   - The AI game writer retired.
+   - Four demo games: Year 2 water cycle, Year 3 fractions, Year 5
+     photosynthesis, Form 4 acids and bases. Checked at four widths.
+3. **The Lab and Spot the Mistake.**
+4. **Detective Case and Escape Room.**
+5. **Revision**: Boss Battle, Streak Ladder, and Tug-of-War on the class
+   screen.
+6. Docs, README, tests at each phase. Push and deploy on your word.
+
+### 26.7 Known limits
+
+- **Less surprise than an AI-coded game.** Every Sort It Out plays like a
+  Sort It Out. The variety comes from seven templates, five worlds and the
+  story.
+- **The Lab's scenes are generic**: meters, emoji, sizes and a graph, not a
+  bespoke animation for each topic.
+- **Revision templates are question-and-answer by nature.**
+- **Diagrams and conversations are out** (see 26.2).

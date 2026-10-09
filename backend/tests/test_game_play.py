@@ -76,6 +76,27 @@ async def test_a_mission_reached_after_several_goes_earns_no_first_go_bonus(
     assert done["attempt"]["points"] == 100 + 125 + 125
 
 
+async def test_a_mission_reached_after_show_me_still_scores_a_little(
+    session, client, teacher, student
+) -> None:
+    assignment = await shared(session, teacher, [student], kind="game", n=3)
+    async with client(student) as c:
+        attempt = await start(c, assignment)
+        base = f"/api/me/attempts/{attempt['id']}/answers"
+        for item in attempt["items"]:
+            shown = item["id"] == "g3"
+            report = {
+                "item_id": item["id"],
+                "done": True,
+                "tries": 3 if shown else 1,
+                "shown": shown,
+            }
+            assert (await c.post(base, json=report)).status_code == 200
+        done = (await c.post(f"/api/me/attempts/{attempt['id']}/complete")).json()
+    # easy and medium on the first go, then the buddy showed the last one.
+    assert done["attempt"]["points"] == 125 + 150 + 50
+
+
 async def test_a_mission_not_reached_scores_nothing_and_still_teaches(
     session, client, teacher, student
 ) -> None:
@@ -191,7 +212,8 @@ async def test_a_student_gets_their_own_games_code_locked_down(
     assert [m["id"] for m in told["missions"]] == ["g1", "g2", "g3"]
     assert told["buddy"] == "Momo" and told["level"] == "advanced"
     assert "Mentora.demo = function" in served.text
-    assert setup_of(replay.text)["missions"] == [{"id": "g2", "goal": "Reach goal 2.", "number": 2}]
+    [again] = setup_of(replay.text)["missions"]
+    assert (again["id"], again["number"], again["guide"]) == ("g2", 2, "Slide control 2 up!")
 
     stranger = await account("student", "Not Them")
     async with client(stranger) as c:

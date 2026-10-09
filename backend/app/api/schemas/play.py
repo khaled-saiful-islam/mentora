@@ -110,6 +110,8 @@ class AnswerRequest(BaseModel):
     # how many goes.
     done: bool | None = None
     tries: int | None = Field(default=None, ge=1, le=99)
+    # Reached after "Show me" (§25): the buddy played it first.
+    shown: bool = False
 
 
 class HintResponse(BaseModel):

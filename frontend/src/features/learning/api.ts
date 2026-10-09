@@ -78,6 +78,12 @@ export interface GuideExtras {
  *  check that reaches it, and what reaching it teaches. */
 export interface GameItem {
   id: string
+  /** Learn it (§25): the one idea, a picture-word for it, the control it
+   *  adds, and what Try it asks. */
+  learn: string
+  icon: string
+  control: string
+  guide: string
   goal: string
   win: string
   explanation: string
@@ -92,15 +98,32 @@ export type GameWorld = 'rainforest' | 'reef' | 'kampung' | 'city' | 'space'
 export type Level = 'beginner' | 'intermediate' | 'advanced'
 export const LEVEL_LABELS: Record<Level, string> = { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' }
 
-/** A game's story and setting (§24). `{buddy}` in any line is the player's buddy. */
+/** A speech-bubble line of a game's story (§25). */
+export interface StoryLine {
+  who: string
+  says: string
+}
+
+/** The story panels before and after one mission. */
+export interface StoryBeat {
+  before: StoryLine[]
+  after: StoryLine[]
+}
+
+/** A game's story plan and setting (§25). `{buddy}` in any line is the player's buddy. */
 export interface GameExtras {
   title: string
   world: GameWorld
+  character: { name: string; about: string }
   story: {
     hook: string
     goal: string
     win: string
+    opening: StoryLine[]
+    ending: StoryLine[]
   }
+  /** By mission id. */
+  beats: Record<string, StoryBeat>
   /** The maker wrote the story themselves. */
   authored: boolean
 }

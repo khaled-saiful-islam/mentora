@@ -154,6 +154,47 @@ async def test_words_unkind_to_children_go_back_to_be_rewritten() -> None:
     assert "not right for children" in writer.asked[2][1]
 
 
+class Flaky(ScriptedWriter):
+    """Drops the connection on the calls it is told to, then answers."""
+
+    def __init__(self, *replies: str, drops: set[int]) -> None:
+        super().__init__(*replies)
+        self._drops, self._call = drops, 0
+
+    async def write(self, system, user, into: Written, *, temperature=None):
+        self._call += 1
+        if self._call in self._drops:
+            from app.artifacts.base import ArtifactUnavailable
+
+            raise ArtifactUnavailable("peer closed connection")
+        async for piece in super().write(system, user, into, temperature=temperature):
+            yield piece
+
+
+async def test_a_game_cut_off_part_way_is_continued_not_fixed_half_written() -> None:
+    cut = len(GOOD) // 2
+    writer = ScriptedWriter(json.dumps(DESIGN), GOOD[:cut], GOOD[cut:])
+    built = (await run(SimBuilder(writer, ScriptedTester())))[-1]
+    assert built.html == GOOD
+    assert built.report["continued"] == 1
+    system, user = writer.asked[2]
+    assert "Continue it EXACTLY" in system and GOOD[cut - 20 : cut] in user
+
+
+async def test_a_dropped_connection_is_tried_again_not_a_failed_build() -> None:
+    writer = Flaky(json.dumps(DESIGN), GOOD, drops={2})
+    built = (await run(SimBuilder(writer, ScriptedTester())))[-1]
+    assert isinstance(built, SimBuilt) and built.html == GOOD
+
+
+async def test_a_fix_that_never_arrives_keeps_the_game_and_goes_on() -> None:
+    # The first fix's edits and its whole rewrite both drop, twice each.
+    writer = Flaky(json.dumps(DESIGN), GOOD, SAME, drops={3, 4, 5, 6})
+    tester = ScriptedTester(["TypeError: x"], ["TypeError: x"], [])
+    built = (await run(SimBuilder(writer, tester)))[-1]
+    assert built.report["fixed_by"] == ["kept", "edits"]
+
+
 async def test_a_thin_design_is_asked_for_again_and_then_given_up_on() -> None:
     writer = ScriptedWriter("{}", json.dumps({"name": "x"}))
     with pytest.raises(GenerationUnavailable, match="couldn't work out a game"):
@@ -204,8 +245,18 @@ async def test_a_change_that_changes_nothing_is_said_so() -> None:
 def test_the_game_writer_is_told_the_runtime_and_never_to_ask_a_quiz() -> None:
     from app.learning.sim.prompts import DESIGN_SYSTEM, WRITE_SYSTEM, write
 
-    assert "quiz" in DESIGN_SYSTEM and "no options to pick" in DESIGN_SYSTEM
-    for rule in ("Mentora.missions", "Mentora.done", "Mentora.demo", "390", "no horizontal"):
+    assert "never by answering a question" in DESIGN_SYSTEM
+    assert "Controls arrive one per mission" in DESIGN_SYSTEM
+    for rule in (
+        "Mentora.missions",
+        "Mentora.done",
+        "Mentora.demo = function (id)",
+        "390",
+        "no horizontal",
+        "Try it",
+        "Do it",
+        "never a game over",
+    ):
         assert rule.lower() in WRITE_SYSTEM.lower()
     _, user = write(SPEC, DESIGN)
     assert "id=m1" in user and "<design>" in user and "Mentora.buddy" in user

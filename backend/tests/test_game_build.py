@@ -29,6 +29,10 @@ def missions() -> Any:
             n = next(counter)
             items.append(
                 {
+                    "learn": "Leaves cook food from sunlight.",
+                    "icon": "☀️",
+                    "control": f"control {n}",
+                    "guide": "Slide the sun up!",
                     "goal": f"Grow plant {n} to full height.",
                     "win": f"Plant {n} is 100% tall with sun above half.",
                     "explanation": "Plants need light to make food.",
@@ -142,6 +146,25 @@ async def test_missions_are_checked_as_missions_at_the_level_chosen() -> None:
     assert "Level: Beginner" in seen["verify"]
     assert "These items are missions" in seen["verify_system"]
     assert "never options" in seen["draft"].lower()
+
+
+async def test_a_mission_repeating_an_earlier_ones_control_is_not_kept() -> None:
+    written = missions()
+    rounds = iter([["the sun slider", "The Sun Slider", "the rain cloud"], ["the air fan"] * 3])
+
+    def draft(system: str, user: str) -> dict[str, Any]:
+        items = written(system, user)["items"]
+        controls = next(rounds)
+        return {"items": [{**item, "control": c} for item, c in zip(items, controls, strict=False)]}
+
+    gen, _ = build(happy(draft=draft, wrap=STORY), builder=FakeBuilder())
+    updates = await run(gen, count=3)
+    controls = [i["control"] for i in updates[-1].result.items]
+    assert sorted(c.lower() for c in controls) == [
+        "the air fan",
+        "the rain cloud",
+        "the sun slider",
+    ]
 
 
 async def test_quizzes_have_no_story_and_no_code() -> None:

@@ -5,7 +5,7 @@
  * sound, full screen, and finishing early. Wraps onto two rows on a phone.
  */
 import { motion } from 'motion/react'
-import { ArrowsIn, ArrowsOut, Check, FlagCheckered, Lightbulb, SpeakerHigh, SpeakerSlash, Star, X } from '@phosphor-icons/react'
+import { ArrowsIn, ArrowsOut, Check, Eye, FlagCheckered, Lightbulb, SpeakerHigh, SpeakerSlash, Star, X } from '@phosphor-icons/react'
 import { Button, ButtonLink } from '@/components/ui'
 import type { GameMission } from '@/features/play/api'
 import { cn } from '@/lib/utils'
@@ -23,6 +23,8 @@ interface GameBarProps {
   /** Whether a hint can be asked for now, and what it was if it was. */
   canHint: boolean
   onHint: () => void
+  /** "Show me" — offered after two misses at a mission (§25). */
+  showMe: (() => void) | null
   sound: boolean
   onSound: () => void
   fullscreen: { available: boolean; on: boolean; toggle: () => void }
@@ -30,7 +32,7 @@ interface GameBarProps {
 }
 
 export function GameBar(props: GameBarProps) {
-  const { title, exitTo, missions, outcomes, current, points, canHint, onHint, sound, onSound, fullscreen, onFinish } = props
+  const { title, exitTo, missions, outcomes, current, points, canHint, onHint, showMe, sound, onSound, fullscreen, onFinish } = props
   return (
     <header className="relative z-20 flex flex-wrap items-center gap-x-3 gap-y-2 border-b-2 border-border bg-surface px-3 py-2">
       <ButtonLink to={exitTo} variant="ghost" size="icon" aria-label="Close the game">
@@ -43,6 +45,14 @@ export function GameBar(props: GameBarProps) {
         ))}
       </ol>
       <div className="ml-auto flex flex-wrap items-center gap-2">
+        {showMe && (
+          <motion.span initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={spring.bouncy}>
+            <Button variant="sun" size="sm" onClick={showMe}>
+              <Eye weight="bold" className="size-4" />
+              Show me
+            </Button>
+          </motion.span>
+        )}
         {canHint && (
           <Button variant="outline" size="sm" onClick={onHint}>
             <Lightbulb weight="fill" className="size-4 text-warning" />

@@ -14,6 +14,8 @@ export const POINTS = {
   harder: { easy: 0, medium: 25, hard: 50 } as Record<string, number>,
   firstGo: 25,
   hint: 40,
+  /** Reached after "Show me": never zero, never the full count. */
+  shown: 50,
 } as const
 
 export interface Answered {
@@ -22,11 +24,14 @@ export interface Answered {
   difficulty: string
   /** Goes it took, the one that reached it included. */
   tries: number
+  /** Reached after the buddy showed how. */
+  shown?: boolean
 }
 
 /** What one mission earns. */
 export function earned(answer: Answered): number {
   if (!answer.correct) return 0
+  if (answer.shown) return POINTS.shown
   let points = POINTS.mission + (POINTS.harder[answer.difficulty] ?? 0)
   if (answer.tries <= 1) points += POINTS.firstGo
   if (answer.hinted) points -= POINTS.hint
@@ -35,4 +40,12 @@ export function earned(answer: Answered): number {
 
 export function pointsFor(answered: Answered[]): number {
   return answered.reduce((total, answer) => total + earned(answer), 0)
+}
+
+/** A mission's stars (§25): three on the first go without help, two with
+ *  help or after some goes, one after Show me, none if not reached. */
+export function starsOf(answer: Answered): number {
+  if (!answer.correct) return 0
+  if (answer.shown) return 1
+  return answer.tries <= 1 && !answer.hinted ? 3 : 2
 }

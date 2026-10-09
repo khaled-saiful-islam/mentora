@@ -533,7 +533,11 @@ def _in_item_terms(response: dict[str, Any], order: list[int] | None) -> dict[st
         return {"knew": response.get("knew") is True}
     if "done" in response:
         # A game's mission (§24): reached or not, and in how many goes.
-        return {"done": response.get("done") is True, "tries": _tries(response)}
+        return {
+            "done": response.get("done") is True,
+            "tries": _tries(response),
+            "shown": response.get("shown") is True,
+        }
     return {}
 
 
@@ -557,6 +561,7 @@ def _points(loaded: Loaded, answers: list[AttemptAnswer]) -> int | None:
             hinted=a.item_id in hinted,
             difficulty=str(loaded.by_id.get(a.item_id, {}).get("difficulty", "medium")),
             tries=_tries(a.response),
+            shown=(a.response or {}).get("shown") is True,
         )
         for a in answers
     ]

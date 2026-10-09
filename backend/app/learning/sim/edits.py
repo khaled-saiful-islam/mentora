@@ -64,6 +64,20 @@ def document_of(text: str) -> str:
     return body[: ends[-1].end()] if ends else body
 
 
+# A repeat shorter than this is not trimmed: a continuation that starts with
+# `}` may well mean a new `}`, not the one before it again.
+LEAST_REPEAT = 12
+
+
+def joined(start: str, rest: str) -> str:
+    """A cut-off document and its continuation, without the line the
+    continuation repeated from where it picked up."""
+    for size in range(min(len(rest), 400), LEAST_REPEAT - 1, -1):
+        if start.endswith(rest[:size]):
+            return start + rest[size:]
+    return start + rest
+
+
 def is_whole(html: str) -> bool:
     """Starts with a doctype and ends with `</html>`: not cut off part-way."""
     stripped = html.strip()

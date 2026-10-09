@@ -19,7 +19,8 @@ type Playable = KeyedQuiz | FlashcardItem | GameItem
  *  goal, never the hint until it is asked for. */
 function shown(item: Playable): QuizItem | CardItem | GameMission {
   if (isMission(item)) {
-    return { id: item.id, goal: item.goal, has_hint: Boolean(item.hint), skill: item.skill, difficulty: item.difficulty }
+    const { id, learn, icon, control, guide, goal, skill, difficulty } = item
+    return { id, learn, icon, control, guide, goal, has_hint: Boolean(item.hint), skill, difficulty }
   }
   if (isQuiz(item)) return { id: item.id, prompt: item.prompt, options: item.options, skill: item.skill, difficulty: item.difficulty }
   return { id: item.id, front: item.front, back: item.back, hint: item.hint, skill: item.skill }

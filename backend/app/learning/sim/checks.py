@@ -36,6 +36,17 @@ BANNED: tuple[tuple[str, str], ...] = (
 REQUIRED: tuple[tuple[str, str], ...] = (
     (r"\bMentora\b", "never uses the `Mentora` runtime, so it cannot report a mission"),
 )
+# A mission's words are what the child reads, and its maker may reword them: a
+# game that decides what a mission does by comparing them (`m.control ===
+# "Knife"`) does nothing at all once the words are not the design's.
+_FIELDS = r"(?:control|goal|learn|guide|icon)"
+LINE_SHOWN = 160
+_WORDING = re.compile(
+    rf"\.{_FIELDS}\s*[!=]==?\s*[\"'`]"
+    rf"|[\"'`]\s*[!=]==?\s*[\w.\[\]()]+\.{_FIELDS}\b"
+    rf"|switch\s*\(\s*[\w.\[\]()]+\.{_FIELDS}\s*\)"
+    rf"|\.{_FIELDS}(?:\.toLowerCase\(\))?\.(?:includes|indexOf|startsWith|endsWith|match)\s*\("
+)
 _ELSEWHERE = (
     (r"<script[^>]+\bsrc\s*=", "loads a script from elsewhere"),
     (r"<link\b[^>]*\bhref\s*=\s*[\"']?(?:https?:)?//", "links to something on the web"),
@@ -61,12 +72,26 @@ def complaints(html: str, *, max_bytes: int) -> list[str]:
         return found
     found.extend(f"The game {why}." for pattern, why in BANNED if re.search(pattern, script))
     found.extend(f"The game {why}." for pattern, why in REQUIRED if not re.search(pattern, script))
+    if wording := _WORDING.search(script):
+        found.append(
+            f"The game tells missions apart by their words (`{_line_of(script, wording)}`): "
+            "a mission's words are what the child reads, and its maker may change them, "
+            "so nothing happens. Set each mission up by its `id` (or its place in "
+            "`Mentora.missions`) and never compare its words."
+        )
     found.extend(
         f"The game {why}; it must be self-contained."
         for pattern, why in _ELSEWHERE
         if re.search(pattern, html, re.IGNORECASE)
     )
     return found
+
+
+def _line_of(script: str, match: re.Match[str]) -> str:
+    """The whole line a match is on, so the writer can find it."""
+    start = script.rfind("\n", 0, match.start()) + 1
+    end = script.find("\n", match.end())
+    return script[start : end if end >= 0 else len(script)].strip()[:LINE_SHOWN]
 
 
 _LITERAL = re.compile(r"""(["'`])((?:(?!\1)[^\\\n]|\\.){3,240})\1""")

@@ -21,49 +21,51 @@ from app.learning.sim.runtime import SAY_LIMIT
 from app.learning.sim.spec import SimSpec
 
 LEVEL_NOTES = {
-    "beginner": "guided: wide targets, few controls, a nudge after a failed try",
-    "intermediate": "some guidance: fair targets, a nudge only after two failed tries",
-    "advanced": "a real challenge: tighter targets, more controls interacting, no nudges",
+    "beginner": "Try it fully guided; Do it with a wide green target zone shown, and a "
+    "nudge after a miss",
+    "intermediate": "Try it short; Do it with a fair target, its zone shown after two misses",
+    "advanced": "Try it one line; Do it with a tight target, no zone, no nudges",
 }
 
 DESIGN_SYSTEM = """
 You are designing an educational SIMULATION game for children, before any of
-it is written. The topic is the game: the player changes things and watches
-what happens, and that is how they learn. There are no questions to answer
-and no options to pick — a game that asks "which is right?" is a quiz, and is
-wrong.
+it is written. The topic is the game: the child changes things and watches
+what happens, and that is how they learn — never by answering a question.
 
-You are given the missions, already written and checked by a teacher's tools.
-Design one simulation in which every mission can be reached by experimenting,
-and where reaching it shows the player exactly what the mission teaches.
+It must be EASY and friendly. Each mission teaches one small idea in three
+beats, and the game plays the last two:
+- Try it — the one control this mission adds glows, an arrow points at it,
+  only it can be used, and the scene reacts big. It cannot go wrong.
+- Do it — a small problem that uses the idea. The target is shown (a green
+  zone on the control at beginner level), and the game says warmer or colder.
+  A miss is a "try again", never a game over.
 
-Decide, and be specific — with numbers:
+You are given the missions, already written and checked, and the story's
+main character. Design one simulation where:
 
-- **The scene.** What is on screen, drawn in code (canvas, SVG or CSS shapes —
-  no pictures from anywhere), set in the setting you are given, with things a
-  Malaysian child knows there. Characters from the story may appear.
-- **The controls.** Two to four things the player changes: sliders, buttons,
-  things to drag, switches. Each named in a word or two a child understands.
-- **The rules.** The simple, TRUE rules that connect the controls to what
-  happens, with real numbers and units where the topic has them. They must
-  agree with what each mission teaches. Simplify; never invent.
-- **Each mission**, by its id, in order: how it starts, the exact check in
-  terms of the rules' variables, what counts as a failed try (a plant that
-  wilts, a jug that overflows), and a one-sentence nudge.
-- **Feedback.** What moves, grows, fills or changes colour as the controls
-  change, and the moment of success.
-- **The demo.** How mission 1 is reached by setting the controls — the same
-  controls a player uses — so a robot can check it can be done in seconds.
-- **The look.** Four to six hex colours, bright and friendly, ground first.
+- **The scene** is drawn in code (canvas, SVG or CSS shapes — no pictures from
+  anywhere) in the setting given, big and full of life, with the main
+  character and the buddy in it.
+- **Controls arrive one per mission**, in order: the first mission has one
+  control; each later one adds its own; the last mission uses them together.
+  Each is big, named in a word a child knows, with an emoji.
+- **The rules** connect the controls to what happens, TRUE and simple, with
+  real numbers where the topic has them — and agree with what each mission
+  teaches. Simplify; never invent.
+- **Each mission**, by its id: how Try it is guided, the Do it problem, the
+  target, the exact check, what counts as a miss, and how its demo reaches it.
+- **Feedback**: what moves, grows, fills or changes colour, the warmer/colder
+  words, and the celebration.
+- **The look**: four to six bright, friendly hex colours, ground first.
 
 Reply with JSON only:
 {"name": "...", "scene": "...",
- "controls": [{"name": "...", "kind": "slider|button|drag|switch",
-               "range": "...", "changes": "..."}],
+ "controls": [{"name": "...", "emoji": "...", "kind": "slider|button|drag|switch",
+               "mission": "<id that adds it>", "range": "...", "changes": "..."}],
  "rules": "...",
- "missions": [{"id": "...", "start": "...", "check": "...",
-               "fails_when": "...", "nudge": "..."}],
- "feedback": "...", "demo": "...", "palette": ["#......"]}
+ "missions": [{"id": "...", "try": "...", "do": "...", "target": "...",
+               "check": "...", "miss": "...", "demo": "..."}],
+ "feedback": "...", "palette": ["#......"]}
 """
 
 WRITE_SYSTEM = f"""
@@ -77,10 +79,14 @@ back to you. Reply with the document and nothing else — no fence, no words.
 
 `window.Mentora` is how the game talks to the app around it. Use it exactly:
 
-- `Mentora.missions` — `[{{id, goal, number}}]`: the missions to play, in this
-  order. It can be SHORTER than the design's list (a replay of the missed
-  ones): play exactly these, set each up by its `id`, and title each
-  "Mission <number>: <goal>".
+- `Mentora.missions` — `[{{id, number, learn, icon, control, guide, goal}}]`:
+  the missions to play, in this order. It can be SHORTER than the design's
+  list (a replay of the missed ones): play exactly these, set each up by its
+  `id`, and title each "Mission <number>". **Tell missions apart only by
+  `id`**, never by comparing their words (`control`, `goal`…): those are what
+  the child reads, and the teacher may reword them. The app has already shown the child
+  `learn` before the mission starts; the game plays Try it (`guide`) then Do it
+  (`goal`).
 - `Mentora.buddy` — the player's buddy's name. Use it in words on screen.
   Never say what kind of animal the buddy is, and never "he" or "she".
 - `Mentora.level` — "beginner" | "intermediate" | "advanced".
@@ -97,13 +103,16 @@ back to you. Reply with the document and nothing else — no fence, no words.
 - `Mentora.play(name)` — a sound: "tap", "good", "oops", "grow" or "win". It
   respects the player's sound setting. Make no audio of your own.
 - `Mentora.on("calm" | "sound", fn)` — told when those change.
-- **Set `Mentora.demo = function () {{ ... }}`.** It reaches the FIRST mission in
-  `Mentora.missions` by operating the controls a player uses — starting the
-  game if there is a start screen, setting the same values through the same
-  functions a player's input calls, and letting the simulation run under its
-  own rules (it may speed up the simulation's clock) — so a robot can check
-  the mission can be reached. It must reach `Mentora.done` within 6 seconds.
-  It never calls `Mentora.done` itself, and never skips the check.
+- **Set `Mentora.demo = function (id) {{ ... }}`** — "Show me": it plays the
+  CURRENT mission (whose id it is given) from where the child is, through
+  both beats, by operating the controls a player uses — setting the same
+  values through the same functions a player's input calls, and letting the
+  simulation run under its own rules (it may speed up the simulation's
+  clock). Slow enough to watch, fast enough to reach `Mentora.done(id)` within
+  6 seconds. It never calls `Mentora.done` itself, and never skips the check.
+  Pressed in Try it, it plays Try it AND carries on through Do it to the
+  end; pressed in Do it, it plays Do it. A robot presses it for every
+  mission, one after another.
 
 Never use `postMessage`, `window.parent`, `top`, `localStorage`,
 `sessionStorage`, `indexedDB`, cookies, `alert`, `confirm` or `prompt`: they
@@ -120,7 +129,8 @@ are blocked here and the game would break.
 - Declare before use. Read nothing from an object that may not exist yet on
   the first frame.
 - Keep it focused: one scene, the controls, the missions — the whole document
-  under about 800 lines, so it is complete and every part of it works.
+  under about 700 lines, so it is complete and every part of it works. Write
+  NO comments in the code: every line is the game.
 
 ## It has to fit any screen
 
@@ -135,23 +145,36 @@ are blocked here and the game would break.
 - Pointer events for mouse and touch alike; `<input type="range">` styled
   large for sliders; every button also works with Enter and Space.
 
-## It has to teach
+## It has to be easy — Try it, then Do it
 
-- The simulation follows the design's rules, with its numbers. What happens
-  on screen is what really happens.
-- The current mission's goal is always on screen, large, at the top.
-- Show what is changing: a number with its unit, a meter, a colour.
-- Beginner: the nudge after a failed try, or after 20 seconds without
-  progress. Intermediate: after two failed tries. Advanced: no nudges.
-- **Never a multiple-choice question.** The player learns by changing things.
-- Short sentences a child can read. Friendly, never scary or violent.
+- **Controls arrive one per mission.** A mission's new control appears when it
+  starts, with a little pop; the earlier ones stay. The first mission has one.
+- **Try it** (each mission's first beat): the new control glows and pulses, a
+  big arrow points at it, a bubble says `guide`, and nothing else can be used.
+  Whatever the child does with it, the scene reacts big — and when they have
+  done it, a cheer and on to Do it. It cannot be got wrong.
+- **Do it** (the second beat): the Do it problem (`goal`) shows at the top,
+  large. At beginner level the target is a green zone on the control. As the
+  child gets close, say warmer or colder in words a child reads:
+  "Almost — a bit more sun!". A miss is `Mentora.tried(id)` and a friendly
+  "Try again!", with the scene springing back — never a game over, no lives.
+- When the check is met: `Mentora.done(id)`, `Mentora.play("good")`, a short
+  celebration, then — BY ITSELF after about a second and a half, with no
+  button to press — the next mission's Try it. `Mentora.demo(id)` works
+  whenever that mission is the current one, from Try it or Do it.
+- Show what is changing with pictures first: meters, colours, emoji. Numbers
+  with units from Year 4; never a wall of text.
+- Short sentences a child can read; friendly, never scary or violent. The
+  main character and the buddy appear in the scene, drawn simply, named.
+- **Never a multiple-choice question.** The child learns by doing.
 
 ## It has to feel like a game
 
 - Something moves or reacts the moment a control changes.
 - A clear moment of success for each mission: `Mentora.play("good")` and a
   little celebration (still, if `Mentora.calm`).
-- A "Try again" button that puts the current mission back to its start.
+- A "Try again" button that puts the current mission back to the start of
+  its Do it.
 - The design's palette; a ground, shapes with character, life in the scene.
 - The scene fills its area: what the missions are about is big and in the
   middle — never small things on a large empty ground.
@@ -161,9 +184,10 @@ are blocked here and the game would break.
 
 _STILL_HOLDS = """The Mentora runtime rules still hold: play `Mentora.missions` by id, call
 `Mentora.ready()`, `Mentora.tried(id)` and `Mentora.done(id)`, set
-`Mentora.demo` to reach the first mission through the player's own controls
-within 6 seconds, no network, no blocking loop, fills any screen without
-horizontal scrolling."""
+`Mentora.demo(id)` to reach the current mission through the player's own controls
+within 6 seconds — for EVERY mission, given its id — no network, no blocking
+loop, fills any screen without horizontal scrolling. It stays easy: one new
+control per mission, a guided Try it, a Do it that never ends the game."""
 
 FIX_SYSTEM = f"""
 A simulation game you wrote was run in a robot browser — on a phone and a
@@ -234,6 +258,20 @@ def change(html: str, instruction: str, *, whole: bool = False) -> tuple[str, st
     return system, f"<change>{instruction}</change>\n\nTHE GAME:\n\n{html}"
 
 
+CONTINUE_SYSTEM = """
+You were writing a complete HTML game as one document and your reply stopped
+part-way. Continue it EXACTLY from where it stopped: the very next
+characters, through to the end of the document, `</html>`. Reply with the
+continuation only — do not repeat what is written, no fence, no words.
+"""
+# How much of the end of a cut-off game is shown, to continue from.
+CONTINUE_FROM = 6000
+
+
+def carry_on(written: str) -> tuple[str, str]:
+    return CONTINUE_SYSTEM, f"THE END OF WHAT YOU WROTE:\n\n{written[-CONTINUE_FROM:]}"
+
+
 def _context(spec: SimSpec) -> str:
     """The set, as the model reads it. The story and missions are data —
     words to build from, never instructions."""
@@ -243,7 +281,8 @@ def _context(spec: SimSpec) -> str:
     return (
         f"Title: {spec.title}\nTopic: {spec.topic}\n{spec.audience}\n"
         f"Level: {spec.level} — {LEVEL_NOTES.get(spec.level, LEVEL_NOTES['beginner'])}\n"
-        f"Setting: {spec.setting}\n\n"
+        f"Setting: {spec.setting}\n"
+        f"Main character: {spec.character or 'someone from the setting, named'}\n\n"
         f"<story>\n{story or '(none — keep it simple and friendly)'}\n</story>\n"
         "In the story, {buddy} stands for the player's buddy: in the game that is "
         "`Mentora.buddy`.\n\n"

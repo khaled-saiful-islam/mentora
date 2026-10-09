@@ -7,9 +7,10 @@ children on phones:
 
 - **Two sizes:** a phone held upright, by touch, and a laptop, by mouse and
   keys. A game that is wider than the phone, or draws nothing there, fails.
-- **The game as it ships:** served exactly as a student gets it — the content
-  policy, the setup, the runtime (`runtime.served`) — with every request
-  refused.
+- **The game as it ships:** served exactly as a student gets it — from an
+  address of its own, with the content policy as a header and in the page,
+  the setup and the runtime (`runtime.served`) — with every other request
+  refused. An error is reported with the line of the game it came from.
 - **Mission 1, reached:** the game's own `Mentora.demo` is run on the laptop,
   and the runtime must report the first mission done within the time. A game
   whose first mission cannot be reached is not a game.
@@ -29,7 +30,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.artifacts.raster import LOAD_TIMEOUT_MS, RasterUnavailable, _ensure_browser, shutdown
-from app.learning.sim.runtime import Setup, first_in_head, served
+from app.learning.sim.runtime import HEADER_POLICY, Setup, first_in_head, served
 
 logger = logging.getLogger(__name__)
 
@@ -40,15 +41,31 @@ PHONE = ("phone", 390, 700)
 LAPTOP = ("laptop", 1280, 760)
 SETTLE_MS = 1500
 AFTER_INPUT_MS = 600
-# The demo has eight seconds, as the game was told; a little more to report.
-DEMO_S = 10.0
-# One size, end to end. A game that wedges its thread blocks every probe.
-BUDGET_S = 35.0
+# Each press of Show me has six seconds, as the game was told; a little more
+# to report. A child presses it again if the first press only took them
+# through Try it.
+DEMO_S = 8.0
+PRESSES = 3
+# Between one mission's demo and the next: its celebration, then the next
+# mission's Try it.
+BETWEEN_MS = 1800
+# One size, end to end — the laptop plays every mission's demo. A game that
+# wedges its thread blocks every probe.
+BUDGET_S = 150.0
 PROBE_S = 5.0
 CLOSE_S = 5.0
 # More than this many pixels wider than the screen is a game that scrolls
 # sideways — the one layout fault a child cannot work around.
 TOO_WIDE_PX = 2
+# The game's address in the test. Served from somewhere, a fault is reported
+# at its line in the document; written into a blank page it is not.
+GAME_URL = "https://game.mentora.test/"
+_HEADERS = {
+    "content-type": "text/html; charset=utf-8",
+    "content-security-policy": HEADER_POLICY,
+}
+# Enough of a line for the writer to find it in the game.
+LINE_SHOWN = 160
 
 
 class NoBrowser(RuntimeError):
@@ -98,9 +115,10 @@ class SizeResult:
             found.append(f"{at}, the game tried to load {self.network[0]}: nothing from outside.")
         if self.reached is False:
             found.append(
-                f"{at}, running `Mentora.demo()` did not reach the first mission "
-                f"({self.demo or 'no Mentora.done for it within 8 seconds'}). The demo must "
-                "operate the player's controls so the mission's check is met and the game "
+                f"{at}, Show me — `Mentora.demo(id)` for each mission in turn — did not "
+                f"reach every mission ({self.demo or 'no Mentora.done within 6 seconds'}). "
+                "Each mission's demo must operate the player's controls from where the "
+                "game is, through Try it and Do it, until the check is met and the game "
                 "calls `Mentora.done(id)`."
             )
         return found
@@ -188,28 +206,20 @@ async def _run(
             errors.append(message.text[:300])
 
     page.on("console", console)
-
-    async def refuse(route: Any) -> None:
-        url = route.request.url
-        if not url.startswith(("data:", "about:", "blob:")):
-            blocked.append(url[:120])
-        await route.abort()
-
-    await page.route("**/*", refuse)
-    await page.set_content(
-        _counting(served(html, setup)), wait_until="load", timeout=LOAD_TIMEOUT_MS
-    )
+    document = _counting(served(html, setup))
+    await _open(page, document, blocked)
     await page.wait_for_timeout(SETTLE_MS)
     first = await asyncio.wait_for(page.evaluate(_PROBE), PROBE_S)
     await _prod(page, size, width, height)
     second = await asyncio.wait_for(page.evaluate(_PROBE), PROBE_S)
     reached, demo = (None, "")
     if size == LAPTOP[0] and setup.missions:
-        reached, demo = await _demo(page, str(setup.missions[0]["id"]))
+        reached, demo = await _demos(page, [str(m["id"]) for m in setup.missions])
     words = await asyncio.wait_for(page.evaluate(_WORDS), PROBE_S)
+    where = await asyncio.wait_for(page.evaluate("() => window.__where || []"), PROBE_S)
     return SizeResult(
         size=size,
-        errors=tuple(dict.fromkeys(errors))[:5],
+        errors=_located(errors, where, document),
         painted=bool(first["painted"] or second["painted"]),
         loops=second["frames"] > first["frames"],
         on_screen=bool(second["onScreen"]),
@@ -220,6 +230,36 @@ async def _run(
         demo=demo,
         words=str(words)[:6000],
     )
+
+
+async def _open(page: Any, document: str, blocked: list[str]) -> None:
+    """The game at its own address, sent with the header a student's copy
+    gets. Anything else it asks for is refused, and noted."""
+
+    async def serve(route: Any) -> None:
+        url = route.request.url
+        if url == GAME_URL:
+            await route.fulfill(status=200, headers=_HEADERS, body=document)
+            return
+        if not url.startswith(("data:", "about:", "blob:")):
+            blocked.append(url[:120])
+        await route.abort()
+
+    await page.route("**/*", serve)
+    await page.goto(GAME_URL, wait_until="load", timeout=LOAD_TIMEOUT_MS)
+
+
+def _located(errors: list[str], where: list[Any], document: str) -> tuple[str, ...]:
+    """Each error with the line of the game it came from, where the browser
+    said: a syntax error names no function, so without its line the writer
+    cannot find it."""
+    lines = document.splitlines()
+    found = []
+    for error in dict.fromkeys(errors):
+        line = next((n for message, n in where if str(message).endswith(error)), 0)
+        text = lines[line - 1].strip()[:LINE_SHOWN] if 0 < line <= len(lines) else ""
+        found.append(f"{error}, on the line `{text}`" if text else error)
+    return tuple(found)[:5]
 
 
 async def _prod(page: Any, size: str, width: int, height: int) -> None:
@@ -235,18 +275,48 @@ async def _prod(page: Any, size: str, width: int, height: int) -> None:
     await page.wait_for_timeout(AFTER_INPUT_MS)
 
 
-async def _demo(page: Any, first_id: str) -> tuple[bool, str]:
-    """Run the game's own demo of mission 1; did the runtime hear it reached?"""
-    started = await asyncio.wait_for(page.evaluate(_START_DEMO), PROBE_S)
-    if started != "ran":
-        return False, started
+async def _demos(page: Any, ids: list[str]) -> tuple[bool, str]:
+    """ "Show me" for every mission in turn, pressed as a stuck child would
+    press it — again if the first press only took them through Try it: did
+    the runtime hear each one reached? The first that is not is named."""
+    for number, mission in enumerate(ids, start=1):
+        if number > 1:
+            # The game celebrates, then moves on to this mission's Try it.
+            await page.wait_for_timeout(BETWEEN_MS)
+        start = await asyncio.wait_for(page.evaluate(_COUNT), PROBE_S)
+        for _press in range(PRESSES):
+            started = await asyncio.wait_for(page.evaluate(_START_DEMO, mission), PROBE_S)
+            if started != "ran":
+                return False, f"mission {number}: {started}"
+            if await _heard(page, mission):
+                break
+        else:
+            heard = await asyncio.wait_for(page.evaluate(_SINCE, start), PROBE_S)
+            return False, f"mission {number} (id {mission}) was never reported done{_clue(heard)}"
+    return True, ""
+
+
+def _clue(heard: list[Any]) -> str:
+    """What the game did while Show me was pressed: the clue to why it fell
+    short — a demo that overshoots is told so by its own game."""
+    tried = sum(1 for kind, _ in heard if kind == "tried")
+    said = [str(text) for kind, text in heard if kind == "say" and text][-2:]
+    found = []
+    if tried:
+        found.append(f"the game reported {tried} failed {'try' if tried == 1 else 'tries'}")
+    if said:
+        found.append("the buddy was told to say " + ", then ".join(f'"{t}"' for t in said))
+    return f"; over {PRESSES} presses " + (" and ".join(found) or "the game did nothing")
+
+
+async def _heard(page: Any, mission: str) -> bool:
     waited = 0.0
     while waited < DEMO_S:
-        if await asyncio.wait_for(page.evaluate(_REACHED, first_id), PROBE_S):
-            return True, ""
+        if await asyncio.wait_for(page.evaluate(_REACHED, mission), PROBE_S):
+            return True
         await asyncio.sleep(0.5)
         waited += 0.5
-    return False, "the demo ran, and the first mission was never reported done"
+    return False
 
 
 async def _discard(context: Any) -> None:
@@ -258,12 +328,14 @@ async def _discard(context: Any) -> None:
             await shutdown()
 
 
-# Counts the game's own calls for another frame — prepended, so it is in place
-# before any script of the game's runs.
+# Counts the game's own calls for another frame, and notes the line of each
+# error — prepended, so it is in place before any script of the game's runs.
 _COUNTER = (
-    "<script>(function(){window.__frames=0;"
+    "<script>(function(){window.__frames=0;window.__where=[];"
     "var raf=window.requestAnimationFrame.bind(window);"
     "window.requestAnimationFrame=function(cb){window.__frames++;return raf(cb);};"
+    "window.addEventListener('error',function(e){"
+    "if(e.lineno)window.__where.push([String(e.message),e.lineno]);});"
     "})();</script>"
 )
 
@@ -301,12 +373,16 @@ _PROBE = """() => {
   };
 }"""
 
-_START_DEMO = """() => {
+_START_DEMO = """(id) => {
   if (!window.Mentora || typeof window.Mentora.demo !== 'function') {
     return 'there is no Mentora.demo function';
   }
-  try { window.Mentora.demo(); return 'ran'; } catch (e) { return 'Mentora.demo threw: ' + e; }
+  try { window.Mentora.demo(id); return 'ran'; } catch (e) { return 'Mentora.demo threw: ' + e; }
 }"""
+
+_COUNT = """() => (window.__mentora || []).length"""
+
+_SINCE = """(n) => (window.__mentora || []).slice(n).map((m) => [m.type, m.text || ''])"""
 
 _REACHED = """(id) => (window.__mentora || []).some((m) => m.type === 'done' && m.id === id)"""
 

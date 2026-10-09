@@ -18,21 +18,26 @@ export interface AnswerBody {
    *  in how many goes. */
   done?: boolean
   tries?: number
+  /** Reached after "Show me" (§25): the buddy played it first. */
+  shown?: boolean
   time_ms: number
 }
 
-/** A piece of a game's story the voice can tell (§24). */
-export type StoryPiece = 'hook' | 'goal' | 'win'
+/** A piece of a game's story the voice can tell (§25): narration, or a line
+ *  of the opening or ending panel by its number. */
+export type StoryPiece = 'hook' | 'goal' | 'win' | 'opening' | 'ending'
 
 /** One part of an item the tutor's voice can say. */
 export type Spoken =
-  | { item: string; part: 'question' | 'front' | 'back' | 'hint' | 'explanation' }
+  | { item: string; part: 'question' | 'front' | 'back' | 'hint' | 'explanation' | 'learn' | 'guide' }
+  /** A line of the story panel before or after a game's mission. */
+  | { item: string; part: 'before' | 'after'; n: number }
   | { item: string; part: 'option'; n: number }
   | { item: StoryPiece; part: 'story'; n?: number }
 
 export function spokenQuery(spoken: Spoken): string {
   const query = new URLSearchParams({ item: spoken.item, part: spoken.part })
-  if (spoken.part === 'option') query.set('n', String(spoken.n))
+  if (spoken.part === 'option' || spoken.part === 'before' || spoken.part === 'after') query.set('n', String(spoken.n))
   if (spoken.part === 'story' && spoken.n !== undefined) query.set('n', String(spoken.n))
   return query.toString()
 }

@@ -39,6 +39,12 @@ MAX_BYTES = 600_000
 # The buddy the robot plays with. Any name: the game must use whichever.
 TEST_BUDDY = "Kiko"
 HELD = frozenset({Decision.BLOCK, Decision.SUPPORT})
+# Each call to the game's writer, tried this many times: a connection that
+# drops part-way is usually a blip, not a writer that is down.
+CALL_TRIES = 2
+# A game cut off part-way is continued at most this many times.
+CONTINUATIONS = 2
+WRITER_DOWN = "The game writer isn't answering. Try again soon."
 
 
 class Writer(Protocol):
@@ -105,6 +111,9 @@ class SimBuilder:
         tally.add(written)
         report: dict[str, Any] = {"design": decided, "fixed_by": []}
         game = edits.document_of(strip_fence(written.text))
+        if not edits.is_whole(game):
+            yield Progress("Coding the game", "writing the last part")
+            game = await self._finished_off(game, tally, report)
         async for update in self._settle(game, spec, tally, report):
             yield update
         yield self._built(report, tally, started)
@@ -203,46 +212,78 @@ class SimBuilder:
     ) -> str:
         """The game revised: by edits when they apply exactly — seconds, and
         nothing else touched — else rewritten whole. A rewrite that comes back
-        cut off is not kept: the game stays as it was, to be tried again."""
-        written = Written()
-        await self._drain(*as_edits, written, 0.1)
-        tally.add(written)
-        patched = edits.apply(html, edits.parse(written.text))
+        cut off, or not at all, is not kept: the game stays as it was, to be
+        tried again in the next round."""
+        written = await self._asked(as_edits, tally)
+        patched = edits.apply(html, edits.parse(written.text)) if written else None
         if patched is not None:
             report["fixed_by"].append("edits")
             return patched
-        whole = Written()
-        await self._drain(*as_whole, whole, 0.1)
-        tally.add(whole)
-        rewritten = edits.document_of(strip_fence(whole.text))
+        whole = await self._asked(as_whole, tally)
+        rewritten = edits.document_of(strip_fence(whole.text)) if whole else ""
         if edits.is_whole(rewritten):
             report["fixed_by"].append("whole")
             return rewritten
         report["fixed_by"].append("kept")
-        logger.info("a rewrite came back cut off; keeping the game as it was")
+        logger.info("a revision came back cut off or not at all; keeping the game as it was")
         return html
 
-    async def _drain(self, system: str, user: str, into: Written, temperature: float) -> None:
+    async def _finished_off(self, game: str, tally: _Tally, report: dict[str, Any]) -> str:
+        """A game cut off part-way — its writer ran out of room — continued
+        from where it stopped, rather than handed to the fixes half-written."""
+        for _ in range(CONTINUATIONS):
+            more = await self._asked(prompts.carry_on(game), tally)
+            if more is None:
+                break
+            game = edits.joined(game, strip_fence(more.text))
+            report["continued"] = report.get("continued", 0) + 1
+            if edits.is_whole(edits.document_of(game)):
+                return edits.document_of(game)
+        return game
+
+    async def _asked(self, call: tuple[str, str], tally: _Tally) -> Written | None:
+        """A revising call whose failure is not the build's: None when the
+        writer could not answer, and the round goes on without it."""
+        written = Written()
         try:
-            async for _ in self._model.write(system, user, into, temperature=temperature):
-                pass
-        except ArtifactUnavailable as exc:
-            raise GenerationUnavailable("The game writer isn't answering. Try again soon.") from exc
+            await self._drain(*call, written, 0.1)
+        except GenerationUnavailable:
+            return None
+        tally.add(written)
+        return written
+
+    async def _drain(self, system: str, user: str, into: Written, temperature: float) -> None:
+        """One call, tried twice: a dropped connection is usually a blip."""
+        for attempt in range(CALL_TRIES):
+            try:
+                async for _ in self._model.write(system, user, into, temperature=temperature):
+                    pass
+                return
+            except ArtifactUnavailable as exc:
+                logger.info("game writer call failed (try %d): %s", attempt + 1, exc)
+                if attempt + 1 == CALL_TRIES:
+                    raise GenerationUnavailable(WRITER_DOWN) from exc
 
     async def _stream(
         self, system: str, user: str, into: Written, label: str, temperature: float
     ) -> AsyncIterator[Progress]:
-        """One long call, narrated — a minute of silence reads as a hang."""
-        size, said = 0, perf_counter()
+        """One long call, narrated — a minute of silence reads as a hang —
+        and tried again once if the connection drops part-way."""
         yield Progress(label)
-        try:
-            async for piece in self._model.write(system, user, into, temperature=temperature):
-                size += len(piece)
-                if perf_counter() - said >= 1.0:
-                    said = perf_counter()
-                    yield Progress(label, f"{size // 1000} KB written")
-        except ArtifactUnavailable as exc:
-            raise GenerationUnavailable("The game writer isn't answering. Try again soon.") from exc
+        for attempt in range(CALL_TRIES):
+            size, said = 0, perf_counter()
+            try:
+                async for piece in self._model.write(system, user, into, temperature=temperature):
+                    size += len(piece)
+                    if perf_counter() - said >= 1.0:
+                        said = perf_counter()
+                        yield Progress(label, f"{size // 1000} KB written")
+                return
+            except ArtifactUnavailable as exc:
+                logger.info("game writer stream failed (try %d): %s", attempt + 1, exc)
+                if attempt + 1 == CALL_TRIES:
+                    raise GenerationUnavailable(WRITER_DOWN) from exc
+                yield Progress(label, "the connection dropped — starting again")
 
     def _built(self, report: dict[str, Any], tally: _Tally, started: float) -> SimBuilt:
         html = str(report.pop("html"))

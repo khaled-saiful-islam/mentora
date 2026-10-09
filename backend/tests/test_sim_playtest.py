@@ -11,8 +11,9 @@ from app.learning.sim.runtime import Setup, numbered
 
 MISSIONS = numbered([{"id": "m1", "goal": "Grow it."}, {"id": "m2", "goal": "Again."}])
 
-# A whole, tiny game: fills any screen, draws, loops, reaches mission 1 by
-# moving its own slider, and talks only through the runtime.
+# A whole, tiny game: fills any screen, draws, loops, plays its missions in
+# turn — each reached by moving its own slider, as its Show me does — and
+# talks only through the runtime.
 GOOD = """<!DOCTYPE html><html><head><style>
 html, body { margin: 0; height: 100%; }
 main { display: flex; flex-direction: column; height: 100%; }
@@ -21,20 +22,29 @@ input { width: 90%; min-height: 48px; }
 </style></head><body><main>
 <h1 id="goal"></h1><canvas id="c"></canvas><input id="sun" type="range" min="0" max="100" value="0">
 </main><script>
-const mission = Mentora.missions[0];
-document.getElementById('goal').textContent = 'Mission ' + mission.number + ': ' + mission.goal;
-const sun = document.getElementById('sun');
+let at = 0;
 let height = 0;
+const sun = document.getElementById('sun');
+function show() {
+  const mission = Mentora.missions[at];
+  document.getElementById('goal').textContent = mission
+    ? 'Mission ' + mission.number + ': ' + mission.goal : 'All done!';
+}
 function frame() {
   const c = document.getElementById('c');
   c.width = c.clientWidth; c.height = c.clientHeight;
   const g = c.getContext('2d');
   g.fillStyle = '#2e7d32'; g.fillRect(0, c.height - height, 40, height);
   height += Number(sun.value) / 20;
-  if (height > 100) Mentora.done(mission.id);
+  const mission = Mentora.missions[at];
+  if (mission && height > 100) {
+    Mentora.done(mission.id);
+    at += 1; height = 0; sun.value = 0; show();
+  }
   requestAnimationFrame(frame);
 }
-Mentora.demo = function () { sun.value = 100; sun.dispatchEvent(new Event('input')); };
+Mentora.demo = function (id) { sun.value = 100; sun.dispatchEvent(new Event('input')); };
+show();
 requestAnimationFrame(function () { Mentora.ready(); frame(); });
 </script></body></html>"""
 
@@ -73,10 +83,19 @@ async def test_a_game_wider_than_a_phone_is_sent_back() -> None:
     assert any("wider than the screen" in c for c in tested.complaints())
 
 
-async def test_a_demo_that_never_reaches_mission_one_is_sent_back() -> None:
+async def test_a_show_me_that_never_reaches_a_mission_is_sent_back() -> None:
     stuck = GOOD.replace("sun.value = 100;", "sun.value = 0;")
     tested = await (await _tester()).test(stuck, Setup(missions=MISSIONS))
-    assert any("did not reach the first mission" in c for c in tested.complaints())
+    assert any("mission 1 (id m1) was never reported done" in c for c in tested.complaints())
+    assert any("over 3 presses the game did nothing" in c for c in tested.complaints())
+
+
+async def test_show_me_is_played_for_every_mission_not_just_the_first() -> None:
+    first_only = GOOD.replace(
+        "sun.value = 100;", "if (id === Mentora.missions[0].id) sun.value = 100;"
+    )
+    tested = await (await _tester()).test(first_only, Setup(missions=MISSIONS))
+    assert any("mission 2 (id m2) was never reported done" in c for c in tested.complaints())
 
 
 async def test_an_error_or_a_missing_ready_is_sent_back() -> None:
@@ -84,6 +103,13 @@ async def test_an_error_or_a_missing_ready_is_sent_back() -> None:
     complaints = (await (await _tester()).test(broken, Setup(missions=MISSIONS))).complaints()
     assert any("undefinedThing" in c for c in complaints)
     assert any("Mentora.ready()" in c for c in complaints)
+
+
+async def test_an_error_names_the_line_it_came_from() -> None:
+    # A syntax error names no function: its line is all the writer has to go on.
+    typo = GOOD.replace("let height = 0;", "let height = ;")
+    complaints = (await (await _tester()).test(typo, Setup(missions=MISSIONS))).complaints()
+    assert any("on the line `let height = ;`" in c for c in complaints)
 
 
 async def test_nothing_reaches_the_network_from_inside_a_game() -> None:

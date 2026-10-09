@@ -66,6 +66,25 @@ def test_a_game_must_use_the_runtime_however_it_spells_it() -> None:
     assert complaints(spelled_otherwise, max_bytes=600_000) == []
 
 
+@pytest.mark.parametrize(
+    "line",
+    [
+        'if (m.control === "Knife") return knifeBtn;',
+        "if ('Share' == mission.control) share();",
+        "switch (current().goal) { case 'x': break; }",
+        "if (m.control.toLowerCase().includes('sun')) sun();",
+    ],
+)
+def test_a_game_that_tells_missions_apart_by_their_words_is_sent_back(line: str) -> None:
+    found = complaints(broken(f"\n{line}\n"), max_bytes=600_000)
+    assert any(f"tells missions apart by their words (`{line}`)" in c for c in found)
+
+
+def test_missions_told_apart_by_id_are_fine() -> None:
+    line = 'if (m.id === "p1") sun(); label.textContent = m.control; if (m.number === 2) {}'
+    assert complaints(broken(line), max_bytes=600_000) == []
+
+
 def test_not_a_document_or_too_big_is_said_plainly() -> None:
     assert any("DOCTYPE" in c for c in complaints("<html></html>", max_bytes=600_000))
     assert any("larger" in c for c in complaints(GOOD, max_bytes=100))

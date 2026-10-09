@@ -593,6 +593,10 @@ class LearningGenerator:
             return []
         known = {s.id for s in sources}
         seen = {self._kind.summary(i).lower() for i in written}
+        # A kind may say what makes two items the same beyond their words — a
+        # game's missions, the control each adds (§25).
+        distinct = getattr(self._kind, "distinct", None)
+        keys = {distinct(i) for i in written} if callable(distinct) else set()
         kept: list[Item] = []
         for entry in raw:
             item = (
@@ -600,9 +604,11 @@ class LearningGenerator:
                 if isinstance(entry, dict)
                 else None
             )
-            if item is None or self._kind.summary(item).lower() in seen:
+            key = distinct(item) if item is not None and callable(distinct) else ""
+            if item is None or self._kind.summary(item).lower() in seen or (key and key in keys):
                 continue
             seen.add(self._kind.summary(item).lower())
+            keys.add(key)
             kept.append(item)
         return kept
 

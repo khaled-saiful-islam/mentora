@@ -172,13 +172,24 @@ async def test_a_game_story_is_told_with_the_students_own_buddy(
         goal = await c.get(f"{base}?item=goal&part=story")
         win = await c.get(f"{base}?item=win&part=story")
         mission = await c.get(f"{base}?item=g1&part=question")
+        idea = await c.get(f"{base}?item=g1&part=learn")
+        opening = await c.get(f"{base}?item=opening&part=story&n=1")
+        before = await c.get(f"{base}?item=g1&part=before&n=0")
+        after = await c.get(f"{base}?item=g1&part=after&n=0")
+        missing = await c.get(f"{base}?item=g2&part=before&n=0")
     assert hook.status_code == goal.status_code == win.status_code == 200, hook.text
-    assert mission.status_code == 200
+    assert mission.status_code == idea.status_code == opening.status_code == 200
+    assert before.status_code == after.status_code == 200
+    assert missing.status_code == 422
     assert voiced.voice.said == [
         "The river has flooded! Momo needs your help.",
         "Get everyone home.",
         "Hooray, Momo is home!",
         "Reach goal 1.",
+        "Idea 1.",
+        "Momo will help, Atuk!",
+        "The leaves need light.",
+        "Green again!",
     ]
 
 

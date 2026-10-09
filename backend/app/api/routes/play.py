@@ -157,7 +157,7 @@ def _response(body: AnswerRequest) -> dict[str, Any]:
     if body.knew is not None:
         return {"knew": body.knew}
     if body.done is not None:
-        return {"done": body.done, "tries": body.tries or 1}
+        return {"done": body.done, "tries": body.tries or 1, "shown": body.shown}
     return {"choice": body.choice}
 
 

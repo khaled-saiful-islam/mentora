@@ -37,16 +37,18 @@ def test_the_policy_setup_and_runtime_come_before_the_games_own_code() -> None:
 def test_the_setup_carries_this_viewers_missions_and_buddy() -> None:
     html = served(GAME, setup(level="advanced", calm=True))
     told = json.loads(re.search(r"window\.MENTORA_SETUP=(\{.*?\});</script>", html).group(1))
-    assert told["missions"] == [
-        {"id": "m1", "goal": "Grow it.", "number": 1},
-        {"id": "m2", "goal": "Keep it alive.", "number": 2},
+    assert [(m["id"], m["number"], m["goal"]) for m in told["missions"]] == [
+        ("m1", 1, "Grow it."),
+        ("m2", 2, "Keep it alive."),
     ]
+    assert set(told["missions"][0]) == {"id", "number", "goal", "learn", "icon", "control", "guide"}
     assert told["buddy"] == "Momo"
     assert told["level"] == "advanced" and told["calm"] is True
 
 
 def test_a_replay_of_the_missed_keeps_each_missions_number_in_the_whole_game() -> None:
-    assert numbered(MISSIONS, {"m2"}) == [{"id": "m2", "goal": "Keep it alive.", "number": 2}]
+    [only] = numbered(MISSIONS, {"m2"})
+    assert (only["id"], only["number"], only["goal"]) == ("m2", 2, "Keep it alive.")
 
 
 def test_words_in_the_setup_cannot_end_the_script_they_sit_in() -> None:
@@ -74,3 +76,5 @@ def test_the_runtime_talks_only_to_its_frame_and_only_about_known_missions() -> 
     assert "event.source !== host" in RUNTIME
     assert "data.source !== 'mentora-host'" in RUNTIME
     assert "if (!known(id) || reached[id]) return;" in RUNTIME
+    # "Show me" plays only a mission the game was given.
+    assert "data.type === 'show' && known(data.id)" in RUNTIME

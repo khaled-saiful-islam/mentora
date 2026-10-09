@@ -1,212 +1,172 @@
-# 050 — Play and Learn: story games
+# 050 — Play and Learn: simulation games that teach
 
-Teachers and parents make a **game** on any topic. Students play it,
-learning the topic as they go, earn points and stars, and play again to beat
-their best. The AI writes the game: its story, its world and its challenges,
-pitched to the year and level and checked like every quiz. Mentora's own
-engine plays it. No model-written code runs on a student's device, and
-points are counted on the server. Plan: `PLAN.md` §23.
+Teachers and parents make a **game** on any topic. It is a small simulation
+where the child learns by changing things and watching what happens, never
+by answering questions. The game teaches one idea at a time, inside a story
+that moves forward as they learn. The AI writes the lesson (checked against
+sources), the story and the game's code. A robot plays every game on a phone
+and a laptop before anyone else sees it. Plans: `PLAN.md` §24 (AI-coded
+simulations) and §25 (Learn it → Try it → Do it).
 
 ## What it does
 
-### Making a game
+### For the child
 
-- **Where:** *Make a game* on the teacher home, the parent home and the
-  coverage nudges; *Game* in Library → Make; or ask in the chat
-  (*"Make a game on the parts of a plant for Year 2 beginners, set on the
-  coral reef, played as Bubble Catch"*). Students can't make games. They
-  play the games they're given.
-- **The usual choices**, as for any set: topic, subject, year, language and
-  how many (9 challenges by default; 3 to 15), and optionally the maker's own
-  materials.
-- **Level:** *Beginner*, *Intermediate* or *Advanced*. Every kind accepts a
-  level; for a game it also sets the timer: none for Beginner, and the
-  year's quick-check time otherwise (30 s for Years 1–3, 20 s for Years 4–6,
-  15 s for the Forms).
-- **How it plays (style):** *Quest Map*, *Lane Runner*, *Bubble Catch*,
-  *Match & Build*, or *Let Mentora decide*.
-- **Where it happens (world):** the Taman Negara rainforest, the Sipadan
-  coral reef, a kampung festival, Kuala Lumpur, a space mission, or *Let
-  Mentora decide*. Pick these first, so a drafted story is set there.
-- **The story:**
-  - *Surprise me*: written during the build.
-  - *Draft with AI*: a story in a few seconds, written for the chosen world,
-    to read and edit before building. *Draft another* for a new one.
-  - *Write my own*: up to 2,000 characters. It is safety-checked with the
-    topic, and the game is built around it. `{buddy}` marks where the
-    player's own buddy appears.
-- **Watching it build:** the usual five stages, the last being *Writing the
-  story and building the world*. The build carries on in the background, and
-  the bell says when it is ready: *"Play it through before you share it."*
-- **Play it first:** *Play it* in the editor (or *Preview* on the chat card)
-  plays the real game, and nothing is recorded. The editor changes the
-  title, the story lines, the style and the world (no rebuild), and every
-  challenge.
-- **Share:** with a class or groups, or send it home. A game is for playing
-  again, so retakes are on by default. The **best-points leaderboard is
-  opt-in** (off by default).
+- **The opening**: a short comic, read aloud. The story's main character
+  (*Aina, the reef keeper*) has a problem; the child's own buddy says
+  they will help.
+- **Each mission is a little lesson in three beats.**
+  1. **Learn it**: before the mission, a story panel that makes the idea
+     matter, then the idea itself, big, with a picture: *☀️ "The sun heats
+     the sea and turns water into invisible vapour."* Read aloud.
+  2. **Try it**: in the game, the one control this idea is about glows and
+     an arrow points at it. Only that control works, the scene reacts
+     big, and it cannot be got wrong.
+  3. **Do it**: a small problem that uses the idea (*"Make lots of
+     vapour float up"*), with the target shown at beginner level and
+     warmer/colder words. A miss is a "Try again", never a game over.
+- **Controls arrive one per mission**, so the first mission has just one;
+  the last mission is a big finish that uses them together.
+- **What you discovered**: when a mission is done, its stars, the checked
+  explanation, and the story moving on (*"…but the sky is getting dark!"*).
+- **Show me**: after two misses at a mission, the buddy plays it while the
+  child watches; the mission still counts, with one star.
+- **Hints** from the buddy cost a few points. **Stars**: three on the first
+  go without help, two with help or after some goes, one after Show me.
+- **The ending**: the character thanks the child; stars, points, and
+  *Missions you missed* to replay just those (nothing is kept).
+- Sound, full screen, read-aloud of every story line, idea and explanation;
+  the buddy beside the game on a wide screen, in a line under the bar on a
+  phone.
 
-### Playing a game
+### For the teacher or parent
 
-- **Cover → story → three chapters → finale.** The story is read aloud as
-  each part appears (after the first tap), with the student's own buddy as
-  the sidekick, named in the story. Challenges come easiest first and the
-  last one is the **boss**, with its own music.
-- **The four styles** all play the same challenge in their own way. Every
-  style works with tapping, number keys 1–4 and (where it fits) the arrow
-  keys:
-  - *Quest Map*: travel a winding path, one stop per challenge.
-  - *Lane Runner*: run down the lane with the right answer before the
-    gates arrive. Untimed, press *Go!*.
-  - *Bubble Catch*: catch the right answer as it floats down.
-  - *Match & Build*: drag or tap the right piece into the glowing gap. Each
-    world builds its own thing (a rope bridge, a glass-bottom boat, a wau
-    kite, a light-rail track, a rocket), and it is finished by the finale.
-- **Hints** are asked of the buddy, cost 40 points, and are never sent
-  before they are asked for.
-- **After every answer:** right or not, the right answer if it was missed,
-  and why, read aloud on a tap. A wrong answer never ends the game.
-- **Stars for each chapter** (none to three, by the share right), points
-  in the HUD as they will be counted, sound and music with a mute button,
-  and full screen.
-- **The finish:** the points counted up, *Your best yet!* or *Your best: N*,
-  stars, badges, how each skill went, *Check my answers*, *Play again*, and
-  **Tricky ones**: a calm round of just the challenges missed, with no timer,
-  no points and nothing recorded.
-- **Badges:** *Game Hero* (finish a game), *Three-Star Star* (three stars in
-  every chapter), *Never Give Up* (win after a hard try). *Hot Streak*
-  counts game answers too.
-
-### Points
-
-Worked out on the server from the answers, and never sent by the game:
-
-| | |
-|---|---|
-| A right answer | 100, plus 25 for a medium one and 50 for a hard one |
-| Combo | +10 for each right answer in a row after the first, up to +50 |
-| Speed (timed games only) | up to +50, less the longer it took |
-| A hint | −40 (an answer never scores below 0) |
-| A wrong answer | 0, and the combo ends |
-
-The game shows the same count as it goes (`features/game/points.ts`, halves
-rounded up on both sides).
-
-### Teachers and parents see
-
-Results per challenge and per skill, as for a quiz. The game's points sit
-beside the score in a parent's look back at an attempt, and the leaderboard
-ranks **best points** (*Best points · ties share a place*). A shared game
-counts on the coverage map like any other set.
+- **Make a game** from the teacher and parent homes, the coverage nudges,
+  Library → Make, or the chat. Pick the topic, subject, year, **level**,
+  language, how many missions (4 by default, 3 to 6), the setting (or *Let
+  Mentora decide*) and the story (*Surprise me*, *Draft with AI* or *Write
+  my own*).
+- **Watch it build**, about 3–6 minutes: check the topic → research →
+  skills → write and check the missions → write the story → design the
+  simulation → code it → test it on a phone and a laptop → screen its words.
+  The bell rings when it is ready.
+- **Play it first** in the real game screen, with nothing recorded.
+- **Edit** each mission's words (the idea, its picture, the control, what
+  to try, the problem, what it teaches, the hint), the story plan (the
+  character, the opening and ending panels, the beat before and after each
+  mission) and the setting. Missions are not added or removed here, because
+  they live in the game's code.
+- **Change it**: type a change (*"make the sun slider bigger"*); the game is
+  revised and tested again, and a change that breaks it is not kept.
+- **Share** with a class (retakes on by default, a best-points leaderboard
+  if you want one) or send it home. Results show each mission by its goal.
 
 ## How it works
 
-- **A learning kind, `game`** (`backend/app/learning/game.py`, one line in
-  `learning/registry.py`). Its items are **challenges**: a prompt, 2–4 short
-  options, the answer, a hint, an explanation, a skill and a difficulty. It
-  is checked like a quiz question. The story and world are set-level
-  `extras`, written by the kind's **finish stage** (`Enriching`), which keeps
-  what the maker chose over what the model picks. If the story model fails,
-  the maker's own story is kept as written and the game is still made.
-- **Optional kind hooks**, read with `getattr`, so other kinds don't change:
-  `arrange` (easiest first), `keeps_order` (no shuffling), `min_count`,
-  `choices`, `rules_for` (the world and the maker's story go into the
-  challenge prompt), `finish_label` / `finish_detail`, `leaderboard`
-  (`BEST_POINTS`; quizzes are `FIRST_TRY`), `points`, `seconds`.
-- **Level** is `learning_sets.level`. It goes into the prompts that write,
-  check, rewrite and add items (`learning/pitch.py`). **Choices** (style,
-  world, story) are kept on the set (`learning_sets.choices`), so a retry
-  builds what was asked. **Points** are `attempts.points`. Migration
-  `e2a7c5d9f041`.
-- **Prompts** (`learning/game_prompts.py`): the challenges and the story are
-  set in the world, with Malaysian things in it. The buddy is written as
-  `{buddy}` and is never given a species, a he or a she. No other animal
-  friend is invented. A teacher's story goes in as data, between tags.
-- **Story drafts:** `POST /api/learning-sets/story-draft`
-  (`learning/story_draft.py`). It is screened like a topic, rate-limited
-  with generation, and nothing is saved.
-- **Playing:**
-  - `POST /api/me/attempts/{id}/items/{item}/open` notes when a challenge
-    first appears.
-  - `…/hint` returns the hint and notes that it was asked for.
-  - The answer carries the game's `time_ms` and `timed_out`. The speed bonus
-    uses the longer of the game's time and the time the server saw since
-    *open*. A challenge never opened earns no speed bonus.
-  - `AttemptResponse` carries `level`, `timer_seconds`, `points` and
-    `best_points` (the best finished try, this one included).
-  - The leaderboard says how it ranks (`ranking`: `first_try` or
-    `best_points`), and a game's entries carry their best `points`.
-- **The engine** (`frontend/src/features/game/`):
-  - A pure state machine (`run.ts`) behind `useGameRun`, and a
-    `PlayBackend`: the server for a student, `PreviewGrader` (the same rules,
-    in the browser) for a maker's preview.
-  - `styles/`: one component per style over shared `StyleProps`. On a narrow
-    screen a style lays its answers out another way rather than shrink them
-    (`useNarrow`). Lane Runner shows numbered gates with the words listed
-    above the road, and Bubble Catch drops its bubbles two abreast.
-  - `worlds/`: SVG worlds drawn from `--world-*` tokens in `theme.css`, with
-    SMIL animation that stops in calm motion.
-  - `audio/`: Web Audio music for each world, a boss theme, and effects. No
-    audio files.
-  - `ui/`: the challenge card, timer ring, reveal panel and HUD.
-  - `TrickyRound.tsx`: the missed challenges again, marked from the answers
-    the finished attempt has already revealed.
-- **Making:** `learning/GameOptions.tsx` in the create sheet,
-  `learning/editors/game.tsx` in the editor. The chat tool
-  (`tools/learning_set.py`) takes `level`, `style`, `world` and `story`.
+- **The kind** (`backend/app/learning/game.py`, `game_prompts.py`): a
+  mission is `{learn, icon, control, guide, goal, win, explanation, hint,
+  skill, difficulty, source_ids}`, checked by the same pipeline as quiz
+  items with a mission-specific focus (`CHECK_FOCUS`). Missions are
+  written in one go (`batch = 6`), simplest first, and two that add the
+  same control are one mission (`distinct`: the thing controlled, so "the
+  sun" and "the sun slider" are the same). The story plan lives in the
+  set's extras: title, setting, character, opening and ending lines, and
+  `beats` keyed by mission id. `coded = True` tells the generator to build
+  the game's code after the story.
+- **The builder** (`backend/app/learning/sim/`):
+  - `prompts.py`: design, then write, with the three beats, one control
+    per mission, and a `Mentora.demo(id)` (Show me) for every mission.
+  - `checks.py`: refuses network, `eval`, blocking loops, web storage,
+    dialogs and outside resources, and any reply that isn't one whole
+    document. It also refuses a game that tells missions apart by their
+    words (`m.control === "Knife"`): the words are the maker's to edit, so
+    such a game stops working once they change. Missions go by `id`.
+  - `playtest.py`: runs the game, served as a student gets it (from an
+    address of its own, with the content policy as a header), at 390×700
+    by touch and 1280×760 by keys. It presses Show me for every mission in
+    turn (up to three presses each) and fails errors, freezes, blank
+    pages, horizontal scrolling and any reach for the network. Each error
+    is reported with the line of the game it came from, so a syntax error
+    can be fixed. When Show me falls short, the complaint says what the
+    game did meanwhile (failed tries, what the buddy was told to say).
+  - `builder.py`: the build. A cut-off write is continued. Problems are
+    fixed by line edits (`edits.py`), with a whole rewrite as fallback, at
+    most twice, and a game that still fails is not kept. Each call to the
+    writer is retried once if the connection drops. The game's words go
+    through the student safety rules.
+- **The runtime** (`sim/runtime.py`) is injected when a game is served. It
+  is the game's only way out: `ready`, `tried`, `done`, `say`, `play`, and
+  Show me coming in. It also carries the viewer's missions (with their
+  beats), the buddy's name, the level, the language, calm motion and sound.
+  The content policy is sent both as a header and as a `<meta>` tag.
+- **Storage and routes**: `game_documents` holds each game's code, one
+  revision per change. The routes are:
+  - `GET /api/learning-sets/{id}/game/play` for the maker, and
+    `GET /api/me/attempts/{id}/game` for the student whose attempt it is,
+    both with `?only=` for a replay.
+  - `GET /api/learning-sets/{id}/game` for the status.
+  - `POST …/game/changes` for Change it.
+  - A mission is reported as an answer with `done`, `tries` and `shown`.
+- **Points** (server, mirrored in `features/game/points.ts`): a mission
+  reached earns 100, plus 25 or 50 for medium or hard, plus 25 on the first
+  go, minus 40 for a hint. A mission reached after Show me earns 50. A
+  mission not reached earns 0.
+- **The screen** (`frontend/src/features/game/`):
+  - `GameHost` frames the game (`sandbox="allow-scripts"`, its own
+    address), with `GameBar`, the cards (`cards.tsx`, chosen by
+    `overlay.tsx`), the buddy, and Show me.
+  - `bridge.ts` listens only to that frame, and only for the runtime's
+    shapes.
+  - `useMissions` keeps the outcomes, stars and points.
 
 ## Configuration
 
-No new settings.
-
-- `LEARNING_MODEL` (or `LLM_MODEL`) writes the challenges, the story and the
-  drafts.
-- `PARENT_SETS_PER_DAY` counts a parent's games with their other sets.
-- The timers are the live lessons' quick-check sizes (`live/settings.py`
-  `check_size`).
+- `GAMES_ENABLED` (default on) turns games on or off. They also need
+  `ARTIFACT_MODEL`, the model that writes games, which is independent of
+  the switched-off studio. With either missing, games are not offered.
+- `ARTIFACT_MAX_TOKENS` and `ARTIFACT_TIMEOUT_SECONDS` apply to each
+  writing call.
+- `LEARNING_MODEL` writes the missions and the story.
+- Every call that writes a game counts toward the maker's daily tokens
+  (`services/quota.py` sums `game_documents` too). `PARENT_SETS_PER_DAY`
+  counts a parent's games.
 
 ## Extending it
 
-- **A new style:**
-  - A component in `features/game/styles/` taking `StyleProps`.
-  - One line in `styles/index.ts`.
-  - Its name in `worlds/info.ts` `STYLES` and in the backend's `STYLE_LABELS`
-    and `STYLE_NOTES`. The notes tell the model when it suits a topic.
-- **A new world:**
-  - Eight `--world-<name>-*` tokens in `theme.css`.
-  - Its art in `worlds/art.tsx`, and what Match & Build builds there in
-    `styles/structures.tsx`.
-  - An entry in `worlds/info.ts` `WORLDS`, plus `WORLD_LABELS` and
-    `WORLD_NOTES` in the backend.
-
-  A world is more than one file because it is drawn.
-- **A different points rule:** `GameKind.points` on the server and
-  `features/game/points.ts` in the game. Change both, along with both
-  tests (`test_game_kind.py` and `points.test.ts`), which use the same
-  numbers.
+- **A new runtime call**: add it in `sim/runtime.py` (the injected JS)
+  and `features/game/bridge.ts` (the listener), tell the writer in
+  `sim/prompts.py`, and test it with the robot in `sim/playtest.py`.
+- **Stricter or looser tests** live in `sim/checks.py` (reading) and
+  `sim/playtest.py` (playing). Each complaint is a sentence the writer can
+  act on.
+- **A new setting**: add it to `WORLD_NOTES` and `WORLD_LABELS` in
+  `game_prompts.py` / `game.py`, `features/game/worlds.ts`, and eight
+  `--world-<name>-*` tokens for its swatch.
 
 ## Known limits
 
-- **The challenges are sent at the start.** As with a quiz, the student's
-  browser has every prompt and option from the start (never the answers or
-  hints). Someone determined could read ahead and answer quickly. The
-  server's clock stops anyone claiming to be faster than the server saw, so
-  this is worth at most the speed bonus, 50 a challenge.
-- **Story drafts aren't counted toward a day's set quota.** They are only
-  rate-limited with generation. A draft is one short model call.
-- **The story can still drift.** The prompts keep it to the world, the
-  maker's story and one friend, the buddy, and challenges are checked for
-  accuracy. The narrative itself isn't checked; read it in *Play it* before
-  sharing.
-- **Five worlds and four styles,** all drawn in SVG, not illustrated.
-- **Read-aloud** uses the voice quizzes use, so its language limits apply.
-  Story narration starts after the first tap, as browsers require.
-- **The build runs in the API process,** like every set (one API worker;
-  see `029-learning-sets.md`).
-- **Tricky ones** is offered only on the finish screen, right after a game.
-  It isn't recorded, and it isn't in the student's results.
-- **Students don't make games,** and the practice made for a student from
-  their mistakes is a quiz, not a game.
-- **The older studio games are separate.** Those were AI-coded HTML
-  artifacts, switched off with the studio (`024-artifacts.md`). Play and
-  Learn games are a learning kind and are always on.
+- **Builds fail sometimes**, and that is by design. A game that doesn't
+  pass its robot playtest (most often because Show me can't reach a
+  mission) is not kept. The maker is told to try again, and each build is
+  different. Expect most builds to pass, not all.
+- **Build time and cost**: 3–6 minutes, with about 4–8 calls to the game
+  writer (up to 16k tokens each). Each fix and each Change it adds more.
+- **Quality varies.** The robot proves a game runs, fits a phone and can be
+  finished; it cannot judge whether it is fun or beautiful. Labels drawn
+  inside the game can overlap; play it first and use Change it.
+- **Scores come from the game**, which runs on the child's device. A
+  determined student could fake a mission report. Points and the
+  leaderboard should be read in that light.
+- **Repeats are caught by their control only.** Two missions that teach the
+  same idea with different things (halves of a kuih, then halves of a
+  lantern) both stay; the prompt asks for new ideas, but nothing checks.
+- **Missions can't be added or removed after the build.** Their words can
+  be edited, and Change it can rework the game, but a new mission means a
+  new game.
+- **English design.** The game's words follow the set's language, but the
+  prompts are English, so English games are the best.
+- **The robot plays by its demos.** It proves each mission can be reached
+  by the game's own Show me, not that a child will find the way. The Learn
+  it and Try it beats are what make that likely.
+- Story drafts are not counted toward a day's set quota, only rate-limited.
+  Builds run in the API process, like every set.

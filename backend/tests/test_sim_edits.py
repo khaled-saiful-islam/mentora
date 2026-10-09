@@ -3,7 +3,7 @@ or none are made; and the document found in a reply, whole or not."""
 
 from __future__ import annotations
 
-from app.learning.sim.edits import apply, document_of, is_whole, parse
+from app.learning.sim.edits import apply, document_of, is_whole, joined, parse
 
 GAME = "<!DOCTYPE html><html><body>\nlet sun = 10;\nlet water = 5;\n</body></html>"
 
@@ -38,3 +38,12 @@ def test_the_document_is_found_in_a_reply_and_its_wholeness_judged() -> None:
     assert is_whole(GAME)
     assert not is_whole("<!DOCTYPE html><html><body>let sun = ")
     assert not is_whole("<html></html>")
+
+
+def test_a_cut_off_game_and_its_continuation_join_without_the_repeated_line() -> None:
+    start = "<!DOCTYPE html><html><body>\nlet sun = 10;\n"
+    assert joined(start, "let water = 5;\n</body></html>") == GAME
+    # The writer said its last line again before carrying on: kept once.
+    assert joined(start, "let sun = 10;\nlet water = 5;\n</body></html>") == GAME
+    # A short "repeat" is real code, never trimmed.
+    assert joined("a {\n}", "}\n") == "a {\n}}\n"

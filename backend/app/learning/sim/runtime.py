@@ -45,8 +45,9 @@ SAY_LIMIT = 140
 class Setup:
     """What one viewer's copy of a game is told."""
 
-    # The missions to play, in order: `{"id", "goal", "number"}`. A replay
-    # of the missed ones is a shorter list, numbered as in the whole game.
+    # The missions to play, in order: `{"id", "number", "goal", "learn",
+    # "icon", "control", "guide"}`. A replay of the missed ones is a shorter
+    # list, numbered as in the whole game.
     missions: Sequence[dict[str, Any]] = field(default_factory=tuple)
     buddy: str = "your buddy"
     level: str = "beginner"
@@ -57,7 +58,11 @@ class Setup:
     def as_json(self) -> dict[str, Any]:
         return {
             "missions": [
-                {"id": str(m["id"]), "goal": str(m.get("goal", "")), "number": int(m["number"])}
+                {
+                    "id": str(m["id"]),
+                    "number": int(m["number"]),
+                    **{key: str(m.get(key, "")) for key in BEATS},
+                }
                 for m in self.missions
             ],
             "buddy": self.buddy,
@@ -68,11 +73,15 @@ class Setup:
         }
 
 
+# What a game is told of each mission (§25): its beats, never its check.
+BEATS = ("goal", "learn", "icon", "control", "guide")
+
+
 def numbered(missions: Sequence[dict[str, Any]], only: set[str] | None = None) -> list[dict]:
     """The missions for a setup, numbered by their place in the whole game;
     just the ones in `only` when that is given (a replay of the missed)."""
     return [
-        {"id": m["id"], "goal": m.get("goal", ""), "number": n}
+        {"id": m["id"], "number": n, **{key: m.get(key, "") for key in BEATS}}
         for n, m in enumerate(missions, start=1)
         if only is None or m["id"] in only
     ]
@@ -153,6 +162,10 @@ RUNTIME = """(function () {
     if (data.source !== 'mentora-host') return;
     if (data.type === 'sound') { M.sound = !!data.on; fire('sound', M.sound); }
     if (data.type === 'calm') { M.calm = !!data.on; fire('calm', M.calm); }
+    // "Show me": the game plays the mission while the child watches.
+    if (data.type === 'show' && known(data.id) && typeof M.demo === 'function') {
+      try { M.demo(data.id); } catch (e) {}
+    }
   });
   window.Mentora = M;
 })();""".replace("%SAY%", str(SAY_LIMIT))

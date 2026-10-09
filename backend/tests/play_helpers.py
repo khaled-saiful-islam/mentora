@@ -53,6 +53,10 @@ def game_items(n: int = 4) -> list[dict]:
     return [
         {
             "id": f"g{i}",
+            "learn": f"Idea {i}.",
+            "icon": "☀️",
+            "control": f"control {i}",
+            "guide": f"Slide control {i} up!",
             "goal": f"Reach goal {i}.",
             "win": f"Level {i} reached.",
             "explanation": f"Because {i}.",
@@ -68,10 +72,22 @@ def game_items(n: int = 4) -> list[dict]:
 GAME_EXTRAS = {
     "title": "Rescue at the River",
     "world": "rainforest",
+    "character": {"name": "Atuk Hassan", "about": "a padi farmer"},
     "story": {
         "hook": "The river has flooded!\n\n{buddy} needs your help.",
         "goal": "Get everyone home.",
         "win": "Hooray, {buddy} is home!",
+        "opening": [
+            {"who": "Atuk Hassan", "says": "My padi is turning yellow!"},
+            {"who": "{buddy}", "says": "{buddy} will help, Atuk!"},
+        ],
+        "ending": [{"who": "Atuk Hassan", "says": "Thank you, friends!"}],
+    },
+    "beats": {
+        "g1": {
+            "before": [{"who": "Atuk Hassan", "says": "The leaves need light."}],
+            "after": [{"who": "{buddy}", "says": "Green again!"}],
+        },
     },
     "authored": False,
 }

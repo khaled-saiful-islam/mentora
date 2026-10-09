@@ -19,6 +19,10 @@ SOURCES = {"s1"}
 
 def raw_mission(**overrides) -> dict:
     return {
+        "learn": "Leaves are tiny kitchens: they cook food from sunlight.",
+        "icon": "☀️",
+        "control": "the sun slider",
+        "guide": "Slide the sun all the way up!",
         "goal": "Grow the padi plant to full height before sunset.",
         "win": "The plant reaches 100% height while sunlight and water are above half.",
         "explanation": "Plants use sunlight and water to make their own food.",
@@ -61,17 +65,21 @@ def test_a_good_mission_is_kept_and_its_unknown_sources_dropped() -> None:
     assert item["difficulty"] == "easy"
 
 
-@pytest.mark.parametrize("missing", ["goal", "win", "explanation"])
+@pytest.mark.parametrize("missing", ["goal", "win", "explanation", "learn"])
 def test_a_mission_without_its_goal_check_or_lesson_is_refused(missing: str) -> None:
     raw = raw_mission()
     raw.pop(missing)
     assert GameKind().normalise(raw, skills=SKILLS, source_ids=SOURCES) is None
 
 
-def test_a_player_sees_the_goal_but_not_the_check_the_lesson_or_the_hint() -> None:
+def test_a_player_meets_the_missions_beats_but_not_its_check_lesson_or_hint() -> None:
     shown = GameKind().public(mission())
     assert shown == {
         "id": shown["id"],
+        "learn": "Leaves are tiny kitchens: they cook food from sunlight.",
+        "icon": "☀️",
+        "control": "the sun slider",
+        "guide": "Slide the sun all the way up!",
         "goal": "Grow the padi plant to full height before sunset.",
         "has_hint": True,
         "skill": "light",
@@ -98,6 +106,30 @@ def test_points_pay_for_harder_missions_first_goes_and_cost_a_hint() -> None:
     assert points([hinted], grade_level=None, level=None) == 110
     missed = Answered(correct=False, hinted=True, difficulty="hard", tries=4)
     assert points([missed], grade_level=None, level=None) == 0
+    # Reached after the buddy showed how: never zero, never the full count.
+    shown = Answered(correct=True, hinted=False, difficulty="hard", tries=3, shown=True)
+    assert points([shown], grade_level=None, level=None) == 50
+
+
+def test_two_missions_adding_the_same_control_are_the_same_mission() -> None:
+    kind = GameKind()
+    assert kind.distinct(mission(control="The sun slider")) == kind.distinct(
+        mission(control="sun slider")
+    )
+    assert kind.distinct(mission(control="the rain cloud")) != kind.distinct(mission())
+    # The thing controlled, whatever widget it is.
+    assert kind.distinct(mission(control="the sun")) == kind.distinct(mission(control="sun slider"))
+    leaf, sun = mission(control="leaf size slider"), mission(control="sun")
+    assert kind.distinct(leaf) != kind.distinct(sun)
+    cutter, kuih_cutter = mission(control="the cutter"), mission(control="the kuih cutter")
+    assert kind.distinct(cutter) == kind.distinct(kuih_cutter)
+    assert kind.batch >= kind.max_count  # the whole lesson written in one go
+
+
+def test_the_next_batch_is_told_each_missions_idea_and_control() -> None:
+    half = mission(learn="A half is 1 of 2 equal parts.", control="the cutter")
+    told = GameKind().summary(half)
+    assert "A half is 1 of 2 equal parts." in told and "the cutter" in told
 
 
 def test_missions_are_played_simplest_first_keeping_their_order_otherwise() -> None:
@@ -107,9 +139,10 @@ def test_missions_are_played_simplest_first_keeping_their_order_otherwise() -> N
     assert [i["goal"] for i in kind.arrange(items)] == ["Goal 1.", "Goal 2.", "Goal 0."]
 
 
-def test_the_writing_rules_ask_for_missions_to_reach_never_options_to_pick() -> None:
+def test_the_writing_rules_ask_for_one_idea_at_a_time_never_options_to_pick() -> None:
     rules = GameKind().rules_for({"world": "reef", "story": "Siti the turtle is lost."})
-    assert '"goal"' in rules and '"win"' in rules
+    assert '"goal"' in rules and '"win"' in rules and '"learn"' in rules
+    assert "ONE idea" in rules and "adds ONE new control" in rules
     assert "never options" in rules.lower()
     assert "Sipadan" in rules
     assert "Siti the turtle is lost." in rules
@@ -164,7 +197,34 @@ async def test_a_story_model_that_fails_keeps_the_makers_story_as_written() -> N
 def test_extras_never_raise_and_fall_back_to_a_setting() -> None:
     extras = GameKind().normalise_extras("nonsense")
     assert extras["world"] == "rainforest"
-    assert extras["story"] == {"hook": "", "goal": "", "win": ""}
+    assert extras["story"] == {"hook": "", "goal": "", "win": "", "opening": [], "ending": []}
+    assert extras["beats"] == {} and extras["character"] == {"name": "", "about": ""}
+
+
+def test_the_story_plan_keeps_its_character_panels_and_a_beat_for_each_mission() -> None:
+    raw = story(
+        character={"name": "Atuk Hassan", "about": "a padi farmer in Kedah"},
+        story={
+            "hook": "The padi is wilting!",
+            "opening": [{"who": "Atuk Hassan", "says": "Help!"}, {"says": "We will!"}, "x"],
+            "ending": [{"who": "Atuk Hassan", "says": "Thank you!"}],
+        },
+        beats=[
+            {"mission": "m1", "before": [{"who": "{buddy}", "says": "Light!"}], "after": []},
+            {"mission": "", "before": [{"says": "lost"}]},
+        ],
+    )
+    extras = GameKind().normalise_extras(raw)
+    assert extras["character"]["name"] == "Atuk Hassan"
+    assert extras["story"]["opening"] == [
+        {"who": "Atuk Hassan", "says": "Help!"},
+        {"who": "{buddy}", "says": "We will!"},
+    ]
+    assert extras["beats"] == {
+        "m1": {"before": [{"who": "{buddy}", "says": "Light!"}], "after": []}
+    }
+    # An editor sends the beats back keyed by mission: kept the same way.
+    assert GameKind().normalise_extras(extras)["beats"] == extras["beats"]
 
 
 def test_a_finished_game_is_described_by_its_title_and_setting() -> None:
@@ -182,7 +242,8 @@ def test_the_games_writer_is_given_the_checked_missions_story_and_setting() -> N
     assert spec.hook == "The padi is wilting!"
     assert "Year 5" in spec.audience
     assert spec.missions[0]["win"].startswith("The plant reaches")
-    assert "source_ids" not in spec.missions[0]
+    assert spec.missions[0]["guide"] == "Slide the sun all the way up!"
+    assert "source_ids" not in spec.missions[0] and "hint" not in spec.missions[0]
 
 
 def test_the_story_prompts_never_give_the_buddy_a_species_or_a_gender() -> None:
@@ -193,4 +254,5 @@ def test_the_story_prompts_never_give_the_buddy_a_species_or_a_gender() -> None:
         story="", outline="",
     )  # fmt: skip
     assert "Never say what kind of animal {buddy} is" in wrap
-    assert "invent no other animal friend" in wrap
+    assert "the only animal friend" in wrap and "invent no" in wrap
+    assert "a beat before and after EVERY mission" in wrap

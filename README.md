@@ -78,35 +78,35 @@ as a handout** with an answer key. See
 
 ## Play and Learn games
 
-A story game on any topic, made by a teacher or parent in about a minute and
-played by students to learn it. The AI writes the story, the world and the
-challenges, pitched to the year and a **level** (Beginner, Intermediate,
-Advanced) and checked like every quiz. Mentora's own engine plays them, and
-points are counted on the server.
+A small simulation game on any topic, made by a teacher or parent. The child
+learns by changing things and watching what happens, not by answering
+questions. The AI writes the lesson (checked against sources like every
+quiz), the story and the game's code, pitched to the year and a **level**
+(Beginner, Intermediate, Advanced). A robot plays every game on a phone and a
+laptop before anyone else sees it.
 
 | | |
 |---|---|
-| ![Quest Map on the coral reef: the buddy on a winding path of stops, a challenge card with Read it to me, a timer and a hint](docs/screenshots/game-quest-map.png) | ![Lane Runner at the kampung festival: three answer gates down a road, with the buddy running in the middle lane](docs/screenshots/game-lane-runner.png) |
-| **Quest Map**: a stop on the path for every challenge. | **Lane Runner**: run into the gate with the right answer. |
-| ![Match & Build in space: a rocket built piece by piece, with the pieces to place below](docs/screenshots/game-match-build.png) | ![Making a game: pick how it plays and where, or let Mentora decide, then the story](docs/screenshots/game-make.png) |
-| **Match & Build**: every right answer builds a rocket, a bridge, a kite… | **Making one**: style, world and story, or let Mentora decide. |
+| ![The story's opening as a comic: the main character and the student's buddy in speech bubbles, read aloud](docs/screenshots/game-story.png) | ![Learn it: the story beat, then the one idea big with its picture, and what to try](docs/screenshots/game-learn.png) |
+| **The story**: a short comic with a character who needs help. | **Learn it**: one idea, big, with a picture, read aloud. |
+| ![Try it: the one control the idea is about glows in the game, with Mentora's bar above](docs/screenshots/game-try.png) | ![What you discovered: stars, the checked explanation, and the story moving on](docs/screenshots/game-discovery.png) |
+| **Try it, then Do it**: one control, then a small problem with it. | **What you discovered**: stars, why it works, and the story goes on. |
 
-- **Four styles** (Quest Map, Lane Runner, Bubble Catch, Match & Build) and
-  **five Malaysian worlds** (the Taman Negara rainforest, the Sipadan reef, a
-  kampung festival, Kuala Lumpur, and a space mission), or let Mentora decide.
-- **The story** is a surprise, a draft from AI to edit, or the maker's own.
-  It is told in three chapters, read aloud, with the student's own buddy as
-  the sidekick. The last challenge is a boss.
-- **Points** for each right answer, more for a harder one, with combos, a
-  speed bonus when timed (none for Beginners) and a cost for asking the
-  buddy for a hint. Stars for every chapter, *Play again* to beat your best,
-  and **Tricky ones** to replay the challenges missed.
-- **Music and sound** made in the browser, a timer ring, full screen,
-  keyboard and touch, and the student's text size and calm motion.
-- **Play it first**, edit any line or challenge, and switch style or world
-  without rebuilding. Share with a class (retakes on, and a best-points
-  **leaderboard if you want one**) or send it home. It can be made from the
-  chat too.
+- **Each mission is a little lesson in three beats.** *Learn it* (the idea,
+  with a picture), *Try it* (the one control it is about glows and cannot be
+  got wrong), *Do it* (a small problem using it). A new control arrives with
+  each mission; the last one uses them together.
+- **Never stuck.** A miss is "Try again"; after two, **Show me** lets the
+  buddy play the mission while the child watches. Hints cost a few points.
+- **The story** is a surprise, a draft from AI to edit, or the maker's own:
+  a character, an opening, a beat before and after each mission, and an
+  ending, told in speech bubbles with the student's own buddy and read aloud.
+- **Stars and points**, counted on the server; *Missions you missed* to
+  replay just those; sound, full screen, touch and keys, calm motion.
+- **Make it** in the app or from the chat; watch it build (3–6 minutes);
+  **play it first**; edit the words; **Change it** by typing what to change.
+  Share with a class (retakes on, and a best-points **leaderboard if you
+  want one**) or send it home.
 
 See [`docs/features/050-play-and-learn.md`](docs/features/050-play-and-learn.md).
 
@@ -217,9 +217,10 @@ See [`docs/features/042-parents.md`](docs/features/042-parents.md).
 - **Study guides.** A topic taught part by part at three reading levels, with
   pictures, words to know in Malay, read-aloud, a concept map, a check after
   every part, and a printable handout.
-- **Play and Learn games.** Story games in four styles and five Malaysian
-  worlds, with the student's buddy, music, points, stars and a best-points
-  leaderboard. They are written by AI and played by Mentora's own engine.
+- **Play and Learn games.** Simulation games that teach one idea per
+  mission (Learn it, Try it, Do it) inside a story, with the student's buddy,
+  Show me, stars and a best-points leaderboard. The AI codes each game and a
+  robot plays it on a phone and a laptop before it is kept.
 - **Practice made for each student.** When a shared quiz is tricky, Mentora
   makes a short practice set on exactly the skills missed. Students practise;
   only teachers and parents make sets.
@@ -250,7 +251,7 @@ See [`docs/features/042-parents.md`](docs/features/042-parents.md).
 >
 > **The studio is switched off.** No one makes posters, slides, AI-coded
 > games, websites or apps, in the chat or anywhere else. (Play and Learn games
-> are a learning kind, not a studio artifact, and are on.) Ones already made can still
+> are a learning kind, not a studio artifact, and are on: `GAMES_ENABLED`.) Ones already made can still
 > be opened, downloaded and shared. See
 > [`docs/features/025-roles-and-signup.md`](docs/features/025-roles-and-signup.md).
 
