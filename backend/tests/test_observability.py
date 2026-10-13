@@ -448,3 +448,26 @@ def test_no_keys_means_no_tracing() -> None:
 )
 def test_the_environment_is_spelled_as_langfuse_allows(app_env: str, expected: str) -> None:
     assert _environment(app_env) == expected
+
+
+def test_a_trace_started_inside_another_carries_none_of_its_attributes() -> None:
+    from opentelemetry import context as otel_context
+
+    from app.observability.langfuse_tracer import LangfuseTracer
+
+    tracer = LangfuseTracer(
+        public_key="pk-lf-test",
+        secret_key="sk-lf-test",
+        host="http://127.0.0.1:9",
+        environment="test",
+        content=Content.BUILDS,
+    )
+    chat = TraceInfo(name="chat turn", kind=Kind.CHAT, user="u1", session="c1", tags=("teacher",))
+    build = TraceInfo(name="build quiz", kind=Kind.BUILD, user="u1", session="s1", tags=("quiz",))
+    with tracer.attributes(chat):
+        assert "teacher" in repr(dict(otel_context.get_current()))
+        with tracer.attributes(build):
+            inside = repr(dict(otel_context.get_current()))
+            assert "quiz" in inside and "s1" in inside
+            assert "teacher" not in inside and "c1" not in inside
+        assert "teacher" in repr(dict(otel_context.get_current()))

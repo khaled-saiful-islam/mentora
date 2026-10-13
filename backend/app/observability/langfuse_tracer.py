@@ -8,12 +8,13 @@ misconfigured costs a turn nothing at all.
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable, Mapping
-from contextlib import AbstractContextManager, nullcontext
+from collections.abc import Callable, Iterator, Mapping
+from contextlib import contextmanager, nullcontext
 from functools import wraps
 from typing import Any, ParamSpec, TypeVar
 
 from langfuse import Langfuse, propagate_attributes
+from opentelemetry import context as otel_context
 
 from app.observability.base import NULL, Content, Observation, TraceInfo
 
@@ -128,15 +129,25 @@ class LangfuseTracer:
             sample_rate=sample_rate,
         )
 
-    def attributes(self, info: TraceInfo) -> AbstractContextManager[Any]:
-        if not (info.user or info.session or info.tags):
-            return nullcontext()
-        return propagate_attributes(
-            user_id=info.user,
-            session_id=info.session,
-            tags=[*info.tags, info.kind.value],
-            trace_name=info.name,
-        )
+    @contextmanager
+    def attributes(self, info: TraceInfo) -> Iterator[None]:
+        # A new trace starts clean: a quiz the chat started building must not
+        # carry the chat's user, session or tags into its own trace.
+        token = otel_context.attach(otel_context.Context())
+        try:
+            with (
+                propagate_attributes(
+                    user_id=info.user,
+                    session_id=info.session,
+                    tags=[*info.tags, info.kind.value],
+                    trace_name=info.name,
+                )
+                if info.user or info.session or info.tags
+                else nullcontext()
+            ):
+                yield
+        finally:
+            otel_context.detach(token)
 
     @_quiet(NULL)
     def start(self, info: TraceInfo) -> Observation:
