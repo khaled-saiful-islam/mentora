@@ -48,6 +48,7 @@ class ModelClassifier:
             temperature=0.0,
             max_tokens=40,
             stream=False,
+            purpose="safety check",
         )
         try:
             completion = await asyncio.wait_for(self._provider.complete(request), self._timeout)

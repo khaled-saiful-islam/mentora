@@ -89,6 +89,10 @@ async def lifespan(app: FastAPI):
     # leak one per restart.
     await close_renderer()
     await engine.dispose()
+    # Traces still queued go out before the process does (§27).
+    from app.observability.registry import get_tracer
+
+    get_tracer().shutdown()
 
 
 def _start_live_clock():

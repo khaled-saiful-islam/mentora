@@ -1690,3 +1690,153 @@ Where are the other type of games that we agreed on? Start should be unique."*
   the pairs when the writer left it out), a random opening, varied names,
   and no repeated ideas.
 
+
+## 27. Langfuse: seeing every model call (approved 2026-10-13)
+
+**Why:** when a game came back with no story, or a quiz dropped two
+questions, we found out by reading logs line by line ("reply was not JSON",
+"3 of 4 passed checks"). Langfuse records every model call:
+
+- what was asked and what came back;
+- how long it took and what it cost;
+- which build or chat turn it belonged to.
+
+It also lets us re-run a fixed set of cases whenever a prompt changes, so a
+regression like "every character is called Amir" is caught before a teacher
+sees it.
+
+### 27.1 Decisions
+
+> **Decided 2026-10-13:** local first (`make langfuse` on the developer's
+> machine), then Langfuse Cloud's free plan for production. Not on
+> `mentora-prod`: Langfuse 3+ needs ClickHouse, Redis and object storage,
+> about 1.5–2 GB at rest on a 2 GB server, and an out-of-memory kill could
+> take Mentora's own Postgres or API with it. Content: builds in full, chats
+> and play as counts (`LANGFUSE_CONTENT=builds`); `all` locally.
+
+1. **Where Langfuse runs.**
+   - *Recommended:* on your own machine for development, and **Langfuse
+     Cloud** (the free Hobby plan) for production.
+   - Self-hosting it in production needs its own server: Langfuse 3 needs
+     ClickHouse, Redis and object storage, more than the 2 GB `mentora-prod`
+     can carry. That means about $20–40 a month more, against the $10 budget.
+2. **What production sends.** *Recommended:*
+   - the full text of **building** quizzes, guides and games, which is
+     curriculum content;
+   - only **counts and timings** for chats and play: no text from students,
+     who are children, nor from teachers' chats, which can name them.
+
+   One setting (`LANGFUSE_CONTENT=builds|all|none`) changes it later.
+
+### 27.2 How it works
+
+- **One wrapper, every call.** Every model call goes through one interface
+  (`providers/base.py`, `LLMProvider`). `providers/traced.py` wraps any
+  provider and records each call as a *generation*: the model, the messages
+  (masked as 27.1 says), the reply, tokens, latency, finish reason and
+  errors. It is applied where providers are built:
+  - `providers/registry.py` (chat);
+  - `learning/factory.py` (sets and games);
+  - `artifacts/registry.py` (the studio);
+  - the live-lesson providers in `api/deps.py`.
+- **Traces in context.** `app/observability/` (logic only, no FastAPI)
+  holds the current trace in a context variable. A trace is opened by:
+  - a **chat turn** (`ChatService.stream_turn`): session = the
+    conversation;
+  - a **set or game build** (`LearningGenerator.run`): one span per stage —
+    check, research, skills, write, verify, repair, finish — and the
+    generations inside them named by stage;
+  - a **live lesson**, a **story draft** and a **studio build**.
+
+  The user is a pseudonym (a hash of their id) and their role; the release
+  is the git commit, and the environment is dev or prod.
+- **Events worth seeing**, recorded on the span where they happen:
+  - a reply that was not JSON;
+  - an item that failed the fact check, and why;
+  - a round that fell back to Match Up;
+  - an island dropped as a repeat;
+  - a Boss Battle added from pairs;
+  - a guard or safety-screen decision;
+  - a refused topic.
+- **Scores**, which tell us whether a build was good:
+  - the items kept out of those asked for;
+  - how many rounds fell back;
+  - whether the build finished;
+  - later, how much the teacher edited it, and Rewrite with AI.
+- **Never breaks a turn** (rule 3 in CLAUDE.md):
+  - with no keys, it does nothing;
+  - the SDK sends in the background;
+  - any error inside tracing is logged and swallowed.
+- **Costs** stay where they are (`usage_source`, quotas); Langfuse shows
+  them per feature and per model beside them.
+
+### 27.3 Evals
+
+- **A dataset of cases in Langfuse**, about 24 to start: topic × year ×
+  kind, games weighted. For example "Fractions, Year 3", "Electricity,
+  Form 3" and "The Melaka Sultanate, Form 2".
+- **`make eval-games`** builds each case through the real pipeline and
+  records a run with these measures:
+  - built or not, and the time it took;
+  - items kept;
+  - the fallback rate;
+  - the template mix;
+  - a Boss Battle present;
+  - repeats dropped;
+  - openings and names varied;
+  - cost.
+
+  An optional model-as-judge score asks whether each island suits its
+  year.
+- Run it before and after a prompt change, and compare the runs side by
+  side in Langfuse.
+- A run spends model tokens: **capped by a setting**, and each run's cost
+  is printed.
+
+### 27.4 Configuration
+
+- `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_HOST`: none set
+  means off.
+- `LANGFUSE_CONTENT`: `builds` (the default), `all` or `none`.
+- `LANGFUSE_SAMPLE_RATE`, for chat turns once traffic grows.
+- For development, a `docker compose --profile observability` with Langfuse
+  and its stores, on your machine only.
+
+### 27.5 Phases
+
+1. This plan, and your two decisions (27.1).
+2. **Tracing**:
+   - the wrapper, the trace context, chat turns and set and game builds,
+     masking, and the local Langfuse;
+   - tests with a fake client, including "Langfuse down — the turn still
+     answers";
+   - a feature doc (`docs/features/051-observability.md`).
+3. **Events and scores** across the pipeline.
+4. **Evals**: the dataset, `make eval-games`, the first baseline run.
+5. **Production**: keys in the server's `.env`, deployed on your word.
+
+### 27.5.1 Built (phase 2, 2026-10-13)
+
+- `app/observability/` (Protocol, context, Langfuse adapter, registry) and
+  `providers/traced.py`; every model client is built by
+  `providers/registry.make_provider`, and each call says its `purpose`.
+- Traces: `chat turn` (opened in `live_turns`, session = conversation) and
+  `build <kind>` (opened in `GenerationService.events`, stages as steps,
+  session = set). Calls outside both are traces of their own.
+- One event already: "reply was not JSON", on the stage that got it.
+- `docker-compose.langfuse.yml` (profile `langfuse`), `make langfuse`,
+  `make langfuse-down`; Langfuse 4 server, SDK 4.17. Tests clear the keys.
+- Feature doc `docs/features/051-observability.md`.
+
+### 27.6 Known limits
+
+- **Chat stays text-free in production** (27.1): its traces show timing,
+  tokens and errors, not words. So a bad chat answer is found from the
+  conversation itself, not from Langfuse.
+- **Langfuse Cloud keeps data outside Malaysia** (its EU or US region), for
+  30 days on the free plan.
+- **A streamed chat reply is recorded when it finishes**, not as it streams.
+- **Speech and web search are not traced**: they are not language-model
+  calls.
+- **The image reader and the picture check** call vision models through
+  their own clients. They come in phase 3, not with the first wrapper.

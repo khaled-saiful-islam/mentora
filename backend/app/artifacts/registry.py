@@ -16,7 +16,7 @@ from app.artifacts.slides import SlidesKind
 from app.artifacts.web_app import AppKind
 from app.artifacts.website import WebsiteKind
 from app.core.config import Settings, get_settings
-from app.providers.openai_compatible import OpenAICompatibleProvider
+from app.providers.registry import make_provider
 from app.tools.serpapi import SerpApiSearch
 
 
@@ -30,7 +30,8 @@ def build_kinds(settings: Settings | None = None) -> dict[str, ArtifactKind]:
         return {}
 
     model = ArtifactModel(
-        OpenAICompatibleProvider(
+        make_provider(
+            settings,
             base_url=settings.resolved_artifact_base_url,
             api_key=settings.resolved_artifact_api_key,
             model=settings.artifact_model,

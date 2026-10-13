@@ -42,8 +42,7 @@ from app.moderation.gate import ModerationGate
 from app.moderation.registry import build_gate
 from app.policies.capabilities import Capabilities, capabilities_for
 from app.providers.base import TokenBudget
-from app.providers.openai_compatible import OpenAICompatibleProvider
-from app.providers.registry import build_provider
+from app.providers.registry import build_provider, make_provider
 from app.providers.speech import Transcriber, build_speech, build_transcriber
 from app.services.accounting_service import Pricing
 from app.services.auth_service import AuthService
@@ -414,7 +413,8 @@ TranscriberDep = Annotated[Transcriber, Depends(get_transcriber)]
 
 
 def get_voice_lab(settings: SettingsDep) -> VoiceLab:
-    chat = OpenAICompatibleProvider(
+    chat = make_provider(
+        settings,
         base_url=settings.resolved_learning_base_url,
         api_key=settings.resolved_learning_api_key,
         model=settings.resolved_learning_model,
@@ -444,7 +444,8 @@ LivePlanServiceDep = Annotated[LivePlanService, Depends(get_live_plan_service)]
 
 def _live_answerer(grade_level: str | None) -> Answerer:
     settings = get_settings()
-    chat = OpenAICompatibleProvider(
+    chat = make_provider(
+        settings,
         base_url=settings.resolved_learning_base_url,
         api_key=settings.resolved_learning_api_key,
         model=settings.resolved_learning_model,

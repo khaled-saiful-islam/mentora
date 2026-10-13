@@ -836,6 +836,7 @@ class ChatService:
             stream=True,
             tools=tuple(tool_schema(tool) for tool in offered.values()),
             tool_choice=("required" if state.force_tool else "auto") if offered else None,
+            purpose="answer",
         )
 
         async for event in self._provider.stream_chat(request):

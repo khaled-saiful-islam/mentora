@@ -1,12 +1,16 @@
 .DEFAULT_GOAL := help
 SHELL := /bin/bash
-COMPOSE := docker compose
-COMPOSE_DEV := docker compose -f docker-compose.yml -f docker-compose.dev.yml
+# The local Langfuse (§27) is in its own file, every service in the `langfuse`
+# profile: listed here so `make down` and `make ps` know it, started only by
+# `make langfuse`. Production's scripts/deploy.sh never reads it.
+COMPOSE := docker compose -f docker-compose.yml -f docker-compose.langfuse.yml
+COMPOSE_DEV := $(COMPOSE) -f docker-compose.dev.yml
 
 # Ports come from .env when it exists, so the banner cannot print a stale one.
 env_or = $(shell grep -E '^$(1)=' .env 2>/dev/null | cut -d= -f2- | grep . || echo $(2))
 WEB_PORT := $(call env_or,WEB_PORT,8300)
 API_PORT := $(call env_or,API_PORT,8301)
+LANGFUSE_PORT := $(call env_or,LANGFUSE_PORT,8310)
 DEV_PORT := $(call env_or,DEV_PORT,8303)
 ADMIN_USER := $(call env_or,SEED_ADMIN_USERNAME,admin)
 ADMIN_PASS := $(call env_or,SEED_ADMIN_PASSWORD,admin)
@@ -28,7 +32,7 @@ DEPLOY_KEY := $(call deploy_env,DEPLOY_KEY,~/.ssh/mentora-lightsail)
 DEPLOY_DIR := $(call deploy_env,DEPLOY_DIR,/opt/mentora)
 DEPLOY_URL := $(call deploy_env,DEPLOY_URL,https://mentora.stream)
 
-.PHONY: help up down logs migrate migration test lint reset seed dev ps shell-backend shell-db api-dev deploy
+.PHONY: help up down logs migrate migration test lint reset seed dev ps shell-backend shell-db api-dev deploy langfuse langfuse-down
 
 help: ## Show this help
 	@echo "$(BOLD)Mentora$(RESET) — where teachers and students learn together"
@@ -63,6 +67,22 @@ _banner:
 
 down: ## Stop everything, keep the database
 	@$(COMPOSE) down
+
+langfuse: ## Start Langfuse here (http://localhost:8310): every model call, traced
+	@$(COMPOSE) --profile langfuse up -d --wait langfuse-web langfuse-worker
+	@echo
+	@echo "  $(BOLD)Langfuse is running$(RESET)"
+	@echo "  ─────────────────────────────────────────"
+	@echo "  Open       $(AMBER)http://localhost:$(LANGFUSE_PORT)$(RESET)"
+	@echo "  Sign in    $(BOLD)admin@mentora.test$(RESET) / $(BOLD)mentora-local$(RESET)"
+	@echo
+	@echo "  $(DIM)Mentora sends traces when .env has LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY$(RESET)"
+	@echo "  $(DIM)and LANGFUSE_HOST=http://langfuse-web:3000 — then run make up once.$(RESET)"
+	@echo
+
+langfuse-down: ## Stop the local Langfuse, keep what it recorded
+	@$(COMPOSE) --profile langfuse stop langfuse-web langfuse-worker langfuse-db \
+	  langfuse-clickhouse langfuse-minio langfuse-redis
 
 logs: ## Follow logs from all services
 	@$(COMPOSE) logs -f --tail=100

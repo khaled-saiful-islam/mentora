@@ -1,0 +1,170 @@
+# Langfuse on this machine, for development only (§27,
+# docs/features/051-observability.md). Started by `make langfuse`, never by
+# `make up`: every service here is in the `langfuse` profile. Production never
+# reads this file (scripts/deploy.sh names its own) and uses Langfuse Cloud.
+#
+# Adapted from Langfuse's own docker-compose.yml (v4). Only the web app is
+# published, on 127.0.0.1; its stores stay on the compose network. Every
+# password below is a local placeholder for a machine-only service.
+#
+# The first start creates the organisation, the project and its two keys from
+# LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY in .env, and a login:
+#   http://localhost:8310  ·  admin@mentora.test  ·  mentora-local
+
+x-langfuse-env: &langfuse-env
+  NEXTAUTH_URL: http://localhost:${LANGFUSE_PORT:-8310}
+  DATABASE_URL: postgresql://langfuse:langfuse@langfuse-db:5432/langfuse
+  SALT: mentora-local-salt
+  ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+  # Nothing about this install is reported to Langfuse's makers.
+  TELEMETRY_ENABLED: "false"
+  CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
+  CLICKHOUSE_URL: http://langfuse-clickhouse:8123
+  CLICKHOUSE_USER: clickhouse
+  CLICKHOUSE_PASSWORD: clickhouse
+  CLICKHOUSE_CLUSTER_ENABLED: "false"
+  LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+  LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: minio
+  LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: miniosecret
+  LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+  LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+  LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+  LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+  LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: minio
+  LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: miniosecret
+  LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+  LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+  LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+  REDIS_HOST: langfuse-redis
+  REDIS_PORT: "6379"
+  REDIS_AUTH: myredissecret
+
+x-langfuse-depends: &langfuse-depends
+  langfuse-db:
+    condition: service_healthy
+  langfuse-minio:
+    condition: service_healthy
+  langfuse-redis:
+    condition: service_healthy
+  langfuse-clickhouse:
+    condition: service_healthy
+
+services:
+  langfuse-web:
+    image: docker.langfuse.com/langfuse/langfuse:4
+    profiles: [langfuse]
+    container_name: mentora-langfuse-web
+    restart: unless-stopped
+    depends_on: *langfuse-depends
+    ports:
+      - "127.0.0.1:${LANGFUSE_PORT:-8310}:3000"
+    environment:
+      <<: *langfuse-env
+      NEXTAUTH_SECRET: mentora-local-nextauth-secret
+      HOSTNAME: 0.0.0.0
+      LANGFUSE_INIT_ORG_ID: mentora
+      LANGFUSE_INIT_ORG_NAME: Mentora
+      LANGFUSE_INIT_PROJECT_ID: mentora-local
+      LANGFUSE_INIT_PROJECT_NAME: Mentora (local)
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-mentora-local}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-mentora-local}
+      LANGFUSE_INIT_USER_EMAIL: admin@mentora.test
+      LANGFUSE_INIT_USER_NAME: Mentora admin
+      LANGFUSE_INIT_USER_PASSWORD: mentora-local
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/public/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 20s
+
+  langfuse-worker:
+    image: docker.langfuse.com/langfuse/langfuse-worker:4
+    profiles: [langfuse]
+    container_name: mentora-langfuse-worker
+    restart: unless-stopped
+    depends_on: *langfuse-depends
+    environment:
+      <<: *langfuse-env
+
+  langfuse-db:
+    image: postgres:17-alpine
+    profiles: [langfuse]
+    container_name: mentora-langfuse-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse
+      POSTGRES_DB: langfuse
+      TZ: UTC
+      PGTZ: UTC
+    volumes:
+      - mentora-langfuse-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse -d langfuse"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  langfuse-clickhouse:
+    image: clickhouse/clickhouse-server:25.12
+    profiles: [langfuse]
+    container_name: mentora-langfuse-clickhouse
+    restart: unless-stopped
+    user: "101:101"
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: clickhouse
+    volumes:
+      - mentora-langfuse-clickhouse:/var/lib/clickhouse
+      - mentora-langfuse-clickhouse-logs:/var/log/clickhouse-server
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+
+  langfuse-minio:
+    image: cgr.dev/chainguard/minio
+    profiles: [langfuse]
+    container_name: mentora-langfuse-minio
+    restart: unless-stopped
+    entrypoint: sh
+    # The bucket Langfuse writes to, made before the server starts.
+    command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data'
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: miniosecret
+    volumes:
+      - mentora-langfuse-minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+      start_period: 2s
+
+  langfuse-redis:
+    image: redis:7
+    profiles: [langfuse]
+    container_name: mentora-langfuse-redis
+    restart: unless-stopped
+    command: --requirepass myredissecret --maxmemory-policy noeviction
+    volumes:
+      - mentora-langfuse-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "myredissecret", "ping"]
+      interval: 3s
+      timeout: 10s
+      retries: 10
+
+volumes:
+  mentora-langfuse-db:
+  mentora-langfuse-clickhouse:
+  mentora-langfuse-clickhouse-logs:
+  mentora-langfuse-minio:
+  mentora-langfuse-redis:

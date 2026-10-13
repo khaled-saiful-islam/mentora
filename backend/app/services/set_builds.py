@@ -40,7 +40,7 @@ def build_in_background(
     jobs.start(
         learning_set.id,
         owner_id,
-        service.events(learning_set.id, request),
+        service.events(learning_set.id, request, owner_id=owner_id),
         watcher=work.watch(learning_set.id, owner_id, for_set(learning_set)),
     )
 

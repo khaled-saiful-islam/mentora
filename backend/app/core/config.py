@@ -8,6 +8,7 @@ might want to change when adopting the template should be reachable by editing
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -348,6 +349,18 @@ class Settings(BaseSettings):
     # ---- CORS -----------------------------------------------------------
     cors_origins: str = "http://localhost:8303,http://localhost:8300"
 
+    # ---- Observability (§27, docs/features/051-observability.md) ----------
+    # Every model call recorded in Langfuse. Both keys and the host, or it is
+    # off and nothing changes.
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_host: str = ""
+    # Whose words are sent: `builds` (quizzes, guides and games — curriculum
+    # text) keeps chats and play to counts and timings; `all` or `none`.
+    langfuse_content: Literal["builds", "all", "none"] = "builds"
+    # Share of traces kept, 0 to 1, for when traffic grows.
+    langfuse_sample_rate: float = 1.0
+
     @field_validator("llm_base_url")
     @classmethod
     def _strip_trailing_slash(cls, v: str) -> str:
@@ -365,6 +378,13 @@ class Settings(BaseSettings):
     def search_enabled(self) -> bool:
         """Web search is only offered when a key is actually present."""
         return bool(self.serpapi_key.strip())
+
+    @property
+    def langfuse_enabled(self) -> bool:
+        return all(
+            value.strip()
+            for value in (self.langfuse_public_key, self.langfuse_secret_key, self.langfuse_host)
+        )
 
 
 def _listed(value: str) -> list[str]:

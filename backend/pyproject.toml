@@ -25,6 +25,8 @@ dependencies = [
     # A real browser, for exporting a poster as a picture. Nothing else
     # renders a document the way the one the reader is looking at does.
     "playwright>=1.49",
+    # Every model call recorded, when LANGFUSE_* keys are set (§27).
+    "langfuse>=4.17,<5",
 ]
 
 [project.optional-dependencies]

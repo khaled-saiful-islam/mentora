@@ -255,6 +255,11 @@ See [`docs/features/042-parents.md`](docs/features/042-parents.md).
   content oversight.
 - **Accessible by default.** Text size from small to biggest, playful,
   classic or easy-read fonts, reduced motion, light and dark themes.
+- **Every model call traced.** With Langfuse keys set, each chat turn and
+  each quiz, guide or game build is a trace in Langfuse, its stages as steps,
+  with tokens, timings and cost. Builds' text is kept; chats only as counts.
+  `make langfuse` runs Langfuse locally
+  ([`docs/features/051-observability.md`](docs/features/051-observability.md)).
 
 > **Students have no open chat for now, and don't make sets.** They take
 > their class's work, work sent from home, and the practice made for them;
@@ -326,6 +331,7 @@ setting. The ones you are most likely to change:
 | `PARENT_SETS_PER_DAY` | How many quizzes, decks and guides a parent may make each day |
 | `MODERATION_ENABLED` | The student guardrails |
 | `PUBLIC_BASE_URL` | Where invite and share links point — set it for any real deployment |
+| `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_HOST` | Trace every model call in Langfuse; `LANGFUSE_CONTENT` says whose words are sent |
 
 ## Commands
 
@@ -340,6 +346,8 @@ make lint      ruff and tsc
 make migrate   apply pending migrations
 make reset     destroy the database and start clean
 make deploy    ship GitHub main to production
+make langfuse  run Langfuse locally (http://localhost:8310), to see every model call
+make langfuse-down  stop it, keep what it recorded
 ```
 
 ## How it is built

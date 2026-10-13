@@ -24,9 +24,13 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import AsyncIterator
+from contextlib import ExitStack
 from uuid import UUID
 
 from app.core.errors import MentoraError
+from app.observability.base import Kind, TraceInfo
+from app.observability.context import Scope, finish, opened, pseudonym
+from app.observability.registry import get_tracer
 from app.providers.base import FinishReason
 from app.services.events import ChatEvent, DoneEvent, ErrorEvent, StartEvent
 
@@ -94,10 +98,12 @@ class LiveTurns:
         # mid-build.
         self._tasks: set[asyncio.Task[None]] = set()
 
-    def begin(self, *, user_id: UUID, source: AsyncIterator[ChatEvent]) -> LiveTurn:
+    def begin(
+        self, *, user_id: UUID, source: AsyncIterator[ChatEvent], role: str = ""
+    ) -> LiveTurn:
         """Start a turn. It runs whether or not anybody is listening."""
         turn = LiveTurn(user_id)
-        task = asyncio.create_task(self._pump(turn, source))
+        task = asyncio.create_task(self._pump(turn, source, role))
         turn.task = task
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
@@ -115,30 +121,37 @@ class LiveTurns:
             return None
         return turn
 
-    async def _pump(self, turn: LiveTurn, source: AsyncIterator[ChatEvent]) -> None:
-        try:
-            async for event in source:
-                if isinstance(event, StartEvent):
-                    turn.conversation_id = event.conversation_id
-                    turn.assistant_message_id = event.assistant_message_id
-                    self._turns[event.conversation_id] = turn
+    async def _pump(self, turn: LiveTurn, source: AsyncIterator[ChatEvent], role: str) -> None:
+        with ExitStack() as tracing:
+            trace = _TurnTrace(tracing, turn.user_id, role)
+
+            def emit(event: ChatEvent) -> None:
+                trace.see(event)
                 turn.append(event)
-        except asyncio.CancelledError:
-            raise
-        except MentoraError as exc:
-            # The response may already have begun, so an HTTP status is no
-            # longer available anywhere. The reason arrives as an event.
-            turn.append(ErrorEvent(message=exc.message))
-            turn.append(DoneEvent(finish_reason=FinishReason.ERROR))
-        except Exception:
-            logger.exception("turn failed outside the stream")
-            turn.append(ErrorEvent(message="Something went wrong generating the response."))
-            turn.append(DoneEvent(finish_reason=FinishReason.ERROR))
-        finally:
-            turn.close()
-            known = turn.conversation_id
-            if known is not None and self._turns.get(known) is turn:
-                del self._turns[known]
+
+            try:
+                async for event in source:
+                    if isinstance(event, StartEvent):
+                        turn.conversation_id = event.conversation_id
+                        turn.assistant_message_id = event.assistant_message_id
+                        self._turns[event.conversation_id] = turn
+                    emit(event)
+            except asyncio.CancelledError:
+                raise
+            except MentoraError as exc:
+                # The response may already have begun, so an HTTP status is no
+                # longer available anywhere. The reason arrives as an event.
+                emit(ErrorEvent(message=exc.message))
+                emit(DoneEvent(finish_reason=FinishReason.ERROR))
+            except Exception:
+                logger.exception("turn failed outside the stream")
+                emit(ErrorEvent(message="Something went wrong generating the response."))
+                emit(DoneEvent(finish_reason=FinishReason.ERROR))
+            finally:
+                turn.close()
+                known = turn.conversation_id
+                if known is not None and self._turns.get(known) is turn:
+                    del self._turns[known]
 
     async def close_all(self) -> None:
         """Stop everything still running, on the way down.
@@ -156,6 +169,35 @@ class LiveTurns:
     @property
     def running(self) -> int:
         return len(self._turns)
+
+
+class _TurnTrace:
+    """The turn's trace (§27), opened once the turn says which conversation
+    it is in, so every model call it makes lands in one place, and that
+    conversation's turns read as one session."""
+
+    def __init__(self, stack: ExitStack, user_id: UUID, role: str) -> None:
+        self._stack = stack
+        self._user_id = user_id
+        self._role = role
+        self._scope: Scope | None = None
+        self._error: str | None = None
+
+    def see(self, event: ChatEvent) -> None:
+        if isinstance(event, StartEvent) and self._scope is None:
+            info = TraceInfo(
+                name="chat turn",
+                kind=Kind.CHAT,
+                user=pseudonym(self._user_id),
+                session=str(event.conversation_id),
+                tags=(self._role,) if self._role else (),
+            )
+            self._scope = self._stack.enter_context(opened(get_tracer(), info))
+        elif isinstance(event, ErrorEvent):
+            self._error = event.message
+        elif isinstance(event, DoneEvent):
+            output = {"finish_reason": str(event.finish_reason)}
+            finish(self._scope, output=output, error=self._error)
 
 
 # One registry per process, which matches the one-worker assumption above.

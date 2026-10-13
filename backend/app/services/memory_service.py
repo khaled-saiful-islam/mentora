@@ -108,6 +108,7 @@ class MemoryService:
             temperature=0.0,
             max_tokens=256,
             stream=False,
+            purpose="memory",
         )
 
         try:

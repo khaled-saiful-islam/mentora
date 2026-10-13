@@ -7,6 +7,7 @@ the development data. No test needs to remember to clean up.
 
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncIterator, Awaitable, Callable
 from uuid import uuid4
 
@@ -18,6 +19,13 @@ from app.core.config import get_settings
 from app.core.security import hash_password
 from app.db.models.user import User
 from app.services.cancellation import CancellationRegistry
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Tests never send traces (§27), whatever `.env` says."""
+    for key in ("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_HOST"):
+        os.environ[key] = ""
+    get_settings.cache_clear()
 
 
 @pytest.fixture(scope="session")

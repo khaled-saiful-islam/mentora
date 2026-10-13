@@ -40,6 +40,9 @@ from app.learning.pitch import is_level
 from app.learning.registry import switched_on
 from app.learning.research import Source
 from app.moderation.base import Flag
+from app.observability.base import Content, Kind, TraceInfo, keeps_text
+from app.observability.context import Steps, finish, opened, pseudonym
+from app.observability.registry import get_tracer
 from app.policies.capabilities import capabilities_for
 from app.services.learning_set_service import LearningSetService
 from app.services.material_service import MaterialService
@@ -49,6 +52,9 @@ logger = logging.getLogger(__name__)
 
 SessionMaker = Callable[[], Any]
 GeneratorFactory = Callable[[LearningKind, Meter], LearningGenerator]
+
+# The events a build ends with, one of them always.
+ENDINGS = frozenset({"done", "failed", "refused"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -151,13 +157,31 @@ class GenerationService:
         )
 
     async def events(
-        self, set_id: UUID, request: GenerationRequest
+        self, set_id: UUID, request: GenerationRequest, *, owner_id: UUID | None = None
     ) -> AsyncIterator[dict[str, Any]]:
-        """The job's body: run the generator, keep the outcome, say what happened."""
+        """The job's body, as one trace (§27): each stage a step in it, and
+        how it ended — made, refused or failed — on the trace itself."""
+        tracer = get_tracer()
         meter = Meter()
+        with opened(tracer, _build_trace(set_id, request, owner_id, tracer.content)) as scope:
+            steps = Steps(scope)
+            async for event in self._build(set_id, request, meter, steps):
+                if event.get("type") in ENDINGS:
+                    failed = event["type"] == "failed"
+                    steps.close(error=event.get("message") if failed else None)
+                    outcome = {**event, "model_calls": meter.calls, "tokens": meter.by_stage}
+                    finish(scope, output=outcome, error=event.get("message") if failed else None)
+                yield event
+
+    async def _build(
+        self, set_id: UUID, request: GenerationRequest, meter: Meter, steps: Steps
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Run the generator, keep the outcome, say what happened."""
         generator = self._make_generator(self._kinds[request.kind], meter)
         try:
             async for update in generator.run(request):
+                if isinstance(update, Stage):
+                    steps.see(update.key, update.state, update.detail)
                 event = await self._handle(set_id, update)
                 if event is not None:
                     yield event
@@ -407,3 +431,38 @@ def _skills(version: LearningSetVersion) -> tuple[Skill, ...]:
 
 def _sources(version: LearningSetVersion) -> tuple[Source, ...]:
     return tuple(Source(**s) for s in version.sources)
+
+
+def _build_trace(
+    set_id: UUID, request: GenerationRequest, owner_id: UUID | None, content: Content
+) -> TraceInfo:
+    """What a build's trace says it is. The topic only where the trace may
+    keep a build's words (`LANGFUSE_CONTENT`)."""
+    metadata: dict[str, Any] = {
+        "learning_kind": request.kind,
+        "grade": request.grade_level,
+        "language": request.language,
+        "count": request.count,
+        "level": request.level,
+        "grounded_in_materials": bool(request.sources),
+    }
+    asked = None
+    if keeps_text(content, Kind.BUILD):
+        # A game's choices can carry the teacher's own story line.
+        asked = {
+            "topic": request.topic,
+            "subject": request.subject,
+            "grade": request.grade_level,
+            "count": request.count,
+            "choices": dict(request.choices),
+        }
+        metadata.update(subject=request.subject, topic=request.topic, choices=asked["choices"])
+    return TraceInfo(
+        name=f"build {request.kind}",
+        kind=Kind.BUILD,
+        user=pseudonym(owner_id),
+        session=str(set_id),
+        tags=(request.kind,),
+        metadata=metadata,
+        input=asked,
+    )

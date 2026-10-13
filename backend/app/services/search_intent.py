@@ -177,6 +177,7 @@ async def _ask_model(text: str, provider: LLMProvider) -> SearchDecision:
         temperature=0.0,
         max_tokens=4,
         stream=False,
+        purpose="search intent",
     )
 
     try:

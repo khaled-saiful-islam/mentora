@@ -257,6 +257,7 @@ async def stream(
         raise ForbiddenError("Posters, slides, games, websites and apps are for teachers.")
     turn = live_turns.begin(
         user_id=user.id,
+        role=user.role,
         source=chat.stream_turn(
             user_id=user.id,
             conversation_id=payload.conversation_id,

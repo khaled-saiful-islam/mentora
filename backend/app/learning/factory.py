@@ -10,13 +10,14 @@ from app.learning.generator import LearningGenerator
 from app.learning.model import JsonModel, LearningModel, Meter
 from app.learning.picture_check import PictureCheck, VisionPictureCheck, WordsPictureCheck
 from app.learning.research import Researcher
-from app.providers.openai_compatible import OpenAICompatibleProvider
+from app.providers.registry import make_provider
 from app.tools.page_reader import PageReader
 from app.tools.serpapi import SerpApiSearch
 
 
 def build_model(settings: Settings, meter: Meter) -> JsonModel:
-    provider = OpenAICompatibleProvider(
+    provider = make_provider(
+        settings,
         base_url=settings.resolved_learning_base_url,
         api_key=settings.resolved_learning_api_key,
         model=settings.resolved_learning_model,

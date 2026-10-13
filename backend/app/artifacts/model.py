@@ -105,6 +105,7 @@ class ArtifactModel:
             temperature=0.7,
             max_tokens=max_tokens,
             stream=False,
+            purpose="studio plan",
         )
         try:
             completion = await self._provider.complete(request)
@@ -130,6 +131,7 @@ class ArtifactModel:
             temperature=self._temperature if temperature is None else temperature,
             max_tokens=self._max_tokens,
             stream=True,
+            purpose="studio write",
         )
         pieces: list[str] = []
         try:

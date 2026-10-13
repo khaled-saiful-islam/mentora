@@ -76,6 +76,9 @@ class ChatRequest:
     # untouched — every provider spells the exotic values differently and
     # guessing for them is worse than letting the caller decide.
     tool_choice: str | dict[str, Any] | None = None
+    # What the call is for — "answer", "suggestions", a build's "check" —
+    # so a trace names it (§27). Never sent: providers ignore it.
+    purpose: str = ""
 
 
 class UsageSource(StrEnum):

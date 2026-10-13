@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 from app.artifacts.model import parse_object
+from app.observability.context import note
 from app.providers.base import ChatMessage, ChatRequest, LLMProvider, ProviderError, Role
 
 logger = logging.getLogger(__name__)
@@ -81,6 +82,7 @@ class LearningModel:
                 temperature=temperature,
                 max_tokens=max_tokens,
                 stream=False,
+                purpose=stage,
             )
             try:
                 completion = await self._provider.complete(request)
@@ -92,4 +94,5 @@ class LearningModel:
             if parsed:
                 return parsed
             logger.info("stage %s: reply was not JSON (attempt %d)", stage, attempt)
+            note("reply was not JSON", metadata={"stage": stage, "attempt": attempt}, warning=True)
         return {}

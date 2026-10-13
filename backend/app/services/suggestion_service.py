@@ -57,6 +57,7 @@ async def suggest(
         temperature=0.7,
         max_tokens=200,
         stream=False,
+        purpose="suggestions",
     )
 
     try:
