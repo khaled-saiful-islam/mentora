@@ -63,6 +63,10 @@ class Observation(Protocol):
         self, name: str, *, metadata: Mapping[str, Any] | None = None, warning: bool = False
     ) -> None: ...
 
+    def score(self, name: str, value: float | str, *, comment: str | None = None) -> None:
+        """Scores the whole trace this observation is in."""
+        ...
+
     def end(
         self,
         *,
@@ -105,6 +109,9 @@ class NullObservation:
     def event(
         self, name: str, *, metadata: Mapping[str, Any] | None = None, warning: bool = False
     ) -> None:
+        return None
+
+    def score(self, name: str, value: float | str, *, comment: str | None = None) -> None:
         return None
 
     def end(

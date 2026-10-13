@@ -33,6 +33,7 @@ from app.learning.game_finish import STARTS, names, opening, same_idea, with_bos
 from app.learning.game_rounds import PLAY_LABELS, PLAYS, ident, rounds_of
 from app.learning.model import GenerationUnavailable, JsonModel
 from app.learning.quiz import BEST_POINTS, DIFFICULTIES
+from app.observability.context import note
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +147,12 @@ class GameKind:
         task = clean_text(raw.get("task"), LIMITS["task"]) if play == wanted else None
         if play != wanted:
             logger.info("an island's %r round broke its rules; played as Match Up", wanted)
+            note(
+                "fell back to Match Up",
+                metadata={"wanted": str(wanted)[:20]},
+                words={"island": learn},
+                warning=True,
+            )
         difficulty = raw.get("difficulty")
         return {
             "id": ident(raw.get("id")) or new_id(),
@@ -220,7 +227,7 @@ class GameKind:
     ) -> list[Item]:
         """The game's islands, ending with a Boss Battle (§26.8) even when the
         writer wrote none — made from the islands' own pairs."""
-        return with_boss(
+        done = with_boss(
             items,
             world=str(extras.get("world") or ""),
             language=finishing.language,
@@ -228,6 +235,9 @@ class GameKind:
             plays=self.choices(finishing.choices)["plays"],
             most=self.max_count,
         )
+        if len(done) > len(items):
+            note("Boss Battle added from pairs")
+        return done
 
     def points(
         self, answered: Sequence[Answered], *, grade_level: str | None, level: str | None
@@ -293,6 +303,7 @@ class GameKind:
             # Not answered, or not in a shape to read: the maker's own story, if
             # any, and the game's own title — never a game with no name.
             logger.warning("game story for %r could not be written", finishing.topic)
+            note("story written from the title", warning=True)
             reply = _told_as_written(finishing.title, chosen["story"])
         # The opening is picked here, not by the writer, which picks the comic
         # nearly every time: games should not all start alike.

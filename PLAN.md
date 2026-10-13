@@ -1828,6 +1828,18 @@ sees it.
   `make langfuse-down`; Langfuse 4 server, SDK 4.17. Tests clear the keys.
 - Feature doc `docs/features/051-observability.md`.
 
+### 27.5.2 Built (phase 3, 2026-10-13): events and scores
+
+- `note()` and `count()` (`observability/context.py`): an event on the step
+  running now, counted in the trace's `tally`; words only where allowed.
+- Build events: item rejected, duplicate, repeat, failed the check, dropped
+  after repair, fell back to Match Up, story from the title, Boss Battle
+  added, pictures or wrap failed, topic refused. Chat events from the turn's
+  own event stream: guard fired, tool done or failed, answer withdrawn.
+- Build scores (`services/build_trace.build_scores`): outcome, items_kept,
+  passed_first_check, and for games fallback_rate and repeats_dropped.
+- Teacher-edit scores are left for later: they need the editor to report.
+
 ### 27.6 Known limits
 
 - **Chat stays text-free in production** (27.1): its traces show timing,

@@ -20,7 +20,16 @@ from app.observability.base import (
     TraceInfo,
     keeps_text,
 )
-from app.observability.context import Steps, current, finish, note, opened, pseudonym
+from app.observability.context import (
+    Steps,
+    count,
+    current,
+    finish,
+    note,
+    opened,
+    pseudonym,
+    score,
+)
 from app.observability.langfuse_tracer import _Observed
 from app.observability.registry import _environment, build_tracer
 from app.providers.base import (
@@ -42,8 +51,14 @@ from app.providers.base import (
 )
 from app.providers.traced import TracedProvider
 from app.services import live_turns as live_turns_module
-from app.services.events import DoneEvent, StartEvent
-from app.services.generation_service import _build_trace
+from app.services.build_trace import build_scores, build_trace_info
+from app.services.events import (
+    DoneEvent,
+    GuardEventPayload,
+    RetractEvent,
+    StartEvent,
+    ToolEvent,
+)
 from app.services.live_turns import LiveTurns
 
 SECRET = "my child Aisyah is struggling"
@@ -56,6 +71,7 @@ class FakeObservation:
         self.fields = fields
         self.children: list[FakeObservation] = []
         self.events: list[tuple[str, Any, bool]] = []
+        self.scores: list[tuple[str, float | str]] = []
         self.ended: dict[str, Any] | None = None
 
     def span(self, name: str, *, metadata: Mapping[str, Any] | None = None) -> FakeObservation:
@@ -74,6 +90,9 @@ class FakeObservation:
         self, name: str, *, metadata: Mapping[str, Any] | None = None, warning: bool = False
     ) -> None:
         self.events.append((name, metadata, warning))
+
+    def score(self, name: str, value: float | str, *, comment: str | None = None) -> None:
+        self.scores.append((name, value))
 
     def end(self, **fields: Any) -> None:
         if self.ended is None:
@@ -386,13 +405,13 @@ def build_request() -> GenerationRequest:
 
 def test_a_builds_trace_carries_its_topic_only_when_words_may_be_kept() -> None:
     set_id, owner = uuid4(), uuid4()
-    kept = _build_trace(set_id, build_request(), owner, Content.BUILDS)
+    kept = build_trace_info(set_id, build_request(), owner, Content.BUILDS)
     assert (kept.name, kept.kind, kept.session) == ("build game", Kind.BUILD, str(set_id))
     assert kept.user == pseudonym(owner)
     assert kept.metadata["topic"] == "Food chains"
     assert kept.metadata["choices"] == {"story": "Our class trip to Taman Negara"}
     assert kept.input is not None and kept.input["topic"] == "Food chains"
-    hidden = _build_trace(set_id, build_request(), owner, Content.NONE)
+    hidden = build_trace_info(set_id, build_request(), owner, Content.NONE)
     assert "topic" not in hidden.metadata and "choices" not in hidden.metadata
     assert hidden.input is None
     assert hidden.metadata["grade"] == "year_4"
@@ -471,3 +490,133 @@ def test_a_trace_started_inside_another_carries_none_of_its_attributes() -> None
             assert "quiz" in inside and "s1" in inside
             assert "teacher" not in inside and "c1" not in inside
         assert "teacher" in repr(dict(otel_context.get_current()))
+
+
+# --- events and scores (§27, phase 3) ------------------------------------------
+
+
+def test_an_event_is_counted_and_keeps_its_words_only_where_allowed() -> None:
+    cases = ((Content.ALL, {"items": 1, "island": "Plants"}), (Content.NONE, {"items": 1}))
+    for content, shown in cases:
+        tracer = FakeTracer(content)
+        with opened(tracer, TraceInfo(name="build game", kind=Kind.BUILD)) as scope:
+            note("dropped as a repeat", metadata={"items": 1}, words={"island": "Plants"})
+            note("dropped as a repeat")
+            count("items drafted", 6)
+        assert scope is not None
+        assert tracer.roots[0].events[0] == ("dropped as a repeat", shown, False)
+        assert scope.tally == {"dropped as a repeat": 2, "items drafted": 6}
+
+
+def test_events_outside_a_trace_go_nowhere() -> None:
+    note("item rejected", warning=True)
+    count("items drafted")
+    score(None, "outcome", "done")
+    assert current() is None
+
+
+def test_a_steps_events_count_toward_the_whole_trace() -> None:
+    tracer = FakeTracer()
+    with opened(tracer, TraceInfo(name="build quiz", kind=Kind.BUILD)) as scope:
+        steps = Steps(scope)
+        steps.see("write", "running")
+        note("failed the check", warning=True)
+        steps.see("write", "done")
+        score(scope, "outcome", "done")
+    assert scope is not None and scope.tally["failed the check"] == 1
+    assert tracer.roots[0].children[0].events == [("failed the check", None, True)]
+    assert tracer.roots[0].scores == [("outcome", "done")]
+
+
+def test_an_island_that_falls_back_to_match_up_says_so_in_its_trace() -> None:
+    from app.learning.game import GameKind
+    from tests.test_game_kind import SKILLS, SORT, raw_island
+
+    tracer = FakeTracer(Content.BUILDS)
+    broken = {**SORT, "baskets": SORT["baskets"][:1]}
+    with opened(tracer, TraceInfo(name="build game", kind=Kind.BUILD)):
+        item = GameKind().normalise(raw_island(sort=broken), skills=SKILLS, source_ids={"s1"})
+    assert item is not None and item["play"] == "match"
+    name, metadata, warning = only_event(tracer.roots[0])
+    assert (name, warning) == ("fell back to Match Up", True)
+    assert metadata["wanted"] == "sort" and metadata["island"].startswith("Plants take")
+
+
+def only_event(observation: FakeObservation) -> tuple[str, Any, bool]:
+    assert len(observation.events) == 1
+    return observation.events[0]
+
+
+def test_a_finished_game_is_scored_from_what_its_trace_counted() -> None:
+    ending = {"type": "done", "count": 5, "requested": 6}
+    tally = {
+        "items drafted": 8,
+        "items failed the check": 2,
+        "fell back to Match Up": 2,
+        "dropped as a repeat": 1,
+    }
+    assert build_scores(ending, tally, "game") == [
+        ("outcome", "done"),
+        ("items_kept", 0.833),
+        ("passed_first_check", 0.75),
+        ("fallback_rate", 0.25),
+        ("repeats_dropped", 1.0),
+    ]
+    assert build_scores(ending, {}, "quiz") == [("outcome", "done"), ("items_kept", 0.833)]
+
+
+@pytest.mark.parametrize("ending", [{"type": "refused"}, {"type": "failed", "message": "x"}, {}])
+def test_a_build_that_did_not_finish_is_scored_by_how_it_ended(ending: dict) -> None:
+    assert build_scores(ending, {"items drafted": 3}, "game") == [
+        ("outcome", ending.get("type", "failed"))
+    ]
+
+
+async def test_a_chat_turn_notes_its_guards_tools_and_withdrawn_answers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tracer = FakeTracer(Content.BUILDS)
+    monkeypatch.setattr(live_turns_module, "get_tracer", lambda: tracer)
+
+    async def turn() -> AsyncIterator[Any]:
+        yield StartEvent(
+            conversation_id=uuid4(), user_message_id=uuid4(), assistant_message_id=uuid4(), title=""
+        )
+        yield GuardEventPayload(
+            source="web", severity="high", rules=("ignore_previous",), evidence="..."
+        )
+        yield ToolEvent(tool="web_search", status="running", label="Searching")
+        yield ToolEvent(tool="web_search", status="done", label="Searched")
+        yield ToolEvent(tool="read_page", status="failed", label="Could not read")
+        yield RetractEvent(text="Let's talk to a trusted adult.")
+        yield DoneEvent(finish_reason=FinishReason.STOP)
+
+    running = LiveTurns().begin(user_id=uuid4(), source=turn())
+    assert running.task is not None
+    await asyncio.wait_for(running.task, 5)
+    events = tracer.roots[0].events
+    assert [(name, warning) for name, _, warning in events] == [
+        ("guard fired", True),
+        ("tool done", False),
+        ("tool failed", True),
+        ("answer withdrawn", True),
+    ]
+    assert events[0][1] == {"source": "web", "severity": "high", "rules": ("ignore_previous",)}
+
+
+def test_a_langfuse_score_is_a_number_or_a_label_on_the_trace() -> None:
+    class Inner:
+        def __init__(self) -> None:
+            self.scored: list[dict[str, Any]] = []
+
+        def score_trace(self, **fields: Any) -> None:
+            self.scored.append(fields)
+
+    inner = Inner()
+    observed = _Observed(inner)
+    observed.score("outcome", "done")
+    observed.score("items_kept", 0.8, comment="4 of 5")
+    assert [(s["name"], s["value"], s["data_type"]) for s in inner.scored] == [
+        ("outcome", "done", "CATEGORICAL"),
+        ("items_kept", 0.8, "NUMERIC"),
+    ]

@@ -29,10 +29,18 @@ from uuid import UUID
 
 from app.core.errors import MentoraError
 from app.observability.base import Kind, TraceInfo
-from app.observability.context import Scope, finish, opened, pseudonym
+from app.observability.context import Scope, finish, note, opened, pseudonym
 from app.observability.registry import get_tracer
 from app.providers.base import FinishReason
-from app.services.events import ChatEvent, DoneEvent, ErrorEvent, StartEvent
+from app.services.events import (
+    ChatEvent,
+    DoneEvent,
+    ErrorEvent,
+    GuardEventPayload,
+    RetractEvent,
+    StartEvent,
+    ToolEvent,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -195,6 +203,15 @@ class _TurnTrace:
             self._scope = self._stack.enter_context(opened(get_tracer(), info))
         elif isinstance(event, ErrorEvent):
             self._error = event.message
+        elif isinstance(event, GuardEventPayload):
+            guard = {"source": event.source, "severity": event.severity, "rules": event.rules}
+            note("guard fired", metadata=guard, warning=True)
+        elif isinstance(event, ToolEvent) and event.status != "running":
+            failed = event.status == "failed"
+            note(f"tool {event.status}", metadata={"tool": event.tool}, warning=failed)
+        elif isinstance(event, RetractEvent):
+            # The output screen took back an answer unsafe for a student.
+            note("answer withdrawn", warning=True)
         elif isinstance(event, DoneEvent):
             output = {"finish_reason": str(event.finish_reason)}
             finish(self._scope, output=output, error=self._error)

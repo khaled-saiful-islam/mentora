@@ -79,6 +79,15 @@ class _Observed:
         )
 
     @_quiet(None)
+    def score(self, name: str, value: float | str, *, comment: str | None = None) -> None:
+        self._inner.score_trace(
+            name=name,
+            value=value,
+            data_type="CATEGORICAL" if isinstance(value, str) else "NUMERIC",
+            comment=comment,
+        )
+
+    @_quiet(None)
     def end(
         self,
         *,

@@ -40,10 +40,10 @@ from app.learning.pitch import is_level
 from app.learning.registry import switched_on
 from app.learning.research import Source
 from app.moderation.base import Flag
-from app.observability.base import Content, Kind, TraceInfo, keeps_text
-from app.observability.context import Steps, finish, opened, pseudonym
+from app.observability.context import Steps, finish, note, opened, score
 from app.observability.registry import get_tracer
 from app.policies.capabilities import capabilities_for
+from app.services.build_trace import build_scores, build_trace_info
 from app.services.learning_set_service import LearningSetService
 from app.services.material_service import MaterialService
 from app.services.moderation_service import ModerationService, Where
@@ -163,14 +163,17 @@ class GenerationService:
         how it ended — made, refused or failed — on the trace itself."""
         tracer = get_tracer()
         meter = Meter()
-        with opened(tracer, _build_trace(set_id, request, owner_id, tracer.content)) as scope:
+        info = build_trace_info(set_id, request, owner_id, tracer.content)
+        with opened(tracer, info) as scope:
             steps = Steps(scope)
             async for event in self._build(set_id, request, meter, steps):
-                if event.get("type") in ENDINGS:
-                    failed = event["type"] == "failed"
-                    steps.close(error=event.get("message") if failed else None)
+                if event.get("type") in ENDINGS and scope is not None:
+                    error = event.get("message") if event["type"] == "failed" else None
+                    steps.close(error=error)
+                    for name, value in build_scores(event, scope.tally, request.kind):
+                        score(scope, name, value)
                     outcome = {**event, "model_calls": meter.calls, "tokens": meter.by_stage}
-                    finish(scope, output=outcome, error=event.get("message") if failed else None)
+                    finish(scope, output=outcome, error=error)
                 yield event
 
     async def _build(
@@ -210,6 +213,7 @@ class GenerationService:
                 "grounded": update.result.grounded,
             }
         if isinstance(update, Refused):
+            note("topic refused", metadata={"rule": update.rule, "category": update.category})
             await self._keep_status(set_id, "refused", update.message)
             await self._log_refusal(set_id, update)
             return {"type": "refused", "message": update.message}
@@ -431,38 +435,3 @@ def _skills(version: LearningSetVersion) -> tuple[Skill, ...]:
 
 def _sources(version: LearningSetVersion) -> tuple[Source, ...]:
     return tuple(Source(**s) for s in version.sources)
-
-
-def _build_trace(
-    set_id: UUID, request: GenerationRequest, owner_id: UUID | None, content: Content
-) -> TraceInfo:
-    """What a build's trace says it is. The topic only where the trace may
-    keep a build's words (`LANGFUSE_CONTENT`)."""
-    metadata: dict[str, Any] = {
-        "learning_kind": request.kind,
-        "grade": request.grade_level,
-        "language": request.language,
-        "count": request.count,
-        "level": request.level,
-        "grounded_in_materials": bool(request.sources),
-    }
-    asked = None
-    if keeps_text(content, Kind.BUILD):
-        # A game's choices can carry the teacher's own story line.
-        asked = {
-            "topic": request.topic,
-            "subject": request.subject,
-            "grade": request.grade_level,
-            "count": request.count,
-            "choices": dict(request.choices),
-        }
-        metadata.update(subject=request.subject, topic=request.topic, choices=asked["choices"])
-    return TraceInfo(
-        name=f"build {request.kind}",
-        kind=Kind.BUILD,
-        user=pseudonym(owner_id),
-        session=str(set_id),
-        tags=(request.kind,),
-        metadata=metadata,
-        input=asked,
-    )

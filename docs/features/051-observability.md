@@ -38,7 +38,39 @@ What you will see:
 - A build's trace ends with how it went — `done` with the items kept out of
   those asked for, `refused`, or `failed` and why — and the tokens each stage
   spent.
-- A reply that was not JSON shows as a warning on the stage that got it.
+- **Events** mark what Mentora itself decided, on the step where it
+  happened (yellow when it is worth a look) — see below.
+- **Scores** sit on each build's trace, to filter and chart by: Tracing →
+  filter by score, or **Scores** in the menu.
+
+### Events
+
+| Event | Where | Means |
+|---|---|---|
+| `reply was not JSON` ⚠ | any build stage | the model's reply could not be read; asked once more |
+| `item rejected` ⚠ | write | an item broke its kind's rules and was thrown away |
+| `dropped as a duplicate`, `dropped as a repeat` | write | the same item again; a game island teaching an idea twice |
+| `failed the check` ⚠ | write | the fact check flagged items, and why |
+| `dropped after repair` | write | items still wrong after one repair |
+| `fell back to Match Up` ⚠ | write | a game island's round broke its template's rules |
+| `story written from the title` ⚠ | finish | the game's story could not be written |
+| `Boss Battle added from pairs` | finish | the writer wrote no boss; Mentora made one |
+| `pictures failed`, `wrap failed` ⚠ | finish | half the finishing failed; the set is whole without it |
+| `topic refused` | check | which rule said no |
+| `guard fired` ⚠, `tool done`, `tool failed` ⚠, `answer withdrawn` ⚠ | chat turn | a guard on a search result; a tool's outcome; the student output screen took an answer back |
+
+An event's words (an island's text, the check's complaint) are kept only
+where the trace may keep words (`LANGFUSE_CONTENT`); its counts always.
+
+### Scores (builds)
+
+| Score | Type | |
+|---|---|---|
+| `outcome` | label | `done`, `refused` or `failed` |
+| `items_kept` | 0–1 | items made out of those asked for |
+| `passed_first_check` | 0–1 | share of written items the fact check passed first time |
+| `fallback_rate` | 0–1 | games: share of islands that fell back to Match Up |
+| `repeats_dropped` | number | games: islands dropped for teaching an idea twice |
 
 ## How it works
 
@@ -95,18 +127,23 @@ Tests never send traces: `conftest.py` clears the keys.
 - **A new kind of work as its own trace:** wrap where it is run in
   `opened(get_tracer(), TraceInfo(name=..., kind=...))`. `Kind.BUILD` keeps
   words under `builds`; `Kind.CHAT` and `Kind.OTHER` do not.
-- **Something worth seeing:** `note("island dropped as a repeat",
-  metadata={...}, warning=True)` from anywhere inside a trace lands on the
-  step running now.
+- **Something worth seeing:** `note("dropped as a repeat", metadata={...},
+  words={...}, warning=True)` from anywhere inside a trace lands on the step
+  running now and is counted; `count(name, n)` only counts.
+- **A new score:** add it to `services/build_trace.build_scores`, from the
+  build's last event and what its trace counted.
 - **Another backend** (OpenTelemetry, Phoenix, …): implement `Tracer` and
   `Observation` (`observability/base.py`) and return it from
   `observability/registry.build_tracer`.
 
 ## Known limits
 
-- **Only model calls and stages so far.** The events and scores of §27.2
-  (a round that fell back to Match Up, an island dropped as a repeat, items
-  kept as a score) and the evals of §27.3 are the next phases.
+- **No teacher-side score yet.** How much a teacher edited a set, or
+  rewrote it with AI, is the score that says most about quality; it needs
+  the editor to report back, and is not built. Evals (§27.3) are next.
+- **Fallback rate counts islands as written**, before the fact check drops
+  any, so it says how often the writer broke a template, not how many of the
+  final islands are Match Up.
 - **Vision calls are not traced** — the image reader and the picture check
   use their own clients. Nor are speech and web search, which are not
   language-model calls.

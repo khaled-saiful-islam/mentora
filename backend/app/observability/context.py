@@ -13,10 +13,11 @@ from __future__ import annotations
 
 import hashlib
 import logging
+from collections import Counter
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 from uuid import UUID
 
@@ -26,10 +27,15 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True, slots=True)
 class Scope:
-    """Where a model call made now is recorded, and whether its words are."""
+    """Where a model call made now is recorded, and whether its words are.
+
+    `tally` is shared by a trace and all its steps — what happened how often,
+    for the scores a trace ends with. Mutable by design, like `Meter`.
+    """
 
     observation: Observation
     keep_text: bool
+    tally: Counter[str] = field(default_factory=Counter)
 
 
 _scope: ContextVar[Scope | None] = ContextVar("mentora_trace_scope", default=None)
@@ -113,15 +119,39 @@ def finish(
         )
 
 
-def note(name: str, *, metadata: Mapping[str, Any] | None = None, warning: bool = False) -> None:
-    """Something worth seeing, on whatever step is running now."""
+def note(
+    name: str,
+    *,
+    metadata: Mapping[str, Any] | None = None,
+    words: Mapping[str, Any] | None = None,
+    warning: bool = False,
+) -> None:
+    """Something worth seeing, on whatever step is running now, and counted.
+    `words` — an island's text, a check's complaint — only where the trace may
+    keep them; `metadata` always."""
+    scope = _scope.get()
+    if scope is None:
+        return
+    scope.tally[name] += 1
+    shown = {**(metadata or {}), **(words or {})} if scope.keep_text else dict(metadata or {})
+    quietly(
+        "event",
+        lambda: scope.observation.event(name, metadata=shown or None, warning=warning),
+        None,
+    )
+
+
+def count(name: str, amount: int = 1) -> None:
+    """Counted for the trace's scores, with nothing to show on its own."""
     scope = _scope.get()
     if scope is not None:
-        quietly(
-            "event",
-            lambda: scope.observation.event(name, metadata=metadata, warning=warning),
-            None,
-        )
+        scope.tally[name] += amount
+
+
+def score(scope: Scope | None, name: str, value: float | str, comment: str | None = None) -> None:
+    """A number or a label on the whole trace, to filter and chart by."""
+    if scope is not None:
+        quietly("score", lambda: scope.observation.score(name, value, comment=comment), None)
 
 
 class Steps:
@@ -140,7 +170,7 @@ class Steps:
             self.close()
             root = self._root
             step = quietly("step", lambda: root.observation.span(key), NULL)
-            self._open = Scope(step, root.keep_text)
+            self._open = Scope(step, root.keep_text, root.tally)
             _scope.set(self._open)
         elif self._open is not None:
             self.close(output=detail or None)

@@ -36,6 +36,7 @@ from app.learning.picture_check import (
 from app.learning.research import Researcher, Source, listing
 from app.moderation.base import Decision
 from app.moderation.rules import InputRules
+from app.observability.context import count, note
 
 logger = logging.getLogger(__name__)
 
@@ -282,6 +283,7 @@ class LearningGenerator:
             if isinstance(outcome, BaseException):
                 # The set is whole without it; the log says which half is missing.
                 logger.warning("finishing %s: %s failed: %r", plan.topic, part, outcome)
+                note(f"{part} failed", metadata={"error": repr(outcome)[:300]}, warning=True)
         done = pictured if isinstance(pictured, list) else items
         wrapped = extras if isinstance(extras, dict) else {}
         # A kind may round its items off once it knows its extras — a game
@@ -407,15 +409,28 @@ class LearningGenerator:
     ) -> list[Item]:
         if not items:
             return []
+        count("items drafted", len(items))
         failed = await self._problems(plan, sources, items, request.level)
         passed = [i for i in items if i["id"] not in failed]
         if not failed:
             return passed
+        count("items failed the check", len(failed))
+        note(
+            "failed the check",
+            metadata={"items": len(failed)},
+            words={"problems": failed},
+            warning=True,
+        )
         repaired = await self._repair(
             request, plan, skills, sources, [i for i in items if i["id"] in failed], failed
         )
         still = await self._problems(plan, sources, repaired, request.level) if repaired else {}
-        return passed + [i for i in repaired if i["id"] not in still]
+        fixed = [i for i in repaired if i["id"] not in still]
+        if len(fixed) < len(failed):
+            lost = len(failed) - len(fixed)
+            count("items dropped after repair", lost)
+            note("dropped after repair", metadata={"items": lost}, words={"problems": still})
+        return passed + fixed
 
     async def _problems(
         self, plan: _Plan, sources: list[Source], items: list[Item], level: str | None = None
@@ -558,11 +573,17 @@ class LearningGenerator:
                 if isinstance(entry, dict)
                 else None
             )
-            if item is None or self._kind.summary(item).lower() in seen:
+            if item is None:
+                note("item rejected", words={"item": str(entry)[:600]}, warning=True)
+                continue
+            summary = self._kind.summary(item)
+            if summary.lower() in seen:
+                note("dropped as a duplicate", words={"item": summary})
                 continue
             if self._repeats(item, [*written, *kept]):
+                note("dropped as a repeat", words={"item": summary})
                 continue
-            seen.add(self._kind.summary(item).lower())
+            seen.add(summary.lower())
             kept.append(item)
         return kept
 
