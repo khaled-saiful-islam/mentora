@@ -57,6 +57,9 @@ _PLAY_RULES = {
     "is biased, which explanation fits the data, whose claim breaks a rule",
     "escape": "`escape` (from Year 4) when the idea is used to work out answers — a "
     "calculation, a word, a fact that opens a lock",
+    "say": "`say` (Year 1–3 ONLY, English or Malay) when the idea is new words or a short "
+    "sentence worth reading aloud — the names of the parts of a plant, 'Ikan bernafas "
+    "dengan insang'",
     "boss": "`boss` (from Year 3) ONLY as the LAST island: a battle that revises every "
     "other island's idea",
 }
@@ -79,6 +82,7 @@ _SHAPES = {
     '"answer": "<a suspect\'s name>", "key": "<the title of the clue that proves it>"}',
     "escape": '"escape": {"doors": [{"puzzle": "...", "icon": "...", '
     '"kind": "number|word|choice", "answer": "...", "options": ["..."], "why": "..."}]}',
+    "say": '"say": {"lines": [{"text": "...", "icon": "...", "why": "..."}]}',
     "boss": '"boss": {"name": "...", "icon": "...", "questions": [{"ask": "...", '
     '"options": ["...", "...", "..."], "answer": 0, "why": "..."}]}',
 }
@@ -102,6 +106,9 @@ _RULES = {
     "escape": "2 to 4 doors, each a puzzle whose answer is the code: a `number` (digits, "
     "a decimal or a fraction like 3/4), one `word` (letters only, at most 12), or a "
     "`choice` of 3 or 4 `options`. Exact answers only.",
+    "say": "2 to 4 lines for the child to read aloud: each one word or a short sentence of "
+    "at most 8 easy words, spelt exactly as said, with no digits (write 'tiga', not '3'). "
+    "`why` says what the line means.",
     "boss": "4 to 8 questions that revise the islands before it, each with 3 or 4 "
     "`options`, `answer` the right one's index from 0.",
 }
@@ -170,7 +177,8 @@ CHECK_FOCUS = (
     "`match` (pairs), `lab` (sliders whose `formula` gives an output to bring into a "
     "range), `mistake` (a worked answer with wrong lines and their fixes), `case` (clues "
     "and suspects, one answer and the clue that proves it), `escape` (puzzles whose "
-    "answers are codes), `boss` (revision questions) — with `pairs` as well. An item is "
+    "answers are codes), `say` (lines to read aloud), `boss` (revision questions) — with "
+    "`pairs` as well. An item is "
     "ok when every fact in it is true and supported by the sources, every piece is where "
     "it truly belongs (a card in its basket, steps in order, a fix that is right and "
     "decoys that are wrong, the one answer and its proving clue, each code correct, a "

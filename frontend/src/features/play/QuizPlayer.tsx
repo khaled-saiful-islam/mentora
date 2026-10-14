@@ -11,7 +11,7 @@
  * clean look for Forms.
  */
 import { AnimatePresence, motion } from 'motion/react'
-import { ArrowRight, Check, Lightbulb, Sparkle, X } from '@phosphor-icons/react'
+import { ArrowRight, ChatCircleDots, Check, Lightbulb, Sparkle, X } from '@phosphor-icons/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button, Chip } from '@/components/ui'
 import { useToast } from '@/components/ui/Toast'
@@ -27,6 +27,7 @@ import { useAnswerCoach, useCoach } from './coach'
 import { PlayHeader } from './PlayChrome'
 import { PlayBackdrop, PointsBurst, ReadAloudButton } from './PlayFun'
 import { MARKERS, Options } from './QuizOptions'
+import { ExplainWhy, useWhy } from './ExplainWhy'
 import { SecondChance } from './SecondChance'
 import { usePlayVoice, type Line, type PlayVoice } from './usePlayVoice'
 import type { PlayerProps } from './players'
@@ -44,6 +45,8 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
   const [burst, setBurst] = useState(0)
   // "Let's look at it together" is open (§28.3.7).
   const [helping, setHelping] = useState(false)
+  // "Tell me why" is open (§28.3.5).
+  const [explaining, setExplaining] = useState(false)
   const { toast } = useToast()
   const sound = useSound()
   const calm = useCalmMotion()
@@ -61,6 +64,7 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
     shownAt.current = Date.now()
     voice.stop()
     setHelping(false)
+    setExplaining(false)
     // A new question starts quiet; `voice.stop` is stable.
   }, [index])
 
@@ -111,8 +115,11 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
   }, [index, items.length, onFinished])
 
   // The second chance's own question takes the keys while it is open.
-  useKeys(helping ? 0 : (item?.options.length ?? 0), (n) => void choose(n), answer && instant && !helping ? next : null)
+  const sheetOpen = helping || explaining
+  useKeys(sheetOpen ? 0 : (item?.options.length ?? 0), (n) => void choose(n), answer && instant && !sheetOpen ? next : null)
   const closeHelp = useCallback(() => setHelping(false), [])
+  const closeWhy = useCallback(() => setExplaining(false), [])
+  const why = useWhy(attempt, played)
 
   if (!item) return null
   return (
@@ -150,10 +157,23 @@ export function QuizPlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps) 
             burst={look.points && answer.correct === true && burst > 0}
             last={resumeAt(items, played) >= items.length}
             onHelp={attempt.second_chance && answer.correct === false ? () => setHelping(true) : null}
+            onWhy={why.offer(answer) ? () => setExplaining(true) : null}
             onNext={next}
           />
         )}
       </AnimatePresence>
+      {explaining && answer && (
+        <ExplainWhy
+          key={item.id}
+          item={item}
+          answerText={correctAnswer(item, answer)}
+          last={resumeAt(items, played) >= items.length}
+          judge={(words) => why.judge(item.id, words)}
+          onJudged={why.used}
+          onClose={closeWhy}
+          onNext={next}
+        />
+      )}
       <AnimatePresence>
         {helping && answer && (
           <SecondChance
@@ -228,6 +248,7 @@ function Verdict({
   burst,
   last,
   onHelp,
+  onWhy,
   onNext,
 }: {
   item: QuizItem
@@ -238,6 +259,8 @@ function Verdict({
   last: boolean
   /** A second chance, after a wrong answer where the quiz offers one. */
   onHelp: (() => void) | null
+  /** "Tell me why", sometimes, after a right one (Form 1–5). */
+  onWhy: (() => void) | null
   onNext: () => void
 }) {
   const right = answer.correct === true
@@ -254,7 +277,7 @@ function Verdict({
       className={cn('fixed inset-x-0 bottom-0 z-40 border-t-4 pb-[env(safe-area-inset-bottom)]', right ? 'border-correct bg-correct-soft' : 'border-wrong bg-wrong-soft')}
       aria-live="polite"
     >
-      <div className={cn('relative mx-auto flex w-full max-w-3xl flex-col gap-3 py-4 pr-24 pl-4 md:pr-40 xl:pr-4', !onHelp && 'sm:flex-row sm:items-center')}>
+      <div className={cn('relative mx-auto flex w-full max-w-3xl flex-col gap-3 py-4 pr-24 pl-4 md:pr-40 xl:pr-4', !onHelp && !onWhy && 'sm:flex-row sm:items-center')}>
         <PointsBurst amount={POINTS_EACH} show={burst} />
         <div className="flex min-w-0 flex-1 items-start gap-3">
           <motion.span
@@ -280,7 +303,13 @@ function Verdict({
             )}
           </div>
         </div>
-        <div className={cn('flex shrink-0 flex-wrap gap-2', onHelp && 'sm:justify-end')}>
+        <div className={cn('flex shrink-0 flex-wrap gap-2', (onHelp || onWhy) && 'sm:justify-end')}>
+          {onWhy && (
+            <Button size="lg" variant="secondary" onClick={onWhy}>
+              <ChatCircleDots weight="fill" className="size-5" />
+              Tell me why
+            </Button>
+          )}
           {onHelp && (
             <Button size="lg" variant="secondary" onClick={onHelp}>
               <Sparkle weight="fill" className="size-5" />

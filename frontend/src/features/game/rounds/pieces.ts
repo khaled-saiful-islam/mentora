@@ -9,7 +9,8 @@
  * - a Mistake's lines;
  * - a Case's suspects, then its clues;
  * - an Escape Room's doors;
- * - a Boss Battle's questions.
+ * - a Boss Battle's questions;
+ * - a Say It's lines.
  *
  * The voice is asked for a piece by its number, never by its words.
  */
@@ -48,6 +49,8 @@ export function piecesOf(island: Readable): Piece[] {
       return said(island.escape?.doors ?? [], (d) => d.puzzle)
     case 'boss':
       return said(island.boss?.questions ?? [], (q) => q.ask)
+    case 'say':
+      return island.say?.lines ?? []
   }
 }
 

@@ -7,7 +7,7 @@
 import type { Sound } from '@/lib/sound'
 
 /** The templates a round can be played in. */
-export type Play = 'sort' | 'order' | 'match' | 'lab' | 'mistake' | 'case' | 'escape' | 'boss'
+export type Play = 'sort' | 'order' | 'match' | 'lab' | 'mistake' | 'case' | 'escape' | 'boss' | 'say'
 
 /** Who it is for (§26.3): Year 1–3, Year 4–6, or Form 1 and up. */
 export type Band = 'early' | 'middle' | 'secondary'
@@ -155,6 +155,19 @@ export interface EscapeContent {
   doors: EscapeDoor[]
 }
 
+/** A line of a Say It (§28.3.5): a word or a short sentence to read aloud. */
+export interface SayLine {
+  id: string
+  text: string
+  icon: string
+  /** What it means. */
+  why: string
+}
+
+export interface SayContent {
+  lines: SayLine[]
+}
+
 export interface BossQuestion {
   id: string
   ask: string
@@ -179,6 +192,7 @@ export interface Contents {
   case: CaseContent
   escape: EscapeContent
   boss: BossContent
+  say: SayContent
 }
 
 /** One move the child made: which piece, and whether it was right. A

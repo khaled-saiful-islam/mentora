@@ -29,7 +29,7 @@ from typing import Any
 from app.learning import game_prompts
 from app.learning.base import Graded, Item, Skill, clean_text, new_id, pick_skill, pick_sources
 from app.learning.enrich import Finishing, Pictures
-from app.learning.game_finish import STARTS, names, opening, same_idea, with_boss
+from app.learning.game_finish import STARTS, names, opening, same_idea, say_for_young, with_boss
 from app.learning.game_rounds import PLAY_LABELS, PLAYS, ident, rounds_of
 from app.learning.model import GenerationUnavailable, JsonModel
 from app.learning.quiz import BEST_POINTS, DIFFICULTIES
@@ -227,11 +227,13 @@ class GameKind:
     ) -> list[Item]:
         """The game's islands, ending with a Boss Battle (§26.8) even when the
         writer wrote none — made from the islands' own pairs."""
+        grade = finishing.grade.code if finishing.grade else None
+        items = say_for_young(items, grade=grade, language=finishing.language, task=FALLBACK_TASK)
         done = with_boss(
             items,
             world=str(extras.get("world") or ""),
             language=finishing.language,
-            grade=finishing.grade.code if finishing.grade else None,
+            grade=grade,
             plays=self.choices(finishing.choices)["plays"],
             most=self.max_count,
         )

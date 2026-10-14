@@ -2173,6 +2173,21 @@ exactly those students, as a group.
   - The child's words pass the student safety gate first.
   - Capped per day and traced.
 
+#### 28.3.5.1 Built (phase 7, 2026-10-14)
+
+- **Spike:** synthesized English and Malay sentences were heard word for
+  word; a lone Malay word was not ("rama-rama" → "ramo ramo"). So Say It
+  reads lines, with forgiving matching. Children's voices: still to try.
+- **Drag everywhere:** Line Up and Detective Case drag too; a magnet lights
+  the target, and a drop knocks and buzzes (`rounds/drag.ts`).
+- **Say It** (Year 1–3, en/ms): a new template, from the writer to the
+  editor; heard at `POST …/items/{item}/hear`, only the words kept on the
+  attempt; a missed word said again in syllables and in the tutor's voice.
+- **Explain why** (Form 1–5): every third right answer from the second,
+  screened, judged in one line, 5 a day (`why_given`, migration
+  `8d2f61a0b4c3`).
+- See `docs/features/058-hands-and-voice.md`.
+
 #### 28.3.6 Class Battle
 
 The expert's favourite mechanic becomes live play on the class screen:

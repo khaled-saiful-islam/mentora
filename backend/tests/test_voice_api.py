@@ -10,7 +10,7 @@ class Ears:
     def __init__(self, text: str = "  why is the  sky blue  ", fail: bool = False) -> None:
         self.text, self.fail, self.heard = text, fail, 0
 
-    async def transcribe(self, audio, *, filename, mime):
+    async def transcribe(self, audio, *, filename, mime, language=None):
         self.heard += 1
         if self.fail:
             raise SpeechError("That couldn't be heard. Try again, or type it.")

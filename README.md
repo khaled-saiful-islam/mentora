@@ -202,6 +202,15 @@ guide's Boss Battle and a short quiz. No extra AI calls
 
 ![The end of a study guide: the journey with every part lit, and the Boss Battle and quiz unlocked](docs/screenshots/guide-journey.png)
 
+### Hands and voice
+
+Games can be dragged everywhere, with a magnet that pulls each piece in and
+a knock when it lands. **Say It** (Year 1–3, English and Malay) has children
+read lines aloud and lights each word as it is heard. **Explain why** (Form
+1–5) sometimes asks "Tell me why" after a right answer and answers the
+reasoning in a line
+([`docs/features/058-hands-and-voice.md`](docs/features/058-hands-and-voice.md)).
+
 ### Help at home
 
 A parent taps a skill their child finds hard and gets what it means in

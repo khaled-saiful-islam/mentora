@@ -8,11 +8,11 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { pop, spring } from '@/motion'
+import { MAGNET, useMagnet, type DragEvent } from './drag'
 import { ReadIt, SHOW_ME_MS, SIZE, useFinish, useLater, useShowMe, useWobble } from './parts'
 import { shuffled, type Shuffled } from './shuffle'
 import type { Band, Basket, RoundProps, SortCard, SortContent } from './types'
 
-type DragEnd = MouseEvent | TouchEvent | PointerEvent
 // The baskets side by side, centred, as many across as there are — four go
 // two by two on a phone.
 const BASKET_GRID: Record<number, string> = {
@@ -34,6 +34,7 @@ export function SortItOut({ content, band, calm, say, sound, showMe, onMove, onD
   const [showing, setShowing] = useState<string | null>(null)
   const [scope, shake] = useWobble(calm)
   const later = useLater()
+  const magnet = useMagnet('basket', sound)
   const current = cards.find((card) => !(card.id in placed)) ?? null
   const count = Object.keys(placed).length
   useFinish(cards.length > 0 && count === cards.length, onDone)
@@ -72,7 +73,21 @@ export function SortItOut({ content, band, calm, say, sound, showMe, onMove, onD
       </p>
       <div className="grid min-h-48 flex-1 place-items-center">
         <AnimatePresence mode="wait">
-          {current && <Face key={current.id} card={current} band={band} calm={calm} showing={showing === current.id} say={say} onDrop={put} />}
+          {current && (
+            <Face
+              key={current.id}
+              card={current}
+              band={band}
+              calm={calm}
+              showing={showing === current.id}
+              say={say}
+              onDrag={magnet.track}
+              onDrop={(event) => {
+                const basket = magnet.drop(event)
+                if (basket) put(basket)
+              }}
+            />
+          )}
         </AnimatePresence>
       </div>
       <div className={cn('mx-auto grid w-full gap-3', BASKET_GRID[content.baskets.length] ?? BASKET_GRID[4])}>
@@ -85,6 +100,7 @@ export function SortItOut({ content, band, calm, say, sound, showMe, onMove, onD
             current={current}
             inside={cards.filter((card) => placed[card.id] === basket.id)}
             pointed={target === basket.id}
+            near={magnet.near === basket.id}
             onPut={() => put(basket.id)}
           />
         ))}
@@ -94,8 +110,8 @@ export function SortItOut({ content, band, calm, say, sound, showMe, onMove, onD
 }
 
 /** The card to sort, big — and draggable onto a basket. */
-function Face({ card, band, calm, showing, say, onDrop }: {
-  card: SortCard; band: Band; calm: boolean; showing: boolean; say: (text: string) => void; onDrop: (basket: string) => void
+function Face({ card, band, calm, showing, say, onDrag, onDrop }: {
+  card: SortCard; band: Band; calm: boolean; showing: boolean; say: (text: string) => void; onDrag: (event: DragEvent) => void; onDrop: (event: DragEvent) => void
 }) {  // fmt: skip
   const size = SIZE[band]
   return (
@@ -103,10 +119,8 @@ function Face({ card, band, calm, showing, say, onDrop }: {
       drag={!showing}
       dragSnapToOrigin
       whileDrag={calm ? undefined : { scale: 1.05, rotate: -2 }}
-      onDragEnd={(event: DragEnd) => {
-        const basket = basketAt(event)
-        if (basket) onDrop(basket)
-      }}
+      onDrag={(event: DragEvent) => onDrag(event)}
+      onDragEnd={(event: DragEvent) => onDrop(event)}
       initial={calm ? false : { opacity: 0, scale: 0.85, y: -16 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={calm ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, scale: 0.4, y: 140 }}
@@ -128,8 +142,8 @@ function Face({ card, band, calm, showing, say, onDrop }: {
   )
 }
 
-function BasketButton({ basket, band, calm, current, inside, pointed, onPut }: {
-  basket: Basket; band: Band; calm: boolean; current: SortCard | null; inside: SortCard[]; pointed: boolean; onPut: () => void
+function BasketButton({ basket, band, calm, current, inside, pointed, near, onPut }: {
+  basket: Basket; band: Band; calm: boolean; current: SortCard | null; inside: SortCard[]; pointed: boolean; near: boolean; onPut: () => void
 }) {  // fmt: skip
   const size = SIZE[band]
   return (
@@ -142,7 +156,8 @@ function BasketButton({ basket, band, calm, current, inside, pointed, onPut }: {
       className={cn(
         'flex min-h-28 min-w-0 flex-col items-center gap-1.5 rounded-3xl border-4 border-dashed bg-surface/90 p-3 text-center transition-colors',
         'hover:border-hover-border hover:bg-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring',
-        pointed ? 'border-primary bg-selected ring-4 ring-primary/40' : 'border-border',
+        near ? MAGNET : pointed ? 'border-primary bg-selected ring-4 ring-primary/40' : 'border-border',
+        'transition-[transform,border-color,background-color]',
       )}
     >
       {basket.icon && <span className={cn(size.icon, 'leading-none')} aria-hidden>{basket.icon}</span>}
@@ -169,15 +184,4 @@ function BasketButton({ basket, band, calm, current, inside, pointed, onPut }: {
       )}
     </button>
   )
-}
-
-/** The basket under the pointer where a drag ended, if any. */
-function basketAt(event: DragEnd): string | null {
-  const point = 'changedTouches' in event ? event.changedTouches[0] : event
-  if (!point || typeof document.elementsFromPoint !== 'function') return null
-  for (const element of document.elementsFromPoint(point.clientX, point.clientY)) {
-    const basket = element.closest<HTMLElement>('[data-basket]')
-    if (basket?.dataset.basket) return basket.dataset.basket
-  }
-  return null
 }

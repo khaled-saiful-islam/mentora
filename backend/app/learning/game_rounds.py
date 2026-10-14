@@ -26,6 +26,7 @@ PLAY_LABELS = {
     "mistake": "Spot the Mistake",
     "case": "Detective Case",
     "escape": "Escape Room",
+    "say": "Say It",
     "boss": "Boss Battle",
 }
 PLAYS = tuple(PLAY_LABELS)
@@ -41,6 +42,7 @@ PIECE_LIMITS = {
     "text": 300,
     "cell": 40,
     "answer": 40,
+    "say": 80,
 }
 # How many of each a round may have, whatever the year: the prompt asks for
 # the year's size (§26.3); these are what a round can lay out at all.
@@ -56,6 +58,9 @@ CASE_ROWS = (6, 4)
 ESCAPE_DOORS = (2, 4)
 CHOICES = (3, 4)
 BOSS_QUESTIONS = (4, 8)
+# Say It (§28.3.5): lines to read aloud, each a word or a short sentence.
+SAY_LINES = (2, 5)
+SAY_WORDS = 8
 
 
 def rounds_of(raw: Mapping[str, Any], why: str) -> dict[str, dict[str, Any]]:
@@ -65,7 +70,7 @@ def rounds_of(raw: Mapping[str, Any], why: str) -> dict[str, dict[str, Any]]:
     match = raw.get("match") if isinstance(raw.get("match"), dict) else {"pairs": raw.get("pairs")}
     readers: dict[str, Callable[[Any, str], dict[str, Any] | None]] = {
         "sort": _sort, "order": _order, "match": _match, "lab": lab,
-        "mistake": _mistake, "case": _case, "escape": _escape, "boss": _boss,
+        "mistake": _mistake, "case": _case, "escape": _escape, "boss": _boss, "say": _say,
     }  # fmt: skip
     found = {
         play: read(match if play == "match" else raw.get(play), why)
@@ -128,6 +133,36 @@ def _match(value: Any, why: str) -> dict[str, Any] | None:
     if len(pairs) < MATCH_PAIRS[0]:
         return None
     return {"pairs": numbered(pairs, "p")}
+
+
+def _say(value: Any, why: str) -> dict[str, Any] | None:
+    """Lines to read aloud: a word or a short sentence each, in words only —
+    a digit is read many ways, so it could never be heard right."""
+    if not isinstance(value, dict):
+        return None
+    lines = []
+    for raw in dicts(value.get("lines")):
+        text = clean_text(raw.get("text"), PIECE_LIMITS["say"])
+        if not text or len(text.split()) > SAY_WORDS or any(c.isdigit() for c in text):
+            continue
+        lines.append(
+            {"id": ident(raw.get("id")), "text": text, "icon": icon(raw), "why": _why(raw, why)}
+        )
+    lines = distinct(lines, "text")[: SAY_LINES[1]]
+    if len(lines) < SAY_LINES[0]:
+        return None
+    return {"lines": numbered(lines, "l")}
+
+
+def say_words(item: Mapping[str, Any]) -> list[str]:
+    """A Say It's words in order, line after line, as the player counts them
+    to ask the voice for one: letters only, so "padi," is "padi"."""
+    content = item.get("say") if isinstance(item.get("say"), dict) else {}
+    words = (w for line in dicts(content.get("lines")) for w in str(line.get("text", "")).split())
+    return [cleaned for w in words if (cleaned := _WORD_EDGES.sub("", w))]
+
+
+_WORD_EDGES = re.compile(r"^[^\w]+|[^\w]+$")
 
 
 # --- Spot the Mistake ---------------------------------------------------------------
@@ -317,7 +352,7 @@ def piece_names(item: Mapping[str, Any]) -> dict[str, str]:
         suspects = {s["id"]: f"Picked {s['name']}" for s in dicts(content.get("suspects"))}
         return suspects | {c["id"]: f"Clue: {c['title']}" for c in dicts(content.get("clues"))}
     named = {"lab": ("goals", "text"), "mistake": ("lines", "text"), "escape": ("doors", "puzzle"),
-             "boss": ("questions", "ask")}  # fmt: skip
+             "boss": ("questions", "ask"), "say": ("lines", "text")}  # fmt: skip
     if play in named:
         key, field = named[play]
         return {p["id"]: str(p[field]) for p in dicts(content.get(key))}
@@ -348,6 +383,7 @@ def pieces_of(item: Mapping[str, Any]) -> list[dict[str, Any]]:
         "case": lambda: [*said(listed.get("suspects", []), "claim"), *said(clues, "text")],
         "escape": lambda: said(listed.get("doors", []), "puzzle"),
         "boss": lambda: said(listed.get("questions", []), "ask"),
+        "say": lambda: listed.get("lines", []),
     }
     return by_play[play]() if play in by_play else []
 

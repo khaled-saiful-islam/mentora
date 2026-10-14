@@ -38,8 +38,10 @@ export type Spoken =
    *  (`piecesOf` in `features/game/rounds`). */
   | { item: string; part: 'option' | 'piece' | 'why'; n: number }
   | { item: StoryPiece; part: 'story'; n?: number }
+  /** One word of a Say It, counted across its lines (§28.3.5). */
+  | { item: string; part: 'word'; n: number }
 
-const NUMBERED = new Set(['option', 'before', 'after', 'piece', 'why'])
+const NUMBERED = new Set(['option', 'before', 'after', 'piece', 'why', 'word'])
 
 export function spokenQuery(spoken: Spoken): string {
   const query = new URLSearchParams({ item: spoken.item, part: spoken.part })
@@ -57,6 +59,18 @@ export interface PlayBackend {
   /** The quiz a finished study guide unlocks (§28.3.8). None in a preview:
    *  there is no student to keep it for. */
   guideQuiz?: (attemptId: string) => Promise<{ set_id: string; title: string }>
+  /** A child's reading of a Say It line, heard; only the words are kept on
+   *  the attempt. A preview hears it without keeping anything. */
+  hear?: (attemptId: string, itemId: string, line: number, wav: Blob) => Promise<string>
+  /** Explain why (§28.3.5, Form 1–5): reasons left today, and one judged.
+   *  None in a preview. */
+  whyLeft?: () => Promise<number>
+  explainWhy?: (attemptId: string, itemId: string, words: string) => Promise<WhyJudged>
+}
+
+export interface WhyJudged {
+  verdict: 'spot_on' | 'nearly' | 'not_yet' | null
+  feedback: string
 }
 
 const server: PlayBackend = {
@@ -64,6 +78,9 @@ const server: PlayBackend = {
   speech: (attemptId, spoken) => `/api/me/attempts/${attemptId}/speech?${spokenQuery(spoken)}`,
   hint: async (attemptId, itemId) => (await playApi.hint(attemptId, itemId)).hint,
   guideQuiz: playApi.guideQuiz,
+  hear: async (attemptId, itemId, line, wav) => (await playApi.hear(attemptId, itemId, line, wav)).text,
+  whyLeft: async () => (await playApi.whyLeft()).left,
+  explainWhy: playApi.explainWhy,
 }
 
 const BackendContext = createContext<PlayBackend>(server)

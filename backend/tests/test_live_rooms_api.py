@@ -61,7 +61,7 @@ class FakeEars:
         self.heard: list[bytes] = []
         self.fail = False
 
-    async def transcribe(self, audio, *, filename, mime):
+    async def transcribe(self, audio, *, filename, mime, language=None):
         from app.providers.speech import SpeechError
 
         if self.fail:

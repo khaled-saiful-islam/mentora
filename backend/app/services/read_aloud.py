@@ -25,7 +25,7 @@ from app.core.buddies import buddy_name
 from app.core.config import Settings
 from app.core.errors import NotFoundError, UpstreamError, ValidationError
 from app.db.models.user import User
-from app.learning.game_rounds import pieces_of
+from app.learning.game_rounds import pieces_of, say_words
 from app.learning.registry import build_learning_kinds
 from app.live.audio import Narrator
 from app.providers.speech import SpeechError
@@ -34,7 +34,7 @@ from app.services.learning_set_service import LearningSetService
 
 Part = Literal[
     "question", "option", "front", "back", "hint", "explanation", "story",
-    "learn", "task", "piece", "why", "before", "after",
+    "learn", "task", "piece", "why", "before", "after", "word",
 ]  # fmt: skip
 # A game's story, by piece: told as narration, or a panel's line by number.
 STORY_PIECES = ("hook", "goal", "win")
@@ -64,6 +64,11 @@ def words_for(item: dict[str, Any], part: Part, n: int | None = None) -> str:
         said = piece.get("text" if part == "piece" else "why")
         if isinstance(said, str) and said:
             return said
+    if part == "word":
+        # One word of a Say It, for a child who missed it (§28.3.5).
+        words = say_words(item)
+        if n is not None and 0 <= n < len(words):
+            return words[n]
     if part in ("front", "back", "hint", "explanation", "learn", "task") and item.get(part):
         return str(item[part])
     raise ValidationError("There is nothing to read there.")

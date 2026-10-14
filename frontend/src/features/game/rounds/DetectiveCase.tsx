@@ -1,16 +1,18 @@
 /**
  * Detective Case (§26.8): a case file — the question, the suspects (people or
  * things), and clue cards to open and read, some with a small table. First
- * the child picks who or what it is; then the clue that proves it. A wrong
+ * the child picks who or what it is; then the clue that proves it, tapped or
+ * dragged onto who it names (§28.3.5). A wrong
  * pick wobbles and the buddy says why it is not so; the right ones are
  * stamped. Show me makes one right pick at a time.
  */
 import { motion } from 'motion/react'
 import { CaretDown, CheckFat, FolderOpen, MagnifyingGlass, X } from '@phosphor-icons/react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { pop, spring } from '@/motion'
+import { MAGNET, useMagnet, type DragEvent } from './drag'
 import { ReadIt, SHOW_ME_MS, SIZE, useFinish, useLater, useShowMe, useWobble } from './parts'
 import { shuffled, type Shuffled } from './shuffle'
 import type { Band, CaseClue, CaseContent, CaseSuspect, RoundProps } from './types'
@@ -23,6 +25,7 @@ export function DetectiveCase({ content, band, calm, say, sound, showMe, onMove,
   const [suspects] = useState(() => shuffle(content.suspects))
   const play = useCase({ content, calm, say, sound, showMe, onMove })
   const { step, showing } = play
+  const magnet = useMagnet('suspect', sound)
   useFinish(step === 'done', onDone)
 
   return (
@@ -34,12 +37,28 @@ export function DetectiveCase({ content, band, calm, say, sound, showMe, onMove,
         </p>
         <section aria-label="Suspects" className={cn('grid gap-3', suspects.length > 2 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2')}>
           {suspects.map((suspect) => (
-            <SuspectCard key={suspect.id} suspect={suspect} band={band} calm={calm} picking={step === 'who'} named={step !== 'who' && suspect.id === content.answer} out={play.ruledOut.has(suspect.id)} pointed={showing === suspect.id} onPick={() => play.accuse(suspect)} />
+            <SuspectCard key={suspect.id} suspect={suspect} band={band} calm={calm} picking={step === 'who'} named={step !== 'who' && suspect.id === content.answer} out={play.ruledOut.has(suspect.id)} pointed={showing === suspect.id} near={step === 'proof' && magnet.near === suspect.id} onPick={() => play.accuse(suspect)} />
           ))}
         </section>
         <section aria-label="Clues" className="grid gap-3 sm:grid-cols-2">
           {content.clues.map((clue, n) => (
-            <ClueCard key={clue.id} clue={clue} number={n + 1} calm={calm} open={play.opened.has(clue.id)} proving={step === 'proof'} proved={step === 'done' && clue.id === content.key} pointed={showing === clue.id} onOpen={() => play.open(clue.id)} onProve={() => play.prove(clue)} />
+            <ClueCard
+              key={clue.id}
+              clue={clue}
+              number={n + 1}
+              calm={calm}
+              open={play.opened.has(clue.id)}
+              proving={step === 'proof'}
+              proved={step === 'done' && clue.id === content.key}
+              pointed={showing === clue.id}
+              onOpen={() => play.open(clue.id)}
+              onProve={() => play.prove(clue)}
+              onDrag={magnet.track}
+              onDrop={(event) => {
+                // Onto who it names: the clue is offered as the proof.
+                if (magnet.drop(event) === content.answer) play.prove(clue)
+              }}
+            />
           ))}
         </section>
       </div>
@@ -124,14 +143,15 @@ function Stamp({ label, calm }: { label: string; calm: boolean }) {
   )
 }
 
-function SuspectCard({ suspect, band, calm, picking, named, out, pointed, onPick }: {
-  suspect: CaseSuspect; band: Band; calm: boolean; picking: boolean; named: boolean; out: boolean; pointed: boolean; onPick: () => void
+function SuspectCard({ suspect, band, calm, picking, named, out, pointed, near, onPick }: {
+  suspect: CaseSuspect; band: Band; calm: boolean; picking: boolean; named: boolean; out: boolean; pointed: boolean; near: boolean; onPick: () => void
 }) {  // fmt: skip
   const size = SIZE[band]
   return (
     <button
       type="button"
       data-piece={suspect.id}
+      data-suspect={named ? suspect.id : undefined}
       onClick={onPick}
       disabled={!picking}
       aria-label={named ? `${suspect.name}: it is this one` : `Pick ${suspect.name}: ${suspect.claim}`}
@@ -140,7 +160,8 @@ function SuspectCard({ suspect, band, calm, picking, named, out, pointed, onPick
         // Room for the stamp or the cross, so neither covers a word.
         named ? 'pt-14' : out && 'pr-14',
         'enabled:hover:border-hover-border enabled:hover:bg-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring',
-        named ? 'border-success bg-correct-soft' : pointed ? 'border-primary ring-4 ring-primary/40' : 'border-border',
+        near ? MAGNET : named ? 'border-success bg-correct-soft' : pointed ? 'border-primary ring-4 ring-primary/40' : 'border-border',
+        'transition-[transform,border-color,background-color]',
         out && 'opacity-60',
       )}
     >
@@ -159,12 +180,34 @@ function SuspectCard({ suspect, band, calm, picking, named, out, pointed, onPick
   )
 }
 
-function ClueCard({ clue, number, calm, open, proving, proved, pointed, onOpen, onProve }: {
+function ClueCard({ clue, number, calm, open, proving, proved, pointed, onOpen, onProve, onDrag, onDrop }: {
   clue: CaseClue; number: number; calm: boolean; open: boolean; proving: boolean; proved: boolean; pointed: boolean; onOpen: () => void; onProve: () => void
+  onDrag: (event: DragEvent) => void; onDrop: (event: DragEvent) => void
 }) {  // fmt: skip
+  // A drag ends with a click where it started: that is not a tap.
+  const dragged = useRef(false)
+  const tapped = (action: () => void) => () => {
+    if (dragged.current) {
+      dragged.current = false
+      return
+    }
+    action()
+  }
   return (
-    <article data-piece={clue.id} aria-label={`Clue ${number}: ${clue.title}`} className={cn('relative min-w-0 rounded-3xl border-4 bg-surface p-3 shadow-sm', proved ? 'border-success pt-14' : pointed ? 'border-primary ring-4 ring-primary/40' : 'border-border')}>
-      <button type="button" onClick={onOpen} aria-expanded={open} className="flex min-h-12 w-full items-center gap-3 rounded-2xl px-1 text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring">
+    <motion.article
+      data-piece={clue.id}
+      aria-label={`Clue ${number}: ${clue.title}`}
+      drag={proving}
+      dragSnapToOrigin
+      whileDrag={calm ? undefined : { scale: 1.04, rotate: -1.5, zIndex: 30 }}
+      onDragStart={() => {
+        dragged.current = true
+      }}
+      onDrag={(event: DragEvent) => onDrag(event)}
+      onDragEnd={(event: DragEvent) => onDrop(event)}
+      className={cn('relative min-w-0 rounded-3xl border-4 bg-surface p-3 shadow-sm', proving && 'cursor-grab touch-none active:cursor-grabbing', proved ? 'border-success pt-14' : pointed ? 'border-primary ring-4 ring-primary/40' : 'border-border')}
+    >
+      <button type="button" onClick={tapped(onOpen)} aria-expanded={open} className="flex min-h-12 w-full items-center gap-3 rounded-2xl px-1 text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring">
         <span className="text-3xl leading-none" aria-hidden>{clue.icon || '🔎'}</span>
         <span className="min-w-0 flex-1 break-words font-display text-lg font-semibold">
           <span className="block text-xs font-bold uppercase tracking-wide text-primary">Clue {number}</span>
@@ -179,12 +222,13 @@ function ClueCard({ clue, number, calm, open, proving, proved, pointed, onOpen, 
         </motion.div>
       )}
       {proving && (
-        <Button type="button" variant="outline" size="sm" className="mt-3" onClick={onProve} aria-label={`This clue proves it: ${clue.title}`}>
+        <Button type="button" variant="outline" size="sm" className="mt-3" onClick={tapped(onProve)} aria-label={`This clue proves it: ${clue.title}`}>
           This proves it
         </Button>
       )}
+      {proving && <p className="mt-2 text-sm text-muted-foreground">Or drag it onto who it points to.</p>}
       {proved && <Stamp label="Proof!" calm={calm} />}
-    </article>
+    </motion.article>
   )
 }
 

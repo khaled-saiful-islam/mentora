@@ -25,6 +25,7 @@ from app.api.routes import (
     conversations,
     coverage,
     documents,
+    explain_why,
     family,
     family_shares,
     growth,
@@ -45,6 +46,7 @@ from app.api.routes import (
     play,
     practice_for,
     results,
+    say_it,
     second_chance,
     shares,
     teaching,
@@ -228,6 +230,8 @@ def create_app() -> FastAPI:
     app.include_router(my_day.router, prefix="/api")
     app.include_router(second_chance.router, prefix="/api")
     app.include_router(guide_quiz.router, prefix="/api")
+    app.include_router(say_it.router, prefix="/api")
+    app.include_router(explain_why.router, prefix="/api")
     app.include_router(results.router, prefix="/api")
     app.include_router(shares.owner_router, prefix="/api")
     app.include_router(shares.public_router, prefix="/api")

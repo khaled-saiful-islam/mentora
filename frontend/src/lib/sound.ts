@@ -7,13 +7,18 @@ import { useCallback } from 'react'
 import { audioContext } from './audio'
 import { usePreferences } from './prefs'
 
-export type Sound = 'tap' | 'correct' | 'wrong' | 'flip' | 'streak' | 'finish' | 'badge' | 'notify'
+export type Sound = 'tap' | 'correct' | 'wrong' | 'flip' | 'streak' | 'finish' | 'badge' | 'notify' | 'snap'
 
 // [frequency Hz, start s, length s, wave]
 type Note = [number, number, number, OscillatorType]
 
 const TUNES: Record<Sound, Note[]> = {
   tap: [[660, 0, 0.06, 'triangle']],
+  // A piece landing where it was dropped: a short, woody knock (§28.3.5).
+  snap: [
+    [880, 0, 0.035, 'square'],
+    [440, 0.02, 0.06, 'triangle'],
+  ],
   correct: [
     [660, 0, 0.12, 'triangle'],
     [988, 0.09, 0.2, 'triangle'],

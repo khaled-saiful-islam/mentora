@@ -279,6 +279,18 @@ export const playApi = {
   hint: (attemptId: string, itemId: string) =>
     apiFetch<{ hint: string }>(`/me/attempts/${attemptId}/items/${encodeURIComponent(itemId)}/hint`, { method: 'POST' }),
   guideQuiz: (attemptId: string) => apiFetch<{ set_id: string; title: string }>(`/me/attempts/${attemptId}/guide-quiz`, { method: 'POST' }),
+  whyLeft: () => apiFetch<{ left: number }>('/me/why'),
+  explainWhy: (attemptId: string, itemId: string, words: string) =>
+    apiFetch<{ verdict: 'spot_on' | 'nearly' | 'not_yet' | null; feedback: string }>(`/me/attempts/${attemptId}/items/${encodeURIComponent(itemId)}/why`, {
+      method: 'POST',
+      body: JSON.stringify({ words }),
+    }),
+  hear: (attemptId: string, itemId: string, line: number, wav: Blob) => {
+    const form = new FormData()
+    form.append('line', String(line))
+    form.append('clip', wav, 'reading.wav')
+    return apiFetch<{ text: string }>(`/me/attempts/${attemptId}/items/${encodeURIComponent(itemId)}/hear`, { method: 'POST', body: form })
+  },
   results: () => apiFetch<Results>('/me/results'),
   badges: () => apiFetch<BadgeCatalog>('/me/badges'),
   leaderboard: (assignmentId: string) => apiFetch<Board>(`/assignments/${assignmentId}/leaderboard`),

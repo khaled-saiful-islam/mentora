@@ -11,11 +11,10 @@ import { ArrowRight, LinkSimple, Sparkle } from '@phosphor-icons/react'
 import { useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { pop, spring } from '@/motion'
+import { MAGNET, useMagnet, type DragEvent } from './drag'
 import { ReadIt, SHOW_ME_MS, SIZE, useFinish, useLater, useShowMe, useWobble } from './parts'
 import { outOfOrder, shuffled, type Shuffled } from './shuffle'
 import type { Band, MatchContent, Pair, RoundProps } from './types'
-
-type DragEnd = MouseEvent | TouchEvent | PointerEvent
 
 /** What the child has in hand: an answer from the tray, or an empty slot. */
 interface Picked {
@@ -33,6 +32,9 @@ export function MatchUp({ content, band, calm, say, sound, showMe, onMove, onDon
   const [showing, setShowing] = useState<string | null>(null)
   const [scope, shake] = useWobble(calm)
   const later = useLater()
+  const magnet = useMagnet('slot', sound)
+  // While an answer is dragged, the tray stops clipping it: it is in the hand.
+  const [dragging, setDragging] = useState(false)
   useFinish(pairs.length > 0 && filled.length === pairs.length, onDone)
 
   const fill = (id: string) => setFilled((all) => (all.includes(id) ? all : [...all, id]))
@@ -90,6 +92,7 @@ export function MatchUp({ content, band, calm, say, sound, showMe, onMove, onDon
                 band={band}
                 calm={calm}
                 filled={filled.includes(pair.id)}
+                near={magnet.near === pair.id}
                 picked={picked?.kind === 'slot' && picked.id === pair.id}
                 pointed={showing === pair.id}
                 say={say}
@@ -97,7 +100,7 @@ export function MatchUp({ content, band, calm, say, sound, showMe, onMove, onDon
               />
             ))}
           </ol>
-          <Tray band={band} done={left === 0}>
+          <Tray band={band} done={left === 0} dragging={dragging}>
             <AnimatePresence initial={false}>
               {tray
                 .filter((pair) => !filled.includes(pair.id))
@@ -111,8 +114,12 @@ export function MatchUp({ content, band, calm, say, sound, showMe, onMove, onDon
                     pointed={showing === pair.id}
                     say={say}
                     onChoose={() => choose('chip', pair.id)}
-                    onDrop={(slot) => {
-                      if (!filled.includes(slot) && !showing) attempt(slot, pair.id)
+                    onDrag={magnet.track}
+                    onLift={() => setDragging(true)}
+                    onDrop={(event) => {
+                      setDragging(false)
+                      const slot = magnet.drop(event)
+                      if (slot && !filled.includes(slot) && !showing) attempt(slot, pair.id)
                     }}
                   />
                 ))}
@@ -135,8 +142,8 @@ function promptFor(pairs: Pair[], filled: string[], picked: Picked | null): stri
 
 /** A left card, the link to its slot, and the slot — green with its answer
  *  and why once filled. */
-function Row({ pair, band, calm, filled, picked, pointed, say, onChoose }: {
-  pair: Pair; band: Band; calm: boolean; filled: boolean; picked: boolean; pointed: boolean; say: (text: string) => void; onChoose: () => void
+function Row({ pair, band, calm, filled, near, picked, pointed, say, onChoose }: {
+  pair: Pair; band: Band; calm: boolean; filled: boolean; near: boolean; picked: boolean; pointed: boolean; say: (text: string) => void; onChoose: () => void
 }) {  // fmt: skip
   return (
     <li
@@ -165,7 +172,8 @@ function Row({ pair, band, calm, filled, picked, pointed, say, onChoose }: {
           'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring',
           filled && 'border-correct bg-surface',
           !filled && 'border-dashed',
-          !filled && (picked || pointed ? 'border-primary bg-selected ring-4 ring-primary/40' : 'border-border bg-muted/40 hover:border-hover-border hover:bg-hover'),
+          !filled && (near ? MAGNET : picked || pointed ? 'border-primary bg-selected ring-4 ring-primary/40' : 'border-border bg-muted/40 hover:border-hover-border hover:bg-hover'),
+          'transition-[transform,border-color,background-color]',
         )}
       >
         {filled ? <Snapped pair={pair} band={band} calm={calm} /> : <span className="font-semibold text-muted-foreground">{picked ? 'Now pick its answer' : 'Drop the answer here'}</span>}
@@ -194,19 +202,20 @@ function Snapped({ pair, band, calm }: { pair: Pair; band: Band; calm: boolean }
 
 /** Where the answers wait: stuck to the bottom of a phone's screen, under
  *  the rows on a tablet, beside them on a wide screen. */
-function Tray({ band, done, children }: { band: Band; done: boolean; children: React.ReactNode }) {
+function Tray({ band, done, dragging, children }: { band: Band; done: boolean; dragging: boolean; children: React.ReactNode }) {
   return (
     <section aria-label="Answers" className="sticky bottom-0 z-10 -mx-3 rounded-t-3xl border-t-2 border-border bg-surface/95 p-3 shadow-lg backdrop-blur-sm sm:mx-0 sm:rounded-3xl sm:border-2 lg:bottom-auto lg:top-0">
       <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Answers</p>
-      <ul className={cn('flex max-h-[38vh] flex-wrap overflow-y-auto lg:max-h-none', band === 'early' ? 'gap-3' : 'gap-2')}>{children}</ul>
+      <ul className={cn('flex max-h-[38vh] flex-wrap lg:max-h-none', dragging ? 'overflow-visible' : 'overflow-y-auto', band === 'early' ? 'gap-3' : 'gap-2')}>{children}</ul>
       {done && <p className="text-center font-semibold text-muted-foreground">Every answer is in its place.</p>}
     </section>
   )
 }
 
 /** An answer: dragged onto a slot, or tapped to pick it up. */
-function Chip({ pair, band, calm, picked, pointed, say, onChoose, onDrop }: {
-  pair: Pair; band: Band; calm: boolean; picked: boolean; pointed: boolean; say: (text: string) => void; onChoose: () => void; onDrop: (slot: string) => void
+function Chip({ pair, band, calm, picked, pointed, say, onChoose, onDrag, onLift, onDrop }: {
+  pair: Pair; band: Band; calm: boolean; picked: boolean; pointed: boolean; say: (text: string) => void; onChoose: () => void
+  onDrag: (event: DragEvent) => void; onLift: () => void; onDrop: (event: DragEvent) => void
 }) {  // fmt: skip
   // A drag ends with a click on the chip it started from: that is not a tap.
   const dragged = useRef(false)
@@ -228,11 +237,10 @@ function Chip({ pair, band, calm, picked, pointed, say, onChoose, onDrop }: {
         whileDrag={calm ? undefined : { scale: 1.08, rotate: -2, zIndex: 30 }}
         onDragStart={() => {
           dragged.current = true
+          onLift()
         }}
-        onDragEnd={(event: DragEnd) => {
-          const slot = slotAt(event)
-          if (slot) onDrop(slot)
-        }}
+        onDrag={(event: DragEvent) => onDrag(event)}
+        onDragEnd={(event: DragEvent) => onDrop(event)}
         onClick={() => {
           if (dragged.current) {
             dragged.current = false
@@ -253,15 +261,4 @@ function Chip({ pair, band, calm, picked, pointed, say, onChoose, onDrop }: {
       {band === 'early' && <ReadIt text={pair.right} say={say} />}
     </motion.li>
   )
-}
-
-/** The slot under the pointer where a drag ended, if any. */
-function slotAt(event: DragEnd): string | null {
-  const point = 'changedTouches' in event ? event.changedTouches[0] : event
-  if (!point || typeof document.elementsFromPoint !== 'function') return null
-  for (const element of document.elementsFromPoint(point.clientX, point.clientY)) {
-    const slot = element.closest<HTMLElement>('[data-slot]')
-    if (slot?.dataset.slot) return slot.dataset.slot
-  }
-  return null
 }

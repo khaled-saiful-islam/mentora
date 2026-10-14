@@ -18,6 +18,8 @@ import { Button } from '@/components/ui'
 import { Confirm } from '@/components/ui/Confirm'
 import { Buddy, profileOf } from '@/features/buddies'
 import type { GameIsland } from '@/features/play/api'
+import { usePlayBackend } from '@/features/play/backend'
+import { apiFetch } from '@/lib/api'
 import type { PlayerProps } from '@/features/play/players'
 import { usePlayVoice } from '@/features/play/usePlayVoice'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
@@ -34,7 +36,7 @@ import { MissionScore, playSting } from './mission/score'
 import { touched, useDeviceFlag } from './mission/useDeviceFlag'
 import { isStart } from './openings'
 import { overlayFor, type Phase, type Shown, type Tell } from './overlay'
-import { bandOf, Round, roundContent, type Band, type Move, type RoundContent } from './rounds'
+import { bandOf, Round, roundContent, SayItContext, type Band, type Move, type RoundContent, type SayItHelp } from './rounds'
 import { HowToPlay } from './rounds/howto'
 import { spokenFor } from './rounds/pieces'
 import { useFullscreen } from './useFullscreen'
@@ -101,6 +103,20 @@ export function GameHost({ attempt, buddy, exitTo, onFinished, only, practice = 
     const spoken = island && band === 'early' && voice.supported ? spokenFor(island, text) : null
     if (spoken) voice.read(`say-${island?.id}`, [{ spoken, text }])
   }
+
+  const backend = usePlayBackend()
+  // A Say It's ear and the voice for one word (§28.3.5): the attempt keeps
+  // what was heard; a preview only hears it.
+  const sayIt: SayItHelp | null =
+    active?.play === 'say'
+      ? {
+          language: attempt.language,
+          hear: (line, wav) => (backend.hear ? backend.hear(attempt.id, active.id, line, wav) : hearOnly(wav, attempt.language)),
+          word: (n, text) => {
+            if (voice.supported) voice.read(`word-${active.id}-${n}`, [{ spoken: { item: active.id, part: 'word', n }, text }])
+          },
+        }
+      : null
 
   function move(island: GameIsland, { piece, right }: Move) {
     if (right) return
@@ -203,17 +219,19 @@ export function GameHost({ attempt, buddy, exitTo, onFinished, only, practice = 
                 <span className="min-w-0 break-words">{told(active.task, cast.buddyName)}</span>
               </p>
               <div className="relative min-h-0 flex-1">
-                <Round
-                  key={active.id}
-                  {...roundOf(active)}
-                  band={band}
-                  calm={calm}
-                  say={(text) => say(text)}
-                  sound={ring}
-                  showMe={showMe}
-                  onMove={(m) => move(active, m)}
-                  onDone={() => void cleared(active)}
-                />
+                <SayItContext.Provider value={sayIt}>
+                  <Round
+                    key={active.id}
+                    {...roundOf(active)}
+                    band={band}
+                    calm={calm}
+                    say={(text) => say(text)}
+                    sound={ring}
+                    showMe={showMe}
+                    onMove={(m) => move(active, m)}
+                    onDone={() => void cleared(active)}
+                  />
+                </SayItContext.Provider>
               </div>
             </section>
           ) : (
@@ -357,4 +375,12 @@ function useMissionSound({
     return () => window.clearTimeout(wait)
     // Once per card: a new key, or sound switched on.
   }, [key, sound])
+}
+
+/** A Say It heard without an attempt to keep it on: a teacher's preview. */
+async function hearOnly(wav: Blob, language: string): Promise<string> {
+  const form = new FormData()
+  form.append('clip', wav, 'reading.wav')
+  if (language === 'en' || language === 'ms') form.append('language', language)
+  return (await apiFetch<{ text: string }>('/voice/transcribe', { method: 'POST', body: form })).text
 }

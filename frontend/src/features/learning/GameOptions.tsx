@@ -5,7 +5,7 @@
  * "Let Mentora decide" is the default for each.
  */
 import { useState } from 'react'
-import { ArrowsDownUp, Check, Eraser, Flask, LinkSimple, LockKey, MagicWand, MagnifyingGlass, PencilSimpleLine, Sparkle, SquaresFour, Sword, type Icon } from '@phosphor-icons/react'
+import { ArrowsDownUp, Check, Eraser, Flask, LinkSimple, LockKey, MagicWand, MagnifyingGlass, Microphone, PencilSimpleLine, Sparkle, SquaresFour, Sword, type Icon } from '@phosphor-icons/react'
 import { Alert, Button } from '@/components/ui'
 import { errorMessage } from '@/features/auth/errors'
 import { PLAY_LABELS, type Play } from '@/features/game/rounds'
@@ -41,6 +41,7 @@ const PLAYS: { value: Play; blurb: string; Icon: Icon }[] = [
   { value: 'mistake', blurb: 'Find the wrong line in a worked answer and fix it (Year 4 up)', Icon: Eraser },
   { value: 'case', blurb: 'Read the clues and name who or what did it (Year 5 up)', Icon: MagnifyingGlass },
   { value: 'escape', blurb: 'Solve each puzzle to open the next door (Year 4 up)', Icon: LockKey },
+  { value: 'say', blurb: 'Read words out loud: they light up as they are heard (Year 1–3)', Icon: Microphone },
   { value: 'boss', blurb: 'A last island that battles through everything learnt', Icon: Sword },
 ]
 

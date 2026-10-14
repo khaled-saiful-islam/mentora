@@ -83,6 +83,25 @@ def _content(text: str) -> set[str]:
     return {w for w in _WORD.findall(text.lower()) if w not in _COMMON and len(w) > 2}
 
 
+# Say It is for the youngest readers, in the languages the ear knows (§28.3.5).
+SAY_YEARS = {"year_1", "year_2", "year_3"}
+SAY_LANGUAGES = {"en", "ms"}
+
+
+def say_for_young(items: list[Item], *, grade: str | None, language: str, task: str) -> list[Item]:
+    """`items`, a Say It played as its Match Up — with `task`, since its own
+    asks for reading aloud — where it doesn't belong: past Year 3, in another
+    language, or for a year not known."""
+    if grade in SAY_YEARS and language in SAY_LANGUAGES:
+        return items
+    return [
+        {**item, "play": "match", "task": task}
+        if item.get("play") == "say" and item.get("match")
+        else item
+        for item in items
+    ]
+
+
 def with_boss(
     items: list[Item], *, world: str, language: str, grade: str | None, plays: Sequence[str],
     most: int,

@@ -144,6 +144,10 @@ class Settings(BaseSettings):
     # Second-chance asks per student per minute (§28.3.7): explanations and
     # questions like it are kept, so most asks cost no model call.
     rate_limit_second_chance_per_minute: int = 20
+    # Explain why (§28.3.5, Form 1–5): reasons judged per student per day, and
+    # asks per minute.
+    explain_why_per_day: int = 5
+    rate_limit_explain_why_per_minute: int = 6
 
     # ---- Live tutoring ---------------------------------------------------
     # The tutor's voice, over the OpenAI-style `/audio/speech`. The URL and key

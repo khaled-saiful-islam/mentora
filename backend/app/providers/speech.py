@@ -108,7 +108,9 @@ def build_speech(settings: Settings) -> SpeechProvider:
 
 
 class Transcriber(Protocol):
-    async def transcribe(self, audio: bytes, *, filename: str, mime: str) -> str: ...
+    async def transcribe(
+        self, audio: bytes, *, filename: str, mime: str, language: str | None = None
+    ) -> str: ...
 
 
 class OpenAICompatibleTranscriber:
@@ -132,10 +134,14 @@ class OpenAICompatibleTranscriber:
         self._language = language
         self._transport = transport
 
-    async def transcribe(self, audio: bytes, *, filename: str, mime: str) -> str:
+    async def transcribe(
+        self, audio: bytes, *, filename: str, mime: str, language: str | None = None
+    ) -> str:
+        """The words heard; `language` (e.g. "ms") over the one this was made
+        with, for a child reading in the set's language (§28.3.5)."""
         headers = {"Authorization": f"Bearer {self._api_key}"} if self._api_key else {}
         files = {"file": (filename, audio, mime)}
-        data = {"model": self._model, "language": self._language}
+        data = {"model": self._model, "language": language or self._language}
         try:
             async with httpx.AsyncClient(
                 timeout=self._timeout, transport=self._transport

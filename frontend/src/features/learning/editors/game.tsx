@@ -22,6 +22,7 @@ import { GrowingText, LabelledText, SkillPicker, SourceToggles } from './fields'
 import { BossEditor } from './boss'
 import { CaseEditor } from './case'
 import { EscapeEditor } from './escape'
+import { SayEditor, sayProblem } from './say'
 import { LabEditor } from './lab'
 import { MistakeEditor } from './mistake'
 import { MatchEditor, OrderEditor, SortEditor } from './rounds'
@@ -82,6 +83,7 @@ function IslandEditor({ item, skills, sources, onChange }: ItemEditorProps<GameI
       {item.play === 'case' && item.case && <CaseEditor content={item.case} onChange={(found) => set({ case: found })} />}
       {item.play === 'escape' && item.escape && <EscapeEditor content={item.escape} onChange={(escape) => set({ escape })} />}
       {item.play === 'boss' && item.boss && <BossEditor content={item.boss} onChange={(boss) => set({ boss })} />}
+      {item.play === 'say' && item.say && <SayEditor content={item.say} onChange={(say) => set({ say })} />}
       <LabelledText label="What it teaches" value={item.explanation} limit={LIMITS.explanation} placeholder="Shown once the island is cleared" onChange={(explanation) => set({ explanation })} />
       <LabelledText label="The buddy's hint" value={item.hint} limit={LIMITS.hint} placeholder="A nudge — never the answer" onChange={(hint) => set({ hint })} />
       <div className="flex flex-wrap items-center gap-2">
@@ -149,6 +151,7 @@ function newerProblem(item: GameItem): string | null | undefined {
     return item.case.suspects.some((s) => blank(s.name)) || item.case.clues.some((c) => blank(c.title)) ? 'Name every suspect and clue.' : null
   }
   if (item.play === 'escape' && item.escape) return item.escape.doors.some((d) => blank(d.puzzle) || blank(d.answer)) ? 'Give every door its puzzle and code.' : null
+  if (item.play === 'say' && item.say) return sayProblem(item.say)
   if (item.play === 'boss' && item.boss) {
     return item.boss.questions.some((q) => blank(q.ask) || q.options.some(blank)) ? 'Fill in every question and option.' : null
   }

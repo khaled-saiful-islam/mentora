@@ -8,6 +8,7 @@ import { DetectiveCase } from './DetectiveCase'
 import { EscapeRoom } from './EscapeRoom'
 import { LineUp } from './LineUp'
 import { MatchUp } from './MatchUp'
+import { SayIt } from './SayIt'
 import type { Shuffled } from './shuffle'
 import { SortItOut } from './SortItOut'
 import { SpotTheMistake } from './SpotTheMistake'
@@ -24,6 +25,7 @@ export const PLAY_LABELS: Record<Play, string> = {
   case: 'Detective Case',
   escape: 'Escape Room',
   boss: 'Boss Battle',
+  say: 'Say It',
 }
 
 export type RoundOf<P extends Play> = RoundProps<Contents[P]> & Shuffled & { play: P }
@@ -47,6 +49,8 @@ export function Round(props: AnyRound) {
       return <EscapeRoom {...props} />
     case 'boss':
       return <BossBattle {...props} />
+    case 'say':
+      return <SayIt {...props} />
   }
 }
 
@@ -64,5 +68,6 @@ export { LineUp } from './LineUp'
 export { MatchUp } from './MatchUp'
 export { SortItOut } from './SortItOut'
 export { SHOW_ME_MS } from './parts'
+export { SayItContext, type SayItHelp } from './SayIt'
 export { outOfOrder, shuffled, type Shuffled, type Shuffler } from './shuffle'
 export * from './types'

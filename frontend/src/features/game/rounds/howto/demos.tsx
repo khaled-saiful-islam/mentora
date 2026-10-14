@@ -203,6 +203,24 @@ function BossDemo({ phase }: DemoProps) {
   )
 }
 
+function SayDemo({ phase }: DemoProps) {
+  return (
+    <>
+      <span className="absolute left-[12%] top-6 flex gap-2 text-xl font-bold">
+        {['Ikan', 'berenang'].map((word, n) => (
+          <span key={word} className={cn('rounded-xl border-2 px-2 py-0.5', phase >= n + 1 ? 'border-correct bg-correct-soft' : 'border-transparent bg-surface/80')}>
+            {word}
+          </span>
+        ))}
+      </span>
+      <motion.span initial={false} animate={{ scale: phase >= 1 ? [1, 1.15, 1] : 1 }} transition={{ duration: 0.8, repeat: phase >= 1 ? Infinity : 0 }} className="absolute bottom-4 left-[42%] grid size-12 place-items-center rounded-full bg-coral-400 text-2xl">
+        🎤
+      </motion.span>
+      <Hand x={48} y={78} pressing={phase === 0} />
+    </>
+  )
+}
+
 const DEMOS: Record<Play, (props: DemoProps) => React.ReactNode> = {
   sort: SortDemo,
   order: OrderDemo,
@@ -212,6 +230,7 @@ const DEMOS: Record<Play, (props: DemoProps) => React.ReactNode> = {
   case: CaseDemo,
   escape: EscapeDemo,
   boss: BossDemo,
+  say: SayDemo,
 }
 
 export function Demo({ play, phase }: { play: Play; phase: Phase }) {

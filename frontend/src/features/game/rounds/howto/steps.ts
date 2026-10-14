@@ -36,6 +36,10 @@ export const HOW_TO: Record<Play, Record<HowToLanguage, [string, string, string]
     en: ['Read the puzzle on the door.', 'Enter the code: numbers, letters or a symbol.', 'Open every door to escape!'],
     ms: ['Baca teka-teki di pintu.', 'Masukkan kod: nombor, huruf atau simbol.', 'Buka semua pintu untuk keluar!'],
   },
+  say: {
+    en: ['Tap Listen to hear the words.', 'Tap the microphone and read them out loud.', 'Each word you say turns green!'],
+    ms: ['Ketik Dengar untuk mendengar perkataan.', 'Ketik mikrofon dan baca dengan kuat.', 'Setiap perkataan yang kamu sebut jadi hijau!'],
+  },
   boss: {
     en: ["Read the boss's question.", 'Tap the right answer to hit the boss.', 'A wrong one costs a heart — and the question comes back.'],
     ms: ['Baca soalan bos.', 'Ketik jawapan betul untuk serang bos.', 'Jawapan salah hilang satu hati — dan soalan itu kembali.'],

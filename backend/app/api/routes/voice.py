@@ -8,7 +8,7 @@ and dropped; nothing here keeps anyone's voice.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 
 from app.api.deps import CurrentUser, SessionDep, SettingsDep, TranscriberDep
 from app.core.errors import ValidationError
@@ -19,6 +19,8 @@ router = APIRouter(prefix="/voice", tags=["voice"])
 
 # Half a minute of 16 kHz mono WAV is under a megabyte.
 MAX_CLIP_BYTES = 1_200_000
+# The languages a clip may be heard in, when the caller knows (§28.3.5).
+LANGUAGES = ("en", "ms")
 
 
 async def limit_listening(session: SessionDep, settings: SettingsDep, user: CurrentUser) -> None:
@@ -29,8 +31,13 @@ async def limit_listening(session: SessionDep, settings: SettingsDep, user: Curr
 
 @router.post("/transcribe", dependencies=[Depends(limit_listening)])
 async def transcribe(
-    user: CurrentUser, transcriber: TranscriberDep, clip: UploadFile = File(...)
+    user: CurrentUser,
+    transcriber: TranscriberDep,
+    clip: UploadFile = File(...),
+    language: str | None = Form(None),
 ) -> dict[str, str]:
+    if language is not None and language not in LANGUAGES:
+        raise ValidationError("Listening is in English or Malay.")
     audio = await clip.read(MAX_CLIP_BYTES + 1)
     if not audio:
         raise ValidationError("Nothing was recorded. Hold the mic a little longer.")
@@ -38,7 +45,10 @@ async def transcribe(
         raise ValidationError("That recording is too long. Keep it under half a minute.")
     try:
         text = await transcriber.transcribe(
-            audio, filename=clip.filename or "speech.wav", mime=clip.content_type or "audio/wav"
+            audio,
+            filename=clip.filename or "speech.wav",
+            mime=clip.content_type or "audio/wav",
+            language=language,
         )
     except SpeechError as exc:
         raise ValidationError(str(exc)) from exc

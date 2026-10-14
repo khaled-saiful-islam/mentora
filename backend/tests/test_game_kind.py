@@ -227,7 +227,7 @@ def test_islands_are_played_simplest_first_keeping_their_order_otherwise() -> No
 
 def test_the_writing_rules_fit_a_round_to_each_idea_at_the_years_size() -> None:
     rules = GameKind().rules_for({"world": "reef", "story": "Siti the turtle is lost."})
-    every = "sort|order|match|lab|mistake|case|escape|boss"
+    every = "sort|order|match|lab|mistake|case|escape|say|boss"
     assert f'"play": "{every}"' in rules and '"pairs"' in rules and '"why"' in rules
     assert '"lab": {"controls"' in rules and '"case": {"question"' in rules
     assert "From Year 3, the LAST island is a `boss`" in rules
