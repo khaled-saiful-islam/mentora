@@ -2083,6 +2083,21 @@ exactly those students, as a group.
   `practiseLink`).
 - Cheers are a new notification kind that the buddy companion plays.
 
+#### 28.3.3.1 Built (phase 3, 2026-10-14)
+
+- Help at home, from each "Worth practising" skill on the parent's child
+  page:
+  - meaning, example and a five-minute activity, EN or MS
+    (`SkillHelpService`, kept in `skill_help`);
+  - Send a challenge (`skill_practice.py`), built after the request and sent
+    home when made.
+- Cheers: preset, a `cheer` notification the child's buddy announces.
+- Practice for N under each red skill on an assignment's heatmap:
+  - one group per skill ("Practise: X");
+  - the quiz from the assignment's sources, shared with that group when
+    made.
+- Doc: `docs/features/054-help-at-home.md`.
+
 #### 28.3.4 Daily Quest and the skill garden
 
 **What the child sees:**

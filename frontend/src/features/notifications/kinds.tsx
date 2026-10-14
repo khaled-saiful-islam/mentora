@@ -342,6 +342,18 @@ export const KINDS: Record<string, KindView> = {
     flourish: 'knock',
     mood: 'oops',
   },
+  // A parent's cheer, acted out by the child's buddy (§28.3.3).
+  cheer: {
+    Icon: HeartStraight,
+    tile: 'bg-kind-family-vivid/15 text-kind-family',
+    title: (n) => `${text(n, 'label') || 'Home'} says: ${text(n, 'line')} ${text(n, 'sticker')}`,
+    headlines: (n) => [
+      `${text(n, 'sticker')} ${text(n, 'label') || 'Home'} says: ${text(n, 'line')}`,
+      `A cheer from ${text(n, 'label') || 'home'}: ${text(n, 'line')} ${text(n, 'sticker')}`,
+    ],
+    flourish: 'confetti',
+    mood: 'celebrate',
+  },
   family_done: {
     Icon: Trophy,
     tile: 'bg-kind-family-vivid/15 text-kind-family',

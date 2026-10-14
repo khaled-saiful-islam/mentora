@@ -13,9 +13,14 @@ import { rise, stagger } from '@/motion'
 import type { ChildOverview } from '../api'
 import { LessonRow, SectionTitle, waitingOf, WorkRow } from './bits'
 import { useAuth } from '@/lib/auth'
+import { useState } from 'react'
+import type { SkillInsight } from '@/features/play/api'
+import { HelpAtHome } from './HelpAtHome'
 
-export function OverviewTab({ childId, first, overview }: { childId: string; first: string; overview: ChildOverview | null }) {
+export function OverviewTab({ childId, first, buddy = null, overview }: { childId: string; first: string; buddy?: string | null; overview: ChildOverview | null }) {
   const { user } = useAuth()
+  // The skill a parent asked for help with (§28.3.3).
+  const [helping, setHelping] = useState<SkillInsight | null>(null)
   if (!overview) return <Skeleton className="h-72 rounded-[1.75rem]" />
   const base = `/children/${childId}`
   const waiting = waitingOf(overview, user?.id)
@@ -64,9 +69,13 @@ export function OverviewTab({ childId, first, overview }: { childId: string; fir
       {(overview.strengths.length > 0 || overview.practise.length > 0) && (
         <section className="grid gap-4 @xl:grid-cols-2">
           <SkillList title="Strong at" Icon={Trophy} tone="mint" skills={overview.strengths} empty="Strengths show after a few more tries." practiseLink={false} />
-          <SkillList title="Worth practising" Icon={Barbell} tone="coral" skills={overview.practise} empty="Nothing tricky right now." practiseLink={false} />
+          <SkillList title="Worth practising" Icon={Barbell} tone="coral" skills={overview.practise} empty="Nothing tricky right now." practiseLink={false} onPick={setHelping} />
         </section>
       )}
+      {overview.practise.length > 0 && (
+        <p className="-mt-6 text-sm font-semibold text-muted-foreground">Tap a skill to see how to help at home, or send {first} a challenge.</p>
+      )}
+      <HelpAtHome childId={childId} first={first} buddy={buddy} skill={helping} onClose={() => setHelping(null)} />
 
       {overview.made_for_you.length > 0 && (
         <section className="space-y-3">

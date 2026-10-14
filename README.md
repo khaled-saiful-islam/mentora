@@ -169,6 +169,21 @@ schedule of the whole class, or of the one group it is for.
 See [`docs/features/037-live-lessons.md`](docs/features/037-live-lessons.md)
 and [`docs/features/038-live-room.md`](docs/features/038-live-room.md).
 
+### Help at home
+
+A parent taps a skill their child finds hard and gets what it means in
+plain words, five minutes to do together at home, and **Send a challenge**:
+a short quiz on just that skill, which their child's buddy brings them. In
+English or Bahasa Melayu. Parents can also send preset **cheers** the buddy
+acts out. Teachers get **Practice for N** under any red skill on an
+assignment's heatmap: practice made from the assignment's own sources, for
+just those students
+([`docs/features/054-help-at-home.md`](docs/features/054-help-at-home.md)).
+
+| | |
+|---|---|
+| ![Help at home: what evaporation means, a five-minute activity, and Send a challenge](docs/screenshots/help-at-home.png) | ![The skills heatmap with Practice for 1 under each red skill](docs/screenshots/practice-for-these.png) |
+
 ## For teachers
 
 | | |

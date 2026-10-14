@@ -22,6 +22,7 @@ import { Page, pop, stagger } from '@/motion'
 import { familyApi, stageOf, type Child, type ChildOverview } from '../api'
 import { isLate, waitingOf } from './bits'
 import { useAuth } from '@/lib/auth'
+import { CheerButton } from './Cheers'
 import { ClassesTab } from './ClassesTab'
 import { OverviewTab } from './OverviewTab'
 import { PracticeTab } from './PracticeTab'
@@ -81,7 +82,7 @@ export default function ChildPage() {
       />
       {overview.error && <Alert className="mt-6">{overview.error}</Alert>}
       <div className="mt-6">
-        {active === 'overview' && <OverviewTab childId={childId} first={first} overview={overview.data} />}
+        {active === 'overview' && <OverviewTab childId={childId} first={first} buddy={child?.buddy ?? null} overview={overview.data} />}
         {active === 'work' && <WorkTab childId={childId} first={first} />}
         {active === 'results' && <ResultsTab childId={childId} first={first} buddy={child?.buddy} />}
         {active === 'practice' && <PracticeTab childId={childId} first={first} />}
@@ -113,6 +114,9 @@ function Header({ child, overview, late }: { child: Child; overview: ChildOvervi
           <Stat Icon={Medal} text={`${overview?.badges ?? 0} ${overview?.badges === 1 ? 'badge' : 'badges'}`} />
           <Stat Icon={ListChecks} text={waiting === 0 ? 'All caught up' : `${waiting} waiting`} />
           {late > 0 && <Stat Icon={Warning} text={`${late} past due`} alert />}
+          <motion.li variants={pop}>
+            <CheerButton childId={child.id} first={child.first_name} buddy={child.buddy} />
+          </motion.li>
         </motion.ul>
       </div>
     </section>

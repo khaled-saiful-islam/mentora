@@ -3,7 +3,7 @@
  * a summary from their buddy, recent scores, skills in three groups, and
  * everything they finished — each one opens to its answers.
  */
-import { ArrowRight, ChartLineUp, Trophy } from '@phosphor-icons/react'
+import { ArrowRight, ChartLineUp, Lightbulb, Trophy } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { Alert, Chip, Skeleton } from '@/components/ui'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -54,6 +54,7 @@ export function SkillList({
   skills,
   empty,
   practiseLink = true,
+  onPick,
 }: {
   title: string
   Icon: typeof Trophy
@@ -62,6 +63,8 @@ export function SkillList({
   empty: string
   /** The student's own page points to their practice. */
   practiseLink?: boolean
+  /** Each skill opens help with it — a parent's Help at home (§28.3.3). */
+  onPick?: (skill: SkillInsight) => void
 }) {
   return (
     <section className={cn('rounded-[1.75rem] p-5', tone === 'mint' ? 'bg-correct-soft' : 'bg-wrong-soft')}>
@@ -75,9 +78,21 @@ export function SkillList({
         <ul className="mt-3 flex flex-wrap gap-2">
           {skills.map((skill) => (
             <li key={skill.subject + skill.slug}>
-              <Chip className="bg-surface px-3 py-1 text-sm capitalize text-foreground">
-                {skill.label} · {Math.round(skill.mastery * 100)}%
-              </Chip>
+              {onPick ? (
+                <button
+                  type="button"
+                  onClick={() => onPick(skill)}
+                  aria-label={`Help at home with ${skill.label}, ${Math.round(skill.mastery * 100)}%`}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full border-2 border-transparent bg-surface px-3 py-1 text-sm font-bold capitalize text-foreground shadow-sm transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
+                >
+                  {skill.label} · {Math.round(skill.mastery * 100)}%
+                  <Lightbulb weight="fill" className="size-4 shrink-0 text-warning" aria-hidden />
+                </button>
+              ) : (
+                <Chip className="bg-surface px-3 py-1 text-sm capitalize text-foreground">
+                  {skill.label} · {Math.round(skill.mastery * 100)}%
+                </Chip>
+              )}
             </li>
           ))}
         </ul>

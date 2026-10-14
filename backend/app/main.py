@@ -29,6 +29,7 @@ from app.api.routes import (
     family_shares,
     growth,
     health,
+    help_at_home,
     invites,
     learning,
     live,
@@ -40,6 +41,7 @@ from app.api.routes import (
     messages,
     notifications,
     play,
+    practice_for,
     results,
     shares,
     teaching,
@@ -218,6 +220,8 @@ def create_app() -> FastAPI:
     app.include_router(notifications.router, prefix="/api")
     app.include_router(play.router, prefix="/api")
     app.include_router(growth.router, prefix="/api")
+    app.include_router(help_at_home.router, prefix="/api")
+    app.include_router(practice_for.router, prefix="/api")
     app.include_router(results.router, prefix="/api")
     app.include_router(shares.owner_router, prefix="/api")
     app.include_router(shares.public_router, prefix="/api")

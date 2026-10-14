@@ -68,6 +68,19 @@ export const resultsApi = {
   forAssignment: (id: string, groupId?: string | null) =>
     apiFetch<AssignmentResults>(`/assignments/${id}/results${groupId ? `?group_id=${groupId}` : ''}`),
   student: (id: string, studentId: string) => apiFetch<StudentDrill>(`/assignments/${id}/results/students/${studentId}`),
+  /** Practice on one skill for just the students in the red (§28.3.3). */
+  practiceFor: (id: string, skill: string) =>
+    apiFetch<{ set_id: string; skill: string; students: number; group: string }>(`/assignments/${id}/practice`, {
+      method: 'POST',
+      body: JSON.stringify({ skill }),
+    }),
+}
+
+/** The students in the red on a skill: who practice is made for. */
+export function inTheRed(results: Pick<AssignmentResults, 'heat'>, slug: string): string[] {
+  return Object.entries(results.heat)
+    .filter(([, skills]) => skills[slug] !== undefined && band(skills[slug]) === 'practise')
+    .map(([student]) => student)
 }
 
 /** Mastery as a colour band: the same three levels the student sees. */

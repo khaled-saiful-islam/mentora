@@ -151,5 +151,31 @@ export const familyApi = {
   coverage: (childId: string, classId: string) => apiFetch<PublicReport>(`${child(childId)}/classes/${classId}/coverage`),
 }
 
+/** What a skill means for a parent, and five minutes to do at home (§28.3.3). */
+export interface SkillHelp {
+  meaning: string
+  example: string
+  activity: { title: string; minutes: number; needs: string[]; steps: string[] }
+}
+
+export interface CheerOption {
+  key: string
+  sticker: string
+  line: string
+}
+
+export type HelpLanguage = 'en' | 'ms'
+
+export const helpAtHomeApi = {
+  help: (childId: string, skill: { slug: string; label: string; subject: string }, language: HelpLanguage) =>
+    apiFetch<SkillHelp>(
+      `${child(childId)}/skills/${encodeURIComponent(skill.slug)}/help?${new URLSearchParams({ subject: skill.subject, label: skill.label, language })}`,
+    ),
+  challenge: (childId: string, slug: string) =>
+    apiFetch<{ set_id: string; skill: string; status: string }>(`${child(childId)}/challenges`, { method: 'POST', ...json({ skill: slug }) }),
+  cheers: (childId: string) => apiFetch<{ items: CheerOption[] }>(`${child(childId)}/cheers`),
+  cheer: (childId: string, key: string) => apiFetch<{ sticker: string; line: string }>(`${child(childId)}/cheers`, { method: 'POST', ...json({ cheer: key }) }),
+}
+
 /** What a child calls the parent. The last choice lets them type their own. */
 export const LABELS = ['Mum', 'Dad', 'Guardian'] as const

@@ -3,12 +3,15 @@
  * scores, and three ways to look closer — by student, by question, by skill.
  */
 import { motion } from 'motion/react'
-import { CaretRight, Check, Clock, Warning } from '@phosphor-icons/react'
+import { Barbell, CaretRight, Check, Clock, Warning } from '@phosphor-icons/react'
+import { useState } from 'react'
 import { Chip } from '@/components/ui'
+import { useToast } from '@/components/ui/Toast'
+import { errorMessage } from '@/features/auth/errors'
 import { BuddyAvatar } from '@/features/buddies'
 import { cn } from '@/lib/utils'
 import { rise, stagger } from '@/motion'
-import { band, isActive, type AssignmentResults, type QuestionResult, type StudentResult } from './api'
+import { band, inTheRed, isActive, resultsApi, type AssignmentResults, type QuestionResult, type StudentResult } from './api'
 
 const BAND = {
   strong: 'bg-correct text-white',
@@ -204,7 +207,10 @@ export function SkillHeatmap({ results }: { results: AssignmentResults }) {
           <tr>
             <th className="text-left font-bold text-muted-foreground">Student</th>
             {skills.map((skill) => (
-              <th key={skill.slug} className="px-1 text-center font-bold capitalize text-muted-foreground">{skill.label}</th>
+              <th key={skill.slug} className="px-1 text-center align-bottom font-bold capitalize text-muted-foreground">
+                <span className="block">{skill.label}</span>
+                <PracticeFor assignmentId={results.assignment.id} slug={skill.slug} label={skill.label} count={inTheRed(results, skill.slug).length} />
+              </th>
             ))}
           </tr>
         </thead>
@@ -225,6 +231,42 @@ export function SkillHeatmap({ results }: { results: AssignmentResults }) {
         </tbody>
       </table>
     </div>
+  )
+}
+
+/** Under a skill's name: practice on just it, for just the students in the
+ *  red, shared with them as a group when it is made (§28.3.3). */
+function PracticeFor({ assignmentId, slug, label, count }: { assignmentId: string; slug: string; label: string; count: number }) {
+  const { toast } = useToast()
+  const [state, setState] = useState<'ready' | 'making' | 'made'>('ready')
+  if (count === 0) return null
+
+  async function make() {
+    setState('making')
+    try {
+      const made = await resultsApi.practiceFor(assignmentId, slug)
+      setState('made')
+      toast(`Making practice on ${made.skill}`, {
+        tone: 'success',
+        body: `For ${made.students} ${made.students === 1 ? 'student' : 'students'}, shared with them as the group "${made.group}" when it's ready.`,
+      })
+    } catch (error) {
+      setState('ready')
+      toast('Could not make that practice', { tone: 'error', body: errorMessage(error) })
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => void make()}
+      disabled={state !== 'ready'}
+      aria-label={`Practice on ${label} for ${count} ${count === 1 ? 'student' : 'students'}`}
+      className="mt-1.5 inline-flex min-h-8 items-center gap-1 rounded-full bg-wrong-soft px-2.5 py-0.5 text-xs font-bold normal-case text-destructive transition-colors hover:bg-wrong hover:text-white disabled:opacity-70"
+    >
+      {state === 'made' ? <Check weight="bold" className="size-3.5" aria-hidden /> : <Barbell weight="bold" className="size-3.5" aria-hidden />}
+      {state === 'made' ? 'On its way' : state === 'making' ? 'Making…' : `Practice for ${count}`}
+    </button>
   )
 }
 
