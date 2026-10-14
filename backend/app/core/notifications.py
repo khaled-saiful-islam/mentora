@@ -42,3 +42,5 @@ class Kind(StrEnum):
     FAMILY_ASKED = "family_asked"
     # For admins: a student may be at risk, and a person should look.
     SAFETY_ALERT = "safety_alert"
+    # For students: their teacher opened a Class Battle to join (§28.3.6).
+    BATTLE = "battle"

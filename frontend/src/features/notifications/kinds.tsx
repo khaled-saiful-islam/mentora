@@ -25,6 +25,7 @@ import {
   MagicWand,
   Medal,
   PaperPlaneTilt,
+  Sword,
   Target,
   Trophy,
   UserPlus,
@@ -341,6 +342,20 @@ export const KINDS: Record<string, KindView> = {
     action: 'See their work',
     flourish: 'knock',
     mood: 'oops',
+  },
+  // A Class Battle opened for the class, to join on this device (§28.3.6).
+  battle: {
+    Icon: Sword,
+    tile: 'bg-coral-400 text-white',
+    title: (n) => `Class Battle: ${text(n, 'title')}. Join now!`,
+    headlines: (n) => [
+      n.payload.mode === 'boss' ? `${text(n, 'class_name')} vs the boss: ${text(n, 'title')}. Join in!` : `Tug-of-War in ${text(n, 'class_name')}: ${text(n, 'title')}. Pick up your rope!`,
+      `A Class Battle is on: ${text(n, 'title')}`,
+    ],
+    href: (n) => `/battle/${text(n, 'battle_id')}/play`,
+    action: 'Join the battle',
+    flourish: 'confetti',
+    mood: 'cheer',
   },
   // A parent's cheer, acted out by the child's buddy (§28.3.3).
   cheer: {

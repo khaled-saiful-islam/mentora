@@ -15,6 +15,8 @@ import { NewsPop } from '@/features/notifications/NewsPop'
 import { NotificationsProvider } from '@/features/notifications/NotificationsProvider'
 import { WorkProvider } from '@/features/work/WorkProvider'
 import EditorPage from '@/features/learning/EditorPage'
+import BattlePlay from '@/features/battle/BattlePlay'
+import BattleStage from '@/features/battle/BattleStage'
 import GuidePreviewPage from '@/features/guide/GuidePreviewPage'
 import LibraryPage from '@/features/learning/LibraryPage'
 import VoiceLabPage from '@/features/live/VoiceLabPage'
@@ -89,6 +91,8 @@ export default function App() {
           <Route path="/practice/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="practice" /></Allowed></Protected>} />
           <Route path="/from-home/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="home" /></Allowed></Protected>} />
           <Route path="/attempts/:id" element={<Protected><Allowed capability="take_assignments"><PlayPage source="attempt" /></Allowed></Protected>} />
+          <Route path="/battle/:id" element={<Protected><Allowed capability="share_learning_sets"><BattleStage /></Allowed></Protected>} />
+          <Route path="/battle/:id/play" element={<Protected><Allowed capability="take_assignments"><BattlePlay /></Allowed></Protected>} />
           <Route path="/practice" element={<Shell capability="take_assignments"><PracticePage /></Shell>} />
           <Route path="/results" element={<Shell capability="take_assignments"><ResultsPage /></Shell>} />
           <Route path="/badges" element={<Shell capability="take_assignments"><BadgesPage /></Shell>} />

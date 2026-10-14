@@ -26,6 +26,7 @@ import { useResource } from '@/hooks/useResource'
 import { Page, spring } from '@/motion'
 import { cn } from '@/lib/utils'
 import { AddWithAI } from './AddWithAI'
+import { OpenBattle } from '@/features/battle/OpenBattle'
 import { RevisionCard } from '@/features/game/revision/RevisionLaunch'
 import { learningApi, type GameItem, type Item, type SetDetail } from './api'
 import { EDITORS } from './editors'
@@ -319,6 +320,7 @@ function SourcesPanel({ set }: { set: SetDetail }) {
   return (
     <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
       {set.kind === 'game' && <RevisionCard title={set.title} items={set.items as GameItem[]} />}
+      {(set.kind === 'quiz' || set.kind === 'game') && set.status === 'ready' && <OpenBattle setId={set.id} />}
       <Card className="p-5">
         <h2 className="flex items-center gap-2 font-display text-lg font-semibold"><Globe weight="duotone" className="size-5 text-sky-700 dark:text-sky-100" /> Sources</h2>
         {set.sources.length === 0 ? (

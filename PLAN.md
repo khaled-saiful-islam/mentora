@@ -2209,6 +2209,19 @@ The expert's favourite mechanic becomes live play on the class screen:
   or from a quiz.
 - The single-screen Tug-of-War stays, for classes without devices.
 
+#### 28.3.6.1 Built (phase 8, 2026-10-14)
+
+- **Live Tug-of-War and Class vs Boss** from a teacher's quiz or game: the
+  class screen at `/battle/{id}`, students on their devices at
+  `/battle/{id}/play`, every screen following the room by SSE.
+- Teams kept even; a right answer pulls one step shared across its team, or
+  hits the boss; a miss costs nothing in Class vs Boss.
+- Students are told by a notification and a home banner.
+- The end shows each team's right answers, comebacks and improvement, and
+  the comeback crew. Nobody is ranked.
+- In memory, like live lessons: nothing kept. See
+  `docs/features/059-class-battle.md`.
+
 #### 28.3.7 Second chance, at your level
 
 **What the child sees** on a wrong answer:

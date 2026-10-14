@@ -211,6 +211,16 @@ read lines aloud and lights each word as it is heard. **Explain why** (Form
 reasoning in a line
 ([`docs/features/058-hands-and-voice.md`](docs/features/058-hands-and-voice.md)).
 
+### Class Battle
+
+A live Tug-of-War or Class vs Boss from any quiz or game: the battle on the
+class screen, every student answering on their own device, right answers
+pulling the rope or hitting the boss as they arrive. The end celebrates
+every team's spirit, comebacks and improvement, and ranks nobody
+([`docs/features/059-class-battle.md`](docs/features/059-class-battle.md)).
+
+![A Class Battle on the class screen: the rope, the clock, and the question with its answer shown](docs/screenshots/class-battle.png)
+
 ### Help at home
 
 A parent taps a skill their child finds hard and gets what it means in

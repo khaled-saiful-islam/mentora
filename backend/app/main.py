@@ -19,6 +19,7 @@ from app.api.routes import (
     artifacts,
     assignments,
     auth,
+    battles,
     chat,
     children,
     classes,
@@ -82,6 +83,9 @@ async def lifespan(app: FastAPI):
     from app.api.deps import live_runtime
 
     await live_runtime().close_all()
+    from app.battles.hub import battle_hub
+
+    await battle_hub().close()
 
     # A turn now outlives the request that asked for it, so something has to
     # end it: otherwise a reload leaves the model being polled for an answer
@@ -232,6 +236,7 @@ def create_app() -> FastAPI:
     app.include_router(guide_quiz.router, prefix="/api")
     app.include_router(say_it.router, prefix="/api")
     app.include_router(explain_why.router, prefix="/api")
+    app.include_router(battles.router, prefix="/api")
     app.include_router(results.router, prefix="/api")
     app.include_router(shares.owner_router, prefix="/api")
     app.include_router(shares.public_router, prefix="/api")

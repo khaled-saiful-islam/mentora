@@ -147,9 +147,12 @@ export function TugOfWar({ title, questions, calm, onExit, shuffle = shuffled }:
   )
 }
 
-function Rope({ rope, calm }: { rope: number; calm: boolean }) {
+/** The rope, its flag `rope` steps from the middle: toward the left team
+ *  when negative. A live Class Battle (§28.3.6) pulls it in part-steps. */
+export function Rope({ rope, calm }: { rope: number; calm: boolean }) {
   const toward = rope < 0 ? TEAMS.left.name : TEAMS.right.name
-  const said = rope === 0 ? 'in the middle' : `${Math.abs(rope)} ${Math.abs(rope) === 1 ? 'step' : 'steps'} toward ${toward}`
+  const steps = Math.round(Math.abs(rope) * 10) / 10
+  const said = steps === 0 ? 'in the middle' : `${steps} ${steps === 1 ? 'step' : 'steps'} toward ${toward}`
   return (
     <section aria-label={`The rope: ${said}`} className="flex items-center gap-2 rounded-3xl bg-surface p-3 shadow-sm sm:gap-4 sm:p-4">
       <span aria-hidden className="text-4xl sm:text-6xl">{TEAMS.left.icon}</span>

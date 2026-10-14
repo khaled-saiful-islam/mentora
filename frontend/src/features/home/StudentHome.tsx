@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils'
 import { Page, pop, stagger } from '@/motion'
 import { useLive } from '@/lib/bus'
 import { MadeForYou } from './MadeForYou'
+import { BattleBanner } from '@/features/battle/BattleBanner'
 import { MyDay } from '@/features/quest/MyDay'
 
 export default function StudentHome() {
@@ -95,6 +96,7 @@ export default function StudentHome() {
       </BuddyStage>
 
       {home.error && <Alert className="mt-6">{home.error}</Alert>}
+      <BattleBanner className="mt-8" />
       <MyDay className="mt-8" />
       <UpNext className="mt-8" />
       {data && <FromHome home={data} />}
