@@ -39,6 +39,7 @@ from app.api.routes import (
     me,
     memories,
     messages,
+    my_day,
     notifications,
     play,
     practice_for,
@@ -222,6 +223,7 @@ def create_app() -> FastAPI:
     app.include_router(growth.router, prefix="/api")
     app.include_router(help_at_home.router, prefix="/api")
     app.include_router(practice_for.router, prefix="/api")
+    app.include_router(my_day.router, prefix="/api")
     app.include_router(results.router, prefix="/api")
     app.include_router(shares.owner_router, prefix="/api")
     app.include_router(shares.public_router, prefix="/api")

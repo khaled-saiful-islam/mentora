@@ -8,18 +8,21 @@ first screen should not be a waterfall of spinners.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.clock import zone
+from app.core.config import get_settings
 from app.db.models.attempt import Attempt, StudentBadge
 from app.db.models.classroom import Classroom
 from app.db.models.learning import Assignment, LearningSetVersion
 from app.db.models.user import User
 from app.policies.access import visible_to
+from app.services.streaks import streak_for
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,29 +119,11 @@ class StudentHomeService:
         return {(s, v): int(n) for s, v, n in rows.all()}
 
     async def _streak(self, student_id: UUID) -> int:
-        """Days in a row, up to today or yesterday, with something finished."""
-        days = (
-            (
-                await self._session.execute(
-                    select(func.date(Attempt.completed_at))
-                    .where(Attempt.student_id == student_id, Attempt.status == "completed")
-                    .distinct()
-                    .order_by(func.date(Attempt.completed_at).desc())
-                    .limit(60)
-                )
-            )
-            .scalars()
-            .all()
-        )
-        today = datetime.now(UTC).date()
-        expected = today if days and days[0] == today else today - timedelta(days=1)
-        streak = 0
-        for day in days:
-            if day != expected:
-                break
-            streak += 1
-            expected -= timedelta(days=1)
-        return streak
+        """Days in a row with something finished, in the school's day, with
+        freezes covering a missed day (§28.3.4)."""
+        timezone = get_settings().default_timezone
+        today = datetime.now(UTC).astimezone(zone(timezone)).date()
+        return (await streak_for(self._session, student_id, timezone=timezone, today=today)).days
 
 
 def _card(assignment: Assignment, room: Classroom, attempts: list[Attempt], items: int) -> TodoCard:

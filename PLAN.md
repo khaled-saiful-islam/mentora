@@ -2136,6 +2136,19 @@ exactly those students, as a group.
   - It is in-app today.
   - Phone notifications for parents (PWA push) can come later.
 
+#### 28.3.4.1 Built (phase 4, 2026-10-14)
+
+- **My day** at the top of the student home:
+  - Today's Quest: 5 questions from work the student can see, review first;
+    a practice set, played in the quiz player;
+  - a streak in the school's day with freezes;
+  - the skill garden (Leitner boxes in `skill_memory`);
+  - the class quest, ending in a once-a-week buddy party.
+- Every finished attempt moves its skills through their boxes. A quest done
+  grows the buddy (+3).
+- Not yet: a game round in the quest, and generated questions for students
+  with too few. See `docs/features/055-daily-quest.md`.
+
 #### 28.3.5 Play with hands and voice
 
 - **Drag everywhere.**

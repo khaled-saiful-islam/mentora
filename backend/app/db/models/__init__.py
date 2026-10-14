@@ -45,6 +45,7 @@ from app.db.models.memory import Memory
 from app.db.models.moderation import ModerationEvent
 from app.db.models.notification import Notification
 from app.db.models.parent_teacher import ParentTeacherMessage, ParentTeacherThread
+from app.db.models.quest import DailyQuest, SkillMemory
 from app.db.models.rate_limit import RateLimitHit
 from app.db.models.share import ConversationShare
 from app.db.models.skill_help import SkillHelp
@@ -52,6 +53,8 @@ from app.db.models.source import MessageSource
 from app.db.models.user import User
 
 __all__ = [
+    "DailyQuest",
+    "SkillMemory",
     "SkillHelp",
     "BuddyGrowth",
     "BuddyProgress",

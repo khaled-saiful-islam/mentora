@@ -51,6 +51,8 @@ class ChildViewService:
     async def practice(self, child_id: UUID) -> list[PracticeRow]:
         """The sets the child made, and those made for them, newest first."""
         views, _ = await LearningSetService(self._session).page(child_id, limit=PRACTICE_SHOWN)
+        # A day's quest is played from the home page, not kept as practice (§28.3.4).
+        views = [v for v in views if "daily_quest" not in (v.learning_set.choices or {})]
         ids = [v.learning_set.id for v in views]
         scores = await self._scores(child_id, ids)
         made_for = await self._made_for(child_id, ids)

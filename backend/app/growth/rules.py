@@ -16,6 +16,7 @@ POINTS: dict[str, int] = {
     "day": 1,  # a day with something finished
     "badge": 3,  # any badge
     "skill": 10,  # a skill mastered, once per skill
+    "quest": 3,  # today's quest done (§28.3.4), once a day
 }
 
 # The growth at which each stage begins: newborn, little one, young, grown.

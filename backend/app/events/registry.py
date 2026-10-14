@@ -27,7 +27,7 @@ from app.events.catalog import (
     StudentNeedsSupport,
     WorkFinished,
 )
-from app.events.subscribers import growth, notifications, practice, realtime
+from app.events.subscribers import growth, notifications, practice, quests, realtime
 
 
 def build_bus() -> EventBus:
@@ -60,6 +60,8 @@ def build_bus() -> EventBus:
     bus.subscribe(AttemptCompleted, practice.weak_spots)
     # Learning grows the student's buddy (§28.3.1).
     bus.subscribe(AttemptCompleted, growth.attempt_completed)
+    # Skills move through their review boxes; a quest finished is done (§28.3.4).
+    bus.subscribe(AttemptCompleted, quests.remember)
     bus.subscribe(BadgeAwarded, growth.badge_awarded)
     bus.subscribe(PracticeMade, notifications.practice_ready)
     # A parent connected: the child is told, and both family pages refresh.

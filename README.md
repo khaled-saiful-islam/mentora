@@ -169,6 +169,18 @@ schedule of the whole class, or of the one group it is for.
 See [`docs/features/037-live-lessons.md`](docs/features/037-live-lessons.md)
 and [`docs/features/038-live-room.md`](docs/features/038-live-room.md).
 
+### My day: the Daily Quest
+
+A student's home opens on **Today's Quest**: five quick questions from their
+own work, review first, about five minutes a day. Beside it, a **streak**
+counted in Malaysian days, with freezes that cover a missed day; a **skill
+garden** where each skill is a plant that droops when it is due for review;
+and a **class quest**, everyone's quests adding up to a weekly goal and a
+buddy party, with no one ranked
+([`docs/features/055-daily-quest.md`](docs/features/055-daily-quest.md)).
+
+![A student's home: today's quest with the streak, the skill garden with plants needing water, and the class quest](docs/screenshots/my-day.png)
+
 ### Help at home
 
 A parent taps a skill their child finds hard and gets what it means in
