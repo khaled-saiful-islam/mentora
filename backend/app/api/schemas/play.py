@@ -64,6 +64,8 @@ class AttemptResponse(BaseModel):
     attempts_used: int
     leaderboard: bool
     due_at: datetime | None
+    # A second chance after a wrong answer (§28.3.7).
+    second_chance: bool = False
 
     @classmethod
     def of(cls, view: AttemptView) -> AttemptResponse:
@@ -98,6 +100,7 @@ class AttemptResponse(BaseModel):
                 view.assignment and view.assignment.leaderboard_enabled and ranks(view.kind)
             ),
             due_at=view.assignment.due_at if view.assignment else None,
+            second_chance=view.second_chance,
         )
 
 

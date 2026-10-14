@@ -401,6 +401,16 @@ async def limit_speech(session: SessionDep, settings: SettingsDep, user: Current
     )
 
 
+async def limit_second_chance(
+    session: SessionDep, settings: SettingsDep, user: CurrentUser
+) -> None:
+    """Second-chance asks per student per minute: most are kept already,
+    but the first ask for a question is a model call."""
+    await RateLimiter(session, enabled=settings.rate_limit_enabled).check(
+        "second_chance", str(user.id), Limit(settings.rate_limit_second_chance_per_minute)
+    )
+
+
 def _narrator() -> Narrator:
     return shared_narrator()
 

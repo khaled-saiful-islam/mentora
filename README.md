@@ -181,6 +181,17 @@ buddy party, with no one ranked
 
 ![A student's home: today's quest with the streak, the skill garden with plants needing water, and the class quest](docs/screenshots/my-day.png)
 
+### Second chance, at your level
+
+A wrong answer opens **Let's look at it together**: why the right answer is
+right at the level the child picks (Simpler, Just right or Challenge), a
+worked example stepped through, then **one like it** to try. Right on the
+second try, the buddy cheers and grows; the score stays as it was. A
+teacher can share a quiz in **Test mode** to switch it off
+([`docs/features/056-second-chance.md`](docs/features/056-second-chance.md)).
+
+![A second chance: the question and its answer, the level switch, why, and a worked example](docs/screenshots/second-chance.png)
+
 ### Help at home
 
 A parent taps a skill their child finds hard and gets what it means in

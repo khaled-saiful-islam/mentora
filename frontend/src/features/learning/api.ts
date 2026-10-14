@@ -239,6 +239,8 @@ export interface Assignment {
   allow_retakes: boolean
   max_attempts: number | null
   leaderboard_enabled: boolean
+  /** A second chance after a wrong answer (§28.3.7); false is "test mode". */
+  second_chance?: boolean
   due_at: string | null
   closed: boolean
   created_at: string
@@ -255,6 +257,7 @@ export interface ShareDraft {
   shuffle_questions: boolean
   shuffle_options: boolean
   leaderboard_enabled: boolean
+  second_chance: boolean
 }
 
 const json = (body: unknown) => ({ body: JSON.stringify(body) })

@@ -157,6 +157,8 @@ class ShareRequest(BaseModel):
     shuffle_questions: bool = False
     shuffle_options: bool = True
     leaderboard_enabled: bool = True
+    # False is "test mode": no second chance after a wrong answer.
+    second_chance: bool = True
 
 
 class UpdateAssignmentRequest(BaseModel):
@@ -181,6 +183,7 @@ class AssignmentResponse(BaseModel):
     allow_retakes: bool
     max_attempts: int | None
     leaderboard_enabled: bool
+    second_chance: bool
     due_at: datetime | None
     closed: bool
     created_at: datetime
@@ -204,6 +207,7 @@ class AssignmentResponse(BaseModel):
             allow_retakes=a.allow_retakes,
             max_attempts=a.max_attempts,
             leaderboard_enabled=a.leaderboard_enabled,
+            second_chance=a.second_chance,
             due_at=a.due_at,
             closed=a.closed_at is not None,
             created_at=a.created_at,

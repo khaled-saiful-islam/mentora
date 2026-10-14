@@ -133,6 +133,10 @@ class Assignment(Base):
     allow_retakes: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     max_attempts: Mapped[int | None] = mapped_column(Integer)
     leaderboard_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # A second chance after a wrong answer (§28.3.7); off is "test mode".
+    second_chance: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
     due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # When the podium badges went out. Set once, when the leaderboard is final

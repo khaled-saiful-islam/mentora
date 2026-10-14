@@ -38,6 +38,7 @@ async def share(body: ShareRequest, user: CurrentUser, session: SessionDep) -> A
         shuffle_questions=body.shuffle_questions,
         shuffle_options=body.shuffle_options,
         leaderboard_enabled=body.leaderboard_enabled,
+        second_chance=body.second_chance,
     )
     view = await _service(session).share(user, body.set_id, body.class_id, settings)
     return AssignmentResponse.of(view)

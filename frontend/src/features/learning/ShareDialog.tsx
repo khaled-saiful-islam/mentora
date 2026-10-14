@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'motion/react'
-import { Broadcast, Check, Lightning, Trophy, UsersFour, UsersThree } from '@phosphor-icons/react'
+import { Broadcast, Check, Exam, Lightning, Trophy, UsersFour, UsersThree } from '@phosphor-icons/react'
 import { Alert, Button, Field, Skeleton } from '@/components/ui'
 import { DateTimeField, localNow } from '@/components/ui/DateTimeField'
 import { Dialog } from '@/components/ui/Dialog'
@@ -16,8 +16,10 @@ import { learningApi, type SetDetail } from './api'
 
 /**
  * Share a set: which class, whole class or some groups, and how it plays —
- * instant or end-of-quiz feedback, a due date, retakes, the leaderboard. A
- * game is for playing again, and its best-points leaderboard is opt-in (§23).
+ * instant or end-of-quiz feedback, a due date, retakes, the leaderboard, and
+ * test mode, which takes away the second chance after a wrong answer
+ * (§28.3.7). A game is for playing again, and its best-points leaderboard is
+ * opt-in (§23).
  */
 export function ShareDialog({ open, set, onClose }: { open: boolean; set: SetDetail; onClose: () => void }) {
   const classes = useResource(open ? 'share:classes' : null, () => classesApi.list())
@@ -31,6 +33,7 @@ export function ShareDialog({ open, set, onClose }: { open: boolean; set: SetDet
   const [retakes, setRetakes] = useState(set.kind === 'flashcard' || game)
   const [shuffle, setShuffle] = useState(false)
   const [leaderboard, setLeaderboard] = useState(!game)
+  const [testMode, setTestMode] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
@@ -65,6 +68,7 @@ export function ShareDialog({ open, set, onClose }: { open: boolean; set: SetDet
         shuffle_questions: shuffle,
         shuffle_options: true,
         leaderboard_enabled: ranked && leaderboard,
+        second_chance: !(quiz && testMode),
       })
       celebrate({ calm, power: 0.6 })
       toast(`Shared with ${shared.audience} ${shared.audience === 1 ? 'student' : 'students'}!`, { body: `${shared.class_name}${shared.group_names.length ? ` · ${shared.group_names.join(', ')}` : ''}` })
@@ -159,6 +163,15 @@ export function ShareDialog({ open, set, onClose }: { open: boolean; set: SetDet
         <section className="space-y-2">
           <Toggle {...RETAKES[set.kind]} on={retakes} onChange={setRetakes} />
           {quiz && <Toggle label="Shuffle question order" hint="Answer options are always shuffled for each student." on={shuffle} onChange={setShuffle} />}
+          {quiz && feedback === 'instant' && (
+            <Toggle
+              label="Test mode"
+              hint="No second chance after a wrong answer: no explanation at their level and no question like it to try."
+              on={testMode}
+              onChange={setTestMode}
+              icon={<Exam weight="duotone" className="size-5 text-primary" />}
+            />
+          )}
           {ranked && (
             <Toggle
               label="Show a leaderboard"

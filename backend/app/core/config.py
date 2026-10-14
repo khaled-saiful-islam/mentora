@@ -141,6 +141,9 @@ class Settings(BaseSettings):
     # Builds per person per minute, and a student's practice sets per day.
     rate_limit_generate_per_minute: int = 4
     student_practice_per_day: int = 10
+    # Second-chance asks per student per minute (§28.3.7): explanations and
+    # questions like it are kept, so most asks cost no model call.
+    rate_limit_second_chance_per_minute: int = 20
 
     # ---- Live tutoring ---------------------------------------------------
     # The tutor's voice, over the OpenAI-style `/audio/speech`. The URL and key

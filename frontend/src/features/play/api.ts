@@ -97,6 +97,9 @@ export interface Attempt {
   attempts_used: number
   leaderboard: boolean
   due_at: string | null
+  /** A second chance after a wrong answer (§28.3.7): off in a teacher's test,
+   *  a quiz marked at the end, and a preview. */
+  second_chance?: boolean
 }
 
 export interface AnswerResult {

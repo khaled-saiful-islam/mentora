@@ -2215,6 +2215,20 @@ The expert's favourite mechanic becomes live play on the class screen:
 - Applies to quizzes and the Daily Quest. Teachers' assessments can switch
   it off per assignment ("test mode").
 
+#### 28.3.7.1 Built (phase 5, 2026-10-14)
+
+- After a wrong answer, **Let's look at it together**: the question
+  explained at Simpler, Just right or Challenge with a worked example,
+  written once per question, year and level (`item_help`).
+- **Try one like it:** from the set, then the student's other work, then
+  one made before, then made now (at most 10 a day); kept per attempt in
+  `second_chances`. The score never changes; right grows the buddy +1, up
+  to 5 a day.
+- **Test mode** per assignment in the share dialog
+  (`assignments.second_chance`), migration `5b81c0e4a7d2`.
+- Not yet: read aloud, comebacks in a teacher's results. See
+  `docs/features/056-second-chance.md`.
+
 #### 28.3.8 Learn → Practise → Play
 
 The study guide, the expert's favourite, becomes the spine:

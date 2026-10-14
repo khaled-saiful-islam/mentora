@@ -38,6 +38,8 @@ class ShareSettings:
     shuffle_questions: bool = False
     shuffle_options: bool = True
     leaderboard_enabled: bool = True
+    # Off is "test mode": no second chance after a wrong answer (§28.3.7).
+    second_chance: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +76,7 @@ class AssignmentService:
             allow_retakes=settings.allow_retakes,
             max_attempts=settings.max_attempts if settings.allow_retakes else 1,
             leaderboard_enabled=settings.leaderboard_enabled and ranks(learning_set.kind),
+            second_chance=settings.second_chance,
             due_at=settings.due_at,
         )
         self._session.add(assignment)

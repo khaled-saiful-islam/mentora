@@ -122,8 +122,8 @@ class QuestService:
         if made is not None:
             return made
         memory = await self.memory(student)
-        bank = await self._bank(student)
-        known = await self._known(student)
+        bank = await self.bank(student)
+        known = await self.known(student)
         picked, review = pick(bank, memory, known, today, seed=f"{student.id}:{today}")
         if len(picked) < SMALLEST_QUEST:
             return None
@@ -189,7 +189,7 @@ class QuestService:
             counts[1] += 1
         return {skill: (right, seen) for skill, (right, seen) in tally.items()}
 
-    async def _known(self, student: User) -> dict[tuple[UUID, str], bool]:
+    async def known(self, student: User) -> dict[tuple[UUID, str], bool]:
         """Each question answered before, by set and item: last time right?"""
         rows = await self._session.execute(
             select(Attempt.set_id, AttemptAnswer.item_id, AttemptAnswer.correct)
@@ -199,7 +199,7 @@ class QuestService:
         )
         return {(set_id, item_id): correct for set_id, item_id, correct in rows.all()}
 
-    async def _bank(self, student: User) -> list[Candidate]:
+    async def bank(self, student: User) -> list[Candidate]:
         """Every quiz question the student can see: their classes' work, what
         was sent home, and practice made for them — never another quest."""
         pairs: set[tuple[UUID, int]] = set()

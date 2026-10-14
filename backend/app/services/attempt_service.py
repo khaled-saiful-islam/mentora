@@ -71,6 +71,8 @@ class AttemptView:
     level: str | None = None
     timer_seconds: int | None = None
     best_points: int | None = None
+    # A second chance after a wrong answer (§28.3.7).
+    second_chance: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -282,6 +284,7 @@ class AttemptService:
                 (t.points for t in tries if t.status == "completed" and t.points is not None),
                 default=None,
             ),
+            second_chance=second_chance_for(loaded),
         )
 
     def _shown(self, loaded: Loaded, item_id: str) -> dict[str, Any]:
@@ -424,6 +427,10 @@ class AttemptService:
         return loaded
 
     # --- internals -------------------------------------------------------
+
+    async def loaded(self, student_id: UUID, attempt_id: UUID) -> Loaded:
+        """A student's own attempt with its set, for a service built on it."""
+        return await self._load(student_id, attempt_id)
 
     async def _load(self, student_id: UUID, attempt_id: UUID) -> Loaded:
         attempt = (
@@ -604,6 +611,14 @@ def _feedback(loaded: Loaded) -> str:
     if loaded.kind.name != "quiz":
         return "instant"
     return loaded.assignment.feedback_mode if loaded.assignment else "instant"
+
+
+def second_chance_for(loaded: Loaded) -> bool:
+    """A second chance after a wrong answer: in a quiz that says right or
+    wrong straight away, unless the teacher set it as a test (§28.3.7)."""
+    if _feedback(loaded) != "instant" or loaded.kind.name != "quiz":
+        return False
+    return loaded.assignment is None or loaded.assignment.second_chance
 
 
 def _may_retake(assignment: Assignment, used: int) -> bool:
