@@ -25,7 +25,9 @@ POINTS: dict[str, int] = {
 SECOND_CHANCES_A_DAY = 5
 
 # The growth at which each stage begins: newborn, little one, young, grown.
-STAGE_AT: tuple[int, ...] = (0, 10, 60, 200)
+# A day of regular work is about 8 to 12, so: little after about a week,
+# young after about six weeks, grown after about a term. Earned, not given.
+STAGE_AT: tuple[int, ...] = (0, 40, 200, 600)
 GROWN = len(STAGE_AT) - 1
 
 # Three stars, as the player draws them (`starsFor` in play/session.ts).

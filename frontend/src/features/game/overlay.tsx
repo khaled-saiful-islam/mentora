@@ -83,7 +83,13 @@ function opening(args: OverlayArgs): Overlay {
       tell: null,
     }
   }
-  const lines = toldLines([...piece('hook', story?.hook), ...panel('opening', story?.opening), ...piece('goal', story?.goal)], cast.buddyName)
+  // Mission control calls first, then the story; it hands over the mission and
+  // wishes the agent luck (§28.3.2).
+  const control = missionLines(attempt.language, run.islands.length)
+  const lines = toldLines(
+    [control[0], ...piece('hook', story?.hook), ...panel('opening', story?.opening), ...(story?.goal ? [control[1]] : []), ...piece('goal', story?.goal), control[2]],
+    cast.buddyName,
+  )
   return {
     node: (
       <Opening
@@ -205,6 +211,18 @@ function tellingOf(voice: PlayVoice, key: string, lines: Line[]): Telling {
     readable: voice.supported && lines.length > 0,
     toggle: () => (voice.reading === key ? voice.stop() : voice.read(key, lines)),
   }
+}
+
+// What mission control says, as the server says it (`MISSION_LINES` in
+// `read_aloud.py`): the clip is asked for by number, the words shown match.
+const MISSION: Record<string, [string, string, string]> = {
+  en: ['Attention, agent. A new mission is coming in.', 'Here is your mission.', '{islands} islands stand in your way. Good luck, agent.'],
+  ms: ['Perhatian, ejen. Satu misi baharu sedang masuk.', 'Inilah misi anda.', '{islands} pulau menanti anda. Semoga berjaya, ejen.'],
+}
+
+export function missionLines(language: string, islands: number): Line[] {
+  const said = MISSION[language] ?? MISSION.en
+  return said.map((text, n) => ({ spoken: { item: 'mission', part: 'story', n }, text: text.replace('{islands}', String(islands)) }))
 }
 
 function piece(item: 'hook' | 'goal' | 'win', text: string | undefined): Line[] {

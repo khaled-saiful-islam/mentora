@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AuthProvider } from '@/lib/auth'
 import { PreferencesProvider } from '@/lib/prefs'
 import { spokenId } from '@/features/play/usePlayVoice'
+import { missionLines } from '../overlay'
 import { AcceptMission } from './Accept'
 import { MissionBriefing } from './Briefing'
 import { NarrationContext, Said } from './narration'
@@ -88,5 +89,14 @@ describe('accepting the mission', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Mission accepted!')
     expect(button).toBeDisabled()
     await waitFor(() => expect(start).toHaveBeenCalledOnce(), { timeout: 2500 })
+  })
+})
+
+describe('mission control (§28.3.2)', () => {
+  it('calls the agent, hands over the mission and wishes luck, in the game\'s language', () => {
+    const en = missionLines('en', 4)
+    expect(en.map((l) => l.text)).toEqual(['Attention, agent. A new mission is coming in.', 'Here is your mission.', '4 islands stand in your way. Good luck, agent.'])
+    expect(en[2].spoken).toEqual({ item: 'mission', part: 'story', n: 2 })
+    expect(missionLines('ms', 3)[2].text).toBe('3 pulau menanti anda. Semoga berjaya, ejen.')
   })
 })

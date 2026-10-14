@@ -32,10 +32,13 @@ ITEMS = [
 
 def test_a_game_says_its_lines_in_the_order_they_are_heard_each_once() -> None:
     assert game_narration(EXTRAS, ITEMS) == [
+        "Attention, agent. A new mission is coming in.",
         "The river is drying up!",
         "Help us, {buddy}!",
         "Let's go!",
+        "Here is your mission.",
         "Find where the water went.",
+        "2 islands stand in your way. Good luck, agent.",
         "Look at the sky.",
         "Water evaporates.",
         "Sort them!",
@@ -45,6 +48,12 @@ def test_a_game_says_its_lines_in_the_order_they_are_heard_each_once() -> None:
         "The river flows again!",
         "Thank you!",
     ]
+
+
+def test_mission_control_speaks_the_game_s_language() -> None:
+    said = game_narration(EXTRAS, ITEMS, "ms")
+    assert said[0] == "Perhatian, ejen. Satu misi baharu sedang masuk."
+    assert "2 pulau menanti anda. Semoga berjaya, ejen." in said
 
 
 def test_a_line_naming_the_buddy_is_said_for_every_buddy_and_for_a_preview() -> None:

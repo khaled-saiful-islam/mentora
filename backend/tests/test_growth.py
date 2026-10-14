@@ -32,13 +32,13 @@ from tests.play_helpers import shared
 @pytest.mark.parametrize(
     ("points", "stage", "following"),
     [
-        (0, 0, 10),
-        (9, 0, 10),
-        (10, 1, 60),
-        (59, 1, 60),
-        (60, 2, 200),
-        (200, 3, None),
-        (999, 3, None),
+        (0, 0, 40),
+        (39, 0, 40),
+        (40, 1, 200),
+        (199, 1, 200),
+        (200, 2, 600),
+        (600, 3, None),
+        (9999, 3, None),
     ],
 )
 def test_a_buddy_grows_through_four_stages(points: int, stage: int, following: int | None) -> None:
@@ -242,7 +242,7 @@ async def test_a_parent_sees_how_grown_their_child_s_buddy_is(
     parent = await account("parent", "Siti")
     family = FamilyService(session)
     await family.connect(parent, (await family.invite_for(child)).code, "Mum")
-    for i in range(4):
+    for i in range(14):
         await GrowthService(session).badge_awarded(
             BadgeAwarded(student_id=child.id, badge="b", name="B", reason="", scope=str(i))
         )
@@ -250,4 +250,4 @@ async def test_a_parent_sees_how_grown_their_child_s_buddy_is(
         children = (await c.get("/api/me/children")).json()["items"]
         overview = (await c.get(f"/api/me/children/{child.id}/overview")).json()
     assert [k["buddy_stage"] for k in children] == [1]
-    assert (overview["growth"]["stage"], overview["growth"]["points"]) == (1, 12)
+    assert (overview["growth"]["stage"], overview["growth"]["points"]) == (1, 42)

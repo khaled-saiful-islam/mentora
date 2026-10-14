@@ -1948,17 +1948,19 @@ moves are silhouettes, each with how to unlock it.
 | A skill mastered (≥80% across 3 sets, as the Skill Master badge) | +10 |
 
 **Stage thresholds:**
-- stage 1 at 10 points: the first day of work;
-- stage 2 at 60 points: about three weeks of regular use;
-- stage 3 at 200 points: about a term.
+- stage 1 at 40 points: about a week of regular work;
+- stage 2 at 200 points: about six weeks;
+- stage 3 at 600 points: about a term.
+- **Changed (2026-10-14):** was 10, 60 and 200, which grew a buddy up too
+  easily. A day of regular work earns about 8 to 12.
 
 **Rules:**
 - **Decided (2026-10-13): every student starts at stage 0, existing
   accounts too.**
   - On first sign-in after release, an *arrival* scene introduces the baby
     buddy: "Momo is tiny! Learn with Momo and watch it grow."
-  - Stage 1 comes within the first day's work, so the reset is felt as a
-    fresh start, not a loss.
+  - Stage 1 comes after about a week of regular work (since 2026-10-14):
+    growing up is earned, so the reset is felt as a fresh start.
 - **Growth belongs to the child, not the animal.** Switching buddy keeps the
   stage and moves.
 - **New buddy friends are earned (decided 2026-10-13).**

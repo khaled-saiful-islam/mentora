@@ -38,6 +38,21 @@ Part = Literal[
 ]  # fmt: skip
 # A game's story, by piece: told as narration, or a panel's line by number.
 STORY_PIECES = ("hook", "goal", "win")
+# Mission control's lines around a game's story, by number: the call before
+# it, "here is your mission" before the goal, and good luck after (§28.3.2).
+MISSION = "mission"
+MISSION_LINES = {
+    "en": (
+        "Attention, agent. A new mission is coming in.",
+        "Here is your mission.",
+        "{islands} islands stand in your way. Good luck, agent.",
+    ),
+    "ms": (
+        "Perhatian, ejen. Satu misi baharu sedang masuk.",
+        "Inilah misi anda.",
+        "{islands} pulau menanti anda. Semoga berjaya, ejen.",
+    ),
+}
 STORY_PANELS = ("opening", "ending")
 # An island's beats in the story (§25): a panel before it, one after.
 BEAT_PARTS = ("before", "after")
@@ -86,6 +101,14 @@ def story_words(extras: dict[str, Any], piece: str, n: int | None = None) -> str
     return words
 
 
+def mission_words(language: str, n: int | None, islands: int) -> str:
+    """Mission control's line `n`, in the game's language."""
+    lines = MISSION_LINES.get(language, MISSION_LINES["en"])
+    if n is None or not 0 <= n < len(lines):
+        raise ValidationError("There is nothing to read there.")
+    return lines[n].format(islands=islands)
+
+
 def beat_words(extras: dict[str, Any], island: str, part: str, n: int | None) -> str:
     """A line of the story panel before or after a game's island (§25)."""
     beats = extras.get("beats") if isinstance(extras.get("beats"), dict) else {}
@@ -96,14 +119,25 @@ def beat_words(extras: dict[str, Any], island: str, part: str, n: int | None) ->
     return words
 
 
-def game_narration(extras: dict[str, Any], items: list[dict[str, Any]]) -> list[str]:
+def game_narration(
+    extras: dict[str, Any], items: list[dict[str, Any]], language: str = "en"
+) -> list[str]:
     """Every line a game's narrator says (§28.3.2), in the order a child hears
-    them — the story's opening, then each island's beat, idea, task, what it
-    taught and the beat after, then the ending — as written, `{buddy}` and all.
-    What the read-aloud routes say, so recording these fills their cache."""
+    them — mission control's call, the story's opening and the mission, then
+    each island's beat, idea, task, what it taught and the beat after, then
+    the ending — as written, `{buddy}` and all. What the read-aloud routes
+    say, so recording these fills their cache."""
     story = extras.get("story") if isinstance(extras.get("story"), dict) else {}
     beats = extras.get("beats") if isinstance(extras.get("beats"), dict) else {}
-    said: list[str | None] = [story.get("hook"), *_says(story.get("opening")), story.get("goal")]
+    mission = [mission_words(language, n, len(items)) for n in range(3)]
+    said: list[str | None] = [
+        mission[0],
+        story.get("hook"),
+        *_says(story.get("opening")),
+        mission[1],
+        story.get("goal"),
+        mission[2],
+    ]
     for item in items:
         beat = beats.get(item.get("id")) if isinstance(beats.get(item.get("id")), dict) else {}
         said += [
@@ -145,11 +179,17 @@ class ReadAloudService:
         view = await AttemptService(self._session).view(student_id, attempt_id)
         student = await self._session.get(User, student_id)
         buddy = buddy_name(student.buddy if student else None)
+        game = view.kind == "game"
         if part == "story":
-            return await self._speak(view.language, story_words(view.extras, item_id, n), buddy)
+            words = (
+                mission_words(view.language, n, len(view.items))
+                if item_id == MISSION
+                else story_words(view.extras, item_id, n)
+            )
+            return await self._speak(view.language, words, buddy, game=game)
         if part in BEAT_PARTS:
             return await self._speak(
-                view.language, beat_words(view.extras, item_id, part, n), buddy
+                view.language, beat_words(view.extras, item_id, part, n), buddy, game=game
             )
         item = next((i for i in view.items if i.get("id") == item_id), None)
         if part == "hint":
@@ -160,7 +200,7 @@ class ReadAloudService:
             played = next((p for p in view.answered if p.item_id == item_id), None)
             told = (played.reveal or {}) if played else {}
             item = {"id": item_id, "explanation": told.get("explanation")} if told else None
-        return await self._say(view.language, item, part, n, buddy)
+        return await self._say(view.language, item, part, n, buddy, game=game)
 
     async def for_set(
         self, owner_id: UUID, set_id: UUID, item_id: str, part: Part, n: int | None
@@ -170,17 +210,26 @@ class ReadAloudService:
         learning_set = await sets.owned(owner_id, set_id)
         version = await sets.version(learning_set)
         extras = dict(version.extras or {}) if version else {}
+        game = learning_set.kind == "game"
+        islands = len(version.items) if version else 0
         if part == "story":
-            return await self._speak(learning_set.language, story_words(extras, item_id, n))
+            words = (
+                mission_words(learning_set.language, n, islands)
+                if item_id == MISSION
+                else story_words(extras, item_id, n)
+            )
+            return await self._speak(learning_set.language, words, game=game)
         if part in BEAT_PARTS:
-            return await self._speak(learning_set.language, beat_words(extras, item_id, part, n))
+            return await self._speak(
+                learning_set.language, beat_words(extras, item_id, part, n), game=game
+            )
         kind = build_learning_kinds().get(learning_set.kind)
         raw = next((i for i in (version.items if version else []) if i.get("id") == item_id), None)
         item = kind.public(raw) if kind and raw else None
         if part in ("explanation", "hint") and raw:
             # The maker previewing has every answer anyway.
             item = {"id": item_id, part: raw.get(part)}
-        return await self._say(learning_set.language, item, part, n)
+        return await self._say(learning_set.language, item, part, n, game=game)
 
     async def _say(
         self,
@@ -189,21 +238,32 @@ class ReadAloudService:
         part: Part,
         n: int | None,
         buddy: str = "your buddy",
+        *,
+        game: bool = False,
     ) -> bytes:
         if item is None:
             raise NotFoundError("That question is not in this set.")
-        return await self._speak(language, words_for(item, part, n), buddy)
+        return await self._speak(language, words_for(item, part, n), buddy, game=game)
 
-    async def _speak(self, language: str, words: str, buddy: str = "your buddy") -> bytes:
+    async def _speak(
+        self, language: str, words: str, buddy: str = "your buddy", *, game: bool = False
+    ) -> bytes:
+        """`words` in the tutor's voice — or, in a game, mission control's:
+        deeper and steadier (§28.3.2)."""
         if language not in self._settings.read_aloud_language_list:
             raise ValidationError("The tutor's voice does not read this language yet.")
         words = words.replace(BUDDY, buddy)
         try:
+            voice, speed = voice_for(self._settings, game=game)
             return await self._narrator.speak(
-                words,
-                model=self._settings.speech_model,
-                voice=self._settings.speech_voice,
-                speed=self._settings.speech_speed,
+                words, model=self._settings.speech_model, voice=voice, speed=speed
             )
         except SpeechError as exc:
             raise UpstreamError(str(exc)) from exc
+
+
+def voice_for(settings: Settings, *, game: bool) -> tuple[str, float]:
+    """The voice and its pace: a game's narrator, or the tutor's."""
+    if game:
+        return settings.game_voice, settings.game_voice_speed
+    return settings.speech_voice, settings.speech_speed

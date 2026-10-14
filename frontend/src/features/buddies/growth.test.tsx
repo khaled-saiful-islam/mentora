@@ -19,7 +19,7 @@ function wrap(children: React.ReactNode) {
 
 describe('a growing buddy (§28.3.1)', () => {
   it('reaches its stages at the same growth the server counts', () => {
-    expect([0, 9, 10, 59, 60, 199, 200, 999].map(stageFor)).toEqual([0, 0, 1, 1, 2, 2, 3, 3])
+    expect([0, 39, 40, 199, 200, 599, 600, 9999].map(stageFor)).toEqual([0, 0, 1, 1, 2, 2, 3, 3])
   })
 
   it('learns its show-off moves as it grows, and its trick last', () => {
@@ -64,18 +64,18 @@ describe('a growing buddy (§28.3.1)', () => {
 
 describe('growth bar', () => {
   it('says how far to the next stage', () => {
-    render(<GrowthBar buddy="momo" points={34} />)
-    expect(screen.getByText('34 of 60 growth to Young')).toBeInTheDocument()
-    expect(screen.getByRole('progressbar', { name: 'Growth to Young' })).toHaveAttribute('aria-valuenow', '34')
+    render(<GrowthBar buddy="momo" points={134} />)
+    expect(screen.getByText('134 of 200 growth to Young')).toBeInTheDocument()
+    expect(screen.getByRole('progressbar', { name: 'Growth to Young' })).toHaveAttribute('aria-valuenow', '134')
   })
 
   it('fills to the brim when the buddy is about to grow up', () => {
-    render(<GrowthBar buddy="momo" points={14} within={0} />)
+    render(<GrowthBar buddy="momo" points={44} within={0} />)
     expect(screen.getByText('Ready to grow up!')).toBeInTheDocument()
   })
 
   it('says when there is no more growing to do', () => {
-    render(<GrowthBar buddy="momo" points={250} />)
+    render(<GrowthBar buddy="momo" points={650} />)
     expect(screen.getByText('Fully grown!')).toBeInTheDocument()
   })
 })

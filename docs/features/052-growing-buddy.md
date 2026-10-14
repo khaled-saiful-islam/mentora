@@ -29,7 +29,7 @@ two new buddy sounds and a short buzz on phones.
 - **Tapping a young buddy** does the best move it knows so far, and sometimes
   says "When I'm a grown-up orangutan, I'll do my leaf umbrella!".
 - **The buddy page** has:
-  - the stage path and the growth bar ("34 of 60 growth to Young");
+  - the stage path and the growth bar ("134 of 200 growth to Young");
   - **How Momo grows**: the table below;
   - every move as a collection: learned ones play, locked ones say the stage
     they come at;
@@ -142,8 +142,11 @@ The time zone for "a day" is `DEFAULT_TIMEZONE`. Set it to
 ## Known limits
 
 - **Existing students' buddies became babies** with this release (decided
-  2026-10-13). The arrival scene and a fast first stage (10 points, about a
-  day's work) soften it; watch for complaints.
+  2026-10-13). The arrival scene softens it; watch for complaints.
+- **Growing up takes a while, on purpose** (changed 2026-10-14): little at
+  40 growth (about a week of regular work), young at 200 (about six weeks),
+  grown at 600 (about a term). It was 10, 60 and 200, which grew a buddy up
+  too easily.
 - **Classmates' buddies are drawn grown** on leaderboards, in live rooms and
   in results. Only the student's own buddy, and a parent's child's, show their
   stage.

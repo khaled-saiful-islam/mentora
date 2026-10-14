@@ -27,7 +27,7 @@ from app.db.models.learning import LearningSet
 from app.live.audio import Narrator
 from app.providers.speech import SpeechError
 from app.services.learning_set_service import LearningSetService
-from app.services.read_aloud import BUDDY, game_narration
+from app.services.read_aloud import BUDDY, game_narration, voice_for
 
 logger = logging.getLogger(__name__)
 
@@ -64,14 +64,11 @@ async def record_game(
         extras: dict[str, Any] = dict(version.extras or {}) if version else {}
         items: list[dict[str, Any]] = list(version.items) if version else []
     recorded = 0
-    for text in every_voicing(game_narration(extras, items))[:MOST_CLIPS]:
+    voice, speed = voice_for(settings, game=True)
+    lines = game_narration(extras, items, learning_set.language or "en")
+    for text in every_voicing(lines)[:MOST_CLIPS]:
         try:
-            await narrator.speak(
-                text,
-                model=settings.speech_model,
-                voice=settings.speech_voice,
-                speed=settings.speech_speed,
-            )
+            await narrator.speak(text, model=settings.speech_model, voice=voice, speed=speed)
         except SpeechError:
             # The voice is down: the rest is recorded when it is first heard.
             logger.warning("narration for game %s stopped after %d lines", set_id, recorded)

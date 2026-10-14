@@ -15,7 +15,7 @@ export const GROWN: Stage = 3
 export const STAGES: readonly Stage[] = [0, 1, 2, 3]
 
 /** The growth at which each stage begins — as `app/growth/rules.py`. */
-export const STAGE_AT: Readonly<Record<Stage, number>> = { 0: 0, 1: 10, 2: 60, 3: 200 }
+export const STAGE_AT: Readonly<Record<Stage, number>> = { 0: 0, 1: 40, 2: 200, 3: 600 }
 
 export const STAGE_NAMES: Readonly<Record<Stage, string>> = {
   0: 'Newborn',

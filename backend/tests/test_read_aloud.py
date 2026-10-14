@@ -201,6 +201,25 @@ async def test_a_game_story_is_told_with_the_students_own_buddy(
     ]
 
 
+async def test_mission_control_briefs_a_game_in_a_deeper_voice_and_a_quiz_keeps_the_tutor(
+    session, voiced, teacher, student
+) -> None:
+    game = await shared(session, teacher, [student], kind="game", n=3)
+    quiz = await shared(session, teacher, [student])
+    async with voiced(student) as c:
+        played = (await c.post(f"/api/me/assignments/{game.id}/attempts")).json()
+        asked = (await c.post(f"/api/me/assignments/{quiz.id}/attempts")).json()
+        base = f"/api/me/attempts/{played['id']}/speech?part=story&item=mission"
+        call = await c.get(f"{base}&n=0")
+        luck = await c.get(f"{base}&n=2")
+        beyond = await c.get(f"{base}&n=3")
+        question = await c.get(f"/api/me/attempts/{asked['id']}/speech?item=q1&part=question")
+    assert call.content == b"voice_5:Attention, agent. A new mission is coming in."
+    assert luck.content.endswith(b"islands stand in your way. Good luck, agent.")
+    assert beyond.status_code == 422
+    assert question.content.startswith(b"voice_1:")
+
+
 async def test_a_hint_is_read_once_asked_for_and_an_explanation_once_answered(
     session, voiced, teacher, student
 ) -> None:

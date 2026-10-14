@@ -27,7 +27,7 @@ export interface AnswerBody {
 
 /** A piece of a game's story the voice can tell (§25): narration, or a line
  *  of the opening or ending panel by its number. */
-export type StoryPiece = 'hook' | 'goal' | 'win' | 'opening' | 'ending'
+export type StoryPiece = 'hook' | 'goal' | 'win' | 'opening' | 'ending' | 'mission'
 
 /** One part of an item the tutor's voice can say. */
 export type Spoken =

@@ -161,6 +161,10 @@ class Settings(BaseSettings):
     # it, so calm comes from recording sentence by sentence with a gap between
     # (live/beats.py), which brings a lesson to storybook pace.
     speech_speed: float = 0.8
+    # A game's narrator (§28.3.2): mission control, a deeper male voice at a
+    # steadier pace than the tutor's.
+    game_voice: str = "voice_5"
+    game_voice_speed: float = 0.85
     speech_timeout_seconds: float = 30.0
     # What the voice lab offers to compare, comma-separated.
     speech_voices: str = "voice_1,voice_4"
