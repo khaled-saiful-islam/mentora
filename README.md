@@ -47,6 +47,19 @@ better at quizzes, flashcards, study guides and live lessons. **My results** is 
 buddy's one-line summary, recent scores, and skills sorted into *Got it*,
 *Getting there* and *Let's practise*.
 
+**A buddy that grows as you learn.** Every student's buddy starts as a tiny
+baby animal (big head, big eyes, a little wobbly) and grows through four
+stages, newborn to grown, learning new moves at each, with its own trick
+last. Only learning makes it grow: finishing work, three stars, a badge, a
+skill mastered, coming back each day. Growing up is a full-screen moment,
+never in the middle of a question. New buddy friends are earned too, one
+for every three badges. Parents see how grown their child's buddy is
+([`docs/features/052-growing-buddy.md`](docs/features/052-growing-buddy.md)).
+
+| | |
+|---|---|
+| ![Baby Momo arrives: tiny and wobbly, with the four stages and a growth bar](docs/screenshots/buddy-arrival.png) | ![Momo grew up: now a young orangutan, with the new moves it learned](docs/screenshots/buddy-grew-up.png) |
+
 **A first-visit tour** for students, teachers and parents: a few animated
 steps showing what each can do, easy to skip, and reopened from Settings.
 
@@ -247,7 +260,9 @@ See [`docs/features/042-parents.md`](docs/features/042-parents.md).
   and child, closed the moment the link ends.
 - **Real time everywhere.** Notifications, progress while a quiz is being
   taken, leaderboards, class lists and join requests update without a reload.
-- **Study buddies, badges and streaks** to keep students coming back.
+- **Study buddies, badges and streaks** to keep students coming back. Buddies
+  start as babies and grow as the student learns; new buddy friends are
+  earned with badges.
 - **Guardrails for students.** A student in distress is answered with care
   and pointed to a trusted adult and Malaysian helplines; personal details are
   redacted; flagged moments go to a review queue. English and Malay.

@@ -219,7 +219,7 @@ function Picture({ step, buddy, calm }: { step: TourStep; buddy: string | null; 
           transition={calm ? { duration: 0.15 } : spring.bouncy}
         >
           {step.buddy ? (
-            <Buddy buddy={buddy} size={140} mood={step.buddy === 'celebrate' ? 'celebrate' : 'wave'} interactive={false} track={false} lively={false} />
+            <Buddy buddy={buddy} size={140} mood={step.buddy === 'celebrate' ? 'celebrate' : 'wave'} interactive={false} track={false} lively={false} own />
           ) : (
             <motion.span
               className={cn('grid size-24 place-items-center rounded-[1.75rem] shadow-lg', tone.badge)}

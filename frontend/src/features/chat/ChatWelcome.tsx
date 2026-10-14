@@ -123,7 +123,7 @@ export function ChatWelcome({
     <div className="flex flex-1 flex-col items-center overflow-y-auto px-4 py-6 md:py-10">
       <div className="w-full max-w-[var(--message-column)]">
         <BuddyStage buddy={user?.buddy} className="flex flex-col items-center px-4 pt-20 pb-5 text-center">
-          <Buddy buddy={user?.buddy} size={150} bubble="top" />
+          <Buddy buddy={user?.buddy} size={150} bubble="top" own />
           <p className="mt-1 font-display text-lg font-semibold text-muted-foreground">{greeting()}, {name}!</p>
           <h1 className="font-celebrate text-3xl md:text-4xl">What shall we find out, {profileOf(user?.buddy).name} and you?</h1>
         </BuddyStage>

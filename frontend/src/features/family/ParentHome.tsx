@@ -23,7 +23,7 @@ import { Page, rise, stagger } from '@/motion'
 import { useLearnStudio } from '@/features/learning/LearnStudio'
 import type { LearningKindName } from '@/features/learning/api'
 import { lookOfKind } from '@/features/learning/kinds'
-import { familyApi, type Child } from './api'
+import { familyApi, stageOf, type Child } from './api'
 import { isLate, LessonRow, waitingOf, WorkRow } from './child/bits'
 import { ResultRow } from './child/OverviewTab'
 import { useChildResource } from './child/useChild'
@@ -104,7 +104,7 @@ function ChildCard({ child, onGone }: { child: Child; onGone: () => void }) {
     <motion.li variants={rise}>
       <Card className="overflow-hidden">
         <div className="flex flex-wrap items-center gap-4 border-b border-border bg-kind-family-vivid/8 p-5">
-          <Buddy buddy={child.buddy} size={84} mood="happy" bubble="top" />
+          <Buddy buddy={child.buddy} size={84} mood="happy" bubble="top" stage={stageOf(child)} />
           <div className="min-w-[min(100%,12rem)] flex-1">
             <p className="text-xs font-bold tracking-wide text-kind-family uppercase">You're their {child.label}</p>
             <h2 className="break-words font-display text-3xl font-semibold">{child.name}</h2>

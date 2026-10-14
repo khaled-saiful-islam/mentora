@@ -1,7 +1,7 @@
 /** Tompok the cat — a soft grey kampung cat with one dark patch over her eye
  *  (that is what "tompok" means), a red collar and a little gold bell that
  *  jingles when she moves. Curious, cosy, and very proud of her tail. */
-import { Frame, Joint } from './Rig'
+import { Frame, Head, Joint } from './Rig'
 import { Cheeks, Eyes, Follow, Gloss, Mouth } from '../parts'
 import { BLUSH, INK, paint, SHINE } from '../paint'
 import type { RigProps } from '../types'
@@ -33,7 +33,7 @@ export function TompokRig({ mood, mouth, moves, gaze, blinking }: RigProps) {
       <ellipse cx={100} cy={151} rx={30} ry={27} fill={FUR} />
       <ellipse cx={100} cy={158} rx={17} ry={18} fill={CREAM} />
 
-      <Joint move={moves.head} at={[100, 128]}>
+      <Head move={moves.head} at={[100, 128]}>
         <Follow gaze={gaze}>
           <Joint move={moves.earL} at={[72, 64]}>
             <path d="M60 70 L62 30 L90 56 Z" fill={FUR} strokeLinejoin="round" />
@@ -65,7 +65,7 @@ export function TompokRig({ mood, mouth, moves, gaze, blinking }: RigProps) {
           <circle cx={98.2} cy={98.8} r={1.1} fill={SHINE} />
           <Mouth shape={mouth} cx={100} cy={109} width={13} />
         </Follow>
-      </Joint>
+      </Head>
 
       {/* The collar, and the bell that swings on it. */}
       <path d="M76 126 Q100 136 124 126" stroke={COLLAR} strokeWidth={6} fill="none" strokeLinecap="round" />

@@ -4,6 +4,7 @@
  * on its own head, so five different faces share one kind of life.
  */
 import { AnimatePresence, motion, useTransform } from 'motion/react'
+import { useLook } from './look'
 import { BLUSH, INK, pivot, SHINE, TONGUE } from './paint'
 import type { Gaze, Mood } from './types'
 
@@ -183,7 +184,9 @@ export function Eyes({
   colour?: string
   iris?: string
 }) {
-  const look: EyeLook = { size, style, colour, iris }
+  // A young buddy's eyes are bigger for its face (§28.3.1).
+  const { eyes } = useLook()
+  const look: EyeLook = { size: size * eyes, style, colour, iris }
   return (
     <g>
       <Eye shape={eyeShapeFor(mood, 'left')} at={left} gaze={gaze} blinking={blinking} look={look} />

@@ -114,6 +114,8 @@ class BadgeAwarded(Event):
     badge: str
     name: str
     reason: str
+    # What it was earned for — with the badge, what makes this award one of a kind.
+    scope: str = ""
 
 
 @dataclass(frozen=True, slots=True)

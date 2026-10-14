@@ -4,7 +4,7 @@
  *  leaf over their head, the way real orangutans do. */
 import { AnimatePresence, motion } from 'motion/react'
 import { spring } from '@/motion'
-import { Frame, Joint } from './Rig'
+import { Frame, Head, Joint } from './Rig'
 import { Cheeks, Eyes, Follow, Gloss, Mouth } from '../parts'
 import { INK, paint, pivot, SHINE } from '../paint'
 import type { RigProps } from '../types'
@@ -59,7 +59,7 @@ export function MomoRig({ mood, mouth, moves, gaze, blinking }: RigProps) {
         <path d="M128 142 q3 5 0 10 M127 156 q3 5 0 10" />
       </g>
 
-      <Joint move={moves.head} at={[100, 124]}>
+      <Head move={moves.head} at={[100, 124]}>
         <Follow gaze={gaze}>
           <Joint move={moves.earL} at={[60, 88]}>
             <circle cx={60} cy={88} r={8.5} fill={FUR} />
@@ -87,7 +87,7 @@ export function MomoRig({ mood, mouth, moves, gaze, blinking }: RigProps) {
           <ellipse cx={103.5} cy={100} rx={1.7} ry={1.3} fill={INK} opacity={0.7} />
           <Mouth shape={mouth} cx={100} cy={109} width={15} />
         </Follow>
-      </Joint>
+      </Head>
 
       {/* Long arms, down to the knees. */}
       <Joint move={moves.armL} at={[75, 136]}>

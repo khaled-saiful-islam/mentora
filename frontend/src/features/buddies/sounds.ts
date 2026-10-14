@@ -11,7 +11,7 @@
 import { audioContext } from '@/lib/audio'
 import type { BuddyKey, Mood } from './types'
 
-export type BuddySound = 'tap' | 'yay' | 'aww' | 'trill' | 'hello'
+export type BuddySound = 'tap' | 'yay' | 'aww' | 'trill' | 'hello' | 'grow' | 'unlock'
 
 interface Tone {
   /** The middle of the buddy's voice, in Hz. */
@@ -57,6 +57,20 @@ const SHAPES: Record<BuddySound, Shape> = {
   aww: [
     [1.1, 0, 1.4],
     [0.8, 1.2, 2.2],
+  ],
+  // Growing up (§28.3.1): climbing the scale, then holding the top.
+  grow: [
+    [1, 0, 0.6],
+    [1.26, 0.5, 0.6],
+    [1.5, 1, 0.6],
+    [2, 1.5, 0.8],
+    [2.52, 2.2, 2.4],
+  ],
+  // A new move or a new buddy: a quick sparkle.
+  unlock: [
+    [1.5, 0, 0.4],
+    [2, 0.3, 0.4],
+    [2.52, 0.6, 1.2],
   ],
 }
 

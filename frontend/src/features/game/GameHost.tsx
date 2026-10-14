@@ -220,7 +220,7 @@ export function GameHost({ attempt, buddy, exitTo, onFinished, only, practice = 
         </div>
         {roomy && (
           <aside className="flex w-64 shrink-0 flex-col items-center gap-3 border-l-2 border-border bg-surface p-4 pt-24" aria-label="Your buddy">
-            <Buddy ref={buddy} buddy={user?.buddy} size={150} bubble="top" speaks />
+            <Buddy ref={buddy} buddy={user?.buddy} size={150} bubble="top" speaks own />
             {focus && <IslandNote island={focus} number={run.islands.indexOf(focus) + 1} total={run.islands.length} />}
           </aside>
         )}

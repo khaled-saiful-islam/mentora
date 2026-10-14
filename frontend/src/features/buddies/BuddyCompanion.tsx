@@ -120,7 +120,7 @@ export function CompanionBuddy({ companion, slot }: { companion: Companion; slot
         className="rounded-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
         aria-label={`${profile.name}, your buddy. Tap for a tip!`}
       >
-        <Buddy ref={companion.buddy} buddy={companion.buddyKey} size={slot === 'side' ? 96 : 52} interactive={false} speaks={false} hushed={companion.hushed} />
+        <Buddy ref={companion.buddy} buddy={companion.buddyKey} size={slot === 'side' ? 96 : 52} interactive={false} speaks={false} hushed={companion.hushed} own />
       </button>
       {slot === 'side' && <p className="text-center text-xs font-bold text-muted-foreground">{profile.name} · tap me for a tip</p>}
     </div>

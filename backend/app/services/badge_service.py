@@ -91,7 +91,11 @@ class BadgeService:
             granted.append(earned)
             await self._bus.publish(
                 BadgeAwarded(
-                    student_id=student_id, badge=award.badge, name=info.name, reason=award.reason
+                    student_id=student_id,
+                    badge=award.badge,
+                    name=info.name,
+                    reason=award.reason,
+                    scope=award.scope,
                 ),
                 self._session,
             )
@@ -139,15 +143,21 @@ class BadgeService:
         )
 
     async def _skills(self, student_id: UUID) -> tuple[SkillTally, ...]:
-        rows = await self._session.execute(
-            select(
-                AttemptAnswer.skill,
-                func.count().filter(AttemptAnswer.correct.is_(True)),
-                func.count(),
-                func.count(func.distinct(Attempt.set_id)),
-            )
-            .join(Attempt, Attempt.id == AttemptAnswer.attempt_id)
-            .where(Attempt.student_id == student_id, Attempt.status == "completed")
-            .group_by(AttemptAnswer.skill)
+        return await skill_tallies(self._session, student_id)
+
+
+async def skill_tallies(session: AsyncSession, student_id: UUID) -> tuple[SkillTally, ...]:
+    """Every skill a student has answered on, finished attempts only: how
+    many right, of how many, across how many sets."""
+    rows = await session.execute(
+        select(
+            AttemptAnswer.skill,
+            func.count().filter(AttemptAnswer.correct.is_(True)),
+            func.count(),
+            func.count(func.distinct(Attempt.set_id)),
         )
-        return tuple(SkillTally(skill, int(c), int(t), int(s)) for skill, c, t, s in rows.all())
+        .join(Attempt, Attempt.id == AttemptAnswer.attempt_id)
+        .where(Attempt.student_id == student_id, Attempt.status == "completed")
+        .group_by(AttemptAnswer.skill)
+    )
+    return tuple(SkillTally(skill, int(c), int(t), int(s)) for skill, c, t, s in rows.all())

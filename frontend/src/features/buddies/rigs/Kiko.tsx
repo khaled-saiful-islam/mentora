@@ -1,6 +1,6 @@
 /** Kiko the kancil — the clever little mouse-deer of Malay folk tales, with a
  *  leaf sprout that bobs when Kiko moves. */
-import { Frame, Joint } from './Rig'
+import { Frame, Head, Joint } from './Rig'
 import { Cheeks, Eyes, Follow, Gloss, Mouth } from '../parts'
 import { BLUSH, INK, paint, SHINE } from '../paint'
 import type { RigProps } from '../types'
@@ -28,7 +28,7 @@ export function KikoRig({ mood, mouth, moves, gaze, blinking }: RigProps) {
       {/* The pale throat bib of a real kancil. */}
       <path d="M85 127 Q100 135 115 127 Q113 141 100 147 Q87 141 85 127 Z" fill={CREAM} />
 
-      <Joint move={moves.head} at={[100, 126]}>
+      <Head move={moves.head} at={[100, 126]}>
         <Follow gaze={gaze}>
           <Joint move={moves.earL} at={[80, 62]}>
             <path d="M80 66 C62 60 44 40 48 22 C62 20 82 38 88 56 Z" fill={FUR} />
@@ -59,7 +59,7 @@ export function KikoRig({ mood, mouth, moves, gaze, blinking }: RigProps) {
           <path d="M100 102.5 L100 105.5" stroke={INK} strokeWidth={1.6} strokeLinecap="round" />
           <Mouth shape={mouth} cx={100} cy={108.5} width={13} />
         </Follow>
-      </Joint>
+      </Head>
 
       <Joint move={moves.armL} at={[77, 138]}>
         <path d="M77 138 C71 146 69 154 70 162" stroke={FUR} strokeWidth={9} fill="none" strokeLinecap="round" />

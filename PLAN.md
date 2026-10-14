@@ -1852,3 +1852,461 @@ sees it.
   calls.
 - **The image reader and the picture check** call vision models through
   their own clients. They come in phase 3, not with the first wrapper.
+
+## 28. Mentora, wow: a learning friend children come back to (proposed 2026-10-13)
+
+**Why:** an expert reviewed Mentora in detail. They loved the buddies, the
+confetti and stars, the grounding, skill tracking, the parent view, teacher
+onboarding, and above all the study guides with their three levels. They
+asked for:
+- emotes to unlock as rewards;
+- voice storytelling, drag and spoken answers, not mostly quizzes;
+- a reason to come back when no work is due;
+- one tap from a parent's red skill to practice.
+
+We take these as starting points and aim higher: Mentora should be the
+learning friend a child **wants** to open every day, and the partner a
+parent and teacher **trust**. Children learn by playing and speaking, at
+their level, a few minutes every day.
+
+Out of scope here: pictures in live lessons, a Malaysian curriculum
+catalogue, and Cikgu ILMU (separate decisions).
+
+### 28.1 What must not break
+
+What the expert loved stays as it is, and every phase is checked against it:
+- the buddy in the corner who comments while the child works;
+- confetti, three stars and badges;
+- "grounded in" on every set;
+- skills carried into quizzes, flashcards and results;
+- the parent's at-a-glance progress;
+- the first-time teacher screen;
+- study guides with Simpler, Just right and Challenge.
+
+### 28.2 Principles
+
+1. **Learning is the engine of every reward.** A buddy grows, a move is
+   unlocked, a streak goes on because the child learned something. Never
+   because of time spent, and never for money.
+2. **Never shame, never guilt.**
+   - A buddy never gets sick, sad or smaller when a child is away; it says
+     it missed them.
+   - No child is shown at the bottom of a ranking: competition is between
+     teams, or the whole class against a boss.
+3. **A daily goal, then done.** Five good minutes, then "done for today"
+   and a teaser for tomorrow. No endless feed.
+4. **Voice first for the youngest.** A Year 1 child who cannot read yet can
+   play everything by listening and tapping.
+5. **Alive, but calm on request.** Every change on screen moves with
+   meaning, with sound where it helps. Reduced motion is always respected.
+   Existing animations are kept (except 28.3.1's decision).
+6. **Fast on a cheap phone.** A mid-range Android phone on 4G is the
+   reference device (28.4).
+7. **Every AI word grounded, checked and watched.** Cost and quality of
+   each new feature are visible in Langfuse (§27) before it ships.
+
+### 28.3 The features
+
+#### 28.3.1 A buddy that grows with you
+
+**What the child sees:** their buddy arrives as a **tiny baby animal**:
+- a kancil fawn, a kitten, an owlet, a baby orangutan or a tiger cub;
+- big head, sleepy eyes, wobbly legs.
+
+It grows as the child learns, in four stages:
+
+| Stage | Looks | Moves it can show off |
+|---|---|---|
+| **0. Newborn** | tiny, wobbly, sleepy | blink, yawn, wiggle, nap |
+| **1. Little one** | steadier, curious | + wave, hop, happy |
+| **2. Young** | bouncy, confident | + cheer, dance, stretch, bounce |
+| **3. Grown** | proud, full of energy | + tricks and its **signature move** |
+
+Signature moves: each buddy's **own trick**, already drawn and loved, is
+what growing up earns last: Kiko's backflip, Tompok's tail chase, Ollie's
+flutter, Momo's leaf umbrella, Rimau's roar. (Changed while building: new
+signature moves can come later; the existing tricks are the reward now.)
+
+**Growing up is a celebration.** A full-screen moment shows:
+- the buddy glowing, stretching and growing, with sound and sparkles;
+- the reason: "Momo grew up! You mastered 3 skills this week.";
+- the new move, played once.
+
+The buddy page shows **a growth bar** and **a move collection**. Locked
+moves are silhouettes, each with how to unlock it.
+
+**What makes it grow** (points, tuned in one place):
+
+| Learning moment | Growth |
+|---|---|
+| Finish a quiz, deck, study guide or game | +2 |
+| Three stars | +2 |
+| A badge | +3 |
+| Daily Quest done (28.3.4) | +3 |
+| A day of the streak | +1 |
+| Right on a second chance (28.3.7) | +1 |
+| A skill mastered (≥80% across 3 sets, as the Skill Master badge) | +10 |
+
+**Stage thresholds:**
+- stage 1 at 10 points: the first day of work;
+- stage 2 at 60 points: about three weeks of regular use;
+- stage 3 at 200 points: about a term.
+
+**Rules:**
+- **Decided (2026-10-13): every student starts at stage 0, existing
+  accounts too.**
+  - On first sign-in after release, an *arrival* scene introduces the baby
+    buddy: "Momo is tiny! Learn with Momo and watch it grow."
+  - Stage 1 comes within the first day's work, so the reset is felt as a
+    fresh start, not a loss.
+- **Growth belongs to the child, not the animal.** Switching buddy keeps the
+  stage and moves.
+- **New buddy friends are earned (decided 2026-10-13).**
+  - The first buddy is free, and free to change until anything is learned.
+  - Then one new buddy for every 3 badges (2nd at 3, then 6, 9, 12), with
+    the child picking who to meet. Buddies met are free to switch between.
+  - Unmet buddies are silhouettes with "3 more badges"; the server enforces
+    it.
+  - The point: a reason to come back and do the work.
+- **It never shrinks.** Points are never taken away.
+- **Function before show.** The reactions that help a child learn stay at
+  every stage: thinking while they answer, *oops* on a wrong answer, *cheer*
+  on a right one. Only the show-off moves and dances are earned. This
+  narrows "keep animations" for antics only, by decision.
+- **Students only.** Teachers and parents see grown buddies.
+- **Parents see it:** "Momo is a young orangutan now: 12 skills mastered."
+
+**How it works:**
+- **A growth ledger.**
+  - Table `buddy_growth (student_id, source, source_id, points, created_at)`,
+    unique on `(source, source_id)`, so a retake or a replayed event never
+    counts twice.
+  - The stage is computed from the sum.
+- **Fed by domain-event reactions** (`events/registry.py`): attempt
+  completed, badge awarded, skill mastered, quest done. Each reaction is a
+  new file plus one registry line.
+- **API.** `GET /me/buddy` returns:
+  - stage, points, and the next stage's threshold;
+  - unlocked moves;
+  - unseen unlocks.
+
+  `POST /me/buddy/seen` marks the unlocks celebrated.
+- **Rigs take a `stage`.**
+  - Each rig (`buddies/rigs/*`) sets its proportions per stage: head-to-body
+    ratio, limb length, eye size, fluff, stripes or feathers.
+  - Choreography gates the show-off moves by stage.
+  - No new drawings per stage, just parameters, so the art stays one rig
+    per animal.
+- **Celebrations go in a queue** (28.4), so a growth scene never interrupts
+  a question.
+
+#### 28.3.2 Every game told aloud
+
+**What the child sees:** a game's story opens like an audiobook in the
+tutor's warm voice. Each of the five openings is performed its own way:
+- the **phone call** rings, then a voice answers;
+- the **letter** is read by its writer;
+- the **news** sounds like a newsreader;
+- the **postcard** sounds like a friend on holiday;
+- the **comic** has a narrator between panels.
+
+The rest of the game:
+- The buddy says the hints.
+- Each island's idea and task are spoken as they appear.
+- **Words light up as they are spoken** (karaoke captions), so listening
+  also teaches reading.
+- It plays by itself after the first tap, with one-tap mute. The choice is
+  remembered per device.
+- It is on for every year, with Year 1–3 relying on it most.
+
+**How it works:**
+- Narration is the existing read-aloud by reference (`services/read_aloud`,
+  tutor voice), now with a **sequence player**.
+- Clips are **recorded once when the game is built**, in the background,
+  and cached (`live/audio` cache). Playing costs nothing, and the first
+  player hears it at once.
+- Word timing is estimated per clip, the way live lessons already time
+  captions (`live/timing`).
+- Browsers allow sound only after a tap. The story's "Start" button is that
+  tap.
+
+**Decision proposed:**
+- Name the **buddy**, never the child, in narration. Then a clip is shared
+  by every child with that buddy, and no child's name goes to the speech
+  provider.
+- Narration is in the game's own language.
+
+#### 28.3.3 Help at home (parents) and practice for these students (teachers)
+
+**What a parent sees:** tapping a red skill on their child's page opens
+*Help at home*, with three things:
+1. **What it means:** the skill in plain words for the parent, in English or
+   Malay, with one example.
+2. **A five-minute activity, no screen:** something to do at the kitchen
+   table with things at home ("Cut a roti canai into quarters…").
+3. **Send a challenge:**
+   - a short practice set on exactly that skill, at the child's year;
+   - the child's buddy delivers it: "Ibu sent you a challenge! 💪";
+   - when the child finishes, the parent is told how it went.
+
+Parents can also send **cheers**: a sticker and a short preset line ("So
+proud of you!"). The buddy acts it out on the child's screen. Preset only,
+so there is nothing to moderate.
+
+**What a teacher sees:** on the class skill heatmap, a red skill offers
+**"Practice for these 6 students"**. One tap makes the set and shares it with
+exactly those students, as a group.
+
+**How it works:**
+- The explainer and the activity are written once per (skill, year,
+  language) and cached. They are short, checked like any generation, and
+  traced.
+- The challenge is an ordinary family set (`SendHomeDialog` path,
+  `PARENT_SETS_PER_DAY`) with the skill given (`GenerationRequest.skills`).
+- The parent link to practice is switched on (`OverviewTab.tsx`,
+  `practiseLink`).
+- Cheers are a new notification kind that the buddy companion plays.
+
+#### 28.3.4 Daily Quest and the skill garden
+
+**What the child sees:**
+- **Today's Quest**, every day, about five minutes:
+  - 2 **review** questions on skills starting to fade;
+  - 1 **new** challenge a little above their level;
+  - 1 **game round** from a template.
+- Done means **"Done for today!"**: confetti, growth points, and a peek at
+  tomorrow.
+- **The skill garden:**
+  - Every skill the child has met is a plant that grows with mastery.
+  - A plant *droops* (never dies) when it is due for review, and a review
+    waters it.
+  - It shows the forgetting curve without saying the words.
+- **The streak** counts days with a quest or any finished work.
+  - Every 7 days earns a **streak freeze** (hold up to 2). A freeze covers a
+    missed day by itself: a flu day doesn't wipe a month.
+- **The weekly class quest:** the class's quests add up to one goal ("150
+  quests this week!"). Reaching it throws a **buddy party** on the class
+  screen, with every child's buddy dancing together. Nobody is ranked.
+
+**How it works:**
+- **Questions come from what already exists.** The quest uses items from
+  sets the child can see and their class's sets, on the skill chosen.
+  Generation runs only when there are not enough items, small and capped
+  per day, like `auto_practice`.
+- **Spaced review per skill:**
+  - Each (student, skill) gets a strength and a due date, updated after
+    every answer on that skill: right pushes the due date out, wrong pulls
+    it in, Leitner-style.
+  - The garden draws these.
+- **Days are Malaysian days.** Today's streak counts UTC days, so "today"
+  starts at 8 am in Malaysia. Quests and streaks use `DEFAULT_TIMEZONE` /
+  the browser's zone (fix included).
+- **The buddy announces the quest.**
+  - It is in-app today.
+  - Phone notifications for parents (PWA push) can come later.
+
+#### 28.3.5 Play with hands and voice
+
+- **Drag everywhere.**
+  - Sort It Out and Match Up already drag. Line Up gets drag-to-reorder,
+    and Detective Case lets a clue be dragged onto a suspect.
+  - Every drop snaps magnetically, with a sound and a short vibration on
+    Android.
+  - Tap-to-place stays everywhere, for accessibility.
+- **Say it** (new template, Year 1–3, English and Malay):
+  - The child reads a word or a sentence aloud, and each word lights green
+    as it is heard.
+  - A word missed gets a gentle "Listen, then try: *pe-ta-ni*", played in
+    the tutor's voice.
+  - It uses the existing speech-to-text (`build_transcriber`), with
+    accent-tolerant matching.
+  - Audio is not kept; only what was heard is stored, on the attempt.
+- **Explain why** (Form 1–5):
+  - After a right answer, sometimes: "Tell me why." The child speaks or
+    types.
+  - A model judges the **reasoning** against the item's own explanation,
+    and gives one line of feedback.
+  - The child's words pass the student safety gate first.
+  - Capped per day and traced.
+
+#### 28.3.6 Class Battle
+
+The expert's favourite mechanic becomes live play on the class screen:
+- **Tug-of-War, live:**
+  - The teacher opens the battle on the projector. Students join on their
+    own devices (signed in, in the class) and answer there.
+  - Each team's right answers pull the rope on the big screen.
+- **Class vs Boss (co-op):**
+  - The whole class fights one Boss Battle together. Every right answer from
+    anyone is a hit.
+  - Nobody can let the team down alone. Best for mixed abilities.
+- **At the end**, both teams are celebrated, with "team spirit" stats: most
+  comebacks, most improved. No individual ranking.
+
+**How it works:**
+- The battle is a short-lived room, like a live lesson's.
+- Answers are POSTed, and the projector follows the room by SSE.
+- Questions come from the game's pairs and boss questions (`questionsOf`),
+  or from a quiz.
+- The single-screen Tug-of-War stays, for classes without devices.
+
+#### 28.3.7 Second chance, at your level
+
+**What the child sees** on a wrong answer:
+- The buddy says "Let's look at it together", gently.
+- The explanation, at the child's level, with a worked example:
+  - Simpler, Just right or Challenge, the study guide's levels, now
+    everywhere;
+  - the default comes from the year, and the child can switch.
+- **"Try one like it":** a question on the same skill.
+- Right on the second try: the buddy cheers, it counts as a comeback (the
+  Comeback and Never Give Up badges exist), and the buddy grows (+1).
+
+**How it works:**
+- **Levelled explanations** are written on demand, the first time a child
+  asks, then **cached on the item**: one model call per item and level,
+  ever.
+- **"One like it"** is chosen from the same set or the bank on that skill.
+  It is generated only if there is none, and capped.
+- Applies to quizzes and the Daily Quest. Teachers' assessments can switch
+  it off per assignment ("test mode").
+
+#### 28.3.8 Learn → Practise → Play
+
+The study guide, the expert's favourite, becomes the spine:
+- Each part of a guide ends with a **one-minute game round**, built without
+  extra model calls:
+  - a Match Up from the part's words to know;
+  - a Line Up from a process it describes;
+  - then the part's check.
+- A **trail** runs through the guide's parts, with the buddy walking along
+  it and parts lighting up as they are finished.
+- Finishing the guide unlocks **its Boss Battle**, made from the guide's own
+  pairs (`game_finish`), and a short quiz. One guide becomes a whole
+  learning journey.
+
+#### 28.3.1.1 Built (phase 1, 2026-10-14)
+
+- Server:
+  - `app/growth/rules.py`;
+  - `services/growth_service.py`;
+  - `buddy_growth` (ledger) and `buddy_progress` (seen, arrived, met), in
+    migration `2e03671504cc`;
+  - reactions to `AttemptCompleted` and `BadgeAwarded`;
+  - `GET /api/me/growth` and `POST /api/me/growth/seen`;
+  - the buddy choice enforced on `PATCH /api/auth/me`;
+  - the child's stage and growth for parents.
+- Client:
+  - `growth.ts` and `look.ts`; the stage in every rig (body, `Head`, eyes,
+    wobble);
+  - `GrowthProvider`, and the arrival and grow-up scenes;
+  - `GrowthBar` and `GrowthGain` on the finish screen;
+  - the buddy page: stages, how it grows, the move collection, buddy
+    friends;
+  - babies on the welcome screen;
+  - the parent's child page.
+- Wow groundwork (28.4): `CelebrationProvider` (a queue, held mid-task),
+  `Scene`, sounds `grow` and `unlock`, `lib/haptics.ts`.
+- Doc: `docs/features/052-growing-buddy.md`.
+
+### 28.4 The wow layer (every screen)
+
+- **One motion language.**
+  - The spring tokens in `@/motion` are used for every state change.
+  - Shared-element transitions: a card grows into its full page.
+  - Lists stagger in, and the buddy reacts to everything.
+- **Celebrations in three sizes, from one queue:**
+  - small: a sparkle and a tick;
+  - medium: confetti and stars;
+  - big: a full-screen scene (growth, streak milestones, class party).
+
+  The queue never interrupts a question, and plays at the next pause.
+- **Sound design:**
+  - One small set: tap, right, a soft "not quite", unlock, grow, streak.
+  - Plus the buddies' existing voices (`buddies/sounds`).
+  - On by default for students, off for teachers and parents, with one
+    volume setting.
+- **Haptics:** short vibrations on Android for a right answer, a drop that
+  snaps, and unlocks.
+- **A student home called "My day":**
+  - the buddy, big and alive, in its den;
+  - Today's Quest;
+  - the streak flame;
+  - a peek at the garden;
+  - work due.
+- **Budgets on the reference phone** (mid-range Android, 4G):
+  - first screen under 2.5 s;
+  - animations at 60 fps;
+  - rigs, rounds and audio loaded lazily and prefetched one step ahead.
+- **Accessibility:**
+  - reduced motion respected everywhere;
+  - captions on every voice;
+  - tap alternatives to every drag;
+  - text sizes (exist) and AA contrast.
+- **Checked like every UI change:** at 1440, 1024, 768 and 390 px, with no
+  cut or overlapping text, in both themes.
+
+### 28.5 Knowing it works
+
+- **AI cost and quality**, in Langfuse (§27): narration clips recorded,
+  explanations written, quests generated, Explain-why judged. Each is traced
+  with a cost per day.
+- **Learning and habit:**
+  - a small `product_events` table, and an admin card with: children
+    returning the next day and the next week, quests done, streak lengths,
+    time to stage 1, second-chance success, Help-at-home use;
+  - no third-party analytics: children.
+
+### 28.6 Phases
+
+Each phase ships with:
+- tests;
+- a feature document;
+- the 4-width audit and screenshots;
+- a Langfuse cost check;
+- deployment on your word.
+
+1. **The wow groundwork and the growing buddy**: celebration queue, sounds,
+   haptics, rig stages, growth ledger, arrival scene, move collection.
+2. **Every game told aloud**: pre-recorded narration, karaoke captions,
+   auto-play and mute.
+3. **Help at home and practice for these students.**
+4. **Daily Quest, skill garden, Malaysian-day streak and freezes, weekly
+   class quest.**
+5. **Second chance at your level.**
+6. **Learn → Practise → Play** in study guides.
+7. **Hands and voice**: drag everywhere, Say it, Explain why. Phase 7
+   starts with a spike: does the speech-to-text hear children, in Malay
+   and English, well enough?
+8. **Class Battle**: live Tug-of-War and Class vs Boss.
+
+### 28.7 Decisions
+
+- **Made (2026-10-13):** every student's buddy starts at stage 0, existing
+  accounts included (28.3.1).
+- **Made (2026-10-13):** new buddies are earned with badges, one per 3
+  (28.3.1).
+- **Proposed:**
+  - Narration names the buddy, not the child (28.3.2).
+  - Parents' cheers are preset, not free text (28.3.3).
+  - Explain why: at most 5 a day per student (28.3.5).
+  - Second chance is on by default, with "test mode" per assignment
+    (28.3.7).
+
+### 28.8 Known limits and risks
+
+- **Resetting buddies may disappoint** some children who liked a grown
+  buddy. The arrival scene and a fast first stage are the answer; watch
+  for complaints in the first week.
+- **Narration costs speech** for every game built. It is recorded once and
+  cached, but a busy week of games is a real speech bill: watch it.
+- **Speech-to-text and children's voices** are untested, in Malay above
+  all. Say it waits on the phase 7 spike.
+- **Class Battle needs a device per student.** Without them it falls back to
+  the single-screen Tug-of-War.
+- **Spaced review needs answers to work from.** A new student's first
+  quests lean on "new" questions until their skills have history.
+- **Browsers play sound only after a tap.** Every voice starts from a
+  button the child pressed.
+- **The app's own words are in English.** Content is in the set's
+  language. A Malay interface is a separate project.

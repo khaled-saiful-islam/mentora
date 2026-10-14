@@ -84,7 +84,7 @@ export default function StudentHome() {
     <Page className="@container mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-8">
       <BuddyStage buddy={user?.buddy} className="grid items-end gap-2 px-5 pt-6 pb-5 md:grid-cols-[auto_1fr] md:gap-6 md:px-8 md:pt-8">
         <div className="order-2 flex justify-center pt-16 md:order-1 md:pt-20">
-          <Buddy ref={buddy} buddy={user?.buddy} size={170} bubble="top" />
+          <Buddy ref={buddy} buddy={user?.buddy} size={170} bubble="top" own />
         </div>
         <div className="order-1 pb-2 md:order-2">
           <p className="font-display text-lg font-semibold text-muted-foreground">{greeting()},</p>

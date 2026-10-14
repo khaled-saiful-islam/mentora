@@ -41,7 +41,7 @@ export function ChatHeader({
         </Button>
         {student && (
           <span className="-my-2 shrink-0">
-            <Buddy buddy={user?.buddy} size={52} interactive={false} track={false} lively={false} />
+            <Buddy buddy={user?.buddy} size={52} interactive={false} track={false} lively={false} own />
           </span>
         )}
         <div className="min-w-0">

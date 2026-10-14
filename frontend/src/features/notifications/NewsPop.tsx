@@ -139,7 +139,7 @@ function Pop({ note, buddy, onDone, onRead }: { note: Notification; buddy: strin
           animate={{ x: 0, opacity: 1, rotate: [20, -8, 0] }}
           transition={{ ...spring.bouncy, delay: 0.2 }}
         >
-          <Buddy buddy={buddy} size={104} mood={view.mood} interactive={false} track={false} lively={false} />
+          <Buddy buddy={buddy} size={104} mood={view.mood} interactive={false} track={false} lively={false} own />
         </motion.div>
       )}
       {!view.serious && (

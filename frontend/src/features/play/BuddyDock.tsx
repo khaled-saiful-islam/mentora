@@ -42,7 +42,7 @@ export function BuddyCorner({ buddy, handle }: { buddy: string | null | undefine
   if (!cornered && spot) {
     return createPortal(
       <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 160, damping: 16, delay: 0.3 }}>
-        <Buddy key="spot" ref={handle} buddy={buddy} size={tablet ? 112 : 84} bubble="left" />
+        <Buddy key="spot" ref={handle} buddy={buddy} size={tablet ? 112 : 84} bubble="left" own />
       </motion.div>,
       spot,
     )
@@ -54,7 +54,7 @@ export function BuddyCorner({ buddy, handle }: { buddy: string | null | undefine
       transition={{ type: 'spring', stiffness: 160, damping: 16, delay: 0.3 }}
       className="pointer-events-none fixed right-2 bottom-2 z-50 md:right-6 md:bottom-4 [&_button]:pointer-events-auto"
     >
-      <Buddy key="corner" ref={handle} buddy={buddy} size={cornered ? 136 : 84} bubble="above-left" />
+      <Buddy key="corner" ref={handle} buddy={buddy} size={cornered ? 136 : 84} bubble="above-left" own />
     </motion.div>
   )
 }

@@ -29,6 +29,7 @@ from app.db.models.family import FamilyInvite
 from app.events.registry import build_bus
 from app.services.class_pulse import ClassPulseService
 from app.services.family_service import ChildView, FamilyService, first_name
+from app.services.growth_service import GrowthService
 from app.services.membership_service import MembershipService
 
 student_router = APIRouter(
@@ -119,7 +120,14 @@ async def connect(body: ConnectBody, user: CurrentUser, session: SessionDep) -> 
 
 @parent_router.get("")
 async def my_children(user: CurrentUser, session: SessionDep) -> dict[str, Any]:
-    return {"items": [_child(c) for c in await FamilyService(session).children(user.id)]}
+    growth = GrowthService(session)
+    return {
+        "items": [
+            # Their buddy as big as they have grown it (§28.3.1).
+            {**_child(c), "buddy_stage": (await growth.growth(c.student)).stage}
+            for c in await FamilyService(session).children(user.id)
+        ]
+    }
 
 
 @parent_router.get("/{student_id}/classes", response_model=StudentClassList)

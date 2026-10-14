@@ -1,6 +1,6 @@
 /** Ollie the owl — round, wise and kind, with glasses that slide down the
  *  beak while Ollie thinks. */
-import { Frame, Joint } from './Rig'
+import { Frame, Head, Joint } from './Rig'
 import { Cheeks, Eyes, Follow, Gloss, Mouth } from '../parts'
 import { INK, paint, SHINE } from '../paint'
 import type { RigProps } from '../types'
@@ -48,7 +48,7 @@ export function OllieRig({ mood, mouth, moves, gaze, blinking }: RigProps) {
         <path key={d} d={d} stroke={FEATHER} strokeOpacity={0.45} strokeWidth={2} fill="none" strokeLinecap="round" />
       ))}
 
-      <Joint move={moves.head} at={[100, 128]}>
+      <Head move={moves.head} at={[100, 128]}>
         <Follow gaze={gaze}>
           <Joint move={moves.earL} at={[72, 56]}>
             <path d="M64 62 C58 48 56 36 58 24 C68 34 78 44 84 54 Z" fill={DEEP} />
@@ -79,7 +79,7 @@ export function OllieRig({ mood, mouth, moves, gaze, blinking }: RigProps) {
             <path d="M109 80 Q112 75 117 74" stroke={SHINE} strokeOpacity={0.7} strokeWidth={2} fill="none" strokeLinecap="round" />
           </Joint>
         </Follow>
-      </Joint>
+      </Head>
     </Frame>
   )
 }

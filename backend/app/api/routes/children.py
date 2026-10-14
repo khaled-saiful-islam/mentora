@@ -36,6 +36,7 @@ from app.services.child_view_service import ChildViewService
 from app.services.coverage.service import CoverageService
 from app.services.family_service import FamilyService
 from app.services.family_share_service import FamilyShareService
+from app.services.growth_service import GrowthService
 from app.services.live_session_service import LiveSessionService
 from app.services.live_summary_service import LiveSummaryService
 from app.services.results_service import ResultsService
@@ -74,6 +75,7 @@ async def overview(student_id: UUID, user: CurrentUser, session: SessionDep) -> 
         "done": [TodoResponse.of(c) for c in home["done"]],
         "badges": home["badges"],
         "streak": home["streak"],
+        "growth": (await GrowthService(session).growth(child)).as_dict(),
         "practise": insights["practise"][:SKILLS],
         "strengths": insights["strengths"][:SKILLS],
         "latest": [history_row(a, s) for a, s in await results.history(child.id, LATEST)],

@@ -31,6 +31,7 @@ from app.core.errors import NotFoundError
 from app.core.security import create_access_token
 from app.events.registry import build_bus
 from app.services.family_service import FamilyService, first_name
+from app.services.growth_service import GrowthService
 from app.services.membership_service import MembershipService
 from app.services.quota import TokenQuota
 
@@ -205,12 +206,14 @@ async def me(user: CurrentUser) -> UserResponse:
 
 @router.patch("/me", response_model=UserResponse)
 async def update_profile(
-    payload: UpdateProfileRequest, auth: AuthServiceDep, user: CurrentUser
+    payload: UpdateProfileRequest, auth: AuthServiceDep, user: CurrentUser, session: SessionDep
 ) -> UserResponse:
     updated = await auth.update_profile(
         user.id, display_name=payload.display_name, email=payload.email
     )
     if payload.buddy is not None:
+        # A student's first buddy is theirs to pick; another is earned (§28.3.1).
+        await GrowthService(session).choose(user, payload.buddy)
         updated = await auth.choose_buddy(user.id, payload.buddy)
     return UserResponse.of(updated)
 

@@ -10,6 +10,7 @@ import { Button, ButtonLink } from '@/components/ui'
 import { BadgeMedal } from '@/features/badges/medals'
 import { Buddy, BuddyStage, type BuddyHandle, type Cue } from '@/features/buddies'
 import { finishTip } from '@/features/buddies/companion'
+import { GrowthGain } from '@/features/buddies/GrowthGain'
 import { GameHost } from '@/features/game/GameHost'
 import { questionsOf } from '@/features/game/revision/questions'
 import { StreakLadder } from '@/features/game/revision/StreakLadder'
@@ -98,7 +99,7 @@ export function FinishScreen({
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 md:py-12">
       <BuddyStage buddy={user?.buddy} className="flex flex-col items-center px-4 pt-24 pb-8 text-center">
-        <Buddy ref={buddy} buddy={user?.buddy} size={180} mood={verdict === 'great' ? 'dance' : 'idle'} bubble="top" />
+        <Buddy ref={buddy} buddy={user?.buddy} size={180} mood={verdict === 'great' ? 'dance' : 'idle'} bubble="top" own />
         <motion.h1
           initial={{ scale: 0.3, opacity: 0, rotate: -6 }}
           animate={{ scale: 1, opacity: 1, rotate: 0 }}
@@ -130,6 +131,7 @@ export function FinishScreen({
             You won {won} points!
           </motion.p>
         )}
+        <GrowthGain buddy={user?.buddy} />
         {look.rank && !guide && (
           <motion.p
             initial={{ y: 12, opacity: 0 }}

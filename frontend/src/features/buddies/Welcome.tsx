@@ -18,10 +18,11 @@ import { spring } from '@/motion'
 import { Buddy, type BuddyHandle } from './Buddy'
 import { BuddyPicker } from './BuddyPicker'
 import { BuddyStage } from './BuddyStage'
+import { useGrowth } from './GrowthProvider'
 import { BUDDIES } from './profiles'
 import { isBuddyKey, type BuddyKey } from './types'
 
-const PROMISES = ['cheer you on in every quiz', 'give you tips when things get tricky', 'keep you company while you learn']
+const PROMISES = ['cheer you on in every quiz', 'give you tips when things get tricky', 'grow up as you learn, and learn new moves']
 
 export function Welcome() {
   const { user, updateUser } = useAuth()
@@ -33,6 +34,7 @@ export function Welcome() {
   // lift the gate and skip the meeting.
   const [saved, setSaved] = useState<User | null>(null)
   const buddy = useRef<BuddyHandle>(null)
+  const growth = useGrowth()
   const name = user ? firstName(user) : 'friend'
 
   async function choose() {
@@ -56,9 +58,9 @@ export function Welcome() {
           <motion.section key="choose" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -40 }} transition={spring.gentle}>
             <p className="font-display text-xl font-semibold text-muted-foreground">Welcome to Mentora, {name}!</p>
             <h1 className="font-celebrate text-4xl md:text-5xl">Pick your study buddy</h1>
-            <p className="mt-2 text-lg text-muted-foreground">They'll learn alongside you. Tap one to say hello!</p>
+            <p className="mt-2 text-lg text-muted-foreground">Every buddy starts as a tiny baby and grows up as you learn. Tap one to say hello!</p>
             <div className="mt-6">
-              <BuddyPicker value={chosen} onChange={setChosen} />
+              <BuddyPicker value={chosen} onChange={setChosen} stage={0} />
             </div>
             <div className="mt-6 flex justify-end">
               <Button size="lg" disabled={!chosen} loading={saving} onClick={() => void choose()}>
@@ -78,7 +80,7 @@ export function Welcome() {
               onAnimationComplete={() => buddy.current?.cue('hello', { name })}
             >
               <BuddyStage buddy={chosen} className="flex flex-col items-center px-4 pt-28 pb-8 text-center">
-                <Buddy ref={buddy} buddy={chosen} size={220} mood="happy" bubble="top" />
+                <Buddy ref={buddy} buddy={chosen} size={220} mood="happy" bubble="top" own />
                 <h1 className="mt-3 font-celebrate text-4xl md:text-5xl">
                   {BUDDIES[chosen].name} and {name}!
                 </h1>
@@ -93,7 +95,16 @@ export function Welcome() {
                   <Button size="lg" variant="ghost" onClick={() => setStep('choose')}>
                     Pick again
                   </Button>
-                  <Button size="lg" variant="sun" onClick={() => saved && updateUser(saved)}>
+                  <Button
+                    size="lg"
+                    variant="sun"
+                    onClick={async () => {
+                      // Met here: the baby's arrival is not celebrated twice
+                      // (§28.3.1) — marked before the gate lifts, or it would be.
+                      await growth?.seen()
+                      if (saved) updateUser(saved)
+                    }}
+                  >
                     Let's go!
                     <ArrowRight weight="bold" className="size-5" />
                   </Button>

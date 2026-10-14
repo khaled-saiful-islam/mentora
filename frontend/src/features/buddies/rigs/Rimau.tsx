@@ -1,6 +1,6 @@
 /** Rimau the Malayan tiger cub — brave, bouncy, and very proud of a roar that
  *  is mostly a squeak. */
-import { Frame, Joint } from './Rig'
+import { Frame, Head, Joint } from './Rig'
 import { Cheeks, Eyes, Follow, Gloss, Mouth } from '../parts'
 import { paint, SHINE } from '../paint'
 import type { RigProps } from '../types'
@@ -42,7 +42,7 @@ export function RimauRig({ mood, mouth, moves, gaze, blinking }: RigProps) {
       <ellipse cx={100} cy={157} rx={18} ry={18} fill={CREAM} />
       <Stripes d={['M71 142 Q77 144 80 139', 'M70 153 Q77 155 80 150', 'M129 142 Q123 144 120 139', 'M130 153 Q123 155 120 150']} />
 
-      <Joint move={moves.head} at={[100, 128]}>
+      <Head move={moves.head} at={[100, 128]}>
         <Follow gaze={gaze}>
           <Joint move={moves.earL} at={[68, 62]}>
             <circle cx={66} cy={56} r={15} fill={FUR} />
@@ -85,7 +85,7 @@ export function RimauRig({ mood, mouth, moves, gaze, blinking }: RigProps) {
           <circle cx={97.8} cy={98.3} r={1.2} fill={SHINE} />
           <Mouth shape={mouth} cx={100} cy={110} width={13} />
         </Follow>
-      </Joint>
+      </Head>
 
       <Joint move={moves.armL} at={[77, 142]}>
         <path d="M77 142 C71 149 69 156 70 162" stroke={FUR} strokeWidth={11} fill="none" strokeLinecap="round" />

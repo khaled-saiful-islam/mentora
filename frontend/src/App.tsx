@@ -44,6 +44,9 @@ import BadgesPage from '@/features/badges/BadgesPage'
 import LeaderboardPage from '@/features/results/LeaderboardPage'
 import AssignmentResultsPage from '@/features/results/AssignmentResultsPage'
 import { ToastProvider } from '@/components/ui/Toast'
+import { CelebrationProvider } from '@/features/celebrate/CelebrationProvider'
+import { GrowthProvider } from '@/features/buddies/GrowthProvider'
+import { GrowthCelebrations } from '@/features/buddies/GrowthScenes'
 import type { Capabilities } from '@/lib/user'
 import Chat from '@/pages/Chat'
 import Profile from '@/pages/Profile'
@@ -64,6 +67,9 @@ export default function App() {
       <NotificationsProvider>
       <WorkProvider>
       <LearnStudioProvider>
+      <GrowthProvider>
+      <CelebrationProvider>
+        <GrowthCelebrations />
         <Routes>
           <Route path="/signin" element={<PublicOnly><SignInPage /></PublicOnly>} />
           <Route path="/signup" element={<PublicOnly><SignUpChooser /></PublicOnly>} />
@@ -121,6 +127,8 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <NewsPop />
+      </CelebrationProvider>
+      </GrowthProvider>
       </LearnStudioProvider>
       </WorkProvider>
       </NotificationsProvider>

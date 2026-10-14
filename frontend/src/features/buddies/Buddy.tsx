@@ -10,10 +10,14 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
 import { useCalmMotion } from '@/motion'
+import { useInsideScene, useSceneOpen } from '@/features/celebrate/Scene'
 import { useSoundOn } from '@/lib/prefs'
 import { cn } from '@/lib/utils'
 import { choreograph } from './choreography'
+import { anticsFor, ANIMAL, described, GROWN, shrunk, TAP_MOVE, type Stage } from './growth'
+import { useMyStage } from './GrowthProvider'
 import { useBlink, useBuddyMood, useGaze, useSpeech } from './hooks'
+import { StageLook } from './look'
 import { MOUTH_FOR } from './parts'
 import { Particles, useParticles, type ParticleKind } from './particles'
 import { profileOf, type Anchor, type BuddyProfile } from './profiles'
@@ -47,6 +51,10 @@ export interface BuddyProps {
   speaks?: boolean
   /** No sound at all — while Astra is teaching, say. */
   hushed?: boolean
+  /** How grown it is (§28.3.1); grown unless said. */
+  stage?: Stage
+  /** The signed-in student's own buddy: drawn as grown as they have made it. */
+  own?: boolean
   className?: string
 }
 
@@ -88,28 +96,35 @@ const SECRET_TAPS = 5
 const TAP_WINDOW_MS = 1800
 
 export const Buddy = forwardRef<BuddyHandle, BuddyProps>(function Buddy(
-  { buddy, mood: base = 'idle', size = 160, interactive = true, track = true, lively = true, bubble = 'top', speaks, hushed = false, className },
+  { buddy, mood: base = 'idle', size = 160, interactive = true, track = true, lively = true, bubble = 'top', speaks, hushed = false, stage: given, own = false, className },
   ref,
 ) {
   const profile = profileOf(buddy)
   const calm = useCalmMotion()
+  const mine = useMyStage()
+  const stage: Stage = given ?? (own ? mine : undefined) ?? GROWN
   const lite = size < LITE_BELOW
   const svg = useRef<SVGSVGElement>(null)
   const box = useRef<HTMLDivElement>(null)
-  const { mood, play } = useBuddyMood(base, { lively: lively && !lite, calm, antics: profile.antics })
+  const antics = useMemo(() => anticsFor(profile.antics, stage), [profile.antics, stage])
+  const { mood, play } = useBuddyMood(base, { lively: lively && !lite, calm, antics })
   const blinking = useBlink(true)
   const gaze = useGaze(svg, { track: track && !lite && !calm, fixed: FIXED_GAZE[mood] ?? null })
   const field = useParticles(!calm && !lite)
   const { emit } = field
   const speech = useSpeech()
-  const soundOn = useSoundOn() && !lite && !hushed
-  const talks = speaks ?? !lite
+  // Behind a celebration, only the buddy in it talks (§28.4).
+  const sceneOpen = useSceneOpen()
+  const inScene = useInsideScene()
+  const covered = sceneOpen && !inScene
+  const soundOn = useSoundOn() && !lite && !hushed && !covered
+  const talks = (speaks ?? !lite) && !covered
   const moves = useMemo(() => choreograph(mood, profile.signature, calm), [mood, profile, calm])
   const mouth = profile.mouths[mood] ?? MOUTH_FOR[mood]
 
   const burst = useCallback(
-    (kind: ParticleKind, count: number, from: Anchor = 'body') => emit(kind, count, profile.anchors[from]),
-    [emit, profile],
+    (kind: ParticleKind, count: number, from: Anchor = 'body') => emit(kind, count, shrunk(profile.anchors[from], stage)),
+    [emit, profile, stage],
   )
 
   useMoodEffects(mood, profile, burst)
@@ -125,13 +140,22 @@ export const Buddy = forwardRef<BuddyHandle, BuddyProps>(function Buddy(
 
   const trick = useCallback(
     (speak = true) => {
+      if (stage < GROWN) {
+        // Too little for its signature trick: the best move it knows so far,
+        // and now and then a word about growing up (§28.3.1).
+        play(TAP_MOVE[stage])
+        if (soundOn) playBuddySound(profile.key, 'tap')
+        if (speak) say(Math.random() < 0.4 ? `When I'm a grown-up ${ANIMAL[profile.key].grown}, I'll do my ${profile.trick.toLowerCase()}!` : pick(VOICES[profile.key].tap), undefined, 0.45)
+        burst('sparkle', 3, 'body')
+        return
+      }
       play('trick')
       if (soundOn) playBuddySound(profile.key, 'trill')
       if (speak) say(pick(VOICES[profile.key].tap), undefined, 0.45)
       const { kind, count, from, delayMs } = profile.trickBurst
       window.setTimeout(() => burst(kind, count, from), delayMs)
     },
-    [play, say, burst, profile, soundOn],
+    [play, say, burst, profile, soundOn, stage],
   )
 
   const handle = useMemo<BuddyHandle>(
@@ -180,7 +204,9 @@ export const Buddy = forwardRef<BuddyHandle, BuddyProps>(function Buddy(
       aria-label={`${profile.name} the ${profile.species}`}
       className="block overflow-visible"
     >
-      <Rig mood={mood} mouth={mouth} moves={moves} gaze={gaze} blinking={blinking} calm={calm} />
+      <StageLook.Provider value={{ stage, calm }}>
+        <Rig mood={mood} mouth={mouth} moves={moves} gaze={gaze} blinking={blinking} calm={calm} />
+      </StageLook.Provider>
       <Particles field={field} />
     </svg>
   )
@@ -194,7 +220,7 @@ export const Buddy = forwardRef<BuddyHandle, BuddyProps>(function Buddy(
           onClick={onTap}
           whileTap={{ scale: 0.94 }}
           className="block cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
-          aria-label={`${profile.name} the ${profile.species}. Tap for a ${profile.trick.toLowerCase()}!`}
+          aria-label={stage < GROWN ? `${profile.name}, ${described(profile.key, stage)}. Tap to play!` : `${profile.name} the ${profile.species}. Tap for a ${profile.trick.toLowerCase()}!`}
         >
           {art}
         </motion.button>

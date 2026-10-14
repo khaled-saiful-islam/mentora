@@ -3,19 +3,23 @@
  * their week is going, and six tabs of everything they do. Read-only, and
  * live — it changes as the child works.
  */
-import { CaretLeft, ChalkboardTeacher, ChartLineUp, Barbell, CalendarStar, Fire, House, ListChecks, Medal, Warning } from '@phosphor-icons/react'
+import { CaretLeft, ChalkboardTeacher, ChartLineUp, Barbell, CalendarStar, Fire, House, ListChecks, Medal, Plant, Warning } from '@phosphor-icons/react'
 import { motion } from 'motion/react'
 import { useParams } from 'react-router-dom'
 import { Alert, ButtonLink, Skeleton } from '@/components/ui'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Tabs } from '@/components/ui/Tabs'
 import { Buddy } from '@/features/buddies'
+import { described, isStage } from '@/features/buddies/growth'
+import type { Growth } from '@/features/buddies/GrowthProvider'
+import { BUDDIES } from '@/features/buddies/profiles'
+import { isBuddyKey, type BuddyKey } from '@/features/buddies/types'
 import { EmptyArt } from '@/features/classes/EmptyArt'
 import { useResource } from '@/hooks/useResource'
 import { useLive } from '@/lib/bus'
 import { cn } from '@/lib/utils'
 import { Page, pop, stagger } from '@/motion'
-import { familyApi, type Child, type ChildOverview } from '../api'
+import { familyApi, stageOf, type Child, type ChildOverview } from '../api'
 import { isLate, waitingOf } from './bits'
 import { useAuth } from '@/lib/auth'
 import { ClassesTab } from './ClassesTab'
@@ -96,12 +100,13 @@ function Header({ child, overview, late }: { child: Child; overview: ChildOvervi
     <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-kind-family-vivid via-kind-family-vivid to-kind-family p-5 text-white shadow-lg md:p-6">
       <div className="relative flex flex-wrap items-center gap-x-6 gap-y-3">
         <div className="shrink-0 rounded-full bg-white/15 p-1 ring-1 ring-white/25">
-          <Buddy buddy={child.buddy} size={96} mood="happy" bubble="top" />
+          <Buddy buddy={child.buddy} size={96} mood="happy" bubble="top" stage={stageOf(child)} />
         </div>
         <div className="min-w-[min(100%,14rem)] flex-1">
           <p className="text-sm font-bold opacity-85">You're their {child.label}</p>
           <h1 className="break-words font-display text-4xl font-semibold tracking-tight">{child.name}</h1>
           {child.grade_label && <p className="font-bold opacity-85">{child.grade_label}</p>}
+          {overview?.growth && isBuddyKey(child.buddy) && <BuddyGrowthLine buddy={child.buddy} growth={overview.growth} />}
         </div>
         <motion.ul className="flex flex-wrap gap-2" variants={stagger(0.08, 0.2)} initial="hidden" animate={overview ? 'shown' : 'hidden'}>
           <Stat Icon={Fire} text={streak > 0 ? `${streak}-day streak` : 'No streak yet'} />
@@ -120,5 +125,18 @@ function Stat({ Icon, text, alert = false }: { Icon: typeof Fire; text: string; 
       <Icon weight="fill" className="size-4" aria-hidden />
       {text}
     </motion.li>
+  )
+}
+
+/** "Momo is a young orangutan · 12 skills mastered" (§28.3.1). */
+function BuddyGrowthLine({ buddy, growth }: { buddy: BuddyKey; growth: Growth }) {
+  const stage = isStage(growth.stage) ? growth.stage : 0
+  const skills = growth.skills_mastered
+  return (
+    <p className="mt-1 inline-flex items-center gap-1.5 break-words text-sm font-bold opacity-90">
+      <Plant weight="fill" className="size-4 shrink-0" aria-hidden />
+      {BUDDIES[buddy].name} is {described(buddy, stage)}
+      {skills > 0 ? ` · ${skills} ${skills === 1 ? 'skill' : 'skills'} mastered` : ''}
+    </p>
   )
 }

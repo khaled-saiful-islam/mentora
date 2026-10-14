@@ -4,6 +4,8 @@ import type { PublicReport } from '@/features/coverage/api'
 import type { SetSummary } from '@/features/learning/api'
 import type { SessionSummary } from '@/features/live/sessions/api'
 import type { Attempt, HistoryRow, HomeWork, MadeForYou, Results, SkillInsight, Todo } from '@/features/play/api'
+import { isStage, type Stage } from '@/features/buddies/growth'
+import type { Growth } from '@/features/buddies/GrowthProvider'
 
 /** A child's invitation: a link to send and a code to type. */
 export interface FamilyInvite {
@@ -30,9 +32,16 @@ export interface Child {
   name: string
   first_name: string
   buddy: string | null
+  /** How grown the child has made their buddy (§28.3.1). */
+  buddy_stage?: number
   grade_label: string | null
   label: string
   linked_at: string
+}
+
+/** The child's buddy, drawn as grown as they have made it. */
+export function stageOf(child: Child): Stage | undefined {
+  return isStage(child.buddy_stage) ? child.buddy_stage : undefined
 }
 
 export interface InvitePreview {
@@ -53,6 +62,8 @@ export interface ChildOverview {
   made_for_you: MadeForYou[]
   /** What any of the child's parents sent home. */
   from_home: HomeWork[]
+  /** How grown their buddy is (§28.3.1). */
+  growth?: Growth
 }
 
 /** A piece of work, with the finished try to open for its answers. */

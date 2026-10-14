@@ -269,7 +269,7 @@ function Quiet() {
   return (
     <div className="flex flex-col items-center gap-1 px-6 py-8 text-center text-muted-foreground">
       {user?.role === 'student' ? (
-        <Buddy buddy={user.buddy} size={96} mood="sleepy" interactive={false} track={false} lively={false} />
+        <Buddy buddy={user.buddy} size={96} mood="sleepy" interactive={false} track={false} lively={false} own />
       ) : (
         <motion.span animate={{ rotate: [0, 8, 0] }} transition={{ duration: 3, repeat: Infinity }} className="relative">
           <BellIcon weight="duotone" className="size-14 text-grape-300" />
