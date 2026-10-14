@@ -51,6 +51,9 @@ export interface GuideSection {
   explain: Record<ReadingLevel, string>
   points: string[]
   terms: GuideTerm[]
+  /** A process the part describes, in order: its Line Up (§28.3.8). Empty,
+   *  or missing in a guide made before, when there is none. */
+  steps?: string[]
   hook: string
   fact: string
   example: string

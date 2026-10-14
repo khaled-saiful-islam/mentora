@@ -278,6 +278,7 @@ export const playApi = {
   /** A game's hint from the buddy. Asking costs a few points. */
   hint: (attemptId: string, itemId: string) =>
     apiFetch<{ hint: string }>(`/me/attempts/${attemptId}/items/${encodeURIComponent(itemId)}/hint`, { method: 'POST' }),
+  guideQuiz: (attemptId: string) => apiFetch<{ set_id: string; title: string }>(`/me/attempts/${attemptId}/guide-quiz`, { method: 'POST' }),
   results: () => apiFetch<Results>('/me/results'),
   badges: () => apiFetch<BadgeCatalog>('/me/badges'),
   leaderboard: (assignmentId: string) => apiFetch<Board>(`/assignments/${assignmentId}/leaderboard`),

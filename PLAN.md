@@ -2243,6 +2243,17 @@ The study guide, the expert's favourite, becomes the spine:
   pairs (`game_finish`), and a short quiz. One guide becomes a whole
   learning journey.
 
+#### 28.3.8.1 Built (phase 6, 2026-10-14)
+
+- After each part, a one-minute game full screen: a Match Up of its words
+  (topped up from earlier parts) and a Line Up of its `steps`, a new
+  optional field that guides are now asked for and teachers can edit.
+- The buddy rides the progress bar; "Your journey" lights each part.
+- Finishing unlocks the guide's Boss Battle (not Year 1–2) and an
+  8-question quiz from its checks and words
+  (`POST /api/me/attempts/{id}/guide-quiz`).
+- No model calls. See `docs/features/057-learn-practise-play.md`.
+
 #### 28.3.1.1 Built (phase 1, 2026-10-14)
 
 - Server:

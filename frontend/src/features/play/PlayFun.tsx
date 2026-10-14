@@ -82,10 +82,23 @@ export function ProgressStars({ parts }: { parts: Segment[] }) {
 }
 
 /** The progress bar with a rocket riding it to the current question. */
-export function ProgressJourney({ parts, children }: { parts: Segment[]; children: React.ReactNode }) {
+export function ProgressJourney({ parts, rider, children }: { parts: Segment[]; rider?: React.ReactNode; children: React.ReactNode }) {
   const at = Math.max(0, parts.findIndex((p) => p === 'current'))
   const done = parts.every((p) => p !== 'current' && p !== 'todo')
   const share = parts.length ? ((done ? parts.length : at) + 0.5) / parts.length : 0
+  if (rider) {
+    // The buddy walks the trail (§28.3.8): a hop each time it moves on.
+    return (
+      <div className="relative pt-6">
+        {children}
+        <motion.span aria-hidden className="pointer-events-none absolute top-0 -translate-x-1/2" initial={false} animate={{ left: `${Math.min(100, share * 100)}%` }} transition={spring.gentle}>
+          <motion.span key={at} className="block" initial={{ y: 0 }} animate={{ y: [0, -7, 0, -3, 0] }} transition={{ duration: 0.7 }}>
+            {rider}
+          </motion.span>
+        </motion.span>
+      </div>
+    )
+  }
   return (
     <div className="relative pt-1">
       {children}

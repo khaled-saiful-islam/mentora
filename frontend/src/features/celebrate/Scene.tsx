@@ -32,6 +32,22 @@ export function useInsideScene(): boolean {
   return useContext(InsideScene)
 }
 
+/** For a full-screen sheet that is not a celebration (a guide's game, a
+ *  second chance): while it is open, buddies behind it keep quiet. */
+export function useCoversScreen(): void {
+  useEffect(() => {
+    open += 1
+    notify()
+    return () => {
+      open -= 1
+      notify()
+    }
+  }, [])
+}
+
+/** Inside such a sheet: its own buddy may talk. */
+export const InsideSceneProvider = InsideScene.Provider
+
 export function Scene({
   title,
   kicker,

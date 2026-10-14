@@ -135,3 +135,42 @@ describe('GuidePlayer', () => {
     expect(part(1).getByRole('button', { name: /On to part 2/ })).not.toHaveFocus()
   })
 })
+
+describe('learn, practise, play (§28.3.8)', () => {
+  const words = (n: number) => [
+    { term: `word ${n}a`, meaning: `Meaning ${n}a.`, translation: '' },
+    { term: `word ${n}b`, meaning: `Meaning ${n}b.`, translation: '' },
+    { term: `word ${n}c`, meaning: `Meaning ${n}c.`, translation: '' },
+  ]
+  const JOURNEY: Attempt = { ...GUIDE, grade_level: 'year_5', items: [{ ...page(1), terms: words(1) }, { ...page(2), terms: words(2), steps: ['First.', 'Then.', 'Last.'] }] }
+
+  it('offers each part a one-minute game, played full screen', async () => {
+    mount(JOURNEY)
+    expect(part(1).getByText('Match Up')).toBeInTheDocument()
+    expect(part(2).getByText('Match Up and Line Up')).toBeInTheDocument()
+    await userEvent.click(part(1).getByRole('button', { name: 'Play' }))
+    const sheet = await screen.findByRole('dialog', { name: 'Part 1: rain' })
+    expect(within(sheet).getByText('word 1a')).toBeInTheDocument()
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Back to the guide' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('keeps the boss and the quiz locked until every part is done, then opens the quiz', async () => {
+    const fetcher = vi.mocked(fetch)
+    mount(JOURNEY)
+    expect(screen.getByText('2 parts to go to open the boss and the quiz.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Fight the boss' })).toBeDisabled()
+    await userEvent.click(part(1).getByRole('button', { name: /Sun/ }))
+    await userEvent.click(await part(2).findByRole('button', { name: /Sun/ }))
+    expect(await screen.findByText('Every part done. The boss and the quiz are open!')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Fight the boss' })).toBeEnabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Take the quiz' }))
+    await waitFor(() => expect(fetcher.mock.calls.some(([url]) => String(url).endsWith('/me/attempts/att-g/guide-quiz'))).toBe(true))
+  })
+
+  it('has no boss for the youngest', () => {
+    mount({ ...JOURNEY, grade_level: 'year_2' })
+    expect(screen.queryByRole('button', { name: 'Fight the boss' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Take the quiz' })).toBeInTheDocument()
+  })
+})

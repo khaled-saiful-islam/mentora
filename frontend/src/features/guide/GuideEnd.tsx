@@ -28,6 +28,7 @@ export function GuideEnd({
   onFinish,
   finishLabel = 'Finish the guide',
   busy = false,
+  children,
 }: {
   extras: Partial<GuideExtras>
   glossary: GuideTerm[]
@@ -35,6 +36,8 @@ export function GuideEnd({
   onFinish?: () => void
   finishLabel?: string
   busy?: boolean
+  /** Shown before the finish: the journey and what it unlocks (§28.3.8). */
+  children?: React.ReactNode
 }) {
   return (
     <motion.div variants={stagger(0.1)} initial="hidden" animate="shown" className="space-y-6">
@@ -92,6 +95,8 @@ export function GuideEnd({
           </ol>
         </motion.section>
       )}
+
+      {children && <motion.div variants={rise}>{children}</motion.div>}
 
       {onFinish && (
         <motion.div variants={rise} className="flex justify-center pt-2">

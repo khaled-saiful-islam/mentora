@@ -54,12 +54,16 @@ export interface PlayBackend {
   speech: (attemptId: string, spoken: Spoken) => string
   /** A game's hint, which costs a few points once asked for. */
   hint: (attemptId: string, itemId: string) => Promise<string>
+  /** The quiz a finished study guide unlocks (§28.3.8). None in a preview:
+   *  there is no student to keep it for. */
+  guideQuiz?: (attemptId: string) => Promise<{ set_id: string; title: string }>
 }
 
 const server: PlayBackend = {
   answer: playApi.answer,
   speech: (attemptId, spoken) => `/api/me/attempts/${attemptId}/speech?${spokenQuery(spoken)}`,
   hint: async (attemptId, itemId) => (await playApi.hint(attemptId, itemId)).hint,
+  guideQuiz: playApi.guideQuiz,
 }
 
 const BackendContext = createContext<PlayBackend>(server)

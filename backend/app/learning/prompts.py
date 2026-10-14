@@ -210,7 +210,7 @@ def guide_section_rules(limits: dict[str, int]) -> str:
         "Each section is a JSON object:\n"
         '{"heading": "...", "explain": {"simple": "...", "core": "...", "stretch": "..."}, '
         '"points": ["...", "..."], '
-        '"terms": [{"term": "...", "meaning": "...", "translation": "..."}], '
+        '"terms": [{"term": "...", "meaning": "...", "translation": "..."}], "steps": [], '
         '"hook": "...", "fact": "...", "example": "...", "image_query": "...", '
         '"prompt": "...", "options": ["...", "...", "...", "..."], "answer": 0, '
         '"explanation": "...", "skill": "<skill slug>", "difficulty": "easy|medium|hard", '
@@ -224,10 +224,14 @@ def guide_section_rules(limits: dict[str, int]) -> str:
         "- `explain.stretch` takes the same ideas further for a strong reader — one more "
         f"idea, a why or a how — under {limits['stretch']} characters.\n"
         "- `points`: 2 to 4 things to remember, one short sentence each.\n"
-        "- `terms`: 1 to 4 key words from the section, each written exactly as it "
+        "- `terms`: 2 to 4 key words from the section, each written exactly as it "
         "appears in `explain.core`, with a meaning a child understands. `translation` "
         "is the same word in Bahasa Melayu — or in English when you are writing in "
         "Bahasa Melayu; leave it empty when it is the same.\n"
+        "- `steps`: when the section describes a process or a sequence — a cycle, a "
+        "method, events in time — its 3 to 6 steps in order, each under "
+        f"{limits['step']} characters; otherwise an empty list. Never steps that "
+        "could go in any order.\n"
         "- `hook`: a memory trick — a mnemonic, a rhyme or a vivid comparison.\n"
         "- `fact`: one surprising and true 'did you know?' fact from the sources.\n"
         "- `example`: where this shows up in everyday life, in Malaysia if you can.\n"

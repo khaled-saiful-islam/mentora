@@ -11,7 +11,9 @@ import { lookOfKind } from '@/features/learning/kinds'
 import { usePreferences } from '@/lib/prefs'
 import { playSound } from '@/lib/sound'
 import { cn } from '@/lib/utils'
-import { spring } from '@/motion'
+import { spring, useCalmMotion } from '@/motion'
+import { BuddyAvatar } from '@/features/buddies'
+import { useAuth } from '@/lib/auth'
 import type { PlayKind } from './api'
 import { usePlayLook } from './level'
 import { PointsChip, ProgressJourney, ProgressStars, STAR_PATH_MAX } from './PlayFun'
@@ -97,6 +99,8 @@ export function PlayHeader({
 }) {
   const look = lookOfKind(kind)
   const play = usePlayLook()
+  const { user } = useAuth()
+  const calm = useCalmMotion()
   const stars = play.starPath && parts.length <= STAR_PATH_MAX
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-md">
@@ -115,7 +119,11 @@ export function PlayHeader({
         <div className="min-w-0 flex-1">
           <p className="break-words font-display text-base font-semibold leading-tight">{title}</p>
           <div className="mt-1.5">
-            {stars ? (
+            {kind === 'study_guide' && user?.buddy && !calm ? (
+              <ProgressJourney parts={parts} rider={<BuddyAvatar buddy={user.buddy} size={22} />}>
+                <ProgressSegments parts={parts} />
+              </ProgressJourney>
+            ) : stars ? (
               <ProgressStars parts={parts} />
             ) : play.journey ? (
               <ProgressJourney parts={parts}>

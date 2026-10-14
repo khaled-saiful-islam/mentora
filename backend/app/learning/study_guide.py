@@ -36,7 +36,11 @@ LIMITS = {
     "fact": 280,
     "example": 400,
     "image_query": 100,
+    "step": 120,
 }
+# A process the section describes, in order (§28.3.8): what its Line Up is
+# made of. As many as a Line Up takes (`ORDER_STEPS`), or none.
+STEPS = (3, 6)
 
 
 class StudyGuideKind:
@@ -75,6 +79,7 @@ class StudyGuideKind:
             "explain": explain,
             "points": _texts(raw.get("points"), limit=LIMITS["point"], most=5),
             "terms": _terms(raw.get("terms")),
+            "steps": _steps(raw.get("steps")),
             "hook": clean_text(raw.get("hook"), LIMITS["hook"]) or "",
             "fact": clean_text(raw.get("fact"), LIMITS["fact"]) or "",
             "example": clean_text(raw.get("example"), LIMITS["example"]) or "",
@@ -189,6 +194,16 @@ def _texts(value: Any, *, limit: int, most: int) -> list[str]:
         return []
     cleaned = [clean_text(v, limit) for v in value]
     return [text for text in cleaned if text][:most]
+
+
+def _steps(value: Any) -> list[str]:
+    """The steps of a process in order, none the same — or none at all: a few
+    left out would not be the whole process."""
+    texts = _texts(value, limit=LIMITS["step"], most=STEPS[1] + 1)
+    distinct = list(dict.fromkeys(texts))
+    if len(distinct) != len(texts) or not STEPS[0] <= len(distinct) <= STEPS[1]:
+        return []
+    return distinct
 
 
 def _terms(value: Any) -> list[dict[str, str]]:

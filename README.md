@@ -192,6 +192,16 @@ teacher can share a quiz in **Test mode** to switch it off
 
 ![A second chance: the question and its answer, the level switch, why, and a worked example](docs/screenshots/second-chance.png)
 
+### Learn, practise, play
+
+A study guide is a journey: each part ends with a one-minute game made from
+its own words (a Match Up, and a Line Up when it describes a process), the
+buddy walks the trail as parts are finished, and finishing unlocks the
+guide's Boss Battle and a short quiz. No extra AI calls
+([`docs/features/057-learn-practise-play.md`](docs/features/057-learn-practise-play.md)).
+
+![The end of a study guide: the journey with every part lit, and the Boss Battle and quiz unlocked](docs/screenshots/guide-journey.png)
+
 ### Help at home
 
 A parent taps a skill their child finds hard and gets what it means in

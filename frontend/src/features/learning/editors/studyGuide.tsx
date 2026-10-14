@@ -11,8 +11,10 @@ import { quizEditor } from './quiz'
 import type { ExtrasEditor, ItemEditorProps, KindEditor } from './types'
 
 /** The same limits the server applies (`app/learning/study_guide.py`). */
-const LIMITS = { heading: 90, simple: 900, core: 1600, stretch: 1600, point: 200, term: 60, meaning: 240, hook: 260, fact: 280, example: 400 }
+const LIMITS = { heading: 90, simple: 900, core: 1600, stretch: 1600, point: 200, term: 60, meaning: 240, hook: 260, fact: 280, example: 400, step: 120 }
 const MOST_POINTS = 5
+// A Line Up takes 3 to 6 steps (`STEPS` in study_guide.py).
+const MOST_STEPS = 6
 const MOST_TERMS = 5
 
 type Tab = 'teach' | 'helpers' | 'picture' | 'check'
@@ -85,6 +87,7 @@ function Helpers({ item, set }: { item: GuideSection; set: Set }) {
     <div className="space-y-4">
       <ListField label="Remember" noun="point" items={item.points} limit={LIMITS.point} most={MOST_POINTS} onChange={(points) => set({ points })} />
       <TermsField terms={item.terms} onChange={(terms) => set({ terms })} />
+      <ListField label="Steps in order, for a Line Up game" noun="step" items={item.steps ?? []} limit={LIMITS.step} most={MOST_STEPS} onChange={(steps) => set({ steps })} />
       <div className="grid gap-3 @xl:grid-cols-3">
         <LabelledText label="Remember it like this" value={item.hook} limit={LIMITS.hook} placeholder="A rhyme or a memory trick" onChange={(hook) => set({ hook })} />
         <LabelledText label="Did you know?" value={item.fact} limit={LIMITS.fact} placeholder="A surprising true fact" onChange={(fact) => set({ fact })} />
@@ -231,6 +234,7 @@ export const studyGuideEditor: KindEditor<GuideSection> = {
     explain: { simple: '', core: '', stretch: '' },
     points: [],
     terms: [],
+    steps: [],
     hook: '',
     fact: '',
     example: '',
@@ -249,6 +253,8 @@ export const studyGuideEditor: KindEditor<GuideSection> = {
     if (!item.heading.trim()) return 'Give this part a heading.'
     if (!item.explain.core.trim()) return 'Write the "Just right" version of the teaching.'
     if (item.terms.some((t) => !t.term.trim() || !t.meaning.trim())) return 'Every word to know needs its meaning.'
+    const steps = (item.steps ?? []).filter((s) => s.trim())
+    if (steps.length > 0 && steps.length < 3) return 'A Line Up needs at least 3 steps, or none.'
     return quizEditor.problem(item as unknown as QuizItem)
   },
 }

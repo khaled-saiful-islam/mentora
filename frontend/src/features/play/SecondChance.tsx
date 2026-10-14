@@ -16,6 +16,7 @@ import { trapTab } from '@/components/ui/Dialog'
 import { errorMessage } from '@/features/auth/errors'
 import { Buddy, profileOf, type BuddyHandle } from '@/features/buddies'
 import { useGrowth } from '@/features/buddies/GrowthProvider'
+import { InsideSceneProvider, useCoversScreen } from '@/features/celebrate/Scene'
 import { LevelSwitch } from '@/features/guide/LevelSwitch'
 import { rememberedLevel, rememberLevel } from '@/features/guide/level'
 import type { ReadingLevel } from '@/features/learning/api'
@@ -50,6 +51,7 @@ export function SecondChance({ attempt, item, answerText, look, last, onClose, o
   const { user } = useAuth()
   const [twin, setTwin] = useState<Twin | null | 'asking' | 'none'>(null)
   const name = profileOf(user?.buddy).name
+  useCoversScreen()
 
   // Takes the keyboard while open, and gives it back on close.
   useEffect(() => {
@@ -93,7 +95,9 @@ export function SecondChance({ attempt, item, answerText, look, last, onClose, o
         exit={{ y: '100%', transition: { duration: 0.2 } }}
       >
         <header className="flex items-start gap-3 px-4 pt-4 pb-2 sm:px-6">
-          <Buddy ref={buddyRef} buddy={user?.buddy} size={88} mood="think" interactive={false} track={false} own />
+          <InsideSceneProvider value>
+            <Buddy ref={buddyRef} buddy={user?.buddy} size={88} mood="think" interactive={false} track={false} own />
+          </InsideSceneProvider>
           <div className="min-w-0 flex-1 pt-1">
             <p className="flex items-center gap-1.5 text-sm font-bold uppercase tracking-[0.18em] text-primary">
               <ArrowCounterClockwise weight="bold" className="size-4 shrink-0" aria-hidden />

@@ -12,7 +12,8 @@
  * the top follows the part in view.
  */
 import { WarningCircle } from '@phosphor-icons/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui'
 import { useToast } from '@/components/ui/Toast'
 import { errorMessage } from '@/features/auth/errors'
@@ -21,6 +22,10 @@ import type { ReadingLevel } from '@/features/learning/api'
 import { CheckCard } from '@/features/guide/CheckCard'
 import { GuideCover } from '@/features/guide/GuideCover'
 import { GuideEnd, glossaryOf } from '@/features/guide/GuideEnd'
+import { GuideFinale, PartPractice } from '@/features/guide/GuideJourney'
+import { guideBoss, partRounds } from '@/features/guide/journey'
+import { RoundSheet, type SheetRound } from '@/features/guide/RoundSheet'
+import { bandOf } from '@/features/game/rounds'
 import { rememberLevel, rememberedLevel } from '@/features/guide/level'
 import { SectionBody } from '@/features/guide/SectionBody'
 import { translationLabel } from '@/features/guide/text'
@@ -36,6 +41,15 @@ import { playedById, resumeAt, segments, skillLabel } from './session'
 
 const WONDER = ['Whoa, I did not know that!', 'That is SO cool!', 'Wait till you tell your friends!', 'Mind. Blown.']
 const END_ID = 'guide-end'
+// The years a Boss Battle is too much for, as in a game (`game_finish.NO_BOSS`).
+const NO_BOSS = new Set(['year_1', 'year_2'])
+
+interface Sheet {
+  title: string
+  rounds: SheetRound[]
+  /** The part it practises; none for the boss. */
+  part?: string
+}
 
 export function guidePages(attempt: Attempt): GuidePage[] {
   return attempt.items.filter((item): item is GuidePage => 'heading' in item)
@@ -57,6 +71,7 @@ export function GuidePlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps)
   const calm = useCalmMotion()
   const backend = usePlayBackend()
   const label = translationLabel(attempt.language)
+  const journey = useJourney(attempt, pages)
   const inView = usePartInView(pages.length, (i) => {
     const id = pages[i]?.id
     if (id && !seenAt.current[id]) seenAt.current[id] = Date.now()
@@ -136,6 +151,7 @@ export function GuidePlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps)
                 buddy.current?.say(pick(WONDER), 2600)
               }}
             />
+            <PartPractice rounds={journey.rounds[i]} played={journey.practised.has(page.id)} onPlay={() => journey.open({ title: page.heading, rounds: journey.rounds[i], part: page.id })} />
             <CheckCard
               prompt={page.prompt}
               options={page.options}
@@ -170,12 +186,87 @@ export function GuidePlayer({ attempt, buddy, exitTo, onFinished }: PlayerProps)
             glossary={glossaryOf(pages)}
             translationLabel={label}
             onFinish={unanswered.length === 0 ? onFinished : undefined}
-          />
+          >
+            <GuideFinale
+              stops={pages.map((p) => ({ heading: p.heading, done: Boolean(played[p.id]) }))}
+              boss={journey.boss ? { beaten: journey.bossBeaten } : null}
+              quiz={journey.canQuiz}
+              onBoss={journey.openBoss}
+              onQuiz={() => void journey.takeQuiz()}
+              quizBusy={journey.quizBusy}
+            />
+          </GuideEnd>
         </section>
         <BuddySpot />
       </main>
+      {journey.sheet && (
+        <RoundSheet
+          title={journey.sheet.title}
+          rounds={journey.sheet.rounds}
+          band={bandOf(attempt.grade_level)}
+          onClose={journey.close}
+          onDone={() => {
+            journey.done()
+            buddy.current?.cue('correct', { streak: 3 })
+          }}
+        />
+      )}
     </div>
   )
+}
+
+/**
+ * Learn → Practise → Play (§28.3.8): each part's rounds, which were played
+ * (remembered on this device), the guide's boss, and its quiz.
+ */
+function useJourney(attempt: Attempt, pages: GuidePage[]) {
+  const backend = usePlayBackend()
+  const navigate = useNavigate()
+  const { toast } = useToast()
+  const key = `mentora:practised:${attempt.id}`
+  const parts = useMemo(() => pages.map((p) => ({ id: p.id, terms: p.terms, steps: p.steps })), [pages])
+  const rounds = useMemo(() => parts.map((_, i) => partRounds(parts, i, attempt.language)), [parts, attempt.language])
+  const boss = useMemo(() => (NO_BOSS.has(attempt.grade_level ?? '') ? null : guideBoss(parts, attempt.language)), [parts, attempt.grade_level, attempt.language])
+  const [practised, setPractised] = useState<Set<string>>(() => remembered(key))
+  const [bossBeaten, setBossBeaten] = useState(false)
+  const [sheet, setSheet] = useState<Sheet | null>(null)
+  const [quizBusy, setQuizBusy] = useState(false)
+  const close = useCallback(() => setSheet(null), [])
+
+  function done() {
+    if (!sheet?.part) return setBossBeaten(true)
+    const next = new Set(practised).add(sheet.part)
+    setPractised(next)
+    try {
+      window.localStorage.setItem(key, JSON.stringify([...next]))
+    } catch {
+      // Not remembered on this device: the part offers its game again.
+    }
+  }
+
+  async function takeQuiz() {
+    if (!backend.guideQuiz) return
+    setQuizBusy(true)
+    try {
+      const made = await backend.guideQuiz(attempt.id)
+      navigate(`/practice/${made.set_id}`)
+    } catch (error) {
+      toast('The quiz could not open', { tone: 'error', body: errorMessage(error) })
+      setQuizBusy(false)
+    }
+  }
+
+  const openBoss = () => boss && setSheet({ title: `${attempt.title}: the boss`, rounds: [{ play: 'boss', content: boss }] })
+  return { rounds, boss, practised, bossBeaten, sheet, quizBusy, canQuiz: Boolean(backend.guideQuiz), open: setSheet, close, done, openBoss, takeQuiz }
+}
+
+function remembered(key: string): Set<string> {
+  try {
+    const stored: unknown = JSON.parse(window.localStorage.getItem(key) ?? '[]')
+    return new Set(Array.isArray(stored) ? stored.filter((x): x is string => typeof x === 'string') : [])
+  } catch {
+    return new Set()
+  }
 }
 
 /**

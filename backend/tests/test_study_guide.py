@@ -97,6 +97,16 @@ def test_a_translation_that_is_the_same_word_is_dropped() -> None:
     assert item is not None and item["terms"][0]["translation"] == ""
 
 
+def test_a_process_keeps_its_steps_in_order_or_none_at_all() -> None:
+    steps = ["Water evaporates.", "Vapour cools into clouds.", "Rain falls."]
+    item = normalised(steps=steps)
+    assert item is not None and item["steps"] == steps
+    # Too few, too many or the same step twice is not the whole process.
+    for broken in (steps[:2], [*steps, "a", "b", "c", "d"], [*steps, "Rain falls."]):
+        assert normalised(steps=broken)["steps"] == []  # type: ignore[index]
+    assert normalised()["steps"] == []  # type: ignore[index]
+
+
 def test_the_check_answer_is_hidden_until_answered() -> None:
     item = normalised(image={"image": "https://img.test/a.png", "page": "https://page.test"})
     assert item is not None
