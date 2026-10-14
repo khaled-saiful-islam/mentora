@@ -11,7 +11,8 @@ import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { told } from '../cards'
 import { paint, WORLDS } from '../worlds'
-import { Face, Footer, Goal, Scene, islandsToExplore, speakerOf, type OpeningProps } from './parts'
+import { Face, Footer, Goal, Scene, islandsToExplore, speakerOf, useShown, type OpeningProps } from './parts'
+import { Said } from '../mission/narration'
 
 export function LetterOpening(props: OpeningProps) {
   const [open, setOpen] = useState(false)
@@ -75,7 +76,8 @@ function Waves({ world, calm }: { world: OpeningProps['world']; calm: boolean })
   )
 }
 
-function Letter({ title, hook, goal, lines, cast, count, telling, onStart, calm }: OpeningProps) {
+function Letter({ title, hook, goal, lines, cast, count, telling, onStart, onShown, calm }: OpeningProps) {
+  useShown(onShown)
   const writer = cast.character || cast.buddyName
   return (
     <motion.div
@@ -88,7 +90,7 @@ function Letter({ title, hook, goal, lines, cast, count, telling, onStart, calm 
       <div className="space-y-3 rounded-2xl border-2 border-sun-300 bg-sun-100 px-4 py-4 text-grape-900 shadow-sm sm:-rotate-1 dark:bg-sun-100">
         <p className="font-display text-sm font-bold uppercase tracking-wide">{title}</p>
         <p className="font-display text-xl italic">Dear friend,</p>
-        {hook && <p className="break-words font-display text-lg italic">{hook}</p>}
+        {hook && <p className="break-words font-display text-lg italic"><Said text={hook} /></p>}
         <ul className="space-y-2">
           {lines.map((line, n) => (
             <LetterLine key={n} line={line} cast={cast} />
@@ -110,7 +112,7 @@ function LetterLine({ line, cast }: { line: OpeningProps['lines'][number]; cast:
       <Face buddy={buddy} name={name} cast={cast} size={32} />
       <p className="min-w-0 break-words font-display text-lg italic">
         <span className="not-italic font-bold">{name}: </span>
-        {told(line.says, cast.buddyName)}
+        <Said text={told(line.says, cast.buddyName)} />
       </p>
     </li>
   )

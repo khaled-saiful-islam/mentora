@@ -2036,6 +2036,22 @@ The rest of the game:
   provider.
 - Narration is in the game's own language.
 
+#### 28.3.2.1 Built (phase 2, 2026-10-14)
+
+Built as a mission, at the user's word: dramatic, not loud.
+
+- A mission briefing, whose tap lets sound play.
+- A quiet synthesised music bed that ducks under the voice and rests during
+  rounds, and a sting per opening and moment.
+- "Accept the mission" with a stamp, and "Your mission:" on the goal.
+- Every card told aloud as it appears, words lighting up as they are said
+  (`mission/narration.tsx`, `wordTimings`).
+- One remembered sound switch.
+- Narration recorded when a game is built (`services/narration_warmup.py`,
+  through `GenerationService(on_built=…)`), with a narrator shared per
+  process.
+- Doc: `docs/features/053-mission-narration.md`.
+
 #### 28.3.3 Help at home (parents) and practice for these students (teachers)
 
 **What a parent sees:** tapping a red skill on their child's page opens

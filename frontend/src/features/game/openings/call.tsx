@@ -10,7 +10,10 @@ import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { told } from '../cards'
 import { paint } from '../worlds'
-import { Face, Footer, Goal, Scene, islandsToExplore, speakerOf, type OpeningProps } from './parts'
+import { Face, Footer, Goal, Scene, islandsToExplore, speakerOf, useShown, type OpeningProps } from './parts'
+import { useMissionSound } from '../mission/context'
+import { playSting } from '../mission/score'
+import { Said } from '../mission/narration'
 
 // Each line arrives after the one before, with "typing…" between.
 const LINE_MS = 1100
@@ -29,7 +32,17 @@ export function CallOpening(props: OpeningProps) {
   )
 }
 
+// The phone rings again this often until it is answered.
+const RING_EVERY_MS = 4200
+
 function Ringing({ caller, title, calm, cast, onAnswer }: { caller: string; title: string; calm: boolean; cast: OpeningProps['cast']; onAnswer: () => void }) {
+  const sound = useMissionSound()
+  useEffect(() => {
+    if (!sound) return
+    playSting('call')
+    const ring = window.setInterval(() => playSting('call'), RING_EVERY_MS)
+    return () => window.clearInterval(ring)
+  }, [sound])
   return (
     <motion.div exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex flex-col items-center gap-4 py-4 text-center">
       <p className="rounded-full bg-grape-900/50 px-4 py-1 text-sm font-bold uppercase tracking-wide">Incoming video call</p>
@@ -63,7 +76,8 @@ function Ringing({ caller, title, calm, cast, onAnswer }: { caller: string; titl
   )
 }
 
-function Chat({ caller, hook, goal, lines, cast, count, telling, onStart, calm }: OpeningProps & { caller: string }) {
+function Chat({ caller, hook, goal, lines, cast, count, telling, onStart, onShown, calm }: OpeningProps & { caller: string }) {
+  useShown(onShown)
   const shown = useArriving(lines.length, calm)
   const done = shown >= lines.length
   return (
@@ -73,7 +87,7 @@ function Chat({ caller, hook, goal, lines, cast, count, telling, onStart, calm }
         <p className="min-w-0 flex-1 break-words font-bold">{caller}</p>
         <VideoCamera weight="fill" className="size-6 shrink-0" aria-hidden />
       </div>
-      {hook && <p className="break-words rounded-2xl bg-grape-900/60 px-3 py-2 italic">{hook}</p>}
+      {hook && <p className="break-words rounded-2xl bg-grape-900/60 px-3 py-2 italic"><Said text={hook} /></p>}
       <ol className="space-y-2" aria-live="polite">
         {lines.slice(0, shown).map((line, n) => (
           <Bubble key={n} line={line} cast={cast} calm={calm} />
@@ -102,7 +116,7 @@ function Bubble({ line, cast, calm }: { line: OpeningProps['lines'][number]; cas
       <Face buddy={buddy} name={name} cast={cast} size={36} />
       <div className={cn('min-w-0 rounded-2xl px-3 py-2 text-foreground', buddy ? 'rounded-br-sm bg-selected' : 'rounded-bl-sm bg-surface')}>
         <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{name}</p>
-        <p className="break-words text-lg">{told(line.says, cast.buddyName)}</p>
+        <p className="break-words text-lg"><Said text={told(line.says, cast.buddyName)} /></p>
       </div>
     </motion.li>
   )

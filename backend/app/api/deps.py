@@ -11,6 +11,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import Cookie, Depends, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,7 +36,7 @@ from app.learning.model import Meter
 from app.learning.registry import build_learning_kinds
 from app.learning.story_draft import StoryDrafter
 from app.live.answering import Answerer
-from app.live.audio import AudioCache, Narrator
+from app.live.audio import Narrator, shared_narrator
 from app.live.planner import LessonPlanner
 from app.live.voice_lab import VoiceLab
 from app.moderation.gate import ModerationGate
@@ -43,7 +44,7 @@ from app.moderation.registry import build_gate
 from app.policies.capabilities import Capabilities, capabilities_for
 from app.providers.base import TokenBudget
 from app.providers.registry import build_provider, make_provider
-from app.providers.speech import Transcriber, build_speech, build_transcriber
+from app.providers.speech import Transcriber, build_transcriber
 from app.services.accounting_service import Pricing
 from app.services.auth_service import AuthService
 from app.services.cancellation import registry as cancellation_registry
@@ -53,6 +54,7 @@ from app.services.live_plan_service import LivePlanService
 from app.services.live_quiz_service import LiveQuizService
 from app.services.live_room import rooms as live_rooms
 from app.services.live_runtime import LiveRuntime
+from app.services.narration_warmup import record_in_background
 from app.services.quota import TokenQuota
 from app.services.rate_limit import Limit, RateLimiter
 from app.services.set_builds import ChatSetMaker
@@ -372,11 +374,19 @@ StoryDrafterDep = Annotated[StoryDrafter, Depends(get_story_drafter)]
 
 
 def get_generation_service(settings: SettingsDep) -> GenerationService:
+    def built(set_id: UUID, kind: str) -> None:
+        # A game's narration, recorded as soon as it is made (§28.3.2).
+        if kind == "game":
+            record_in_background(
+                set_id, session_maker=session_scope, narrator=shared_narrator(), settings=settings
+            )
+
     return GenerationService(
         kinds=build_learning_kinds(),
         settings=settings,
         session_maker=session_scope,
         generator_factory=lambda kind, meter: build_generator(settings, kind, meter),
+        on_built=built,
     )
 
 
@@ -391,11 +401,8 @@ async def limit_speech(session: SessionDep, settings: SettingsDep, user: Current
     )
 
 
-@lru_cache
 def _narrator() -> Narrator:
-    # One per process, so two requests for the same clip share one recording.
-    settings = get_settings()
-    return Narrator(build_speech(settings), AudioCache(settings.live_audio_dir))
+    return shared_narrator()
 
 
 def get_narrator() -> Narrator:

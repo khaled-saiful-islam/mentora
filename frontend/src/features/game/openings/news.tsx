@@ -8,9 +8,11 @@ import { motion } from 'motion/react'
 import { Broadcast } from '@phosphor-icons/react'
 import { told } from '../cards'
 import { paint, WORLDS } from '../worlds'
-import { Face, Footer, Goal, Scene, islandsToExplore, speakerOf, type OpeningProps } from './parts'
+import { Face, Footer, Goal, Scene, islandsToExplore, speakerOf, useShown, type OpeningProps } from './parts'
+import { Said } from '../mission/narration'
 
-export function NewsOpening({ title, hook, goal, lines, cast, count, telling, onStart, world, calm }: OpeningProps) {
+export function NewsOpening({ title, hook, goal, lines, cast, count, telling, onStart, onShown, world, calm }: OpeningProps) {
+  useShown(onShown)
   return (
     <Scene calm={calm}>
       <div className="overflow-hidden bg-grape-900 text-white">
@@ -24,7 +26,7 @@ export function NewsOpening({ title, hook, goal, lines, cast, count, telling, on
         </div>
         <div className="space-y-3 px-4 py-4" style={{ background: `linear-gradient(180deg, ${paint(world, 'far')}, ${paint(world, 'haze')})` }}>
           <h2 className="break-words rounded-xl bg-grape-900/70 px-3 py-2 font-display text-2xl font-semibold leading-tight sm:text-3xl">{title}</h2>
-          {hook && <p className="break-words rounded-xl bg-grape-900/70 px-3 py-2 text-lg">{hook}</p>}
+          {hook && <p className="break-words rounded-xl bg-grape-900/70 px-3 py-2 text-lg"><Said text={hook} /></p>}
           <p className="w-fit rounded-full bg-surface px-3 py-0.5 text-xs font-bold uppercase tracking-wide text-primary">On the scene: {WORLDS[world].label}</p>
           <ul className="space-y-2">
             {lines.map((line, n) => (
@@ -49,7 +51,7 @@ function Quote({ line, cast }: { line: OpeningProps['lines'][number]; cast: Open
       <Face buddy={buddy} name={name} cast={cast} size={40} />
       <div className="min-w-0">
         <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{name}</p>
-        <p className="break-words text-lg">“{told(line.says, cast.buddyName)}”</p>
+        <p className="break-words text-lg">“<Said text={told(line.says, cast.buddyName)} />”</p>
       </div>
     </li>
   )

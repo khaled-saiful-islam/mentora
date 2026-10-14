@@ -84,11 +84,15 @@ class GenerationService:
         settings: Settings,
         session_maker: SessionMaker,
         generator_factory: GeneratorFactory,
+        on_built: Callable[[UUID, str], None] | None = None,
     ) -> None:
         self._kinds = kinds
         self._settings = settings
         self._session_maker = session_maker
         self._make_generator = generator_factory
+        # Told when a set is made, with its kind: a game's narration is then
+        # recorded in the background (§28.3.2). Nothing it does can fail a build.
+        self._on_built = on_built
 
     async def begin(
         self, session: AsyncSession, owner: User, draft: GenerationDraft, *, made_for: bool = False
@@ -174,7 +178,17 @@ class GenerationService:
                         score(scope, name, value)
                     outcome = {**event, "model_calls": meter.calls, "tokens": meter.by_stage}
                     finish(scope, output=outcome, error=error)
+                if event.get("type") == "done":
+                    self._built(set_id, request.kind)
                 yield event
+
+    def _built(self, set_id: UUID, kind: str) -> None:
+        if self._on_built is None:
+            return
+        try:
+            self._on_built(set_id, kind)
+        except Exception:  # noqa: BLE001 — what follows a build never fails it
+            logger.warning("after building set %s", set_id, exc_info=True)
 
     async def _build(
         self, set_id: UUID, request: GenerationRequest, meter: Meter, steps: Steps

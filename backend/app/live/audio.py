@@ -11,10 +11,12 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
+from functools import lru_cache
 from pathlib import Path
 
+from app.core.config import get_settings
 from app.live.speakable import speakable
-from app.providers.speech import SpeechProvider
+from app.providers.speech import SpeechProvider, build_speech
 
 logger = logging.getLogger(__name__)
 
@@ -82,3 +84,11 @@ class Narrator:
         speech = await self._provider.synthesize(said, voice=voice, speed=speed, model=model)
         self._cache.put(key, speech.audio)
         return speech.audio
+
+
+@lru_cache
+def shared_narrator() -> Narrator:
+    """One per process, so two asks for the same clip share one recording —
+    a request reading aloud and a game's narration being recorded (§28.3.2)."""
+    settings = get_settings()
+    return Narrator(build_speech(settings), AudioCache(settings.live_audio_dir))

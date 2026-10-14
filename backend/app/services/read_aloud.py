@@ -91,6 +91,34 @@ def beat_words(extras: dict[str, Any], island: str, part: str, n: int | None) ->
     return words
 
 
+def game_narration(extras: dict[str, Any], items: list[dict[str, Any]]) -> list[str]:
+    """Every line a game's narrator says (§28.3.2), in the order a child hears
+    them — the story's opening, then each island's beat, idea, task, what it
+    taught and the beat after, then the ending — as written, `{buddy}` and all.
+    What the read-aloud routes say, so recording these fills their cache."""
+    story = extras.get("story") if isinstance(extras.get("story"), dict) else {}
+    beats = extras.get("beats") if isinstance(extras.get("beats"), dict) else {}
+    said: list[str | None] = [story.get("hook"), *_says(story.get("opening")), story.get("goal")]
+    for item in items:
+        beat = beats.get(item.get("id")) if isinstance(beats.get(item.get("id")), dict) else {}
+        said += [
+            *_says(beat.get("before")),
+            item.get("learn"),
+            item.get("task"),
+            item.get("explanation"),
+            *_says(beat.get("after")),
+        ]
+    said += [story.get("win"), *_says(story.get("ending"))]
+    # As written, not tidied: the clip is keyed by the exact words said.
+    return list(dict.fromkeys(s for s in said if isinstance(s, str) and s.strip()))
+
+
+def _says(lines: Any) -> list[str | None]:
+    if not isinstance(lines, list):
+        return []
+    return [str(line.get("says") or "") if isinstance(line, dict) else None for line in lines]
+
+
 def _line(lines: Any, n: int | None) -> str | None:
     if not isinstance(lines, list) or n is None or not 0 <= n < len(lines):
         return None

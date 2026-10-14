@@ -1,9 +1,10 @@
 /**
  * How a game begins (§26.8): each of the five openings tells the same story —
  * the character's lines and the buddy's, the goal, how many islands — in its
- * own scene, named "The story", and every one ends at "Let's play".
+ * own scene, named "The story", and every one ends at "Accept the mission"
+ * (§28.3.2), which stamps it accepted and then starts the game.
  */
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -67,8 +68,9 @@ describe('a game’s opening', () => {
 
     await user.click(within(dialog).getByRole('button', { name: /Read it to me/ }))
     expect(telling.toggle).toHaveBeenCalledTimes(1)
-    await user.click(within(dialog).getByRole('button', { name: "Let's play" }))
-    expect(onStart).toHaveBeenCalledTimes(1)
+    await user.click(within(dialog).getByRole('button', { name: 'Accept the mission' }))
+    expect(screen.getByRole('status')).toHaveTextContent('Mission accepted!')
+    await waitFor(() => expect(onStart).toHaveBeenCalledTimes(1), { timeout: 2500 })
   })
 
   it('rings before the call is answered, then the chat comes in line by line', async () => {
@@ -78,7 +80,7 @@ describe('a game’s opening', () => {
     expect(screen.queryByText('My padi is turning yellow!')).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Answer' }))
     expect(await screen.findByText('My padi is turning yellow!', {}, { timeout: 3000 })).toBeInTheDocument()
-    expect(await screen.findByRole('button', { name: "Let's play" }, { timeout: 4000 })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Accept the mission' }, { timeout: 4000 })).toBeInTheDocument()
   })
 
   it('turns the postcard over by itself after a moment', async () => {

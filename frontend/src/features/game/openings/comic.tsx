@@ -3,8 +3,9 @@
  * says them — the opening every game had before there were others.
  */
 import { StoryCard } from '../cards'
-import type { OpeningProps } from './parts'
+import { useShown, type OpeningProps } from './parts'
 
-export function ComicOpening({ title, hook, goal, lines, cast, count, telling, onStart }: OpeningProps) {
+export function ComicOpening({ title, hook, goal, lines, cast, count, telling, onStart, onShown }: OpeningProps) {
+  useShown(onShown)
   return <StoryCard title={title} hook={hook} goal={goal} lines={lines} cast={cast} count={count} telling={telling} onStart={onStart} />
 }

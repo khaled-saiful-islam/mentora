@@ -23,13 +23,34 @@ export interface Line {
   text: string
 }
 
+/** The line being said right now, and when it started — for words that
+ *  light up as they are spoken (§28.3.2). */
+export interface Now {
+  /** `spokenId` of the line. */
+  id: string
+  text: string
+  /** `performance.now()` when the clip began, and how long it lasts, in ms. */
+  start: number
+  duration: number
+}
+
 export interface PlayVoice {
   supported: boolean
   /** Which piece is being read, as the caller named it; null when quiet. */
   reading: string | null
+  /** The line being said, in the tutor's voice; null between and after. */
+  now: Now | null
   read: (key: string, lines: Line[]) => void
   stop: () => void
 }
+
+/** A line's name, the same wherever it is drawn and spoken. */
+export function spokenId(spoken: Spoken): string {
+  return `${spoken.part}:${spoken.item}:${'n' in spoken ? (spoken.n ?? '') : ''}`
+}
+
+// The tutor's voice a little under full: the game is played in classrooms.
+const VOICE_LEVEL = 0.8
 
 /** A breath between answers, and a longer one after the question. */
 export const GAP_MS = 450
@@ -61,6 +82,7 @@ export function usePlayVoice(attemptId: string, language: string): PlayVoice {
   const { read: browserRead, stop: browserStop } = browser
   const tutor = Boolean(config?.read_aloud_languages?.includes(language))
   const [reading, setReading] = useState<string | null>(null)
+  const [now, setNow] = useState<Now | null>(null)
   // Each reading has a number; stopping moves it on, so a reading that was
   // stopped notices at its next step and goes quiet.
   const run = useRef(0)
@@ -68,6 +90,7 @@ export function usePlayVoice(attemptId: string, language: string): PlayVoice {
 
   const hush = useCallback(() => {
     run.current += 1
+    setNow(null)
     try {
       source.current?.stop()
     } catch {
@@ -83,16 +106,22 @@ export function usePlayVoice(attemptId: string, language: string): PlayVoice {
   }, [hush, browserStop])
 
   /** Plays one clip to its end; false if it could not be played. */
-  const say = useCallback(async (ctx: AudioContext, bytes: ArrayBuffer, mine: number): Promise<boolean> => {
+  const say = useCallback(async (ctx: AudioContext, bytes: ArrayBuffer, mine: number, line: Line): Promise<boolean> => {
     const buffer = await ctx.decodeAudioData(bytes)
     if (run.current !== mine) return false
     return new Promise((resolve) => {
       const node = ctx.createBufferSource()
       node.buffer = buffer
-      node.connect(ctx.destination)
-      node.onended = () => resolve(true)
+      const level = ctx.createGain()
+      level.gain.value = VOICE_LEVEL
+      node.connect(level).connect(ctx.destination)
+      node.onended = () => {
+        setNow(null)
+        resolve(true)
+      }
       source.current = node
       node.start()
+      setNow({ id: spokenId(line.spoken), text: line.text, start: performance.now(), duration: buffer.duration * 1000 })
     })
   }, [])
 
@@ -112,7 +141,7 @@ export function usePlayVoice(attemptId: string, language: string): PlayVoice {
         for (let i = 0; i < lines.length; i++) {
           const bytes = await clips[i]
           if (run.current !== mine) return
-          const heard = bytes ? await say(ctx, bytes, mine).catch(() => false) : false
+          const heard = bytes ? await say(ctx, bytes, mine, lines[i]).catch(() => false) : false
           if (run.current !== mine) return
           if (!heard) {
             // The rest in the browser's voice, rather than silence.
@@ -131,5 +160,5 @@ export function usePlayVoice(attemptId: string, language: string): PlayVoice {
 
   useEffect(() => hush, [hush])
 
-  return { supported: tutor || browser.supported, reading: reading ?? browser.reading, read, stop }
+  return { supported: tutor || browser.supported, reading: reading ?? browser.reading, now, read, stop }
 }

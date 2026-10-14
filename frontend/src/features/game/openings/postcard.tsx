@@ -11,7 +11,8 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui'
 import { told } from '../cards'
 import { paint, WORLDS } from '../worlds'
-import { Face, Footer, Goal, Scene, islandsToExplore, speakerOf, type OpeningProps } from './parts'
+import { Face, Footer, Goal, Scene, islandsToExplore, speakerOf, useShown, type OpeningProps } from './parts'
+import { Said as Lit } from '../mission/narration'
 
 // Long enough to look at the picture; a tap turns it sooner.
 const TURN_AFTER_MS = 3500
@@ -73,14 +74,15 @@ function Stamp({ world, count }: { world: OpeningProps['world']; count: number }
   )
 }
 
-function Message({ title, hook, goal, lines, cast, count, telling, onStart, world }: OpeningProps) {
+function Message({ title, hook, goal, lines, cast, count, telling, onStart, onShown, world }: OpeningProps) {
+  useShown(onShown)
   const writer = cast.character || cast.buddyName
   return (
     <div className="space-y-4 p-5 sm:p-6">
       <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
         <div className="min-w-0 space-y-3">
           <p className="text-sm font-bold uppercase tracking-wide text-primary">{title}</p>
-          {hook && <p className="break-words font-display text-lg italic">{hook}</p>}
+          {hook && <p className="break-words font-display text-lg italic"><Lit text={hook} /></p>}
           <ul className="space-y-2">
             {lines.map((line, n) => (
               <Said key={n} line={line} cast={cast} />
@@ -109,7 +111,7 @@ function Said({ line, cast }: { line: OpeningProps['lines'][number]; cast: Openi
       <Face buddy={buddy} name={name} cast={cast} size={32} />
       <p className="min-w-0 break-words text-lg">
         <span className="font-bold">{name}: </span>
-        {told(line.says, cast.buddyName)}
+        <Lit text={told(line.says, cast.buddyName)} />
       </p>
     </li>
   )

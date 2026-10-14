@@ -18,11 +18,13 @@ vi.mock('@/lib/audio', () => ({
       ? {
           destination: {},
           decodeAudioData: async () => ({}),
+          // The voice is played through a little under full (§28.3.2).
+          createGain: () => ({ gain: { value: 1 }, connect: (next: unknown) => next }),
           createBufferSource: () => {
             const node = {
               buffer: null,
               onended: null as null | (() => void),
-              connect: () => undefined,
+              connect: (next: unknown) => next,
               start: () => {
                 ctx.played += 1
                 setTimeout(() => node.onended?.(), 0)

@@ -95,11 +95,18 @@ function mount() {
   return { finished }
 }
 
+/** Past the briefing and the opening (§28.3.2), onto the map. */
+async function briefed(user: User) {
+  const begin = screen.queryByRole('button', { name: 'Start the mission' })
+  if (begin) await user.click(begin)
+  const accept = screen.queryByRole('button', { name: 'Accept the mission' })
+  if (accept && screen.queryByRole('dialog', { name: 'The story' })) await user.click(accept)
+}
+
 /** Past the opening, onto the map, into island `n`'s Learn it and its round. */
 async function enter(user: User, n: number) {
-  const opening = screen.queryByRole('button', { name: /Let's play/ })
-  if (opening && screen.queryByRole('dialog', { name: 'The story' })) await user.click(opening)
-  await user.click(await screen.findByRole('button', { name: new RegExp(`Island ${n}, play it now`) }))
+  await briefed(user)
+  await user.click(await screen.findByRole('button', { name: new RegExp(`Island ${n}, play it now`) }, { timeout: 3000 }))
   await user.click(await screen.findByRole('button', { name: /Let's play/ }))
   return screen.findByRole('region', { name: `Island ${n}` })
 }
@@ -137,13 +144,17 @@ describe('a game', () => {
   it('opens on its story, then the map, with each island under fog until its turn', async () => {
     const user = userEvent.setup()
     mount()
+    // First the mission briefing: its tap is what lets the sound begin.
+    const briefing = screen.getByRole('dialog', { name: /^Mission briefing/ })
+    expect(briefing).toHaveTextContent('3 islands to explore')
+    await user.click(within(briefing).getByRole('button', { name: 'Start the mission' }))
     const story = screen.getByRole('dialog', { name: 'The story' })
     expect(within(story).getByText(/The padi is wilting! Kiko needs you\./)).toBeInTheDocument()
     expect(within(story).getByText('My padi is yellow!')).toBeInTheDocument()
     expect(within(story).getByText('3 islands to explore')).toBeInTheDocument()
-    await user.click(within(story).getByRole('button', { name: /Let's play/ }))
+    await user.click(within(story).getByRole('button', { name: 'Accept the mission' }))
 
-    expect(screen.getByRole('button', { name: /Island 1, play it now: Idea 1/ })).toBeEnabled()
+    expect(await screen.findByRole('button', { name: /Island 1, play it now: Idea 1/ }, { timeout: 3000 })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Island 2, under the fog' })).toBeDisabled()
     await user.click(screen.getByRole('button', { name: /Island 1, play it now/ }))
     // Learn it before playing: the beat, the one idea, what to do.

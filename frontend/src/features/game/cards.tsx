@@ -6,12 +6,14 @@
  * speech-bubble panels.
  */
 import { motion } from 'motion/react'
-import { ArrowRight, Confetti, HandPointing, Play, SpeakerHigh, Sparkle, Star, Stop } from '@phosphor-icons/react'
+import { ArrowRight, Confetti, HandPointing, SpeakerHigh, Sparkle, Star, Stop } from '@phosphor-icons/react'
 import { Button } from '@/components/ui'
 import { BuddyAvatar } from '@/features/buddies'
 import type { StoryLine } from '@/features/learning/api'
 import { cn } from '@/lib/utils'
 import { spring, useCalmMotion } from '@/motion'
+import { AcceptMission } from './mission/Accept'
+import { Said } from './mission/narration'
 
 export interface Telling {
   reading: boolean
@@ -80,7 +82,7 @@ export function Panels({ lines, cast }: { lines: StoryLine[]; cast: Cast }) {
             )}
             <div className={cn('min-w-0 rounded-2xl border-2 px-3 py-2', buddy ? 'rounded-br-sm border-primary/30 bg-selected' : 'rounded-bl-sm border-border bg-muted/60')}>
               <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{who}</p>
-              <p className="break-words text-lg">{told(line.says, cast.buddyName)}</p>
+              <p className="break-words text-lg"><Said text={told(line.says, cast.buddyName)} /></p>
             </div>
           </motion.li>
         )
@@ -110,22 +112,22 @@ export function StoryCard({ title, hook, goal, lines, cast, count, telling, onSt
     <Card label="The story">
       <p className="text-sm font-bold uppercase tracking-wide text-primary">{count} islands to explore</p>
       <h2 className="mt-1 break-words font-display text-3xl font-semibold">{title}</h2>
-      {hook && <p className="mt-3 break-words text-lg italic text-muted-foreground">{hook}</p>}
+      {hook && <p className="mt-3 break-words text-lg italic text-muted-foreground"><Said text={hook} /></p>}
       <div className="mt-4">
         <Panels lines={lines} cast={cast} />
       </div>
       {goal && (
         <p className="mt-4 flex items-start gap-2 rounded-2xl bg-star-soft px-3 py-2 font-semibold">
           <Star weight="fill" className="mt-1 size-4 shrink-0 text-warning" aria-hidden />
-          <span className="min-w-0 break-words">{goal}</span>
+          <span className="min-w-0 break-words">
+            <span className="font-bold">Your mission: </span>
+            <Said text={goal} />
+          </span>
         </p>
       )}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <ReadAloud telling={telling} />
-        <Button variant="sun" size="lg" onClick={onStart} autoFocus>
-          <Play weight="fill" className="size-5" />
-          Let's play
-        </Button>
+        <AcceptMission onStart={onStart} />
       </div>
     </Card>
   )
@@ -148,12 +150,12 @@ export function LearnCard({ number, total, icon, learn, task, play, lines, cast,
       )}
       <div className="mt-4 flex items-center gap-4 rounded-3xl bg-sky-100 p-4 dark:bg-sky-700/30">
         {icon && <span className="shrink-0 text-6xl leading-none" aria-hidden>{icon}</span>}
-        <p className="min-w-0 break-words font-display text-2xl font-semibold leading-snug">{learn}</p>
+        <p className="min-w-0 break-words font-display text-2xl font-semibold leading-snug"><Said text={told(learn, cast.buddyName)} /></p>
       </div>
       {task && (
         <p className="mt-3 flex items-start gap-2 text-lg font-semibold">
           <HandPointing weight="fill" className="mt-1 size-5 shrink-0 text-primary" aria-hidden />
-          <span className="min-w-0 break-words">{told(task, cast.buddyName)}</span>
+          <span className="min-w-0 break-words"><Said text={told(task, cast.buddyName)} /></span>
         </p>
       )}
       {howTo && <div className="mt-3">{howTo}</div>}
@@ -184,7 +186,7 @@ export function Discovery({ number, learn, reached, stars, explanation, lines, c
       {explanation && (
         <div className="mt-4 rounded-2xl bg-correct-soft px-4 py-3">
           <p className="text-sm font-bold uppercase tracking-wide text-success">What you discovered</p>
-          <p className="mt-1 break-words text-lg">{explanation}</p>
+          <p className="mt-1 break-words text-lg"><Said text={told(explanation, cast.buddyName)} /></p>
         </div>
       )}
       {lines.length > 0 && (
@@ -211,7 +213,7 @@ export function Finale({ win, lines, cast, reached, total, stars, points, tellin
       <div className="text-center">
         <Confetti weight="duotone" className="mx-auto size-12 text-primary" aria-hidden />
         <h2 className="mt-2 font-display text-3xl font-semibold">{reached === total ? 'Every island cleared!' : 'Well played!'}</h2>
-        {win && <p className="mt-2 break-words text-lg">{win}</p>}
+        {win && <p className="mt-2 break-words text-lg"><Said text={win} /></p>}
       </div>
       {lines.length > 0 && (
         <div className="mt-4">

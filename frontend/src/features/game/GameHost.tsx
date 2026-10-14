@@ -13,7 +13,7 @@
  */
 import { AnimatePresence, motion } from 'motion/react'
 import { Lightbulb } from '@phosphor-icons/react'
-import { useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui'
 import { Confirm } from '@/components/ui/Confirm'
 import { Buddy, profileOf } from '@/features/buddies'
@@ -23,11 +23,17 @@ import { usePlayVoice } from '@/features/play/usePlayVoice'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useAuth } from '@/lib/auth'
 import { playSound, type Sound } from '@/lib/sound'
+import { firstName } from '@/lib/user'
 import { useCalmMotion } from '@/motion'
 import { told, type Cast } from './cards'
 import { GameBar } from './GameBar'
 import { TreasureMap } from './Map'
-import { overlayFor, type Phase, type Shown } from './overlay'
+import { MissionContext } from './mission/context'
+import { NarrationContext } from './mission/narration'
+import { MissionScore, playSting } from './mission/score'
+import { touched, useDeviceFlag } from './mission/useDeviceFlag'
+import { isStart } from './openings'
+import { overlayFor, type Phase, type Shown, type Tell } from './overlay'
 import { bandOf, Round, roundContent, type Band, type Move, type RoundContent } from './rounds'
 import { HowToPlay } from './rounds/howto'
 import { spokenFor } from './rounds/pieces'
@@ -62,7 +68,14 @@ export function GameHost({ attempt, buddy, exitTo, onFinished, only, practice = 
   const world = isWorld(attempt.extras.world) ? attempt.extras.world : 'rainforest'
   const cast: Cast = { buddyKey: user?.buddy, buddyName: profileOf(user?.buddy).name, character: attempt.extras.character?.name ?? '' }
   const [phase, setPhase] = useState<Phase>(practice || attempt.answered.length > 0 ? 'map' : 'story')
-  const [sound, setSound] = useState(true)
+  // One switch for every sound in a game — music, stings, the narrator and
+  // the blips — remembered on this device (§28.3.2).
+  const [sound, setSound] = useDeviceFlag('mentora:game-sound', true)
+  // The briefing comes first when the story does; its tap lets sound play.
+  const [briefed, setBriefed] = useState(phase !== 'story')
+  const [openingShown, setOpeningShown] = useState(false)
+  const score = useMemo(() => new MissionScore(), [])
+  const start = isStart(attempt.extras.start) ? attempt.extras.start : 'comic'
   const [shown, setShown] = useState<Shown | null>(null)
   // The island being played: set on the map, and kept until What you
   // discovered — the next island must not show while this one is being kept.
@@ -120,14 +133,33 @@ export function GameHost({ attempt, buddy, exitTo, onFinished, only, practice = 
     say(`Watch me, then it's your turn!`, null)
   }
 
+  function begin() {
+    setBriefed(true)
+    if (!sound) return
+    score.start()
+    // A comic bursts in and the news flashes at once; a letter's seal and a
+    // postcard's whoosh wait for it to be opened, and a phone rings itself.
+    if (start === 'comic' || start === 'news') playSting(start)
+  }
+
+  function storyShown() {
+    setOpeningShown(true)
+    if (sound && (start === 'letter' || start === 'postcard')) playSting(start)
+  }
+
   const overlay = overlayFor({
     attempt, run, cast, phase, shown, active, world, calm, voice, practice,
+    briefed, openingShown, agent: user ? firstName(user) : 'friend',
+    onBegin: begin,
+    onShown: storyShown,
     onStart: () => setPhase('map'),
     onPlay: () => setPhase('play'),
     onNext: next,
     onFinished,
   })  // fmt: skip
   const playing = phase === 'play' && !shown && active !== null
+  const tell = overlay.tell
+  useMissionSound({ score, voice, tell, sound, briefed, playing })
   const stuck = playing && (misses[active.id] ?? 0) >= SHOW_ME_AFTER[band]
   const title = attempt.extras.title || attempt.title
   // What the buddy's corner names: the island being played, or the next one.
@@ -147,7 +179,7 @@ export function GameHost({ attempt, buddy, exitTo, onFinished, only, practice = 
         showMe={stuck && active ? () => help(active) : null}
         onHowTo={playing ? () => setAsking(true) : null}
         sound={sound}
-        onSound={() => setSound((on) => !on)}
+        onSound={() => setSound(!sound)}
         fullscreen={fullscreen}
         onFinish={!allIn && (phase === 'map' || phase === 'play') ? () => setEnding(true) : null}
       />
@@ -211,9 +243,11 @@ export function GameHost({ attempt, buddy, exitTo, onFinished, only, practice = 
                 </section>
               </motion.div>
             )}
-            {overlay && (
+            {overlay.node && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-10 grid place-items-center overflow-y-auto bg-foreground/40 p-4 backdrop-blur-[2px]">
-                {overlay}
+                <MissionContext.Provider value={{ sound }}>
+                  <NarrationContext.Provider value={voice.now}>{overlay.node}</NarrationContext.Provider>
+                </MissionContext.Provider>
               </motion.div>
             )}
           </AnimatePresence>
@@ -259,4 +293,68 @@ function IslandNote({ island, number, total }: { island: GameIsland; number: num
  *  pairs as a Match Up should its own round be missing. */
 function roundOf(island: GameIsland): RoundContent {
   return roundContent(island) ?? { play: 'match', content: island.match ?? { pairs: [] } }
+}
+
+// After a sting, a breath before the narrator begins.
+const AFTER_STING_MS = 900
+const BEFORE_WORDS_MS = 350
+
+/**
+ * The sound of the mission (§28.3.2): the quiet music bed while the child is
+ * on the map and the cards, faded out during a round so they can think,
+ * ducked whenever the narrator speaks; and each card told aloud as it
+ * appears, after its sting — once each, only with sound on, and only once
+ * the page has been touched.
+ */
+function useMissionSound({
+  score,
+  voice,
+  tell,
+  sound,
+  briefed,
+  playing,
+}: {
+  score: MissionScore
+  voice: ReturnType<typeof usePlayVoice>
+  tell: Tell | null
+  sound: boolean
+  briefed: boolean
+  playing: boolean
+}) {
+  const told = useRef<string | null>(null)
+  const { read, stop } = voice
+
+  useEffect(() => {
+    if (sound && briefed && !playing && touched()) score.start()
+    else score.stop()
+  }, [score, sound, briefed, playing])
+
+  useEffect(() => () => score.stop(), [score])
+
+  useEffect(() => score.duck(voice.now !== null), [score, voice.now])
+
+  useEffect(() => {
+    if (!sound) stop()
+  }, [sound, stop])
+
+  const key = tell?.key ?? null
+  useEffect(() => {
+    if (!tell) {
+      // The card went: so do its words.
+      if (told.current) stop()
+      told.current = null
+      return
+    }
+    if (!sound || told.current === tell.key || !touched()) return
+    if (tell.sting) playSting(tell.sting)
+    const wait = window.setTimeout(
+      () => {
+        told.current = tell.key
+        read(tell.key, tell.lines)
+      },
+      tell.sting ? AFTER_STING_MS : BEFORE_WORDS_MS,
+    )
+    return () => window.clearTimeout(wait)
+    // Once per card: a new key, or sound switched on.
+  }, [key, sound])
 }

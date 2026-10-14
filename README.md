@@ -91,6 +91,18 @@ as a handout** with an answer key. See
 
 ## Play and Learn games
 
+**Every game is a mission, told aloud.** It opens on a briefing (a radar
+sweeping, *INCOMING MISSION* typed out), then the story is read by the
+tutor's voice over a quiet, tense music bed, the words lighting up as they
+are said. The child accepts the mission with a stamp, and every island, what
+it taught and the ending are told as they appear. Dramatic, but never loud;
+one sound switch, remembered
+([`docs/features/053-mission-narration.md`](docs/features/053-mission-narration.md)).
+
+| | |
+|---|---|
+| ![The mission briefing: a radar, INCOMING MISSION, the game's name and Start the mission](docs/screenshots/game-briefing.png) | ![The opening read aloud, the word being said lit, and Accept the mission](docs/screenshots/game-told-aloud.png) |
+
 A game on any topic, made by a teacher or parent in a minute or two. It is a
 treasure map of islands, one idea each, told as a short story with the
 student's own buddy, and it opens a different way each time: a comic, a

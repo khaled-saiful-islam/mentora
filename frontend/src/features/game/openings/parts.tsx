@@ -5,13 +5,16 @@
  * opening is its own scene; these keep the words and the controls the same.
  */
 import { motion } from 'motion/react'
-import { Play, SpeakerHigh, Star, Stop } from '@phosphor-icons/react'
+import { SpeakerHigh, Star, Stop } from '@phosphor-icons/react'
+import { useEffect } from 'react'
 import { Button } from '@/components/ui'
 import { BuddyAvatar } from '@/features/buddies'
 import type { GameWorld, StoryLine } from '@/features/learning/api'
 import { cn } from '@/lib/utils'
 import { spring } from '@/motion'
 import { told, type Cast, type Telling } from '../cards'
+import { AcceptMission } from '../mission/Accept'
+import { Said } from '../mission/narration'
 
 /** What a game's opening is given: the story, who is in it, and how to start. */
 export interface OpeningProps {
@@ -23,8 +26,19 @@ export interface OpeningProps {
   count: number
   telling: Telling
   onStart: () => void
+  /** The story's words are on screen — after Answer, Open or the turn of a
+   *  card — so the narrator may begin (§28.3.2). */
+  onShown?: () => void
   world: GameWorld
   calm: boolean
+}
+
+/** Says the story is showing, once, when the part that shows it appears. */
+export function useShown(onShown: (() => void) | undefined): void {
+  useEffect(() => {
+    onShown?.()
+    // Once, as it appears.
+  }, [])
 }
 
 /** The opening's dialog — always named "The story", whatever the scene. */
@@ -68,15 +82,15 @@ export function Face({ buddy, name, cast, size = 48 }: { buddy: boolean; name: s
   )
 }
 
-/** The goal, set apart: what the player sets out to do. */
-export function Goal({ goal, label }: { goal: string; label?: string }) {
+/** The goal, set apart: the mission the player sets out on (§28.3.2). */
+export function Goal({ goal, label = 'Your mission:' }: { goal: string; label?: string }) {
   if (!goal) return null
   return (
     <p className="flex items-start gap-2 rounded-2xl bg-star-soft px-3 py-2 font-semibold">
       <Star weight="fill" className="mt-1 size-4 shrink-0 text-warning" aria-hidden />
       <span className="min-w-0 break-words">
         {label && <span className="font-bold">{label} </span>}
-        {goal}
+        <Said text={goal} />
       </span>
     </p>
   )
@@ -94,10 +108,7 @@ export function Footer({ telling, onStart }: { telling: Telling; onStart: () => 
       ) : (
         <span />
       )}
-      <Button variant="sun" size="lg" onClick={onStart} autoFocus>
-        <Play weight="fill" className="size-5" />
-        Let's play
-      </Button>
+      <AcceptMission onStart={onStart} />
     </div>
   )
 }
