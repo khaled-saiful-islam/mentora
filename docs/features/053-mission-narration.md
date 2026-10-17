@@ -22,9 +22,12 @@ played in classrooms.
    - **letter:** its seal pops as it is opened;
    - **postcard:** a whoosh as it turns.
 
-   Then the narrator reads the hook, every line and the goal. Each word
-   brightens as it is said and the word being said is marked, so listening
-   teaches reading too. The goal reads **Your mission:**.
+   Then **mission control** speaks (since 2026-10-14): "Attention, agent. A
+   new mission is coming in.", the hook and every line, "Here is your
+   mission." and the goal, then "4 islands stand in your way. Good luck,
+   agent." (in Malay for a Malay game). Each word brightens as it is said and
+   the word being said is marked, so listening teaches reading too. The goal
+   reads **Your mission:**.
 3. **Accept the mission.** A **MISSION ACCEPTED** stamp comes down with a
    thud and a chord, then the map opens.
 4. **Each island:** a rising "approaching" sting, then the story beat, the
@@ -39,7 +42,9 @@ played in classrooms.
   narrator and blips. It is **remembered on the device**. With it off,
   "Read it to me" still reads on a tap.
 - **Narration is in the game's language.**
-  - English is read in the tutor's voice.
+  - English is read in **mission control's voice**: a deeper male voice at a
+    steadier pace than the tutor's (`GAME_VOICE`), so a game sounds like a
+    mission briefing. Quizzes and study guides keep the tutor's voice.
   - Other languages are read in the browser's own voice where the device has
     one. Words don't light up in that voice: it gives no timing.
 
@@ -79,8 +84,12 @@ played in classrooms.
 
 ## Configuration
 
-None new. The tutor's voice follows `SPEECH_MODEL`, `SPEECH_VOICE`,
-`SPEECH_SPEED` and `READ_ALOUD_LANGUAGES`, as read-aloud does.
+- `GAME_VOICE` (default `voice_5`, the deeper male voice) and
+  `GAME_VOICE_SPEED` (0.85): the voice every game line is said in, recorded
+  ahead and read aloud alike (`read_aloud.voice_for`).
+- Otherwise as read-aloud: `SPEECH_MODEL` and `READ_ALOUD_LANGUAGES`.
+- Mission control's words are `MISSION_LINES` in `services/read_aloud.py`,
+  mirrored for the captions in `missionLines` (`features/game/overlay.tsx`).
 
 ## Extending it
 

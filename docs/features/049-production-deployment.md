@@ -93,6 +93,10 @@ production database starts with that admin only; there is no demo data
 
 ## Operating it
 
+**Before a deploy, read "Before deploying" in [`CHANGELOG.md`](../../CHANGELOG.md):**
+the migrations it runs, settings to set on the server, and what users will
+notice.
+
 From the laptop, after pushing to GitHub:
 
 ```bash

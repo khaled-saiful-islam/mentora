@@ -16,6 +16,10 @@ The codebase keeps a strict discipline, because features keep landing on it:
 extensibility beats cleverness, and a thing someone has to understand before
 they can change it must be small enough to hold in your head.
 
+**Finding things:** `docs/features/README.md` indexes every feature
+document by area, with the main code of the newest ones; `CHANGELOG.md` says
+what changed lately and what the next deploy needs.
+
 ## Run it
 
 ```bash
@@ -113,7 +117,7 @@ see that?".
 
 ## Testing
 
-Target 80%. About 1,900 backend and 370 frontend tests.
+Target 80%. About 2,350 backend and 650 frontend tests.
 
 - Service tests use **fakes, not mocks** (`tests/fakes.py`, `FakeProvider` in
   `test_chat_service.py`). Asserting on call arguments tests the wiring; these
@@ -153,7 +157,8 @@ before claiming a feature works:
 
 ## Adding a feature
 
-1. A feature document in `docs/features/NNN-name.md` in the same commit, covering
+1. A feature document in `docs/features/NNN-name.md`, and a line for it in
+   `docs/features/README.md`, in the same commit, covering
    what it does, how it works, its configuration, how to extend it, and its
    **known limits**. The limits section is not optional — it is what stops the
    next person rediscovering a constraint the hard way.
@@ -290,7 +295,8 @@ returns pictures gets the grid for free.
 Be honest about these rather than discovering them:
 
 - **One API worker.** `CancellationRegistry` is in-process, so `--workers 2`
-  silently breaks the stop button.
+  silently breaks the stop button. Live lessons and Class Battles
+  (`app/battles/hub.py`) are held in memory too: a restart ends them.
 - **Pattern layers are English-only** — search intent, image intent, and the
   injection guard. The student safety rules cover English and Malay only.
 - **One round's calls run in sequence**, not in parallel. `_dispatch` is the

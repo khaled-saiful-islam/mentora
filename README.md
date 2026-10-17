@@ -342,6 +342,11 @@ See [`docs/features/042-parents.md`](docs/features/042-parents.md).
 - **Study buddies, badges and streaks** to keep students coming back. Buddies
   start as babies and grow as the student learns; new buddy friends are
   earned with badges.
+- **An engagement layer** (§28): games told by mission control, Today's
+  Quest and a skill garden, a second chance at your level, study guides as a
+  journey, drag and Say It and Explain why, and live Class Battles. Each is
+  listed, with its code, in the
+  [feature index](docs/features/README.md#the-engagement-layer-28-october-2026).
 - **Guardrails for students.** A student in distress is answered with care
   and pointed to a trusted adult and Malaysian helplines; personal details are
   redacted; flagged moments go to a review queue. English and Malay.
@@ -456,10 +461,15 @@ make langfuse-down  stop it, keep what it recorded
   one registry line.
 - **Live updates** go over one server-sent event stream per signed-in person.
 
-[`CLAUDE.md`](CLAUDE.md) is the guide to working in the codebase, and
-[`docs/features/`](docs/features) has one document per feature — what it does,
-how it works, how to extend it and its known limits. [`PLAN.md`](PLAN.md) is
-the roadmap.
+Where to look:
+
+| Looking for | Read |
+|---|---|
+| How to work in the code, and its rules | [`CLAUDE.md`](CLAUDE.md) |
+| Every feature: what, how, extending it, known limits | [`docs/features/`](docs/features/README.md), indexed by area |
+| What changed lately, and what a deploy needs | [`CHANGELOG.md`](CHANGELOG.md) |
+| The roadmap and why things were decided | [`PLAN.md`](PLAN.md) |
+| Deploying to mentora.stream | [`docs/features/049-production-deployment.md`](docs/features/049-production-deployment.md) |
 
 ## Tests
 
@@ -467,8 +477,8 @@ the roadmap.
 make test
 ```
 
-About 1,900 backend tests against a real Postgres, rolled back per test,
-and about 370 frontend tests.
+About 2,350 backend tests against a real Postgres, rolled back per test,
+and about 650 frontend tests.
 
 ## Credits
 
